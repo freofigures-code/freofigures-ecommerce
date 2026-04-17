@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Criar Conta | FreoFigures</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#121212',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#DDAF34',
+            'freo-cyan': '#2C3E50',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex items-center justify-center selection:bg-freo-orange selection:text-white px-4 py-10">
+
+  <div class="relative w-full max-w-md bg-freo-dark border border-white/10 shadow-2xl overflow-hidden">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-freo-cyan"></div>
+
+    <div class="p-8">
+      <div class="flex justify-center mb-8">
+        <a href="/">
+          <img
+            src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
+            alt="Freo Figures Logo"
+            class="w-16 h-16 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_15px_rgba(221,175,52,0.3)]"
+            onerror="this.style.display='none'"
+          >
+        </a>
+      </div>
+
+      <h2 class="text-3xl font-display font-black uppercase text-center mb-2 text-white">
+        Criar Conta
+      </h2>
+      <p class="text-freo-light/60 text-center font-body text-sm mb-8">
+        Junte-se à forja e acompanhe seus pedidos e projetos.
+      </p>
+
+      <div id="error-message" class="hidden bg-red-500/10 border border-red-500 text-red-500 p-4 text-center font-mono text-sm mb-6"></div>
+
+      <div id="success-message" class="hidden bg-freo-cyan/10 border border-freo-cyan text-freo-cyan p-4 text-center font-mono text-sm mb-6">
+        Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Verifique sua caixa de entrada e também o spam.
+      </div>
+
+      <form id="signup-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Nome completo</label>
+          <input
+            type="text"
+            id="name"
+            required
+            class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm"
+            placeholder="Seu nome"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">E-mail</label>
+          <input
+            type="email"
+            id="email"
+            required
+            class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm"
+            placeholder="seu@email.com"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Senha</label>
+          <input
+            type="password"
+            id="password"
+            required
+            class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <button
+          type="submit"
+          id="submit-btn"
+          class="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors mt-4 flex justify-center items-center"
+        >
+          Criar Conta
+        </button>
+      </form>
+
+      <div class="mt-8 text-center">
+        <a href="/login.html" class="text-freo-light/60 hover:text-freo-orange text-sm font-body transition-colors">
+          Já tem uma conta? Faça login.
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('signup-form');
+    const errorDiv = document.getElementById('error-message');
+    const successDiv = document.getElementById('success-message');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      errorDiv.classList.add('hidden');
+      successDiv.classList.add('hidden');
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!name || !email || !password) {
+        errorDiv.innerText = 'Preencha todos os campos.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      if (!email.includes('@') || !email.includes('.')) {
+        errorDiv.innerText = 'Por favor, insira um e-mail válido.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch('https://n8nwebhook.solviaoficial.com/webhook/26afb276-b7a5-4d0c-b733-03c47836bd14', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            action: 'create_account'
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao criar conta.');
+        }
+
+        form.classList.add('hidden');
+        successDiv.classList.remove('hidden');
+
+        setTimeout(() => {
+          window.location.href = '/login.html';
+        }, 4000);
+      } catch (err) {
+        errorDiv.innerText = 'Erro ao criar conta. Tente novamente.';
+        errorDiv.classList.remove('hidden');
+        submitBtn.innerHTML = 'Criar Conta';
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
