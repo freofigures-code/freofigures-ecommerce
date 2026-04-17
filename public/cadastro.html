@@ -113,68 +113,80 @@
     </div>
   </div>
 
-  <script>
-    const form = document.getElementById('signup-form');
-    const errorDiv = document.getElementById('error-message');
-    const successDiv = document.getElementById('success-message');
-    const submitBtn = document.getElementById('submit-btn');
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      errorDiv.classList.add('hidden');
-      successDiv.classList.add('hidden');
+  const form = document.getElementById('signup-form');
+  const errorDiv = document.getElementById('error-message');
+  const successDiv = document.getElementById('success-message');
+  const submitBtn = document.getElementById('submit-btn');
 
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      if (!name || !email || !password) {
-        errorDiv.innerText = 'Preencha todos os campos.';
-        errorDiv.classList.remove('hidden');
-        return;
-      }
+    errorDiv.classList.add('hidden');
+    successDiv.classList.add('hidden');
 
-      if (!email.includes('@') || !email.includes('.')) {
-        errorDiv.innerText = 'Por favor, insira um e-mail válido.';
-        errorDiv.classList.remove('hidden');
-        return;
-      }
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
 
-      submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
-      submitBtn.disabled = true;
+    if (!name || !email || !password) {
+      errorDiv.innerText = 'Preencha todos os campos.';
+      errorDiv.classList.remove('hidden');
+      return;
+    }
 
-      try {
-        const response = await fetch('https://n8nwebhook.solviaoficial.com/webhook/26afb276-b7a5-4d0c-b733-03c47836bd14', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-            action: 'create_account'
-          }),
-        });
+    if (!email.includes('@') || !email.includes('.')) {
+      errorDiv.innerText = 'Por favor, insira um e-mail válido.';
+      errorDiv.classList.remove('hidden');
+      return;
+    }
 
-        if (!response.ok) {
-          throw new Error('Erro ao criar conta.');
+    if (password.length < 6) {
+      errorDiv.innerText = 'A senha deve ter pelo menos 6 caracteres.';
+      errorDiv.classList.remove('hidden');
+      return;
+    }
+
+    submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
+    submitBtn.disabled = true;
+
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: 'https://freofigures.com.br/auth/callback.html',
+          data: {
+            full_name: name
+          }
         }
+      });
 
-        form.classList.add('hidden');
-        successDiv.classList.remove('hidden');
+      if (error) throw error;
 
-        setTimeout(() => {
-          window.location.href = '/login.html';
-        }, 4000);
-      } catch (err) {
-        errorDiv.innerText = 'Erro ao criar conta. Tente novamente.';
-        errorDiv.classList.remove('hidden');
-        submitBtn.innerHTML = 'Criar Conta';
-        submitBtn.disabled = false;
-      }
-    });
-  </script>
+      successDiv.innerText = 'Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Verifique sua caixa de entrada e também o spam.';
+      successDiv.classList.remove('hidden');
+      form.classList.add('hidden');
+
+      console.log('Cadastro realizado:', data);
+
+      setTimeout(() => {
+        window.location.href = '/login.html';
+      }, 4000);
+    } catch (err) {
+      console.error('Erro real do cadastro:', err);
+      errorDiv.innerText = err.message || 'Erro ao criar conta. Tente novamente.';
+      errorDiv.classList.remove('hidden');
+      submitBtn.innerHTML = 'Criar Conta';
+      submitBtn.disabled = false;
+    }
+  });
+</script>
 </body>
 </html>
