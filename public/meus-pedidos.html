@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Pedidos | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#121212',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#D4AF37',
+            'freo-cyan': '#2C3E50',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+
+  <style>
+    .glass {
+      background: rgba(18, 18, 18, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0A0A0A; }
+    ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #b5952f; }
+    
+    .status-pendente { color: #eab308; background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.2); }
+    .status-aprovado, .status-processando { color: #3b82f6; background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); }
+    .status-finalizado, .status-entregue { color: #22c55e; background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.2); }
+    .status-cancelado { color: #ef4444; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+  </style>
+</head>
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col selection:bg-freo-orange selection:text-white">
+
+  <!-- Auth Listener -->
+  <script src="/auth-listener.js"></script>
+
+  <!-- Header -->
+  <header class="glass sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-white/10">
+    <div class="flex items-center gap-4 cursor-pointer" onclick="window.location.href='/dashboard.html'">
+      <svg class="w-6 h-6 text-freo-light/60 hover:text-freo-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      <h1 class="text-xl font-display font-bold uppercase tracking-widest text-white">Meus Pedidos</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="user-greeting" class="font-mono text-xs text-freo-light/50 hidden sm:inline"></span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-6 mt-4">
+    
+    <!-- Tabs -->
+    <div class="flex border-b border-white/10 overflow-x-auto hide-scrollbar mb-8">
+      <button class="tab-btn active px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-orange border-b-2 border-freo-orange whitespace-nowrap" data-filter="todos">Todos</button>
+      <button class="tab-btn px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent whitespace-nowrap" data-filter="pendente">A Pagar</button>
+      <button class="tab-btn px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent whitespace-nowrap" data-filter="andamento">Em Andamento</button>
+      <button class="tab-btn px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent whitespace-nowrap" data-filter="finalizado">Finalizados</button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="orders-loading" class="flex justify-center py-20">
+      <div class="w-12 h-12 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <!-- Orders Container -->
+    <div id="orders-container" class="space-y-6 hidden">
+      <!-- Cards injetados aqui -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="orders-empty" class="glass rounded-2xl p-12 text-center hidden">
+      <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg class="w-10 h-10 text-freo-light/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+      </div>
+      <h2 class="text-2xl font-display font-bold text-white mb-2">Nenhum pedido encontrado</h2>
+      <p class="text-freo-light/50 font-body mb-8 max-w-md mx-auto">Você ainda não fez nenhuma compra. Que tal explorar nosso catálogo e encontrar sua próxima peça épica?</p>
+      <a href="/" class="inline-block px-8 py-4 bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest hover:bg-white transition-colors rounded shadow-[0_0_20px_rgba(212,175,55,0.3)]">
+        Fazer minha primeira compra
+      </a>
+    </div>
+
+  </main>
+
+  <!-- Modal Detalhes do Pedido -->
+  <div id="order-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+    <div class="glass w-full max-w-2xl max-h-[90vh] rounded-2xl flex flex-col overflow-hidden transform scale-95 transition-transform duration-300" id="order-modal-content">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-white/10 flex justify-between items-center bg-freo-dark/50">
+        <div>
+          <h3 class="text-xl font-display font-bold text-white uppercase tracking-widest" id="modal-order-id">Pedido #---</h3>
+          <p class="text-xs font-mono text-freo-light/50 mt-1" id="modal-order-date">--/--/----</p>
+        </div>
+        <button id="close-modal-btn" class="p-2 text-freo-light/50 hover:text-white transition-colors rounded-full hover:bg-white/10">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto flex-1 space-y-8">
+        
+        <!-- Status -->
+        <div>
+          <h4 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-3">Status do Pedido</h4>
+          <div id="modal-order-status" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-widest border">
+            Status
+          </div>
+        </div>
+
+        <!-- Itens -->
+        <div>
+          <h4 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-4">Itens Comprados</h4>
+          <div id="modal-order-items" class="space-y-4">
+            <!-- Items injected here -->
+          </div>
+        </div>
+
+        <!-- Resumo Financeiro -->
+        <div class="bg-white/5 rounded-xl p-6 border border-white/5">
+          <h4 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-4">Resumo Financeiro</h4>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm font-mono text-freo-light/70">
+              <span>Subtotal</span>
+              <span id="modal-subtotal">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between text-sm font-mono text-freo-light/70">
+              <span>Frete</span>
+              <span class="text-green-400">Grátis</span>
+            </div>
+            <div class="flex justify-between items-end pt-4 border-t border-white/10 mt-4">
+              <span class="font-display font-bold uppercase text-white">Total</span>
+              <span id="modal-total" class="font-mono font-bold text-2xl text-freo-orange">R$ 0,00</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allOrders = [];
+    let currentFilter = 'todos';
+
+    const formatCurrency = (value) => {
+      const num = parseFloat(value);
+      if (isNaN(num)) return 'R$ 0,00';
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
+    };
+
+    const formatDate = (dateString) => {
+      if (!dateString) return '--/--/----';
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+    };
+
+    const getStatusConfig = (status) => {
+      const s = (status || '').toLowerCase();
+      if (s === 'pendente') return { label: 'A Pagar', class: 'status-pendente' };
+      if (s === 'aprovado' || s === 'processando') return { label: 'Em Andamento', class: 'status-processando' };
+      if (s === 'finalizado' || s === 'entregue') return { label: 'Finalizado', class: 'status-finalizado' };
+      if (s === 'cancelado') return { label: 'Cancelado', class: 'status-cancelado' };
+      return { label: status || 'Desconhecido', class: 'text-white border-white/20 bg-white/5' };
+    };
+
+    // Escuta auth-listener
+    window.addEventListener('auth-not-logged-in', () => {
+      window.location.href = '/login.html';
+    });
+
+    window.addEventListener('auth-data-loaded', async (e) => {
+      const { user, profile } = e.detail;
+      
+      if (!user) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const name = profile?.name || profile?.full_name || user.user_metadata?.name || user.email.split('@')[0];
+      document.getElementById('user-greeting').innerText = `Olá, ${name}`;
+
+      await fetchOrders(user.id);
+    });
+
+    async function fetchOrders(userId) {
+      try {
+        const { data, error } = await window.supabaseClient
+          .from('orders')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        allOrders = data || [];
+        renderOrders();
+      } catch (err) {
+        console.error("Erro ao buscar pedidos:", err);
+        // Fallback visual para teste caso a tabela orders não exista ainda
+        if (err.code === '42P01') {
+          console.warn("Tabela orders não existe. Mostrando estado vazio.");
+          allOrders = [];
+          renderOrders();
+        }
+      } finally {
+        document.getElementById('orders-loading').classList.add('hidden');
+      }
+    }
+
+    function renderOrders() {
+      const container = document.getElementById('orders-container');
+      const emptyState = document.getElementById('orders-empty');
+      
+      let filteredOrders = allOrders;
+
+      if (currentFilter === 'pendente') {
+        filteredOrders = allOrders.filter(o => o.status?.toLowerCase() === 'pendente');
+      } else if (currentFilter === 'andamento') {
+        filteredOrders = allOrders.filter(o => ['aprovado', 'processando'].includes(o.status?.toLowerCase()));
+      } else if (currentFilter === 'finalizado') {
+        filteredOrders = allOrders.filter(o => ['finalizado', 'entregue'].includes(o.status?.toLowerCase()));
+      }
+
+      if (filteredOrders.length === 0) {
+        container.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.classList.remove('hidden');
+
+      container.innerHTML = filteredOrders.map(order => {
+        const statusConfig = getStatusConfig(order.status);
+        // Parse items if it's a JSON string, or use as is if it's an array/object
+        let items = [];
+        try {
+          items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
+        } catch(e) { console.error("Erro ao parsear itens", e); }
+        
+        const itemsSummary = items.length > 0 
+          ? `${items.length} item(s) - ${items[0].product_name || items[0].name || 'Produto'} ${items.length > 1 ? '...' : ''}`
+          : 'Itens não detalhados';
+
+        return `
+          <div class="glass rounded-xl p-6 border border-white/10 hover:border-freo-orange/50 transition-colors cursor-pointer group" onclick="openModal('${order.id}')">
+            <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+              
+              <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                  <h3 class="text-lg font-display font-bold text-white uppercase tracking-widest group-hover:text-freo-orange transition-colors">Pedido #${order.id.substring(0,8).toUpperCase()}</h3>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase tracking-widest border ${statusConfig.class}">
+                    ${statusConfig.label}
+                  </span>
+                </div>
+                <p class="text-sm font-mono text-freo-light/50">${formatDate(order.created_at)}</p>
+                <p class="text-sm font-body text-freo-light/70 mt-3">${itemsSummary}</p>
+              </div>
+
+              <div class="flex items-center justify-between md:flex-col md:items-end gap-2 md:pl-6 md:border-l border-white/10">
+                <p class="text-xs font-mono text-freo-light/40 uppercase tracking-widest">Total</p>
+                <p class="text-xl font-mono font-bold text-freo-orange">${formatCurrency(order.total_amount)}</p>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Tabs Logic
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => {
+          b.classList.remove('text-freo-orange', 'border-freo-orange');
+          b.classList.add('text-freo-light/50', 'border-transparent');
+        });
+        btn.classList.remove('text-freo-light/50', 'border-transparent');
+        btn.classList.add('text-freo-orange', 'border-freo-orange');
+        
+        currentFilter = btn.getAttribute('data-filter');
+        renderOrders();
+      });
+    });
+
+    // Modal Logic
+    const modal = document.getElementById('order-modal');
+    const modalContent = document.getElementById('order-modal-content');
+    const closeBtn = document.getElementById('close-modal-btn');
+
+    window.openModal = (orderId) => {
+      const order = allOrders.find(o => o.id === orderId);
+      if (!order) return;
+
+      document.getElementById('modal-order-id').innerText = `Pedido #${order.id.substring(0,8).toUpperCase()}`;
+      document.getElementById('modal-order-date').innerText = formatDate(order.created_at);
+      
+      const statusConfig = getStatusConfig(order.status);
+      const statusEl = document.getElementById('modal-order-status');
+      statusEl.className = `inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-widest border ${statusConfig.class}`;
+      statusEl.innerText = statusConfig.label;
+
+      document.getElementById('modal-subtotal').innerText = formatCurrency(order.total_amount);
+      document.getElementById('modal-total').innerText = formatCurrency(order.total_amount);
+
+      let items = [];
+      try {
+        items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
+      } catch(e) {}
+
+      const itemsContainer = document.getElementById('modal-order-items');
+      if (items.length > 0) {
+        itemsContainer.innerHTML = items.map(item => `
+          <div class="flex items-center gap-4 p-3 bg-white/5 rounded-lg border border-white/5">
+            <div class="w-16 h-16 bg-freo-black rounded flex-shrink-0 overflow-hidden">
+              ${item.image_url ? `<img src="${item.image_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-white/20"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>`}
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-display font-bold text-sm text-white truncate">${item.product_name || item.name || 'Figura 3D'}</h3>
+              <p class="font-mono text-xs text-freo-light/50 mt-1">Qtd: ${item.quantity || 1} x ${formatCurrency(item.price || 0)}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-mono font-bold text-freo-orange text-sm">${formatCurrency((item.price || 0) * (item.quantity || 1))}</p>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        itemsContainer.innerHTML = '<p class="text-sm font-mono text-freo-light/50">Detalhes dos itens não disponíveis.</p>';
+      }
+
+      modal.classList.remove('hidden');
+      // Small delay for transition
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modalContent.classList.remove('scale-95');
+      }, 10);
+    };
+
+    const closeModal = () => {
+      modal.classList.add('opacity-0');
+      modalContent.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+  </script>
+</body>
+</html>

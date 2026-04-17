@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#121212',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#DDAF34',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+</head>
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen selection:bg-freo-orange selection:text-white flex flex-col">
+  
+  <nav class="bg-freo-dark border-b border-white/10 py-4 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='/'">
+        <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Freo Figures Logo" class="w-10 h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]" onerror="this.style.display='none'">
+        <span class="font-display font-black text-2xl tracking-tighter uppercase">
+          Freo<span class="text-freo-orange font-light">Figures</span>
+        </span>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="/meus-pedidos.html" id="my-orders-btn" class="hidden items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+          Meus Pedidos
+        </a>
+        <button id="logout-btn" class="text-xs font-mono text-freo-light/50 hover:text-white transition-colors border border-white/10 px-3 py-1.5 rounded hidden">Sair</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Loading State -->
+  <div id="loading-state" class="flex-1 flex items-center justify-center">
+    <div class="w-12 h-12 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <!-- Dashboard Content -->
+  <main id="dashboard-content" class="max-w-7xl mx-auto px-6 py-12 w-full hidden flex-1">
+    
+    <!-- Header: Avatar + Name -->
+    <div class="flex items-center gap-6 mb-12 border-b border-white/10 pb-8">
+      <div class="relative w-24 h-24 rounded-full border-2 border-freo-orange overflow-hidden bg-freo-dark flex items-center justify-center">
+        <img id="user-avatar" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+        <span id="user-avatar-placeholder" class="font-display font-bold text-3xl text-freo-orange uppercase"></span>
+      </div>
+      <div>
+        <h1 id="user-name" class="text-4xl md:text-5xl font-display font-black uppercase tracking-tighter">Bem-vindo!</h1>
+        <p id="user-email" class="text-freo-light/50 font-mono text-sm mt-1"></p>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Carrinho de Compras -->
+      <div class="lg:col-span-2 space-y-8">
+        <div class="bg-freo-dark border border-white/10 p-6 md:p-8">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-display font-bold uppercase text-freo-orange flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+              Meu Carrinho
+            </h2>
+            <span id="cart-count" class="font-mono text-sm bg-white/10 px-3 py-1 rounded-full">0 itens</span>
+          </div>
+          <div id="cart-items" class="space-y-4">
+            <!-- Items will be injected here -->
+          </div>
+          
+          <div id="cart-total-section" class="mt-8 pt-6 border-t border-white/10 flex justify-between items-center hidden">
+            <span class="font-display font-bold uppercase text-xl text-freo-light/70">Total Geral</span>
+            <span id="cart-total-price" class="font-mono font-bold text-3xl text-freo-orange">R$ 0,00</span>
+          </div>
+
+          <div id="cart-empty" class="text-center py-8 hidden">
+            <p class="text-freo-light/50 font-mono text-sm">Seu carrinho está vazio.</p>
+            <button onclick="window.location.href='/'" class="mt-4 border border-freo-orange text-freo-orange px-6 py-2 font-display font-bold uppercase text-sm hover:bg-freo-orange hover:text-freo-black transition-colors">Explorar Catálogo</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sidebar: Endereços & Cartões -->
+      <div class="space-y-8">
+        
+        <!-- Endereços -->
+        <div class="bg-freo-dark border border-white/10 p-6">
+          <h2 class="text-xl font-display font-bold uppercase text-freo-orange mb-6 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            Meus Endereços
+          </h2>
+          <div id="addresses" class="space-y-4">
+            <!-- Addresses will be injected here -->
+          </div>
+          <div id="addresses-empty" class="text-center py-6 hidden">
+            <p class="text-freo-light/50 font-mono text-xs">Nenhum endereço cadastrado.</p>
+          </div>
+        </div>
+
+        <!-- Cartões -->
+        <div class="bg-freo-dark border border-white/10 p-6">
+          <h2 class="text-xl font-display font-bold uppercase text-freo-orange mb-6 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+            Cartões Salvos
+          </h2>
+          <div id="payment-methods" class="space-y-4">
+            <!-- Cards will be injected here -->
+          </div>
+          <div id="payments-empty" class="text-center py-6 hidden">
+            <p class="text-freo-light/50 font-mono text-xs">Nenhum cartão cadastrado.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-t border-white/10 py-8 mt-auto">
+    <div class="max-w-7xl mx-auto px-6 text-center">
+      <p class="font-mono text-xs text-freo-light/30">© 2026 FreoFigures. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- Auth Listener -->
+  <script src="/auth-listener.js"></script>
+  
+  <!-- Dashboard Logic -->
+  <script>
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      if (window.supabaseClient) {
+        await window.supabaseClient.auth.signOut();
+        window.location.href = '/login.html';
+      }
+    });
+  </script>
+</body>
+</html>

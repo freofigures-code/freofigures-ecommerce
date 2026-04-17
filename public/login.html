@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#121212',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#DDAF34',
+            'freo-cyan': '#2C3E50',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+</head>
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex items-center justify-center selection:bg-freo-orange selection:text-white">
+  
+  <div class="relative w-full max-w-md bg-freo-dark border border-white/10 shadow-2xl overflow-hidden">
+    <!-- Top accent line -->
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-freo-cyan"></div>
+    
+    <div class="p-8">
+      <div class="flex justify-center mb-8">
+        <a href="/">
+          <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Freo Figures Logo" class="w-16 h-16 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_15px_rgba(221,175,52,0.3)]" onerror="this.style.display='none'">
+        </a>
+      </div>
+      
+      <h2 class="text-3xl font-display font-black uppercase text-center mb-2 text-white">
+        Acessar a Forja
+      </h2>
+      <p class="text-freo-light/60 text-center font-body text-sm mb-8">
+        Entre para acompanhar seus pedidos e projetos.
+      </p>
+
+      <div id="error-message" class="hidden bg-red-500/10 border border-red-500 text-red-500 p-4 text-center font-mono text-sm mb-6">
+      </div>
+
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">E-mail</label>
+          <input type="email" id="email" required class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm" placeholder="seu@email.com" />
+        </div>
+        <div>
+          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Senha</label>
+          <input type="password" id="password" required class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm" placeholder="••••••••" />
+        </div>
+        
+        <div class="flex justify-end">
+          <a href="#" class="text-xs font-mono text-freo-light/50 hover:text-freo-orange transition-colors">Esqueci minha senha</a>
+        </div>
+
+        <button type="submit" id="submit-btn" class="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors mt-4 flex justify-center items-center">
+          Entrar
+        </button>
+      </form>
+
+      <div class="mt-6 flex items-center justify-between">
+        <span class="border-b border-white/10 w-1/5 lg:w-1/4"></span>
+        <span class="text-xs text-center text-freo-light/50 uppercase tracking-widest font-mono">ou continue com</span>
+        <span class="border-b border-white/10 w-1/5 lg:w-1/4"></span>
+      </div>
+
+      <button id="google-login-btn" type="button" class="w-full bg-white text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-gray-200 transition-colors mt-6 flex justify-center items-center gap-3">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg>
+        Google
+      </button>
+
+      <div class="mt-8 text-center">
+        <button onclick="window.location.href='/'" class="text-freo-light/60 hover:text-freo-orange text-sm font-body transition-colors">
+          Não tem uma conta? Crie agora.
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Listener -->
+  <script src="/auth-listener.js"></script>
+  
+  <script>
+    // Função de login com Google
+    async function loginComGoogle() {
+      console.log("🚀 Botão Google clicado - Iniciando OAuth...");
+      try {
+        const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: "https://freofigures.com.br/auth/callback.html",
+            queryParams: { prompt: 'select_account' }  // força mostrar tela de seleção de conta
+          }
+        });
+        if (error) throw error;
+        console.log("✅ Redirecionamento para Google iniciado!");
+      } catch (err) {
+        console.error("❌ Erro no Google login:", err);
+        alert("Erro ao conectar com Google: " + err.message);
+      }
+    }
+
+    // Adiciona o clique no botão (funciona mesmo se o botão for criado dinamicamente)
+    document.addEventListener("DOMContentLoaded", () => {
+      const botaoGoogle = Array.from(document.querySelectorAll("button, a, div")).find(el => 
+        el.textContent && 
+        (el.textContent.toLowerCase().includes("continuar com google") || 
+         el.textContent.toLowerCase().includes("google"))
+      );
+
+      if (botaoGoogle) {
+        botaoGoogle.addEventListener("click", (e) => {
+          e.preventDefault();
+          loginComGoogle();
+        });
+        console.log("✅ Listener adicionado com sucesso no botão:", botaoGoogle.textContent.trim());
+      } else {
+        console.error("❌ Botão 'Continuar com Google' não encontrado na página!");
+      }
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('error-message');
+      const submitBtn = document.getElementById('submit-btn');
+      
+      errorDiv.classList.add('hidden');
+      submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
+      submitBtn.disabled = true;
+
+      try {
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          errorDiv.innerText = error.message === 'Invalid login credentials' 
+            ? 'Email ou senha incorretos.' 
+            : (error.message === 'Email not confirmed' ? 'Por favor, confirme seu email antes de fazer login.' : error.message);
+          errorDiv.classList.remove('hidden');
+        } else {
+          // Login com sucesso
+          window.location.href = '/dashboard.html';
+        }
+      } catch (err) {
+        errorDiv.innerText = 'Erro de conexão. Tente novamente.';
+        errorDiv.classList.remove('hidden');
+      } finally {
+        if (errorDiv.classList.contains('hidden')) {
+          submitBtn.innerHTML = 'Redirecionando...';
+        } else {
+          submitBtn.innerHTML = 'Entrar';
+          submitBtn.disabled = false;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

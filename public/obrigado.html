@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamento Confirmado | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#121212',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#D4AF37', // Dourado
+            'freo-cyan': '#2C3E50',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Confetti JS -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    .glass {
+      background: rgba(18, 18, 18, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(212, 175, 55, 0.15);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.05);
+    }
+    .gold-gradient-text {
+      background: linear-gradient(to right, #D4AF37, #F3E5AB, #D4AF37);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 200% auto;
+      animation: shine 3s linear infinite;
+    }
+    @keyframes shine {
+      to { background-position: 200% center; }
+    }
+    
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.6); }
+  </style>
+</head>
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex items-center justify-center relative overflow-hidden selection:bg-freo-orange selection:text-white p-6">
+  
+  <!-- Background glow -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-freo-orange/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <main class="glass max-w-2xl w-full rounded-3xl p-8 md:p-12 relative z-10 text-center">
+    
+    <div class="w-24 h-24 bg-freo-orange/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-freo-orange/30 shadow-[0_0_30px_rgba(212,175,55,0.2)]">
+      <svg class="w-12 h-12 text-freo-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+    </div>
+
+    <h1 class="text-4xl md:text-5xl font-display font-black uppercase tracking-tighter mb-4 gold-gradient-text">
+      Pagamento confirmado! 🎉
+    </h1>
+    
+    <p class="text-freo-light/70 text-lg mb-10 leading-relaxed">
+      Obrigado por comprar na Freo Figures! Seu pedido foi recebido e está sendo preparado com todo o cuidado.
+    </p>
+
+    <div class="bg-freo-black/50 border border-white/5 rounded-2xl p-6 mb-10 text-left">
+      <div class="flex justify-between items-center mb-6 pb-6 border-b border-white/5">
+        <div>
+          <p class="text-xs font-mono text-freo-light/40 uppercase tracking-widest mb-1">Número do Pedido</p>
+          <p class="text-xl font-display font-bold text-white" id="order-number">#---</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs font-mono text-freo-light/40 uppercase tracking-widest mb-1">Valor Pago</p>
+          <p class="text-xl font-mono font-bold text-freo-orange" id="order-total">R$ 0,00</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs font-mono text-freo-light/40 uppercase tracking-widest mb-4">Resumo dos Itens</p>
+        <div id="order-items" class="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+          <!-- Items will be injected here -->
+          <div class="animate-pulse flex space-x-4">
+            <div class="h-4 bg-white/10 rounded w-3/4"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="/meus-pedidos.html" class="px-8 py-4 bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest hover:bg-white transition-colors rounded shadow-[0_0_20px_rgba(212,175,55,0.3)]">
+        Ver meus pedidos
+      </a>
+      <a href="/" class="px-8 py-4 bg-transparent border border-white/20 text-white font-bold font-display uppercase tracking-widest hover:border-freo-orange hover:text-freo-orange transition-colors rounded">
+        Voltar à loja
+      </a>
+    </div>
+
+  </main>
+
+  <script>
+    // Trigger Confetti
+    const duration = 3 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0, colors: ['#D4AF37', '#FFFFFF', '#121212'] };
+
+    function randomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    const interval = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+      confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+    }, 250);
+
+    // Mock data fetching (in a real scenario, fetch from URL params or localStorage)
+    document.addEventListener('DOMContentLoaded', () => {
+      // Tenta pegar dados do localStorage (salvos no checkout) ou URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentId = urlParams.get('payment_id') || Math.floor(Math.random() * 90000) + 10000;
+      
+      document.getElementById('order-number').innerText = `#${paymentId}`;
+      
+      // Simula carregamento de itens (idealmente buscaria do Supabase pelo paymentId)
+      setTimeout(() => {
+        document.getElementById('order-total').innerText = 'R$ 1.250,00';
+        document.getElementById('order-items').innerHTML = `
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-freo-light/80">1x Estátua Kratos 1/4</span>
+            <span class="font-mono text-freo-light/50">R$ 1.250,00</span>
+          </div>
+        `;
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
