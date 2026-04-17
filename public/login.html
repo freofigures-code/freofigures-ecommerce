@@ -104,83 +104,81 @@
   <script src="/auth-listener.js"></script>
   
   <script>
-    // Função de login com Google
-    async function loginComGoogle() {
-      console.log("🚀 Botão Google clicado - Iniciando OAuth...");
-      try {
-        const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: "https://freofigures.com.br/auth/callback.html",
-            queryParams: { prompt: 'select_account' }  // força mostrar tela de seleção de conta
-          }
-        });
-        if (error) throw error;
-        console.log("✅ Redirecionamento para Google iniciado!");
-      } catch (err) {
-        console.error("❌ Erro no Google login:", err);
-        alert("Erro ao conectar com Google: " + err.message);
+  async function loginComGoogle() {
+    console.log("🚀 Botão Google clicado - Iniciando OAuth...");
+    try {
+      const { error } = await window.supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: "https://freofigures.com.br/auth/callback.html",
+          queryParams: { prompt: 'select_account' }
+        }
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      console.error("❌ Erro no Google login:", err);
+      alert("Erro ao conectar com Google: " + err.message);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const botaoGoogle = document.getElementById("google-login-btn");
+
+    if (botaoGoogle) {
+      botaoGoogle.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        loginComGoogle();
+      });
+    } else {
+      console.error("❌ Botão google-login-btn não encontrado.");
+    }
+  });
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('error-message');
+    const submitBtn = document.getElementById('submit-btn');
+
+    errorDiv.classList.add('hidden');
+    submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
+    submitBtn.disabled = true;
+
+    try {
+      const { error } = await window.supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        errorDiv.innerText =
+          error.message === 'Invalid login credentials'
+            ? 'Email ou senha incorretos.'
+            : error.message === 'Email not confirmed'
+              ? 'Por favor, confirme seu email antes de fazer login.'
+              : error.message;
+
+        errorDiv.classList.remove('hidden');
+      } else {
+        window.location.href = '/dashboard.html';
+      }
+    } catch (err) {
+      console.error("❌ Erro no login com email:", err);
+      errorDiv.innerText = 'Erro de conexão. Tente novamente.';
+      errorDiv.classList.remove('hidden');
+    } finally {
+      if (errorDiv.classList.contains('hidden')) {
+        submitBtn.innerHTML = 'Redirecionando...';
+      } else {
+        submitBtn.innerHTML = 'Entrar';
+        submitBtn.disabled = false;
       }
     }
-
-    // Adiciona o clique no botão (funciona mesmo se o botão for criado dinamicamente)
-    document.addEventListener("DOMContentLoaded", () => {
-      const botaoGoogle = Array.from(document.querySelectorAll("button, a, div")).find(el => 
-        el.textContent && 
-        (el.textContent.toLowerCase().includes("continuar com google") || 
-         el.textContent.toLowerCase().includes("google"))
-      );
-
-      if (botaoGoogle) {
-        botaoGoogle.addEventListener("click", (e) => {
-          e.preventDefault();
-          loginComGoogle();
-        });
-        console.log("✅ Listener adicionado com sucesso no botão:", botaoGoogle.textContent.trim());
-      } else {
-        console.error("❌ Botão 'Continuar com Google' não encontrado na página!");
-      }
-    });
-
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const errorDiv = document.getElementById('error-message');
-      const submitBtn = document.getElementById('submit-btn');
-      
-      errorDiv.classList.add('hidden');
-      submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
-      submitBtn.disabled = true;
-
-      try {
-        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (error) {
-          errorDiv.innerText = error.message === 'Invalid login credentials' 
-            ? 'Email ou senha incorretos.' 
-            : (error.message === 'Email not confirmed' ? 'Por favor, confirme seu email antes de fazer login.' : error.message);
-          errorDiv.classList.remove('hidden');
-        } else {
-          // Login com sucesso
-          window.location.href = '/dashboard.html';
-        }
-      } catch (err) {
-        errorDiv.innerText = 'Erro de conexão. Tente novamente.';
-        errorDiv.classList.remove('hidden');
-      } finally {
-        if (errorDiv.classList.contains('hidden')) {
-          submitBtn.innerHTML = 'Redirecionando...';
-        } else {
-          submitBtn.innerHTML = 'Entrar';
-          submitBtn.disabled = false;
-        }
-      }
-    });
-  </script>
+  });
+</script>
 </body>
 </html>
