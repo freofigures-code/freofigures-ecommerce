@@ -63,38 +63,53 @@
   </div>
 
   <script>
-    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
-    
-    // Inicializa o cliente do Supabase
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
 
-    function handleSuccess() {
-      document.getElementById('status-title').innerText = "Sucesso!";
-      document.getElementById('status-message').classList.add('hidden');
-      document.getElementById('loading-spinner').classList.add('hidden');
-      document.getElementById('success-message').classList.remove('hidden');
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // Redireciona para o dashboard após 2 segundos
-      setTimeout(() => {
-        // Usando o caminho absoluto para o dashboard
-        window.location.href = "/dashboard.html";
-      }, 2000);
-    }
+  function handleSuccess() {
+    document.getElementById('status-title').innerText = "Sucesso!";
+    document.getElementById('status-message').classList.add('hidden');
+    document.getElementById('loading-spinner').classList.add('hidden');
+    document.getElementById('success-message').classList.remove('hidden');
 
-    // Ouve as mudanças de estado de autenticação (disparado quando o hash da URL é processado)
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
-        handleSuccess();
+    setTimeout(() => {
+      window.location.href = "/dashboard.html";
+    }, 1500);
+  }
+
+  function handleError(message) {
+    document.getElementById('status-title').innerText = "Erro";
+    document.getElementById('status-message').innerText = message || "Não foi possível concluir a autenticação.";
+    document.getElementById('loading-spinner').classList.add('hidden');
+  }
+
+  async function initCallback() {
+    try {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+
+      if (code) {
+        const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
+        if (error) throw error;
       }
-    });
 
-    // Fallback: verifica se a sessão já existe caso o evento seja muito rápido
-    supabase.auth.getSession().then(({ data: { session } }) => {
+      const { data: { session }, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+
       if (session) {
         handleSuccess();
+      } else {
+        handleError("Sessão não encontrada. Tente entrar novamente.");
       }
-    });
-  </script>
+    } catch (err) {
+      console.error("Erro no callback:", err);
+      handleError(err.message);
+    }
+  }
+
+  initCallback();
+</script>
 </body>
 </html>
