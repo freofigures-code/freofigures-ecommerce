@@ -29,7 +29,7 @@
       }
     }
   </script>
-
+ 
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -37,7 +37,7 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
     window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
-
+ 
   <style>
     .glass {
       background: rgba(18, 18, 18, 0.7);
@@ -57,10 +57,8 @@
   </style>
 </head>
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col selection:bg-freo-orange selection:text-white">
-
-  <!-- Auth Listener -->
-  <script src="/auth-listener.js"></script>
-
+ 
+ 
   <!-- Header -->
   <header class="glass sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-white/10">
     <div class="flex items-center gap-4 cursor-pointer" onclick="window.location.href='/dashboard.html'">
@@ -71,7 +69,7 @@
       <span id="user-greeting" class="font-mono text-xs text-freo-light/50 hidden sm:inline"></span>
     </div>
   </header>
-
+ 
   <!-- Main Content -->
   <main class="flex-1 max-w-5xl w-full mx-auto p-6 mt-4">
     
@@ -82,17 +80,17 @@
       <button class="tab-btn px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent whitespace-nowrap" data-filter="andamento">Em Andamento</button>
       <button class="tab-btn px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent whitespace-nowrap" data-filter="finalizado">Finalizados</button>
     </div>
-
+ 
     <!-- Loading State -->
     <div id="orders-loading" class="flex justify-center py-20">
       <div class="w-12 h-12 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
     </div>
-
+ 
     <!-- Orders Container -->
     <div id="orders-container" class="space-y-6 hidden">
       <!-- Cards injetados aqui -->
     </div>
-
+ 
     <!-- Empty State -->
     <div id="orders-empty" class="glass rounded-2xl p-12 text-center hidden">
       <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -104,9 +102,9 @@
         Fazer minha primeira compra
       </a>
     </div>
-
+ 
   </main>
-
+ 
   <!-- Modal Detalhes do Pedido -->
   <div id="order-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
     <div class="glass w-full max-w-2xl max-h-[90vh] rounded-2xl flex flex-col overflow-hidden transform scale-95 transition-transform duration-300" id="order-modal-content">
@@ -121,7 +119,7 @@
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
-
+ 
       <!-- Modal Body -->
       <div class="p-6 overflow-y-auto flex-1 space-y-8">
         
@@ -132,7 +130,7 @@
             Status
           </div>
         </div>
-
+ 
         <!-- Itens -->
         <div>
           <h4 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-4">Itens Comprados</h4>
@@ -140,7 +138,7 @@
             <!-- Items injected here -->
           </div>
         </div>
-
+ 
         <!-- Resumo Financeiro -->
         <div class="bg-white/5 rounded-xl p-6 border border-white/5">
           <h4 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-4">Resumo Financeiro</h4>
@@ -159,27 +157,27 @@
             </div>
           </div>
         </div>
-
+ 
       </div>
     </div>
   </div>
-
+ 
   <script>
     let allOrders = [];
     let currentFilter = 'todos';
-
+ 
     const formatCurrency = (value) => {
       const num = parseFloat(value);
       if (isNaN(num)) return 'R$ 0,00';
       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
     };
-
+ 
     const formatDate = (dateString) => {
       if (!dateString) return '--/--/----';
       const date = new Date(dateString);
       return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
     };
-
+ 
     const getStatusConfig = (status) => {
       const s = (status || '').toLowerCase();
       if (s === 'pendente') return { label: 'A Pagar', class: 'status-pendente' };
@@ -188,12 +186,12 @@
       if (s === 'cancelado') return { label: 'Cancelado', class: 'status-cancelado' };
       return { label: status || 'Desconhecido', class: 'text-white border-white/20 bg-white/5' };
     };
-
+ 
     // Escuta auth-listener
     window.addEventListener('auth-not-logged-in', () => {
       window.location.href = '/login.html';
     });
-
+ 
     window.addEventListener('auth-data-loaded', async (e) => {
       const { user, profile } = e.detail;
       
@@ -201,13 +199,13 @@
         window.location.href = '/login.html';
         return;
       }
-
+ 
       const name = profile?.name || profile?.full_name || user.user_metadata?.name || user.email.split('@')[0];
       document.getElementById('user-greeting').innerText = `Olá, ${name}`;
-
+ 
       await fetchOrders(user.id);
     });
-
+ 
     async function fetchOrders(userId) {
       try {
         const { data, error } = await window.supabaseClient
@@ -215,9 +213,9 @@
           .select('*')
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
-
+ 
         if (error) throw error;
-
+ 
         allOrders = data || [];
         renderOrders();
       } catch (err) {
@@ -232,13 +230,13 @@
         document.getElementById('orders-loading').classList.add('hidden');
       }
     }
-
+ 
     function renderOrders() {
       const container = document.getElementById('orders-container');
       const emptyState = document.getElementById('orders-empty');
       
       let filteredOrders = allOrders;
-
+ 
       if (currentFilter === 'pendente') {
         filteredOrders = allOrders.filter(o => o.status?.toLowerCase() === 'pendente');
       } else if (currentFilter === 'andamento') {
@@ -246,16 +244,16 @@
       } else if (currentFilter === 'finalizado') {
         filteredOrders = allOrders.filter(o => ['finalizado', 'entregue'].includes(o.status?.toLowerCase()));
       }
-
+ 
       if (filteredOrders.length === 0) {
         container.classList.add('hidden');
         emptyState.classList.remove('hidden');
         return;
       }
-
+ 
       emptyState.classList.add('hidden');
       container.classList.remove('hidden');
-
+ 
       container.innerHTML = filteredOrders.map(order => {
         const statusConfig = getStatusConfig(order.status);
         // Parse items if it's a JSON string, or use as is if it's an array/object
@@ -267,7 +265,7 @@
         const itemsSummary = items.length > 0 
           ? `${items.length} item(s) - ${items[0].product_name || items[0].name || 'Produto'} ${items.length > 1 ? '...' : ''}`
           : 'Itens não detalhados';
-
+ 
         return `
           <div class="glass rounded-xl p-6 border border-white/10 hover:border-freo-orange/50 transition-colors cursor-pointer group" onclick="openModal('${order.id}')">
             <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
@@ -282,18 +280,18 @@
                 <p class="text-sm font-mono text-freo-light/50">${formatDate(order.created_at)}</p>
                 <p class="text-sm font-body text-freo-light/70 mt-3">${itemsSummary}</p>
               </div>
-
+ 
               <div class="flex items-center justify-between md:flex-col md:items-end gap-2 md:pl-6 md:border-l border-white/10">
                 <p class="text-xs font-mono text-freo-light/40 uppercase tracking-widest">Total</p>
                 <p class="text-xl font-mono font-bold text-freo-orange">${formatCurrency(order.total_amount)}</p>
               </div>
-
+ 
             </div>
           </div>
         `;
       }).join('');
     }
-
+ 
     // Tabs Logic
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
@@ -309,16 +307,16 @@
         renderOrders();
       });
     });
-
+ 
     // Modal Logic
     const modal = document.getElementById('order-modal');
     const modalContent = document.getElementById('order-modal-content');
     const closeBtn = document.getElementById('close-modal-btn');
-
+ 
     window.openModal = (orderId) => {
       const order = allOrders.find(o => o.id === orderId);
       if (!order) return;
-
+ 
       document.getElementById('modal-order-id').innerText = `Pedido #${order.id.substring(0,8).toUpperCase()}`;
       document.getElementById('modal-order-date').innerText = formatDate(order.created_at);
       
@@ -326,15 +324,15 @@
       const statusEl = document.getElementById('modal-order-status');
       statusEl.className = `inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-widest border ${statusConfig.class}`;
       statusEl.innerText = statusConfig.label;
-
+ 
       document.getElementById('modal-subtotal').innerText = formatCurrency(order.total_amount);
       document.getElementById('modal-total').innerText = formatCurrency(order.total_amount);
-
+ 
       let items = [];
       try {
         items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
       } catch(e) {}
-
+ 
       const itemsContainer = document.getElementById('modal-order-items');
       if (items.length > 0) {
         itemsContainer.innerHTML = items.map(item => `
@@ -354,7 +352,7 @@
       } else {
         itemsContainer.innerHTML = '<p class="text-sm font-mono text-freo-light/50">Detalhes dos itens não disponíveis.</p>';
       }
-
+ 
       modal.classList.remove('hidden');
       // Small delay for transition
       setTimeout(() => {
@@ -362,7 +360,7 @@
         modalContent.classList.remove('scale-95');
       }, 10);
     };
-
+ 
     const closeModal = () => {
       modal.classList.add('opacity-0');
       modalContent.classList.add('scale-95');
@@ -370,12 +368,14 @@
         modal.classList.add('hidden');
       }, 300);
     };
-
+ 
     closeBtn.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
     });
-
+ 
   </script>
+  <!-- Auth Listener: deve vir DEPOIS dos scripts que registram os listeners de evento -->
+  <script src="/auth-listener.js"></script>
 </body>
 </html>
