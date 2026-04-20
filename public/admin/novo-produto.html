@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Novo Produto | FreoFigures Admin</title>
+  <title>Admin — Produtos | FreoFigures</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -16,536 +14,721 @@
         extend: {
           colors: {
             'freo-black': '#0A0A0A',
-            'freo-dark': '#121212',
+            'freo-dark': '#111111',
+            'freo-card': '#181818',
             'freo-light': '#F5F5F5',
-            'freo-orange': '#D4AF37', // Dourado Premium
-            'freo-cyan': '#2C3E50',
+            'freo-orange': '#DDAF34',
+            'freo-muted': '#888',
           },
           fontFamily: {
             display: ['Outfit', 'sans-serif'],
             body: ['Space Grotesk', 'sans-serif'],
-            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+            mono: ['ui-monospace', 'monospace'],
           }
         }
       }
     }
   </script>
-
-  <!-- Quill.js for Rich Text Editor -->
-  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-  <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-
-  <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
     window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
-  
   <style>
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #0A0A0A; }
-    ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #b5952f; }
+    /* ── Base ── */
+    * { box-sizing: border-box; }
+    body { background: #0A0A0A; }
 
-    /* Glassmorphism */
-    .glass {
-      background: rgba(18, 18, 18, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
+    /* ── Inputs ── */
+    .fi { width:100%; background:#0D0D0D; border:1px solid rgba(255,255,255,0.08); color:#F5F5F5; padding:.7rem 1rem; font-family:'Space Grotesk',sans-serif; font-size:.875rem; outline:none; transition:border-color .15s; border-radius:2px; }
+    .fi:focus { border-color:#DDAF34; }
+    .fi::placeholder { color:rgba(245,245,245,.2); }
+    textarea.fi { resize:vertical; min-height:90px; }
+    select.fi { appearance:none; cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .75rem center; }
+    select.fi option { background:#111; }
+    .fl { display:block; font-family:ui-monospace,monospace; font-size:.65rem; color:rgba(245,245,245,.35); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
 
-    /* Quill Editor Dark Theme Overrides */
-    .ql-toolbar.ql-snow { border: 1px solid rgba(255,255,255,0.1); background: #121212; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
-    .ql-container.ql-snow { border: 1px solid rgba(255,255,255,0.1); font-family: 'Space Grotesk', sans-serif; font-size: 1rem; color: #F5F5F5; min-height: 200px; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
-    .ql-snow .ql-stroke { stroke: #F5F5F5; }
-    .ql-snow .ql-fill, .ql-snow .ql-stroke.ql-fill { fill: #F5F5F5; }
-    .ql-snow .ql-picker { color: #F5F5F5; }
-    .ql-snow .ql-picker-options { background-color: #121212; border-color: rgba(255,255,255,0.1); }
+    /* ── Cards de produto na listagem ── */
+    .product-card { background:#141414; border:1px solid rgba(255,255,255,.06); transition:border-color .2s, transform .15s; cursor:pointer; }
+    .product-card:hover { border-color:rgba(221,175,52,.3); transform:translateY(-1px); }
+
+    /* ── Upload de imagem ── */
+    .img-drop { border:2px dashed rgba(255,255,255,.1); transition:border-color .2s,background .2s; cursor:pointer; }
+    .img-drop:hover, .img-drop.dragover { border-color:#DDAF34; background:rgba(221,175,52,.04); }
+
+    /* ── Preview de imagem ── */
+    .img-thumb { position:relative; width:80px; height:80px; border:1px solid rgba(255,255,255,.08); flex-shrink:0; overflow:hidden; }
+    .img-thumb img { width:100%; height:100%; object-fit:cover; }
+    .img-thumb .del-img { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.7); border:none; color:#ef4444; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; opacity:0; transition:opacity .15s; border-radius:2px; }
+    .img-thumb:hover .del-img { opacity:1; }
+
+    /* ── Variantes ── */
+    .variant-row { display:flex; gap:8px; align-items:center; background:#0D0D0D; border:1px solid rgba(255,255,255,.06); padding:.5rem .75rem; }
+
+    /* ── Tags ── */
+    .tag-pill { display:inline-flex; align-items:center; gap:4px; background:rgba(221,175,52,.1); border:1px solid rgba(221,175,52,.25); color:#DDAF34; font-family:ui-monospace,monospace; font-size:.7rem; padding:2px 8px; border-radius:2px; }
+
+    /* ── Status badge ── */
+    .badge-active { background:rgba(34,197,94,.1); color:#22c55e; border:1px solid rgba(34,197,94,.2); }
+    .badge-inactive { background:rgba(239,68,68,.1); color:#ef4444; border:1px solid rgba(239,68,68,.2); }
+
+    /* ── Sidebar do modal ── */
+    .modal-overlay { background:rgba(0,0,0,.85); backdrop-filter:blur(8px); }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:#0A0A0A; }
+    ::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+    ::-webkit-scrollbar-thumb:hover { background:#DDAF34; }
+
+    /* ── Toast ── */
+    #toast { position:fixed; bottom:2rem; right:2rem; z-index:9999; font-family:'Space Grotesk',sans-serif; font-size:.875rem; padding:.75rem 1.25rem; border-radius:4px; transform:translateY(120%); transition:transform .25s; pointer-events:none; max-width:320px; }
+    #toast.show { transform:translateY(0); }
+    #toast.success { background:#1a2e1a; border:1px solid rgba(34,197,94,.4); color:#86efac; }
+    #toast.error   { background:#2e1a1a; border:1px solid rgba(239,68,68,.4); color:#fca5a5; }
+
+    /* ── Upload progress ── */
+    .upload-bar { height:3px; background:#DDAF34; width:0%; transition:width .3s; }
   </style>
 </head>
-<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col selection:bg-freo-orange selection:text-white">
+<body class="text-freo-light font-body antialiased min-h-screen flex flex-col">
 
-  <!-- Header -->
-  <header class="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between border-b border-white/10">
-    <div class="flex items-center gap-4">
-      <a href="/dashboard.html" class="text-freo-light/60 hover:text-freo-orange transition-colors">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-      </a>
-      <h1 class="text-xl font-display font-bold uppercase tracking-widest text-white">Novo Produto</h1>
-      <a href="/admin/pedidos.html" class="ml-4 text-xs font-mono text-freo-light/50 hover:text-freo-orange transition-colors uppercase tracking-widest border border-white/10 px-3 py-1 rounded">
-        Gestão de Pedidos
-      </a>
+  <!-- NAV -->
+  <nav class="bg-freo-dark border-b border-white/[0.06] py-3 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="/dashboard.html" class="text-freo-light/40 hover:text-freo-orange transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </a>
+        <div class="flex items-center gap-2">
+          <span class="font-display font-black text-xl tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
+          <span class="text-white/20 font-mono text-xs">/</span>
+          <span class="font-mono text-xs text-freo-orange uppercase tracking-widest">Admin</span>
+          <span class="text-white/20 font-mono text-xs">/</span>
+          <span class="font-mono text-xs text-white/40 uppercase tracking-widest">Produtos</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="admin-badge" class="hidden font-mono text-[10px] bg-freo-orange/10 border border-freo-orange/30 text-freo-orange px-2 py-1 uppercase tracking-widest">Admin</span>
+        <button onclick="openForm(null)" class="flex items-center gap-2 bg-freo-orange text-freo-black font-display font-bold uppercase text-xs tracking-widest px-4 py-2 hover:bg-white transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Novo Produto
+        </button>
+      </div>
     </div>
-    <div class="flex items-center gap-4">
-      <button id="btn-draft" class="px-6 py-2 border border-white/20 text-white font-mono text-sm uppercase tracking-widest hover:border-freo-orange hover:text-freo-orange transition-colors rounded">
-        Salvar Rascunho
-      </button>
-      <button id="btn-publish" class="px-6 py-2 bg-freo-orange text-freo-black font-bold font-mono text-sm uppercase tracking-widest hover:bg-white transition-colors rounded shadow-[0_0_15px_rgba(212,175,55,0.4)]">
-        Publicar Produto
-      </button>
+  </nav>
+
+  <!-- LOADING -->
+  <div id="page-loading" class="flex-1 flex items-center justify-center min-h-[60vh]">
+    <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main id="main-content" class="hidden max-w-7xl mx-auto px-6 py-8 w-full flex-1">
+
+    <!-- Filtros e busca -->
+    <div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="filterStatus('all')" id="filter-all" class="filter-btn active font-mono text-xs uppercase tracking-widest px-3 py-1.5 border border-freo-orange text-freo-orange">Todos</button>
+        <button onclick="filterStatus('active')" id="filter-active" class="filter-btn font-mono text-xs uppercase tracking-widest px-3 py-1.5 border border-white/10 text-white/40 hover:border-white/30 transition-colors">Ativos</button>
+        <button onclick="filterStatus('inactive')" id="filter-inactive" class="filter-btn font-mono text-xs uppercase tracking-widest px-3 py-1.5 border border-white/10 text-white/40 hover:border-white/30 transition-colors">Inativos</button>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+          <input type="text" id="search-input" class="fi pl-9 w-56 py-2" placeholder="Buscar produto..." oninput="renderList()">
+        </div>
+        <span id="product-count" class="font-mono text-xs text-white/30">0 produtos</span>
+      </div>
     </div>
-  </header>
 
-  <!-- Main Content -->
-  <main class="flex-1 max-w-[1600px] w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
-    
-    <!-- Left Column: Form -->
-    <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-6">
-      
-      <!-- Tabs Navigation -->
-      <div class="flex border-b border-white/10 overflow-x-auto hide-scrollbar">
-        <button class="tab-btn active px-6 py-3 font-mono text-sm uppercase tracking-widest text-freo-orange border-b-2 border-freo-orange" data-target="tab-geral">Geral</button>
-        <button class="tab-btn px-6 py-3 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent" data-target="tab-media">Mídia</button>
-        <button class="tab-btn px-6 py-3 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent" data-target="tab-variants">Variantes</button>
-        <button class="tab-btn px-6 py-3 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent" data-target="tab-seo">SEO</button>
+    <!-- Lista de produtos -->
+    <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+    <div id="list-empty" class="hidden text-center py-20">
+      <div class="text-6xl mb-4">📦</div>
+      <p class="font-display font-bold text-xl text-white/20 uppercase">Nenhum produto ainda</p>
+      <p class="font-mono text-sm text-white/20 mt-2 mb-6">Clique em "Novo Produto" para começar</p>
+      <button onclick="openForm(null)" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm px-6 py-3 hover:bg-white transition-colors">+ Adicionar primeiro produto</button>
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════
+       PAINEL LATERAL — FORMULÁRIO DE PRODUTO
+  ══════════════════════════════════════════════════════ -->
+  <div id="form-overlay" class="fixed inset-0 z-50 hidden modal-overlay" onclick="handleOverlayClick(event)">
+    <div id="form-panel" class="absolute right-0 top-0 h-full w-full max-w-2xl bg-freo-dark border-l border-white/[0.07] flex flex-col shadow-2xl" style="overflow:hidden">
+
+      <!-- Header do painel -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] flex-shrink-0">
+        <div>
+          <h2 id="form-title" class="font-display font-black uppercase text-xl text-white">Novo Produto</h2>
+          <p id="form-subtitle" class="font-mono text-xs text-white/30 mt-0.5">Preencha as informações abaixo</p>
+        </div>
+        <button onclick="closeForm()" class="text-white/30 hover:text-white transition-colors p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
-      <!-- Tab Content: Geral -->
-      <div id="tab-geral" class="tab-content glass p-6 rounded-xl space-y-6">
-        <div>
-          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Nome do Produto *</label>
-          <input type="text" id="prod-name" class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-body text-lg rounded" placeholder="Ex: Estátua Kratos 1/4" required>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Preço (R$) *</label>
-            <input type="number" id="prod-price" step="0.01" class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono rounded" placeholder="0.00" required>
-          </div>
-          <div>
-            <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Preço Promocional (R$)</label>
-            <input type="number" id="prod-promo" step="0.01" class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono rounded" placeholder="0.00">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Categoria</label>
-          <select id="prod-category" class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-body rounded appearance-none">
-            <option value="estatuas">Estátuas</option>
-            <option value="action-figures">Action Figures</option>
-            <option value="dioramas">Dioramas</option>
-            <option value="bustos">Bustos</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Descrição</label>
-          <div id="editor-container" class="bg-freo-black"></div>
-        </div>
+      <!-- Abas de navegação dentro do form -->
+      <div class="flex border-b border-white/[0.07] flex-shrink-0 px-6">
+        <button onclick="showTab('tab-basic')" id="btn-tab-basic" class="form-tab active py-3 mr-6 font-mono text-xs uppercase tracking-widest text-freo-orange border-b-2 border-freo-orange">Básico</button>
+        <button onclick="showTab('tab-images')" id="btn-tab-images" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Imagens</button>
+        <button onclick="showTab('tab-variants')" id="btn-tab-variants" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Variantes</button>
+        <button onclick="showTab('tab-seo')" id="btn-tab-seo" class="form-tab py-3 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">SEO</button>
       </div>
 
-      <!-- Tab Content: Mídia -->
-      <div id="tab-media" class="tab-content glass p-6 rounded-xl space-y-6 hidden">
-        <div>
-          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Imagens (Drag & Drop)</label>
-          <div id="drop-zone" class="border-2 border-dashed border-white/20 rounded-xl p-10 text-center hover:border-freo-orange transition-colors cursor-pointer bg-freo-black/50">
-            <svg class="w-12 h-12 mx-auto text-freo-light/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <p class="text-sm font-body text-freo-light/70">Arraste imagens aqui ou <span class="text-freo-orange underline">clique para buscar</span></p>
-            <p class="text-xs font-mono text-freo-light/40 mt-2">PNG, JPG, WEBP até 5MB</p>
-            <input type="file" id="file-input" multiple accept="image/*" class="hidden">
-          </div>
-          
-          <!-- Image Grid Preview -->
-          <div id="image-preview-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
-            <!-- Images will be injected here -->
-          </div>
-        </div>
+      <!-- Corpo do form (scrollável) -->
+      <div class="flex-1 overflow-y-auto">
 
-        <div class="pt-4 border-t border-white/10">
-          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Vídeo de Demonstração (URL YouTube)</label>
-          <input type="url" id="prod-video" class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono rounded" placeholder="https://youtube.com/watch?v=...">
-        </div>
-      </div>
+        <!-- ── ABA: BÁSICO ── -->
+        <div id="tab-basic" class="form-tab-content p-6 space-y-5">
 
-      <!-- Tab Content: Variantes -->
-      <div id="tab-variants" class="tab-content glass p-6 rounded-xl space-y-6 hidden">
-        <div class="flex items-center justify-between mb-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+              <label class="fl">Título do produto *</label>
+              <input type="text" id="f-title" class="fi" placeholder="Ex: Estátua Kratos God of War 1/4">
+            </div>
+            <div>
+              <label class="fl">Preço (R$) *</label>
+              <input type="number" id="f-price" class="fi" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div>
+              <label class="fl">Preço promocional</label>
+              <input type="number" id="f-promo" class="fi" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div>
+              <label class="fl">Estoque</label>
+              <input type="number" id="f-stock" class="fi" placeholder="0" min="0">
+            </div>
+            <div>
+              <label class="fl">Categoria</label>
+              <select id="f-category" class="fi">
+                <option value="">Selecionar</option>
+                <option value="religioso">Religioso</option>
+                <option value="games">Games</option>
+                <option value="anime">Anime</option>
+                <option value="filmes">Filmes / Séries</option>
+                <option value="keycaps">Keycaps</option>
+                <option value="personalizado">Personalizado</option>
+                <option value="lifestyle">Lifestyle</option>
+                <option value="outros">Outros</option>
+              </select>
+            </div>
+          </div>
+
           <div>
-            <h3 class="text-lg font-display font-bold text-white">Opções do Produto</h3>
-            <p class="text-xs font-body text-freo-light/50">Adicione tamanhos, cores ou materiais diferentes.</p>
+            <label class="fl">Descrição</label>
+            <textarea id="f-description" class="fi" placeholder="Descreva o produto, materiais, dimensões, acabamento..."></textarea>
           </div>
-          <button id="add-variant-btn" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-freo-orange border border-freo-orange/30 rounded font-mono text-xs uppercase tracking-widest transition-colors flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            Adicionar
+
+          <div>
+            <label class="fl">Tags <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(Enter para adicionar)</span></label>
+            <div class="fi flex flex-wrap gap-1.5 min-h-[42px] cursor-text" id="tags-container" onclick="document.getElementById('tag-input').focus()">
+              <input type="text" id="tag-input" style="background:transparent;outline:none;border:none;color:#F5F5F5;font-family:'Space Grotesk',sans-serif;font-size:.875rem;min-width:80px;flex:1" placeholder="Ex: 3d impresso, resina, colecionável..." onkeydown="handleTagInput(event)">
+            </div>
+          </div>
+
+          <div>
+            <label class="fl">URL do vídeo <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(YouTube ou Vimeo)</span></label>
+            <input type="url" id="f-video" class="fi" placeholder="https://youtube.com/watch?v=...">
+          </div>
+
+          <div class="flex items-center gap-3 pt-1">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="f-active" class="sr-only peer" checked>
+              <div class="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-freo-orange transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-4 after:h-4 after:transition-transform peer-checked:after:translate-x-5"></div>
+            </label>
+            <span class="font-mono text-xs text-white/50 uppercase tracking-widest">Produto ativo (visível na loja)</span>
+          </div>
+        </div>
+
+        <!-- ── ABA: IMAGENS ── -->
+        <div id="tab-images" class="form-tab-content hidden p-6 space-y-5">
+
+          <!-- Drop zone -->
+          <div id="drop-zone" class="img-drop rounded p-8 text-center" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+            <input type="file" id="file-input" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
+            <svg class="w-10 h-10 text-white/20 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <p class="font-mono text-sm text-white/40">Clique ou arraste as fotos aqui</p>
+            <p class="font-mono text-xs text-white/20 mt-1">JPG, PNG, WEBP · até 5MB por imagem · múltiplas</p>
+          </div>
+
+          <!-- Barra de progresso do upload -->
+          <div id="upload-progress-wrap" class="hidden">
+            <div class="flex justify-between mb-1">
+              <span class="font-mono text-xs text-white/40">Enviando imagens...</span>
+              <span id="upload-pct" class="font-mono text-xs text-freo-orange">0%</span>
+            </div>
+            <div class="bg-white/10 h-1 rounded overflow-hidden">
+              <div id="upload-progress-bar" class="upload-bar h-full"></div>
+            </div>
+          </div>
+
+          <!-- Previews das imagens -->
+          <div>
+            <label class="fl mb-2">Imagens do produto <span id="img-count" class="text-freo-orange">(0)</span></label>
+            <div id="img-preview-grid" class="flex flex-wrap gap-2"></div>
+            <p class="font-mono text-xs text-white/20 mt-2">A primeira imagem é a foto principal. Arraste para reordenar.</p>
+          </div>
+
+          <!-- URL manual -->
+          <div class="pt-2 border-t border-white/[0.06]">
+            <label class="fl">Ou adicione por URL</label>
+            <div class="flex gap-2">
+              <input type="url" id="img-url-input" class="fi py-2" placeholder="https://...">
+              <button onclick="addImageByURL()" class="flex-shrink-0 px-4 bg-freo-orange/10 border border-freo-orange/30 text-freo-orange font-mono text-xs hover:bg-freo-orange hover:text-freo-black transition-colors whitespace-nowrap">+ Adicionar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ABA: VARIANTES ── -->
+        <div id="tab-variants" class="form-tab-content hidden p-6 space-y-5">
+          <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
+            <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p class="font-mono text-xs text-white/40 leading-relaxed">Use variantes para opções como cor, tamanho ou material. Ex: "Cor: Preto", "Tamanho: 30cm".</p>
+          </div>
+
+          <div id="variants-list" class="space-y-2"></div>
+
+          <button onclick="addVariant()" class="w-full border border-dashed border-white/10 py-3 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors">
+            + Adicionar variante
           </button>
         </div>
 
-        <div id="variants-container" class="space-y-4">
-          <!-- Variantes injetadas aqui -->
-          <div class="text-center py-8 text-freo-light/30 font-mono text-sm border border-dashed border-white/10 rounded" id="no-variants-msg">
-            Nenhuma variante adicionada. O produto será vendido como item único.
+        <!-- ── ABA: SEO ── -->
+        <div id="tab-seo" class="form-tab-content hidden p-6 space-y-5">
+          <div class="flex items-start gap-3 p-4 bg-white/[0.03] border border-white/[0.06]">
+            <svg class="w-4 h-4 text-white/30 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+            <p class="font-mono text-xs text-white/30 leading-relaxed">SEO ajuda o produto a aparecer no Google. Se deixar em branco, usará o título e descrição do produto.</p>
+          </div>
+          <div>
+            <label class="fl">Título SEO <span style="text-transform:none;color:rgba(245,245,245,.2)">(max 60 chars)</span></label>
+            <input type="text" id="f-seo-title" class="fi" placeholder="Título para o Google..." maxlength="60" oninput="updateSEOCount(this,'seo-title-count',60)">
+            <span id="seo-title-count" class="font-mono text-[10px] text-white/20 mt-1 block text-right">0/60</span>
+          </div>
+          <div>
+            <label class="fl">Descrição SEO <span style="text-transform:none;color:rgba(245,245,245,.2)">(max 160 chars)</span></label>
+            <textarea id="f-seo-desc" class="fi" placeholder="Descrição para o Google..." maxlength="160" style="min-height:70px" oninput="updateSEOCount(this,'seo-desc-count',160)"></textarea>
+            <span id="seo-desc-count" class="font-mono text-[10px] text-white/20 mt-1 block text-right">0/160</span>
+          </div>
+          <!-- Preview Google -->
+          <div class="border border-white/[0.06] p-4 rounded">
+            <p class="font-mono text-[10px] text-white/25 uppercase tracking-widest mb-3">Preview no Google</p>
+            <p class="text-blue-400 text-sm hover:underline cursor-pointer font-sans truncate" id="seo-preview-title">Título do produto</p>
+            <p class="font-mono text-[11px] text-green-600">freofigures.com.br/produto</p>
+            <p class="font-sans text-xs text-white/40 mt-1 leading-relaxed" id="seo-preview-desc">Descrição do produto aparecerá aqui...</p>
           </div>
         </div>
       </div>
 
-      <!-- Tab Content: SEO -->
-      <div id="tab-seo" class="tab-content glass p-6 rounded-xl space-y-6 hidden">
-        <div>
-          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Título SEO</label>
-          <input type="text" id="seo-title" class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-body rounded" placeholder="Título para o Google">
-        </div>
-        <div>
-          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Descrição SEO</label>
-          <textarea id="seo-desc" rows="3" class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-body rounded" placeholder="Breve descrição para resultados de busca"></textarea>
-        </div>
-        <div>
-          <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">URL Slug</label>
-          <div class="flex items-center">
-            <span class="bg-freo-black border border-r-0 border-white/10 text-freo-light/50 px-4 py-3 rounded-l font-mono text-sm">freofigures.com.br/p/</span>
-            <input type="text" id="seo-slug" class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono rounded-r" placeholder="estatua-kratos-1-4">
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Right Column: Live Preview -->
-    <div class="lg:col-span-5 xl:col-span-4">
-      <div class="sticky top-24">
-        <h3 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-4 flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          Preview em Tempo Real
-        </h3>
-        
-        <!-- Preview Card -->
-        <div class="glass rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-          <!-- Image Area -->
-          <div class="aspect-square bg-freo-black relative flex items-center justify-center overflow-hidden" id="preview-image-container">
-            <svg class="w-16 h-16 text-white/5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <img id="preview-image" src="" class="absolute inset-0 w-full h-full object-cover hidden" alt="Preview">
-            
-            <!-- Badge -->
-            <div id="preview-badge" class="absolute top-4 left-4 bg-freo-orange text-freo-black text-xs font-bold font-mono px-3 py-1 uppercase tracking-wider rounded hidden">
-              Oferta
-            </div>
-          </div>
-
-          <!-- Content Area -->
-          <div class="p-6">
-            <p id="preview-category" class="text-freo-orange text-xs font-mono uppercase tracking-widest mb-2">Estátuas</p>
-            <h4 id="preview-title" class="text-2xl font-display font-bold text-white mb-2 leading-tight">Nome do Produto</h4>
-            
-            <div class="flex items-end gap-3 mb-4">
-              <span id="preview-price" class="text-3xl font-mono text-white">R$ 0,00</span>
-              <span id="preview-old-price" class="text-lg font-mono text-freo-light/40 line-through hidden">R$ 0,00</span>
-            </div>
-
-            <div id="preview-desc" class="text-sm text-freo-light/70 font-body line-clamp-3 mb-6">
-              A descrição do produto aparecerá aqui. Adicione detalhes ricos para atrair seus clientes.
-            </div>
-
-            <button class="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors flex justify-center items-center gap-2 rounded">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-              Adicionar ao Carrinho
-            </button>
-          </div>
-        </div>
+      <!-- Footer do painel — botões de ação -->
+      <div class="border-t border-white/[0.07] px-6 py-4 flex items-center gap-3 flex-shrink-0 bg-freo-dark">
+        <button id="form-delete-btn" onclick="confirmDelete()" class="hidden text-xs font-mono text-red-500/50 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 transition-colors uppercase tracking-widest">
+          Excluir produto
+        </button>
+        <div class="flex-1"></div>
+        <button onclick="closeForm()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">
+          Cancelar
+        </button>
+        <button onclick="saveProduct()" id="form-save-btn" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-6 py-2.5 hover:bg-white transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Salvar
+        </button>
       </div>
     </div>
+  </div>
 
-  </main>
+  <!-- Toast de notificação -->
+  <div id="toast"></div>
 
-  <!-- Auth Listener -->
+  <!-- AUTH LISTENER -->
   <script src="/auth-listener.js"></script>
 
   <script>
-    window.addEventListener('auth-not-logged-in', () => {
-      window.location.href = '/login.html';
+  // ── Estado global ──────────────────────────────────────────────────────────
+  var allProducts = [];
+  var currentFilter = 'all';
+  var editingProductId = null;
+  var currentImages = [];   // array de URLs (Supabase Storage ou externas)
+  var currentTags = [];
+  var currentVariants = [];
+
+  // ── Auth guard ─────────────────────────────────────────────────────────────
+  window.addEventListener('auth-data-loaded', function(e) {
+    var profile = e.detail.profile;
+    if (!profile || !profile.is_admin) {
+      showToast('Acesso negado. Área restrita a administradores.', 'error');
+      setTimeout(function() { window.location.href = '/dashboard.html'; }, 1500);
+      return;
+    }
+    document.getElementById('admin-badge').classList.remove('hidden');
+    loadProducts();
+  });
+
+  // ── Carregar produtos ──────────────────────────────────────────────────────
+  async function loadProducts() {
+    try {
+      var r = await window.supabaseClient.from('products').select('*').order('created_at', { ascending: false });
+      if (r.error) throw r.error;
+      allProducts = r.data || [];
+      document.getElementById('page-loading').classList.add('hidden');
+      document.getElementById('main-content').classList.remove('hidden');
+      renderList();
+    } catch(e) {
+      showToast('Erro ao carregar produtos: ' + e.message, 'error');
+    }
+  }
+
+  // ── Filtros ────────────────────────────────────────────────────────────────
+  function filterStatus(status) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(function(btn) {
+      btn.classList.remove('border-freo-orange','text-freo-orange');
+      btn.classList.add('border-white/10','text-white/40');
+    });
+    var active = document.getElementById('filter-' + status);
+    active.classList.add('border-freo-orange','text-freo-orange');
+    active.classList.remove('border-white/10','text-white/40');
+    renderList();
+  }
+
+  // ── Renderizar lista ───────────────────────────────────────────────────────
+  function renderList() {
+    var search = (document.getElementById('search-input').value || '').toLowerCase();
+    var filtered = allProducts.filter(function(p) {
+      if (currentFilter === 'active'   && !p.is_active) return false;
+      if (currentFilter === 'inactive' &&  p.is_active) return false;
+      if (search && !p.title.toLowerCase().includes(search) && !(p.category||'').toLowerCase().includes(search)) return false;
+      return true;
     });
 
-    // --- Proteção de Rota Admin ---
-    window.addEventListener('auth-data-loaded', (e) => {
-      const { profile } = e.detail;
-      // Se quiser restringir apenas para admins, verifique profile.role === 'admin'
-      // Por enquanto, apenas logados acessam.
-      if (!profile) {
-        window.location.href = '/login.html';
-      }
-    });
+    var container = document.getElementById('product-list');
+    var emptyEl = document.getElementById('list-empty');
+    document.getElementById('product-count').innerText = filtered.length + ' produto' + (filtered.length !== 1 ? 's' : '');
 
-    // --- Inicialização do Quill (Rich Text) ---
-    const quill = new Quill('#editor-container', {
-      theme: 'snow',
-      placeholder: 'Descreva os detalhes da peça, material, dimensões...',
-      modules: {
-        toolbar: [
-          ['bold', 'italic', 'underline', 'strike'],
-          ['blockquote'],
-          [{ 'header': 1 }, { 'header': 2 }],
-          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          [{ 'color': [] }, { 'background': [] }],
-          ['clean']
-        ]
-      }
-    });
+    if (filtered.length === 0) {
+      container.innerHTML = '';
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
 
-    // --- Lógica de Tabs ---
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
+    container.innerHTML = filtered.map(function(p) {
+      var imgs = p.images || [];
+      var thumb = (imgs.length > 0) ? imgs[0] : null;
+      var hasPromo = p.promotional_price && p.promotional_price < p.price;
+      return '<div class="product-card" onclick="openForm(\'' + p.id + '\')">'
+        + '<div class="relative aspect-square bg-freo-black overflow-hidden">'
+        + (thumb ? '<img src="' + thumb + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">' : '<div class="w-full h-full flex items-center justify-center"><svg class="w-12 h-12 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>')
+        + '<span class="absolute top-2 right-2 font-mono text-[9px] px-1.5 py-0.5 uppercase ' + (p.is_active ? 'badge-active' : 'badge-inactive') + '">' + (p.is_active ? 'Ativo' : 'Inativo') + '</span>'
+        + (imgs.length > 1 ? '<span class="absolute bottom-2 left-2 font-mono text-[9px] bg-black/60 text-white/60 px-1.5 py-0.5">' + imgs.length + ' fotos</span>' : '')
+        + '</div>'
+        + '<div class="p-3">'
+        + '<p class="font-display font-bold text-sm text-white leading-tight truncate mb-1">' + (p.title || 'Sem título') + '</p>'
+        + (p.category ? '<p class="font-mono text-[10px] text-white/30 uppercase mb-2">' + p.category + '</p>' : '')
+        + '<div class="flex items-end gap-2">'
+        + (hasPromo ? '<span class="font-mono text-xs text-white/30 line-through">R$ ' + Number(p.price).toFixed(2).replace('.',',') + '</span><span class="font-mono text-sm font-bold text-freo-orange">R$ ' + Number(p.promotional_price).toFixed(2).replace('.',',') + '</span>'
+                    : '<span class="font-mono text-sm font-bold text-freo-orange">R$ ' + Number(p.price).toFixed(2).replace('.',',') + '</span>')
+        + '</div>'
+        + '<p class="font-mono text-[10px] text-white/20 mt-1">Estoque: ' + (p.stock || 0) + '</p>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
 
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Remove active classes
-        tabBtns.forEach(b => {
-          b.classList.remove('text-freo-orange', 'border-freo-orange');
-          b.classList.add('text-freo-light/50', 'border-transparent');
-        });
-        tabContents.forEach(c => c.classList.add('hidden'));
+  // ── Abrir formulário ───────────────────────────────────────────────────────
+  function openForm(productId) {
+    editingProductId = productId;
+    currentImages = [];
+    currentTags = [];
+    currentVariants = [];
 
-        // Add active class to clicked
-        btn.classList.remove('text-freo-light/50', 'border-transparent');
-        btn.classList.add('text-freo-orange', 'border-freo-orange');
-        
-        const targetId = btn.getAttribute('data-target');
-        document.getElementById(targetId).classList.remove('hidden');
-      });
-    });
+    document.getElementById('form-overlay').classList.remove('hidden');
+    document.getElementById('form-overlay').classList.add('flex');
+    showTab('tab-basic');
 
-    // --- Lógica de Preview em Tempo Real ---
-    const inputs = {
-      name: document.getElementById('prod-name'),
-      price: document.getElementById('prod-price'),
-      promo: document.getElementById('prod-promo'),
-      category: document.getElementById('prod-category'),
-      slug: document.getElementById('seo-slug')
-    };
-
-    const preview = {
-      title: document.getElementById('preview-title'),
-      price: document.getElementById('preview-price'),
-      oldPrice: document.getElementById('preview-old-price'),
-      category: document.getElementById('preview-category'),
-      desc: document.getElementById('preview-desc'),
-      badge: document.getElementById('preview-badge')
-    };
-
-    function formatCurrency(value) {
-      if (!value) return 'R$ 0,00';
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    if (productId) {
+      // Modo edição
+      var p = allProducts.find(function(x) { return String(x.id) === String(productId); });
+      if (!p) return;
+      document.getElementById('form-title').innerText = 'Editar Produto';
+      document.getElementById('form-subtitle').innerText = 'ID: ' + p.id;
+      document.getElementById('form-delete-btn').classList.remove('hidden');
+      document.getElementById('f-title').value = p.title || '';
+      document.getElementById('f-price').value = p.price || '';
+      document.getElementById('f-promo').value = p.promotional_price || '';
+      document.getElementById('f-stock').value = p.stock || 0;
+      document.getElementById('f-category').value = p.category || '';
+      document.getElementById('f-description').value = p.description || '';
+      document.getElementById('f-video').value = p.video_url || '';
+      document.getElementById('f-active').checked = p.is_active !== false;
+      document.getElementById('f-seo-title').value = p.seo_title || '';
+      document.getElementById('f-seo-desc').value = p.seo_description || '';
+      updateSEOCount(document.getElementById('f-seo-title'), 'seo-title-count', 60);
+      updateSEOCount(document.getElementById('f-seo-desc'), 'seo-desc-count', 160);
+      currentImages = Array.isArray(p.images) ? p.images.slice() : [];
+      currentTags = Array.isArray(p.tags) ? p.tags.slice() : [];
+      currentVariants = Array.isArray(p.variants) ? JSON.parse(JSON.stringify(p.variants)) : [];
+    } else {
+      // Modo novo
+      document.getElementById('form-title').innerText = 'Novo Produto';
+      document.getElementById('form-subtitle').innerText = 'Preencha as informações abaixo';
+      document.getElementById('form-delete-btn').classList.add('hidden');
+      document.getElementById('f-title').value = '';
+      document.getElementById('f-price').value = '';
+      document.getElementById('f-promo').value = '';
+      document.getElementById('f-stock').value = 0;
+      document.getElementById('f-category').value = '';
+      document.getElementById('f-description').value = '';
+      document.getElementById('f-video').value = '';
+      document.getElementById('f-active').checked = true;
+      document.getElementById('f-seo-title').value = '';
+      document.getElementById('f-seo-desc').value = '';
+      document.getElementById('seo-title-count').innerText = '0/60';
+      document.getElementById('seo-desc-count').innerText = '0/160';
     }
 
-    function updatePreview() {
-      preview.title.innerText = inputs.name.value || 'Nome do Produto';
-      preview.category.innerText = inputs.category.options[inputs.category.selectedIndex].text;
-      
-      const priceVal = parseFloat(inputs.price.value);
-      const promoVal = parseFloat(inputs.promo.value);
+    renderTagsUI();
+    renderImagesUI();
+    renderVariantsUI();
+    updateSEOPreview();
+  }
 
-      if (promoVal && promoVal < priceVal) {
-        preview.price.innerText = formatCurrency(promoVal);
-        preview.oldPrice.innerText = formatCurrency(priceVal);
-        preview.oldPrice.classList.remove('hidden');
-        preview.badge.classList.remove('hidden');
+  function closeForm() {
+    document.getElementById('form-overlay').classList.add('hidden');
+    document.getElementById('form-overlay').classList.remove('flex');
+    editingProductId = null;
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('form-overlay')) closeForm();
+  }
+
+  // ── Abas do formulário ─────────────────────────────────────────────────────
+  function showTab(tabId) {
+    document.querySelectorAll('.form-tab-content').forEach(function(el) { el.classList.add('hidden'); });
+    document.querySelectorAll('.form-tab').forEach(function(btn) {
+      btn.classList.remove('text-freo-orange','border-freo-orange');
+      btn.classList.add('text-white/30','border-transparent');
+    });
+    document.getElementById(tabId).classList.remove('hidden');
+    var btn = document.getElementById('btn-' + tabId);
+    if (btn) { btn.classList.add('text-freo-orange','border-freo-orange'); btn.classList.remove('text-white/30','border-transparent'); }
+  }
+
+  // ── Tags ───────────────────────────────────────────────────────────────────
+  function handleTagInput(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      var val = e.target.value.trim().replace(/,/g,'');
+      if (val && !currentTags.includes(val)) {
+        currentTags.push(val);
+        renderTagsUI();
+      }
+      e.target.value = '';
+    } else if (e.key === 'Backspace' && !e.target.value && currentTags.length > 0) {
+      currentTags.pop();
+      renderTagsUI();
+    }
+  }
+
+  function removeTag(i) { currentTags.splice(i, 1); renderTagsUI(); }
+
+  function renderTagsUI() {
+    var container = document.getElementById('tags-container');
+    var input = document.getElementById('tag-input');
+    container.innerHTML = '';
+    currentTags.forEach(function(tag, i) {
+      var pill = document.createElement('span');
+      pill.className = 'tag-pill';
+      pill.innerHTML = tag + '<button onclick="removeTag(' + i + ')" style="background:none;border:none;cursor:pointer;color:#DDAF34;font-size:14px;line-height:1;padding:0 0 0 2px">×</button>';
+      container.appendChild(pill);
+    });
+    container.appendChild(input);
+    input.placeholder = currentTags.length ? '' : 'Ex: 3d impresso, resina, colecionável...';
+  }
+
+  // ── Imagens ────────────────────────────────────────────────────────────────
+  function renderImagesUI() {
+    var grid = document.getElementById('img-preview-grid');
+    document.getElementById('img-count').innerText = '(' + currentImages.length + ')';
+    grid.innerHTML = currentImages.map(function(url, i) {
+      return '<div class="img-thumb">'
+        + '<img src="' + url + '" alt="img' + i + '" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><rect fill=%22%23222%22 width=%2280%22 height=%2280%22/></svg>\'">'
+        + (i === 0 ? '<span style="position:absolute;bottom:2px;left:2px;background:rgba(221,175,52,.8);color:#000;font-size:8px;font-family:monospace;padding:1px 4px">CAPA</span>' : '')
+        + '<button class="del-img" onclick="removeImage(' + i + ')" title="Remover">×</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  function removeImage(i) { currentImages.splice(i, 1); renderImagesUI(); }
+
+  function addImageByURL() {
+    var url = document.getElementById('img-url-input').value.trim();
+    if (!url) return;
+    currentImages.push(url);
+    renderImagesUI();
+    document.getElementById('img-url-input').value = '';
+  }
+
+  // Upload para Supabase Storage
+  function handleFileSelect(e) { uploadFiles(Array.from(e.target.files)); }
+  function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
+  function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('dragover'); }
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('dragover');
+    uploadFiles(Array.from(e.dataTransfer.files).filter(function(f){ return f.type.startsWith('image/'); }));
+  }
+
+  async function uploadFiles(files) {
+    if (!files.length) return;
+    var wrap = document.getElementById('upload-progress-wrap');
+    var bar = document.getElementById('upload-progress-bar');
+    var pct = document.getElementById('upload-pct');
+    wrap.classList.remove('hidden');
+    var done = 0;
+    for (var f of files) {
+      if (f.size > 5 * 1024 * 1024) { showToast(f.name + ' excede 5MB, pulando...', 'error'); done++; continue; }
+      var ext = f.name.split('.').pop();
+      var path = 'produtos/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+      var r = await window.supabaseClient.storage.from('imagens').upload(path, f, { upsert: false, contentType: f.type });
+      if (!r.error) {
+        var pub = window.supabaseClient.storage.from('imagens').getPublicUrl(path);
+        currentImages.push(pub.data.publicUrl);
+        renderImagesUI();
       } else {
-        preview.price.innerText = formatCurrency(priceVal);
-        preview.oldPrice.classList.add('hidden');
-        preview.badge.classList.add('hidden');
+        showToast('Erro ao enviar ' + f.name + ': ' + r.error.message, 'error');
       }
-
-      // Auto-generate slug if empty
-      if (!inputs.slug.value && inputs.name.value) {
-        inputs.slug.value = inputs.name.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-      }
+      done++;
+      var p = Math.round((done / files.length) * 100);
+      bar.style.width = p + '%';
+      pct.innerText = p + '%';
     }
+    setTimeout(function() { wrap.classList.add('hidden'); bar.style.width = '0%'; }, 800);
+  }
 
-    inputs.name.addEventListener('input', updatePreview);
-    inputs.price.addEventListener('input', updatePreview);
-    inputs.promo.addEventListener('input', updatePreview);
-    inputs.category.addEventListener('change', updatePreview);
+  // ── Variantes ──────────────────────────────────────────────────────────────
+  function addVariant() {
+    currentVariants.push({ name: '', options: '' });
+    renderVariantsUI();
+  }
 
-    quill.on('text-change', () => {
-      const text = quill.getText().trim();
-      preview.desc.innerText = text ? text : 'A descrição do produto aparecerá aqui. Adicione detalhes ricos para atrair seus clientes.';
-    });
+  function removeVariant(i) { currentVariants.splice(i, 1); renderVariantsUI(); }
 
-    // --- Drag & Drop de Imagens ---
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const imageGrid = document.getElementById('image-preview-grid');
-    let uploadedFiles = [];
+  function renderVariantsUI() {
+    var list = document.getElementById('variants-list');
+    list.innerHTML = currentVariants.map(function(v, i) {
+      return '<div class="variant-row">'
+        + '<div class="flex-1">'
+        + '<input type="text" value="' + (v.name||'') + '" placeholder="Tipo (ex: Cor)" class="fi py-1.5 text-xs mb-1.5" oninput="updateVariant(' + i + ',\'name\',this.value)">'
+        + '<input type="text" value="' + (v.options||'') + '" placeholder="Opções separadas por vírgula (ex: Preto, Branco, Dourado)" class="fi py-1.5 text-xs" oninput="updateVariant(' + i + ',\'options\',this.value)">'
+        + '</div>'
+        + '<button onclick="removeVariant(' + i + ')" class="text-red-500/40 hover:text-red-400 transition-colors ml-2 flex-shrink-0">'
+        + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>';
+    }).join('');
+  }
 
-    dropZone.addEventListener('click', () => fileInput.click());
+  function updateVariant(i, field, val) { currentVariants[i][field] = val; }
 
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('border-freo-orange', 'bg-freo-orange/5');
-    });
+  // ── SEO preview ────────────────────────────────────────────────────────────
+  function updateSEOCount(input, countId, max) {
+    document.getElementById(countId).innerText = input.value.length + '/' + max;
+    updateSEOPreview();
+  }
 
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.classList.remove('border-freo-orange', 'bg-freo-orange/5');
-    });
+  function updateSEOPreview() {
+    var title = document.getElementById('f-seo-title').value || document.getElementById('f-title').value || 'Título do produto';
+    var desc = document.getElementById('f-seo-desc').value || document.getElementById('f-description').value || 'Descrição do produto aparecerá aqui...';
+    document.getElementById('seo-preview-title').innerText = title;
+    document.getElementById('seo-preview-desc').innerText = desc.substring(0, 160);
+  }
+  document.getElementById('f-title').addEventListener('input', updateSEOPreview);
+  document.getElementById('f-description').addEventListener('input', updateSEOPreview);
+  document.getElementById('f-seo-title').addEventListener('input', updateSEOPreview);
+  document.getElementById('f-seo-desc').addEventListener('input', updateSEOPreview);
 
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('border-freo-orange', 'bg-freo-orange/5');
-      handleFiles(e.dataTransfer.files);
-    });
+  // ── Salvar produto ─────────────────────────────────────────────────────────
+  async function saveProduct() {
+    var title = document.getElementById('f-title').value.trim();
+    var price = parseFloat(document.getElementById('f-price').value);
 
-    fileInput.addEventListener('change', (e) => {
-      handleFiles(e.target.files);
-    });
+    if (!title) { showToast('Informe o título do produto.', 'error'); showTab('tab-basic'); return; }
+    if (!price || price <= 0) { showToast('Informe um preço válido.', 'error'); showTab('tab-basic'); return; }
 
-    function handleFiles(files) {
-      Array.from(files).forEach(file => {
-        if (file.type.startsWith('image/')) {
-          uploadedFiles.push(file);
-          renderImageGrid();
-        }
-      });
-    }
+    var btn = document.getElementById('form-save-btn');
+    btn.innerText = 'Salvando...'; btn.disabled = true;
 
-    function renderImageGrid() {
-      imageGrid.innerHTML = '';
-      uploadedFiles.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const div = document.createElement('div');
-          div.className = 'relative aspect-square rounded-lg overflow-hidden border border-white/10 group';
-          div.innerHTML = `
-            <img src="${e.target.result}" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <button type="button" onclick="removeImage(${index})" class="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-              </button>
-            </div>
-            ${index === 0 ? '<div class="absolute top-2 left-2 bg-freo-orange text-freo-black text-[10px] font-bold px-2 py-1 rounded uppercase">Capa</div>' : ''}
-          `;
-          imageGrid.appendChild(div);
-
-          // Update main preview with first image
-          if (index === 0) {
-            document.getElementById('preview-image').src = e.target.result;
-            document.getElementById('preview-image').classList.remove('hidden');
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-
-      if (uploadedFiles.length === 0) {
-        document.getElementById('preview-image').classList.add('hidden');
-        document.getElementById('preview-image').src = '';
-      }
-    }
-
-    window.removeImage = (index) => {
-      uploadedFiles.splice(index, 1);
-      renderImageGrid();
+    var promoPrice = parseFloat(document.getElementById('f-promo').value) || null;
+    var payload = {
+      title: title,
+      description: document.getElementById('f-description').value.trim() || null,
+      price: price,
+      promotional_price: promoPrice,
+      stock: parseInt(document.getElementById('f-stock').value) || 0,
+      category: document.getElementById('f-category').value || null,
+      images: currentImages,
+      tags: currentTags.length > 0 ? currentTags : null,
+      video_url: document.getElementById('f-video').value.trim() || null,
+      variants: currentVariants.length > 0 ? currentVariants.map(function(v) {
+        return { name: v.name, options: (v.options||'').split(',').map(function(o){ return o.trim(); }).filter(Boolean) };
+      }) : [],
+      seo_title: document.getElementById('f-seo-title').value.trim() || null,
+      seo_description: document.getElementById('f-seo-desc').value.trim() || null,
+      is_active: document.getElementById('f-active').checked
     };
 
-    // --- Variantes ---
-    const addVariantBtn = document.getElementById('add-variant-btn');
-    const variantsContainer = document.getElementById('variants-container');
-    const noVariantsMsg = document.getElementById('no-variants-msg');
-    let variantCount = 0;
-
-    addVariantBtn.addEventListener('click', () => {
-      noVariantsMsg.classList.add('hidden');
-      const div = document.createElement('div');
-      div.className = 'bg-freo-black/50 border border-white/10 p-4 rounded grid grid-cols-1 sm:grid-cols-12 gap-4 items-end';
-      div.innerHTML = `
-        <div class="sm:col-span-3">
-          <label class="block text-[10px] font-mono text-freo-light/50 uppercase tracking-widest mb-1">Nome (ex: Cor)</label>
-          <input type="text" class="w-full bg-freo-black border border-white/10 text-white px-3 py-2 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm rounded" placeholder="Vermelho">
-        </div>
-        <div class="sm:col-span-3">
-          <label class="block text-[10px] font-mono text-freo-light/50 uppercase tracking-widest mb-1">Tamanho</label>
-          <input type="text" class="w-full bg-freo-black border border-white/10 text-white px-3 py-2 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm rounded" placeholder="1/4">
-        </div>
-        <div class="sm:col-span-3">
-          <label class="block text-[10px] font-mono text-freo-light/50 uppercase tracking-widest mb-1">Preço Adicional</label>
-          <input type="number" step="0.01" class="w-full bg-freo-black border border-white/10 text-white px-3 py-2 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm rounded" placeholder="0.00">
-        </div>
-        <div class="sm:col-span-2">
-          <label class="block text-[10px] font-mono text-freo-light/50 uppercase tracking-widest mb-1">Estoque</label>
-          <input type="number" class="w-full bg-freo-black border border-white/10 text-white px-3 py-2 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm rounded" value="1">
-        </div>
-        <div class="sm:col-span-1 flex justify-end">
-          <button type="button" class="remove-variant-btn p-2 text-red-500 hover:bg-red-500/10 rounded transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-          </button>
-        </div>
-      `;
-      variantsContainer.appendChild(div);
-      variantCount++;
-
-      div.querySelector('.remove-variant-btn').addEventListener('click', () => {
-        div.remove();
-        variantCount--;
-        if (variantCount === 0) noVariantsMsg.classList.remove('hidden');
-      });
-    });
-
-    // --- Salvar Produto ---
-    async function saveProduct(status = 'published') {
-      const btn = status === 'published' ? document.getElementById('btn-publish') : document.getElementById('btn-draft');
-      const originalText = btn.innerText;
-      btn.innerText = 'Salvando...';
-      btn.disabled = true;
-
-      try {
-        // Validação básica
-        if (!inputs.name.value || !inputs.price.value) {
-          throw new Error('Nome e Preço são obrigatórios.');
-        }
-
-        // 1. Upload de Imagens (Simulado por enquanto, precisa do Storage do Supabase)
-        // Aqui você implementaria o upload das imagens para o Supabase Storage
-        // const imageUrls = await uploadImages(uploadedFiles);
-        const imageUrls = []; // Placeholder
-
-        // 2. Coletar Variantes
-        const variants = [];
-        document.querySelectorAll('#variants-container > div:not(#no-variants-msg)').forEach(row => {
-          const inputs = row.querySelectorAll('input');
-          variants.push({
-            name: inputs[0].value,
-            size: inputs[1].value,
-            additional_price: parseFloat(inputs[2].value) || 0,
-            stock: parseInt(inputs[3].value) || 0
-          });
-        });
-
-        // 3. Salvar no Banco
-        const productData = {
-          name: inputs.name.value,
-          description: quill.root.innerHTML,
-          price: parseFloat(inputs.price.value),
-          promotional_price: parseFloat(inputs.promo.value) || null,
-          category: inputs.category.value,
-          slug: inputs.slug.value,
-          images: imageUrls,
-          video_url: document.getElementById('prod-video').value,
-          variants: variants,
-          seo_title: document.getElementById('seo-title').value,
-          seo_description: document.getElementById('seo-desc').value,
-          status: status
-        };
-
-        const { data, error } = await window.supabaseClient
-          .from('products')
-          .insert([productData]);
-
-        if (error) throw error;
-
-        alert(`Produto ${status === 'published' ? 'publicado' : 'salvo como rascunho'} com sucesso!`);
-        window.location.href = '/dashboard.html'; // Redireciona ou limpa o form
-
-      } catch (err) {
-        console.error(err);
-        alert('Erro ao salvar produto: ' + err.message);
-      } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
+    try {
+      var r;
+      if (editingProductId) {
+        r = await window.supabaseClient.from('products').update(payload).eq('id', editingProductId);
+      } else {
+        r = await window.supabaseClient.from('products').insert(payload);
       }
+      if (r.error) throw r.error;
+      showToast(editingProductId ? 'Produto atualizado!' : 'Produto criado!', 'success');
+      closeForm();
+      loadProducts();
+    } catch(e) {
+      showToast('Erro ao salvar: ' + e.message, 'error');
     }
+    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar';
+    btn.disabled = false;
+  }
 
-    document.getElementById('btn-publish').addEventListener('click', () => saveProduct('published'));
-    document.getElementById('btn-draft').addEventListener('click', () => saveProduct('draft'));
+  // ── Excluir produto ────────────────────────────────────────────────────────
+  function confirmDelete() {
+    if (!editingProductId) return;
+    var p = allProducts.find(function(x) { return String(x.id) === String(editingProductId); });
+    if (!confirm('Excluir "' + (p ? p.title : 'este produto') + '"?\n\nEsta ação não pode ser desfeita.')) return;
+    deleteProduct();
+  }
 
+  async function deleteProduct() {
+    if (!editingProductId) return;
+    try {
+      var r = await window.supabaseClient.from('products').delete().eq('id', editingProductId);
+      if (r.error) throw r.error;
+      showToast('Produto excluído.', 'success');
+      closeForm();
+      loadProducts();
+    } catch(e) {
+      showToast('Erro ao excluir: ' + e.message, 'error');
+    }
+  }
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  var toastTimer;
+  function showToast(msg, type) {
+    var el = document.getElementById('toast');
+    el.innerText = msg;
+    el.className = 'show ' + (type || 'success');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { el.className = type || 'success'; }, 3200);
+  }
   </script>
 </body>
 </html>
