@@ -1,18 +1,9 @@
-/**
- * auth-listener.js — FreoFigures
- *
- * ATENÇÃO: Este arquivo NÃO declara SUPABASE_URL nem SUPABASE_ANON_KEY com const/let.
- * Esses valores são declarados nos HTMLs individuais antes deste script ser carregado.
- * Usar const duas vezes no mesmo escopo causa SyntaxError e quebra toda a página.
- */
 (function () {
-  // Pega as credenciais já declaradas nos HTMLs, ou usa fallback
   var _url = (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : null)
           || "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
   var _key = (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : null)
           || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
 
-  // Inicializa o cliente Supabase se ainda não foi inicializado
   if (!window.supabaseClient) {
     if (window.supabase && typeof window.supabase.createClient === 'function') {
       window.supabaseClient = window.supabase.createClient(_url, _key);
@@ -24,7 +15,7 @@
   var db = window.supabaseClient;
 
   if (!db) {
-    console.error("❌ Supabase SDK não encontrado. Inclua o CDN do Supabase ANTES do auth-listener.js");
+    console.error("❌ Supabase SDK não encontrado.");
     var p = window.location.pathname;
     if (['dashboard','meus-pedidos','checkout','admin'].some(function(x){ return p.includes(x); })) {
       window.location.href = '/login.html';
@@ -32,66 +23,58 @@
     return;
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   function isProtected() {
     var p = window.location.pathname;
     return p.includes('dashboard') || p.includes('meus-pedidos') || p.includes('checkout') || p.includes('admin');
+  }
+  function isAdminPage() {
+    return window.location.pathname.includes('/admin/');
   }
   function isLogin() {
     return window.location.pathname.includes('login');
   }
   function el(id) { return document.getElementById(id); }
 
-  // Formatador de moeda global
   window.formatCurrency = function(value) {
     var num = parseFloat(value);
     if (isNaN(num)) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
   };
 
-  // ── Busca de dados (cada uma falha silenciosamente) ────────────────────────
-  async function safeQuery(fn, label) {
-    try {
-      return await fn();
-    } catch (e) {
-      console.warn('⚠️ ' + label + ':', e.message);
-      return null;
-    }
-  }
-
+  // ── Queries individuais — falham silenciosamente ───────────────────────────
   async function fetchProfile(userId) {
-    var result = await safeQuery(async function() {
+    try {
       var r = await db.from('profiles').select('*').eq('id', userId).single();
+      if (r.error) {
+        console.warn('⚠️ profiles:', r.error.message, r.error.code);
+        return null;
+      }
       return r.data;
-    }, 'profiles');
-    return result;
+    } catch(e) { console.warn('⚠️ fetchProfile:', e.message); return null; }
   }
 
   async function fetchCartItems(userId) {
-    var result = await safeQuery(async function() {
+    try {
       var r = await db.from('cart_items').select('*').eq('user_id', userId);
       return r.data || [];
-    }, 'cart_items');
-    return result || [];
+    } catch(e) { return []; }
   }
 
   async function fetchAddresses(userId) {
-    var result = await safeQuery(async function() {
+    try {
       var r = await db.from('addresses').select('*').eq('user_id', userId);
       return r.data || [];
-    }, 'addresses');
-    return result || [];
+    } catch(e) { return []; }
   }
 
   async function fetchPaymentMethods(userId) {
-    var result = await safeQuery(async function() {
+    try {
       var r = await db.from('payment_methods').select('*').eq('user_id', userId);
       return r.data || [];
-    }, 'payment_methods');
-    return result || [];
+    } catch(e) { return []; }
   }
 
-  // ── Atualiza DOM ───────────────────────────────────────────────────────────
+  // ── Atualiza DOM (dashboard cliente) ──────────────────────────────────────
   function showPageContent(user, profile) {
     if (el('loading-state'))     el('loading-state').classList.add('hidden');
     if (el('dashboard-content')) el('dashboard-content').classList.remove('hidden');
@@ -116,25 +99,10 @@
       el('user-avatar').classList.remove('hidden');
       if (el('user-avatar-placeholder')) el('user-avatar-placeholder').classList.add('hidden');
     } else if (el('user-avatar-placeholder')) {
-      el('user-avatar-placeholder').innerText = name.charAt(0).toUpperCase();
-    }
-
-    var isAdmin = profile && profile.is_admin === true;
-    if (isAdmin && el('user-name') && !document.getElementById('admin-badge')) {
-      var badge = document.createElement('span');
-      badge.id = 'admin-badge';
-      badge.className = 'ml-4 align-middle inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-mono bg-freo-orange text-freo-black uppercase tracking-widest cursor-pointer';
-      badge.innerText = 'ADMIN';
-      badge.onclick = function() { window.location.href = '/admin/pedidos.html'; };
-      el('user-name').appendChild(badge);
-    }
-
-    if (isAdmin && window.location.pathname.includes('/admin/') === false) {
-      // ok, admin pode ver páginas normais
-    }
-    if (!isAdmin && window.location.pathname.includes('/admin/')) {
-      alert('Acesso negado: área restrita a administradores');
-      window.location.href = '/dashboard.html';
+      var name2 = (profile && (profile.full_name || profile.name))
+        || (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name))
+        || user.email.split('@')[0];
+      el('user-avatar-placeholder').innerText = name2.charAt(0).toUpperCase();
     }
   }
 
@@ -146,9 +114,9 @@
       container.innerHTML = addresses.map(function(addr) {
         return '<div class="p-4 border border-white/5 bg-freo-black relative">'
           + (addr.is_main || addr.is_default ? '<span class="absolute top-0 right-0 bg-freo-orange text-freo-black text-[10px] font-bold px-2 py-1 uppercase">Principal</span>' : '')
-          + '<p class="font-body text-sm font-bold mb-1">' + (addr.street || addr.logradouro || 'Endereço') + ', ' + (addr.number || addr.numero || 'S/N') + '</p>'
-          + '<p class="font-mono text-xs text-freo-light/50">' + (addr.city || addr.cidade || '') + ' - ' + (addr.state || addr.estado || '') + '</p>'
-          + '<p class="font-mono text-xs text-freo-light/50 mt-1">CEP: ' + (addr.zip_code || addr.cep || '') + '</p>'
+          + '<p class="font-body text-sm font-bold mb-1">' + (addr.street || '') + ', ' + (addr.number || 'S/N') + '</p>'
+          + '<p class="font-mono text-xs text-freo-light/50">' + (addr.city || '') + ' - ' + (addr.state || '') + '</p>'
+          + '<p class="font-mono text-xs text-freo-light/50 mt-1">CEP: ' + (addr.zip_code || '') + '</p>'
           + '</div>';
       }).join('');
     } else {
@@ -163,9 +131,9 @@
     if (methods && methods.length > 0) {
       container.innerHTML = methods.map(function(card) {
         return '<div class="p-4 border border-white/5 bg-freo-black flex items-center gap-3">'
-          + '<div class="w-10 h-6 bg-white/10 rounded flex items-center justify-center text-[10px] font-bold uppercase">' + (card.brand || card.bandeira || 'CARD') + '</div>'
+          + '<div class="w-10 h-6 bg-white/10 rounded flex items-center justify-center text-[10px] font-bold uppercase">' + (card.brand || 'CARD') + '</div>'
           + '<div>'
-          + '<p class="font-mono text-sm">•••• •••• •••• ' + (card.last4 || card.ultimos_digitos || '****') + '</p>'
+          + '<p class="font-mono text-sm">•••• •••• •••• ' + (card.last4 || '****') + '</p>'
           + '<p class="font-mono text-[10px] text-freo-light/50">Exp: ' + (card.exp_month || '**') + '/' + (card.exp_year || '**') + '</p>'
           + '</div></div>';
       }).join('');
@@ -192,7 +160,7 @@
         total += subtotal;
         return '<div class="flex items-center gap-4 p-4 border border-white/5 bg-freo-black hover:border-freo-orange/50 transition-colors">'
           + '<div class="w-16 h-16 bg-white/5 flex-shrink-0 flex items-center justify-center overflow-hidden">'
-          + (item.image_url ? '<img src="' + item.image_url + '" class="w-full h-full object-cover">' : '<svg class="w-6 h-6 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>')
+          + (item.image_url ? '<img src="' + item.image_url + '" class="w-full h-full object-cover">' : '')
           + '</div>'
           + '<div class="flex-1 min-w-0">'
           + '<h3 class="font-display font-bold text-lg truncate">' + (item.product_name || item.name || 'Figura 3D') + '</h3>'
@@ -217,69 +185,83 @@
 
   // ── FLUXO PRINCIPAL ────────────────────────────────────────────────────────
   async function init() {
-    var sessionResult = await safeQuery(async function() {
-      var r = await db.auth.getSession();
-      return r.data && r.data.session;
-    }, 'getSession');
+    try {
+      var sessionResult = await db.auth.getSession();
+      var session = sessionResult.data && sessionResult.data.session;
 
-    var session = sessionResult || null;
-
-    if (!session) {
-      // Sem sessão
-      console.log('⚪ Sem sessão ativa.');
-      if (isProtected()) {
-        window.location.href = '/login.html';
+      if (!session) {
+        console.log('⚪ Sem sessão.');
+        if (isProtected()) window.location.href = '/login.html';
+        window.dispatchEvent(new CustomEvent('auth-not-logged-in'));
         return;
       }
-      window.dispatchEvent(new CustomEvent('auth-not-logged-in'));
-      return;
+
+      var user = session.user;
+      console.log('✅ Sessão:', user.email);
+
+      if (isLogin()) {
+        window.location.href = '/dashboard.html';
+        return;
+      }
+
+      // ── Busca perfil PRIMEIRO — tudo depende dele ──────────────────────────
+      var profile = await fetchProfile(user.id);
+      console.log('👤 Perfil:', profile);
+
+      var isAdmin = profile && profile.is_admin === true;
+      console.log('🔑 isAdmin:', isAdmin);
+
+      // ── Guard de admin — só roda DEPOIS de ter o perfil ───────────────────
+      if (isAdminPage() && !isAdmin) {
+        console.warn('🚫 Acesso negado à área admin');
+        alert('Acesso negado: área restrita a administradores');
+        window.location.href = '/dashboard.html';
+        return;
+      }
+
+      // ── Mostra conteúdo da página ──────────────────────────────────────────
+      if (isProtected() && !isAdminPage()) {
+        showPageContent(user, profile);
+      }
+
+      // ── Busca demais dados em paralelo ─────────────────────────────────────
+      var results = await Promise.allSettled([
+        fetchCartItems(user.id),
+        fetchAddresses(user.id),
+        fetchPaymentMethods(user.id)
+      ]);
+
+      var cartItems      = results[0].status === 'fulfilled' ? results[0].value : [];
+      var addresses      = results[1].status === 'fulfilled' ? results[1].value : [];
+      var paymentMethods = results[2].status === 'fulfilled' ? results[2].value : [];
+
+      if (isProtected() && !isAdminPage()) {
+        window.renderCartUI(cartItems);
+        renderAddresses(addresses);
+        renderPaymentMethods(paymentMethods);
+      }
+
+      // ── Dispara evento para páginas que escutam (admin, meus-pedidos, etc) ─
+      window.dispatchEvent(new CustomEvent('auth-data-loaded', {
+        detail: {
+          user: user,
+          profile: profile,
+          cartItems: cartItems,
+          paymentMethods: paymentMethods,
+          addresses: addresses
+        }
+      }));
+
+    } catch(e) {
+      console.error('❌ Erro no auth-listener:', e);
+      // Nunca trava a tela em caso de erro inesperado
+      if (el('loading-state')) el('loading-state').classList.add('hidden');
+      if (el('dashboard-content')) el('dashboard-content').classList.remove('hidden');
     }
-
-    // Com sessão
-    var user = session.user;
-    console.log('✅ Sessão ativa:', user.email);
-
-    if (isLogin()) {
-      window.location.href = '/dashboard.html';
-      return;
-    }
-
-    // Mostra a UI IMEDIATAMENTE (não espera os dados)
-    if (isProtected()) {
-      showPageContent(user, null);
-    }
-
-    // Busca todos os dados EM PARALELO — qualquer erro individual não bloqueia
-    var results = await Promise.allSettled([
-      fetchProfile(user.id),
-      fetchCartItems(user.id),
-      fetchAddresses(user.id),
-      fetchPaymentMethods(user.id)
-    ]);
-
-    var profile        = results[0].status === 'fulfilled' ? results[0].value : null;
-    var cartItems      = results[1].status === 'fulfilled' ? results[1].value : [];
-    var addresses      = results[2].status === 'fulfilled' ? results[2].value : [];
-    var paymentMethods = results[3].status === 'fulfilled' ? results[3].value : [];
-
-    // Atualiza UI com dados reais (nome, avatar)
-    if (isProtected()) {
-      showPageContent(user, profile);
-      window.renderCartUI(cartItems);
-      renderAddresses(addresses);
-      renderPaymentMethods(paymentMethods);
-    }
-
-    // Dispara evento para páginas que precisam (meus-pedidos, checkout)
-    window.dispatchEvent(new CustomEvent('auth-data-loaded', {
-      detail: { user: user, profile: profile, cartItems: cartItems, paymentMethods: paymentMethods, addresses: addresses }
-    }));
   }
 
-  // Roda imediatamente
   init();
 
-  // Listener para SIGNED_OUT e login via OAuth (Google)
   db.auth.onAuthStateChange(function(event, session) {
     if (event === 'SIGNED_OUT') {
       if (isProtected()) window.location.href = '/login.html';
@@ -289,21 +271,20 @@
     }
   });
 
-  // Remover item do carrinho
   window.removeFromCart = async function(itemId) {
     try {
       var r = await db.from('cart_items').delete().eq('id', itemId);
       if (r.error) throw r.error;
-      var sessionR = await db.auth.getSession();
-      var s = sessionR.data && sessionR.data.session;
-      if (s) {
-        var cartR = await db.from('cart_items').select('*').eq('user_id', s.user.id);
+      var s = await db.auth.getSession();
+      var session = s.data && s.data.session;
+      if (session) {
+        var cartR = await db.from('cart_items').select('*').eq('user_id', session.user.id);
         window.renderCartUI(cartR.data || []);
       }
-    } catch (e) {
+    } catch(e) {
       console.error('Erro ao remover item:', e);
       alert('Erro ao remover item do carrinho.');
     }
   };
 
-})(); // IIFE — tudo encapsulado, sem poluir o escopo global com const/let
+})();
