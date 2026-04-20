@@ -627,7 +627,7 @@
       return '<div class="variant-row">'
         + '<div class="flex-1">'
         + '<input type="text" value="' + (v.name||'') + '" placeholder="Tipo (ex: Cor)" class="fi py-1.5 text-xs mb-1.5" oninput="updateVariant(' + i + ',\'name\',this.value)">'
-        + '<input type="text" value="' + (v.options||'') + '" placeholder="Opções separadas por vírgula (ex: Preto, Branco, Dourado)" class="fi py-1.5 text-xs" oninput="updateVariant(' + i + ',\'options\',this.value)">'
+        + '<input type="text" value="' + (Array.isArray(v.options) ? v.options.join(', ') : (v.options||'')) + '" placeholder="Opções separadas por vírgula (ex: Preto, Branco, Dourado)" class="fi py-1.5 text-xs" oninput="updateVariant(' + i + ',\'options\',this.value)">'
         + '</div>'
         + '<button onclick="removeVariant(' + i + ')" class="text-red-500/40 hover:text-red-400 transition-colors ml-2 flex-shrink-0">'
         + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
@@ -682,7 +682,14 @@
       tags: currentTags.length > 0 ? currentTags : null,
       video_url: document.getElementById('f-video').value.trim() || null,
       variants: currentVariants.length > 0 ? currentVariants.map(function(v) {
-        return { name: v.name, options: (v.options||'').split(',').map(function(o){ return o.trim(); }).filter(Boolean) };
+        // BUG FIX: options pode ser array (vindo da Shopee) ou string (digitado pelo usuário)
+        var opts = v.options;
+        if (Array.isArray(opts)) {
+          // já é array, mantém como está
+        } else {
+          opts = (opts || '').split(',').map(function(o){ return o.trim(); }).filter(Boolean);
+        }
+        return { name: v.name, options: opts };
       }) : [],
       seo_title: document.getElementById('f-seo-title').value.trim() || null,
       seo_description: document.getElementById('f-seo-desc').value.trim() || null,
