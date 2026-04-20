@@ -658,15 +658,19 @@
   // ── Salvar produto ─────────────────────────────────────────────────────────
   async function saveProduct() {
     var title = document.getElementById('f-title').value.trim();
-    var price = parseFloat(document.getElementById('f-price').value);
+    var priceRaw = document.getElementById('f-price').value;
+    var price = parseFloat(priceRaw);
 
     if (!title) { showToast('Informe o título do produto.', 'error'); showTab('tab-basic'); return; }
-    if (!price || price <= 0) { showToast('Informe um preço válido.', 'error'); showTab('tab-basic'); return; }
+    // BUG FIX: permite price=0 vindo do banco, só bloqueia se o campo estiver vazio ou NaN
+    if (priceRaw === '' || isNaN(price) || price < 0) { showToast('Informe um preço válido (pode ser 0).', 'error'); showTab('tab-basic'); return; }
 
     var btn = document.getElementById('form-save-btn');
     btn.innerText = 'Salvando...'; btn.disabled = true;
 
-    var promoPrice = parseFloat(document.getElementById('f-promo').value) || null;
+    var promoPrice = parseFloat(document.getElementById('f-promo').value);
+    promoPrice = isNaN(promoPrice) ? null : promoPrice;
+
     var payload = {
       title: title,
       description: document.getElementById('f-description').value.trim() || null,
@@ -697,10 +701,13 @@
       closeForm();
       loadProducts();
     } catch(e) {
-      showToast('Erro ao salvar: ' + e.message, 'error');
+      console.error('saveProduct error:', e);
+      showToast('Erro ao salvar: ' + (e.message || JSON.stringify(e)), 'error');
+    } finally {
+      // BUG FIX: sempre reabilita o botão, mesmo se der erro
+      btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar';
+      btn.disabled = false;
     }
-    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar';
-    btn.disabled = false;
   }
 
   // ── Excluir produto ────────────────────────────────────────────────────────
