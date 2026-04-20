@@ -36,28 +36,64 @@
   <style>
     .modal-backdrop { background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); }
     .freo-input {
-      width: 100%; background: #0A0A0A; border: 1px solid rgba(255,255,255,0.1);
-      color: #F5F5F5; padding: 0.75rem 1rem; font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.875rem; outline: none; transition: border-color 0.2s;
+      width:100%; background:#0A0A0A; border:1px solid rgba(255,255,255,0.1);
+      color:#F5F5F5; padding:.75rem 1rem; font-family:'Space Grotesk',sans-serif;
+      font-size:.875rem; outline:none; transition:border-color .2s;
     }
-    .freo-input:focus { border-color: #DDAF34; }
-    .freo-input::placeholder { color: rgba(245,245,245,0.25); }
+    .freo-input:focus { border-color:#DDAF34; }
+    .freo-input::placeholder { color:rgba(245,245,245,.25); }
     .freo-label {
-      display: block; font-family: ui-monospace, monospace; font-size: 0.65rem;
-      color: rgba(245,245,245,0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.4rem;
+      display:block; font-family:ui-monospace,monospace; font-size:.65rem;
+      color:rgba(245,245,245,.4); text-transform:uppercase; letter-spacing:.1em; margin-bottom:.4rem;
     }
     .freo-select {
-      width: 100%; background: #0A0A0A; border: 1px solid rgba(255,255,255,0.1);
-      color: #F5F5F5; padding: 0.75rem 1rem; font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.875rem; outline: none; appearance: none; cursor: pointer;
+      width:100%; background:#0A0A0A; border:1px solid rgba(255,255,255,0.1);
+      color:#F5F5F5; padding:.75rem 1rem; font-family:'Space Grotesk',sans-serif;
+      font-size:.875rem; outline:none; appearance:none; cursor:pointer;
     }
-    .freo-select:focus { border-color: #DDAF34; }
-    .freo-select option { background: #121212; }
-    .tab-btn { transition: all 0.2s; border-bottom: 2px solid transparent; }
-    .tab-btn.active { color: #DDAF34; border-bottom-color: #DDAF34; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #0A0A0A; }
-    ::-webkit-scrollbar-thumb { background: #DDAF34; border-radius: 3px; }
+    .freo-select:focus { border-color:#DDAF34; }
+    .freo-select option { background:#121212; }
+    .tab-btn { transition:all .2s; border-bottom:2px solid transparent; }
+    .tab-btn.active { color:#DDAF34; border-bottom-color:#DDAF34; }
+
+    /* Admin period tabs */
+    .period-btn { font-family:ui-monospace,monospace; font-size:.65rem; text-transform:uppercase;
+      letter-spacing:.08em; padding:4px 10px; border:1px solid rgba(255,255,255,.1);
+      color:rgba(245,245,245,.4); cursor:pointer; transition:all .15s; background:transparent; }
+    .period-btn.active { border-color:#DDAF34; color:#DDAF34; background:rgba(221,175,52,.08); }
+
+    /* Stat card */
+    .stat-card { background:#141414; border:1px solid rgba(255,255,255,.06); padding:1.25rem 1.5rem; }
+    .stat-value { font-family:'Outfit',sans-serif; font-weight:900; font-size:2rem; line-height:1; color:#DDAF34; }
+    .stat-label { font-family:ui-monospace,monospace; font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(245,245,245,.35); margin-top:.35rem; }
+    .stat-delta { font-family:ui-monospace,monospace; font-size:.7rem; margin-top:.4rem; }
+    .delta-up { color:#22c55e; }
+    .delta-zero { color:rgba(245,245,245,.3); }
+
+    /* Order rows */
+    .order-row { background:#141414; border:1px solid rgba(255,255,255,.06); padding:1rem 1.25rem;
+      display:flex; align-items:center; gap:1rem; transition:border-color .15s; }
+    .order-row:hover { border-color:rgba(221,175,52,.2); }
+    .status-badge { font-family:ui-monospace,monospace; font-size:.6rem; text-transform:uppercase;
+      letter-spacing:.08em; padding:2px 7px; border-radius:2px; flex-shrink:0; }
+    .status-aguardando { background:rgba(245,158,11,.1); color:#f59e0b; border:1px solid rgba(245,158,11,.25); }
+    .status-pago       { background:rgba(59,130,246,.1);  color:#60a5fa; border:1px solid rgba(59,130,246,.25); }
+    .status-producao   { background:rgba(168,85,247,.1);  color:#c084fc; border:1px solid rgba(168,85,247,.25); }
+    .status-enviado    { background:rgba(34,197,94,.1);   color:#4ade80; border:1px solid rgba(34,197,94,.25); }
+    .status-entregue   { background:rgba(100,116,139,.1); color:#94a3b8; border:1px solid rgba(100,116,139,.25); }
+
+    /* Top product */
+    .top-product-img { width:52px; height:52px; object-fit:cover; flex-shrink:0; background:#0A0A0A; }
+
+    /* Tag pill */
+    .tag-pill { display:inline-flex; align-items:center; gap:4px; background:rgba(221,175,52,.1);
+      border:1px solid rgba(221,175,52,.25); color:#DDAF34; font-family:ui-monospace,monospace;
+      font-size:.7rem; padding:2px 8px; border-radius:2px; }
+
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:#0A0A0A; }
+    ::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+    ::-webkit-scrollbar-thumb:hover { background:#DDAF34; }
   </style>
 </head>
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen selection:bg-freo-orange selection:text-white flex flex-col">
@@ -69,7 +105,16 @@
         <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" class="w-10 h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]" onerror="this.style.display='none'">
         <span class="font-display font-black text-2xl tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
       </div>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
+        <!-- Botões apenas admin (escondidos por padrão) -->
+        <a href="/admin/produtos.html" id="nav-admin-produtos" class="hidden items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Produtos
+        </a>
+        <a href="/admin/pedidos.html" id="nav-admin-pedidos" class="hidden items-center gap-2 text-xs font-mono text-white/50 hover:text-white transition-colors border border-white/10 px-3 py-1.5 rounded">
+          Pedidos
+        </a>
+        <!-- Botão apenas cliente -->
         <a href="/meus-pedidos.html" id="my-orders-btn" class="hidden items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
           Meus Pedidos
@@ -80,14 +125,140 @@
   </nav>
 
   <!-- LOADING -->
-  <div id="loading-state" class="flex-1 flex items-center justify-center">
+  <div id="loading-state" class="flex-1 flex items-center justify-center min-h-[60vh]">
     <div class="w-12 h-12 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
   </div>
 
-  <!-- DASHBOARD -->
-  <main id="dashboard-content" class="max-w-7xl mx-auto px-6 py-12 w-full hidden flex-1">
+  <!-- ══════════════════════════════════════════════════════════
+       DASHBOARD ADMIN
+  ══════════════════════════════════════════════════════════ -->
+  <main id="admin-content" class="hidden max-w-7xl mx-auto px-6 py-10 w-full flex-1">
 
-    <!-- HEADER -->
+    <!-- Header admin -->
+    <div class="flex items-center gap-6 mb-10 border-b border-white/10 pb-8 flex-wrap">
+      <div class="relative w-20 h-20 rounded-full border-2 border-freo-orange overflow-hidden bg-freo-dark flex items-center justify-center flex-shrink-0">
+        <img id="admin-avatar" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+        <span id="admin-avatar-placeholder" class="font-display font-bold text-2xl text-freo-orange uppercase"></span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-3 flex-wrap">
+          <h1 id="admin-name" class="text-4xl md:text-5xl font-display font-black uppercase tracking-tighter">Painel Admin</h1>
+          <span class="font-mono text-xs bg-freo-orange text-freo-black px-3 py-1 font-bold uppercase tracking-widest">Admin</span>
+        </div>
+        <p id="admin-email" class="text-freo-light/40 font-mono text-sm mt-1"></p>
+      </div>
+      <button onclick="openModal('modal-profile')" class="flex-shrink-0 flex items-center gap-2 text-xs font-mono text-freo-orange border border-freo-orange/40 px-4 py-2.5 hover:bg-freo-orange hover:text-freo-black transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Editar Perfil
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- COLUNA PRINCIPAL: Pedidos a enviar -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- Título da seção -->
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-display font-bold uppercase text-freo-orange flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M10 12a1 1 0 000 2h4a1 1 0 000-2h-4z"/></svg>
+            Pedidos a Enviar
+            <span id="orders-badge" class="text-xs font-mono bg-freo-orange text-freo-black px-2 py-0.5 rounded-full font-bold">0</span>
+          </h2>
+          <a href="/admin/pedidos.html" class="font-mono text-xs text-white/30 hover:text-freo-orange transition-colors uppercase tracking-widest">Ver todos →</a>
+        </div>
+
+        <!-- Lista de pedidos pendentes -->
+        <div id="orders-to-ship" class="space-y-2">
+          <div class="text-center py-10">
+            <div class="w-8 h-8 border-2 border-freo-orange/40 border-t-freo-orange rounded-full animate-spin mx-auto"></div>
+          </div>
+        </div>
+
+        <!-- Ações rápidas admin -->
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <a href="/admin/produtos.html" class="flex items-center gap-3 bg-freo-dark border border-white/10 p-4 hover:border-freo-orange/40 transition-colors group">
+            <div class="w-9 h-9 bg-freo-orange/10 flex items-center justify-center group-hover:bg-freo-orange/20 transition-colors flex-shrink-0">
+              <svg class="w-4 h-4 text-freo-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            </div>
+            <div>
+              <p class="font-display font-bold text-sm uppercase text-white">Novo Produto</p>
+              <p class="font-mono text-[10px] text-white/30">Cadastrar no catálogo</p>
+            </div>
+          </a>
+          <a href="/admin/pedidos.html" class="flex items-center gap-3 bg-freo-dark border border-white/10 p-4 hover:border-freo-orange/40 transition-colors group">
+            <div class="w-9 h-9 bg-freo-orange/10 flex items-center justify-center group-hover:bg-freo-orange/20 transition-colors flex-shrink-0">
+              <svg class="w-4 h-4 text-freo-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+            <div>
+              <p class="font-display font-bold text-sm uppercase text-white">Gerenciar Pedidos</p>
+              <p class="font-mono text-[10px] text-white/30">Atualizar status</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- SIDEBAR ADMIN -->
+      <div class="space-y-6">
+
+        <!-- FATURAMENTO -->
+        <div class="bg-freo-dark border border-white/10 p-6">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-display font-bold uppercase text-freo-orange flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Faturamento
+            </h2>
+            <!-- Seletor de período -->
+            <div class="flex gap-1">
+              <button onclick="loadFaturamento(1)"  id="period-1"  class="period-btn active">Hoje</button>
+              <button onclick="loadFaturamento(7)"  id="period-7"  class="period-btn">7d</button>
+              <button onclick="loadFaturamento(30)" id="period-30" class="period-btn">30d</button>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="space-y-3">
+            <div class="stat-card">
+              <div class="stat-value" id="fat-total">R$ 0</div>
+              <div class="stat-label">Total faturado</div>
+              <div class="stat-delta delta-zero" id="fat-delta">— comparado ao período anterior</div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="stat-card">
+                <div class="font-display font-black text-xl text-freo-orange" id="fat-pedidos">0</div>
+                <div class="stat-label">Pedidos</div>
+              </div>
+              <div class="stat-card">
+                <div class="font-display font-black text-xl text-freo-orange" id="fat-ticket">R$ 0</div>
+                <div class="stat-label">Ticket médio</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRODUTO MAIS VENDIDO -->
+        <div class="bg-freo-dark border border-white/10 p-6">
+          <h2 class="text-lg font-display font-bold uppercase text-freo-orange flex items-center gap-2 mb-5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            Mais Vendidos
+          </h2>
+          <div id="top-products" class="space-y-2">
+            <div class="text-center py-6">
+              <div class="w-6 h-6 border-2 border-freo-orange/40 border-t-freo-orange rounded-full animate-spin mx-auto"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════════
+       DASHBOARD CLIENTE (usuário comum)
+  ══════════════════════════════════════════════════════════ -->
+  <main id="user-content" class="hidden max-w-7xl mx-auto px-6 py-12 w-full flex-1">
+
+    <!-- Header cliente -->
     <div class="flex items-center gap-6 mb-12 border-b border-white/10 pb-8 flex-wrap">
       <div class="relative w-24 h-24 rounded-full border-2 border-freo-orange overflow-hidden bg-freo-dark flex items-center justify-center flex-shrink-0">
         <img id="user-avatar" src="" alt="Avatar" class="w-full h-full object-cover hidden">
@@ -105,12 +276,12 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-      <!-- CARRINHO -->
+      <!-- Carrinho do cliente -->
       <div class="lg:col-span-2">
         <div class="bg-freo-dark border border-white/10 p-6 md:p-8">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-display font-bold uppercase text-freo-orange flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 002 1.58h9.78a2 2 0 001.95-1.57l1.65-7.43H5.12"/></svg>
               Meu Carrinho
             </h2>
             <span id="cart-count" class="font-mono text-sm bg-white/10 px-3 py-1 rounded-full">0 itens</span>
@@ -127,17 +298,17 @@
         </div>
       </div>
 
-      <!-- SIDEBAR -->
+      <!-- Sidebar cliente -->
       <div class="space-y-6">
 
-        <!-- ENDEREÇOS -->
+        <!-- Endereços -->
         <div class="bg-freo-dark border border-white/10 p-6">
           <div class="flex items-center justify-between mb-5">
             <h2 class="text-lg font-display font-bold uppercase text-freo-orange flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
               Meus Endereços
             </h2>
-            <button onclick="openModal('modal-address')" title="Adicionar endereço" class="w-7 h-7 flex items-center justify-center border border-freo-orange/40 text-freo-orange hover:bg-freo-orange hover:text-freo-black transition-colors">
+            <button onclick="openModal('modal-address')" class="w-7 h-7 flex items-center justify-center border border-freo-orange/40 text-freo-orange hover:bg-freo-orange hover:text-freo-black transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             </button>
           </div>
@@ -148,19 +319,18 @@
           </div>
         </div>
 
-        <!-- PAGAMENTO -->
+        <!-- Pagamento -->
         <div class="bg-freo-dark border border-white/10 p-6">
           <div class="flex items-center justify-between mb-5">
             <h2 class="text-lg font-display font-bold uppercase text-freo-orange flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
               Pagamento
             </h2>
-            <button onclick="openModal('modal-payment')" title="Adicionar cartão" class="w-7 h-7 flex items-center justify-center border border-freo-orange/40 text-freo-orange hover:bg-freo-orange hover:text-freo-black transition-colors">
+            <button onclick="openModal('modal-payment')" class="w-7 h-7 flex items-center justify-center border border-freo-orange/40 text-freo-orange hover:bg-freo-orange hover:text-freo-black transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             </button>
           </div>
-
-          <!-- PIX — sempre visível -->
+          <!-- PIX fixo -->
           <div class="flex items-center gap-3 p-3 border border-green-500/20 bg-green-500/5 mb-3">
             <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center bg-green-500/10">
               <svg class="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.999 2.001a10 10 0 100 20 10 10 0 000-20zm4.244 6.244l-2.83 2.83a1 1 0 000 1.414l2.83 2.83a1 1 0 01-1.414 1.414l-2.83-2.83a1 1 0 00-1.414 0l-2.83 2.83a1 1 0 01-1.414-1.414l2.83-2.83a1 1 0 000-1.414l-2.83-2.83a1 1 0 011.414-1.414l2.83 2.83a1 1 0 001.414 0l2.83-2.83a1 1 0 011.414 1.414z"/></svg>
@@ -171,7 +341,6 @@
             </div>
             <span class="flex-shrink-0 text-[9px] font-mono bg-green-500/10 text-green-400 border border-green-500/20 px-1.5 py-0.5 uppercase">Sem taxa</span>
           </div>
-
           <div id="payment-methods" class="space-y-2"></div>
           <div id="payments-empty" class="text-center py-4">
             <p class="text-freo-light/40 font-mono text-xs mb-3">Nenhum cartão salvo.</p>
@@ -188,9 +357,11 @@
     </div>
   </footer>
 
-  <!-- ══════════════════════════════════════
-       MODAL: EDITAR PERFIL
-  ══════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════════
+       MODAIS COMPARTILHADOS (admin e cliente)
+  ══════════════════════════════════════════════════════════ -->
+
+  <!-- Modal: Editar Perfil -->
   <div id="modal-profile" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
     <div class="bg-freo-dark border border-white/10 w-full max-w-md relative shadow-2xl">
       <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-freo-orange to-transparent"></div>
@@ -204,25 +375,15 @@
         <div id="profile-err" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono p-3 mb-4"></div>
         <div id="profile-ok" class="hidden bg-green-500/10 border border-green-500/40 text-green-400 text-xs font-mono p-3 mb-4">Perfil atualizado!</div>
         <div class="space-y-4">
-          <div>
-            <label class="freo-label">Nome completo</label>
-            <input type="text" id="profile-name" class="freo-input" placeholder="Seu nome completo">
-          </div>
-          <div>
-            <label class="freo-label">Telefone / WhatsApp</label>
-            <input type="tel" id="profile-phone" class="freo-input" placeholder="(11) 99999-9999" oninput="maskPhone(this)">
-          </div>
+          <div><label class="freo-label">Nome completo</label><input type="text" id="profile-name" class="freo-input" placeholder="Seu nome completo"></div>
+          <div><label class="freo-label">Telefone / WhatsApp</label><input type="tel" id="profile-phone" class="freo-input" placeholder="(11) 99999-9999" oninput="maskPhone(this)"></div>
         </div>
-        <button onclick="saveProfile()" id="profile-save-btn" class="w-full mt-6 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3 hover:bg-white transition-colors">
-          Salvar alterações
-        </button>
+        <button onclick="saveProfile()" id="profile-save-btn" class="w-full mt-6 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3 hover:bg-white transition-colors">Salvar alterações</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       MODAL: ENDEREÇO
-  ══════════════════════════════════════ -->
+  <!-- Modal: Endereço -->
   <div id="modal-address" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
     <div class="bg-freo-dark border border-white/10 w-full max-w-md relative shadow-2xl" style="max-height:90vh;overflow-y:auto">
       <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-freo-orange to-transparent"></div>
@@ -240,55 +401,31 @@
             <label class="freo-label">CEP</label>
             <div class="flex gap-2">
               <input type="text" id="addr-cep" class="freo-input" placeholder="00000-000" maxlength="9" oninput="maskCEP(this)" onkeydown="if(event.key==='Enter')buscarCEP()">
-              <button onclick="buscarCEP()" class="flex-shrink-0 px-4 bg-freo-orange/10 border border-freo-orange/40 text-freo-orange font-mono text-xs hover:bg-freo-orange hover:text-freo-black transition-colors whitespace-nowrap">
-                Buscar CEP
-              </button>
+              <button onclick="buscarCEP()" class="flex-shrink-0 px-4 bg-freo-orange/10 border border-freo-orange/40 text-freo-orange font-mono text-xs hover:bg-freo-orange hover:text-freo-black transition-colors whitespace-nowrap">Buscar CEP</button>
             </div>
             <p id="cep-loading" class="text-[11px] font-mono text-freo-light/40 mt-1 hidden">Buscando endereço...</p>
           </div>
           <div class="grid grid-cols-3 gap-3">
-            <div class="col-span-2">
-              <label class="freo-label">Rua / Logradouro</label>
-              <input type="text" id="addr-street" class="freo-input" placeholder="Rua das Figuras">
-            </div>
-            <div>
-              <label class="freo-label">Número</label>
-              <input type="text" id="addr-number" class="freo-input" placeholder="123">
-            </div>
+            <div class="col-span-2"><label class="freo-label">Rua / Logradouro</label><input type="text" id="addr-street" class="freo-input" placeholder="Rua das Figuras"></div>
+            <div><label class="freo-label">Número</label><input type="text" id="addr-number" class="freo-input" placeholder="123"></div>
           </div>
-          <div>
-            <label class="freo-label">Complemento <span class="normal-case text-freo-light/20">(opcional)</span></label>
-            <input type="text" id="addr-complement" class="freo-input" placeholder="Apto 4B, Bloco C">
-          </div>
-          <div>
-            <label class="freo-label">Bairro</label>
-            <input type="text" id="addr-neighborhood" class="freo-input" placeholder="Centro">
-          </div>
+          <div><label class="freo-label">Complemento <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(opcional)</span></label><input type="text" id="addr-complement" class="freo-input" placeholder="Apto 4B"></div>
+          <div><label class="freo-label">Bairro</label><input type="text" id="addr-neighborhood" class="freo-input" placeholder="Centro"></div>
           <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="freo-label">Cidade</label>
-              <input type="text" id="addr-city" class="freo-input" placeholder="São Paulo">
-            </div>
-            <div>
-              <label class="freo-label">Estado (UF)</label>
-              <input type="text" id="addr-state" class="freo-input" placeholder="SP" maxlength="2" style="text-transform:uppercase">
-            </div>
+            <div><label class="freo-label">Cidade</label><input type="text" id="addr-city" class="freo-input" placeholder="São Paulo"></div>
+            <div><label class="freo-label">Estado (UF)</label><input type="text" id="addr-state" class="freo-input" placeholder="SP" maxlength="2" style="text-transform:uppercase"></div>
           </div>
           <label class="flex items-center gap-3 cursor-pointer select-none pt-1">
             <input type="checkbox" id="addr-main" class="w-4 h-4 accent-freo-orange">
             <span class="text-xs font-mono text-freo-light/50">Definir como endereço principal</span>
           </label>
         </div>
-        <button onclick="saveAddress()" id="address-save-btn" class="w-full mt-6 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3 hover:bg-white transition-colors">
-          Salvar endereço
-        </button>
+        <button onclick="saveAddress()" id="address-save-btn" class="w-full mt-6 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3 hover:bg-white transition-colors">Salvar endereço</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       MODAL: CARTÃO
-  ══════════════════════════════════════ -->
+  <!-- Modal: Cartão -->
   <div id="modal-payment" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
     <div class="bg-freo-dark border border-white/10 w-full max-w-md relative shadow-2xl">
       <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-freo-orange to-transparent"></div>
@@ -299,46 +436,22 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
-
-        <!-- Aviso PIX -->
         <div class="flex items-start gap-3 p-3 border border-green-500/20 bg-green-500/5 mb-5">
           <svg class="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11.999 2.001a10 10 0 100 20 10 10 0 000-20zm4.244 6.244l-2.83 2.83a1 1 0 000 1.414l2.83 2.83a1 1 0 01-1.414 1.414l-2.83-2.83a1 1 0 00-1.414 0l-2.83 2.83a1 1 0 01-1.414-1.414l2.83-2.83a1 1 0 000-1.414l-2.83-2.83a1 1 0 011.414-1.414l2.83 2.83a1 1 0 001.414 0l2.83-2.83a1 1 0 011.414 1.414z"/></svg>
-          <p class="text-xs font-mono text-freo-light/50 leading-relaxed">
-            <span class="text-green-400 font-bold">PIX</span> não precisa ser cadastrado — ele fica disponível automaticamente na hora da compra.
-          </p>
+          <p class="text-xs font-mono text-freo-light/50 leading-relaxed"><span class="text-green-400 font-bold">PIX</span> não precisa ser cadastrado — disponível automaticamente na compra.</p>
         </div>
-
-        <!-- Tabs Crédito / Débito -->
         <div class="flex border-b border-white/10 mb-5">
-          <button id="tab-credit" onclick="setCardType('credit')" class="tab-btn active flex-1 py-2.5 text-xs font-mono uppercase tracking-widest text-freo-light/60">
-            Crédito
-          </button>
-          <button id="tab-debit" onclick="setCardType('debit')" class="tab-btn flex-1 py-2.5 text-xs font-mono uppercase tracking-widest text-freo-light/60">
-            Débito
-          </button>
+          <button id="tab-credit" onclick="setCardType('credit')" class="tab-btn active flex-1 py-2.5 text-xs font-mono uppercase tracking-widest text-freo-light/60">Crédito</button>
+          <button id="tab-debit"  onclick="setCardType('debit')"  class="tab-btn flex-1 py-2.5 text-xs font-mono uppercase tracking-widest text-freo-light/60">Débito</button>
         </div>
-
         <div id="payment-err" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono p-3 mb-4"></div>
-        <div id="payment-ok" class="hidden bg-green-500/10 border border-green-500/40 text-green-400 text-xs font-mono p-3 mb-4">Cartão adicionado com sucesso!</div>
-
+        <div id="payment-ok"  class="hidden bg-green-500/10 border border-green-500/40 text-green-400 text-xs font-mono p-3 mb-4">Cartão adicionado!</div>
         <div class="space-y-4">
-          <div>
-            <label class="freo-label">Nome impresso no cartão</label>
-            <input type="text" id="card-name" class="freo-input" placeholder="KEVYN SILVA" style="text-transform:uppercase">
-          </div>
-          <div>
-            <label class="freo-label">Número do cartão</label>
-            <input type="text" id="card-number" class="freo-input" placeholder="0000 0000 0000 0000" maxlength="19" oninput="maskCard(this)">
-          </div>
+          <div><label class="freo-label">Nome impresso no cartão</label><input type="text" id="card-name" class="freo-input" placeholder="KEVYN SILVA" style="text-transform:uppercase"></div>
+          <div><label class="freo-label">Número do cartão</label><input type="text" id="card-number" class="freo-input" placeholder="0000 0000 0000 0000" maxlength="19" oninput="maskCard(this)"></div>
           <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="freo-label">Validade</label>
-              <input type="text" id="card-expiry" class="freo-input" placeholder="MM/AA" maxlength="5" oninput="maskExpiry(this)">
-            </div>
-            <div>
-              <label class="freo-label">CVV</label>
-              <input type="text" id="card-cvv" class="freo-input" placeholder="123" maxlength="4" inputmode="numeric">
-            </div>
+            <div><label class="freo-label">Validade</label><input type="text" id="card-expiry" class="freo-input" placeholder="MM/AA" maxlength="5" oninput="maskExpiry(this)"></div>
+            <div><label class="freo-label">CVV</label><input type="text" id="card-cvv" class="freo-input" placeholder="123" maxlength="4" inputmode="numeric"></div>
           </div>
           <div>
             <label class="freo-label">Bandeira</label>
@@ -352,14 +465,8 @@
             </select>
           </div>
         </div>
-
-        <p class="text-[11px] font-mono text-freo-light/25 mt-4 leading-relaxed">
-          Seus dados são processados com segurança pelo Mercado Pago. A FreoFigures não armazena números de cartão.
-        </p>
-
-        <button onclick="saveCard()" id="card-save-btn" class="w-full mt-4 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3 hover:bg-white transition-colors">
-          Salvar cartão
-        </button>
+        <p class="text-[11px] font-mono text-freo-light/25 mt-4 leading-relaxed">Seus dados são processados com segurança pelo Mercado Pago.</p>
+        <button onclick="saveCard()" id="card-save-btn" class="w-full mt-4 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3 hover:bg-white transition-colors">Salvar cartão</button>
       </div>
     </div>
   </div>
@@ -368,278 +475,422 @@
   <script src="/auth-listener.js"></script>
 
   <script>
-    var currentUserId = null;
-    var currentCardType = 'credit';
+  var currentUserId = null;
+  var currentUserIsAdmin = false;
+  var currentCardType = 'credit';
+  var currentFatPeriod = 1;
 
-    // ── Modais ─────────────────────────────────────────────────────────────
-    function openModal(id) {
-      var m = document.getElementById(id);
-      m.classList.remove('hidden');
-      m.classList.add('flex');
-      if (id === 'modal-profile') {
-        var nameEl = document.getElementById('user-name');
-        if (nameEl) {
-          var raw = nameEl.innerText.replace('Bem-vindo, ','').replace('!','').trim();
-          document.getElementById('profile-name').value = (raw && raw !== 'Bem-vindo') ? raw : '';
-        }
-      }
+  // ── auth-data-loaded: decide qual layout mostrar ───────────────────────────
+  window.addEventListener('auth-data-loaded', function(e) {
+    var d = e.detail;
+    currentUserId = d.user.id;
+    currentUserIsAdmin = !!(d.profile && d.profile.is_admin);
+
+    document.getElementById('loading-state').classList.add('hidden');
+
+    if (currentUserIsAdmin) {
+      showAdminDashboard(d.user, d.profile);
+    } else {
+      showUserDashboard(d.user, d.profile, d.cartItems, d.addresses, d.paymentMethods);
     }
-    function closeModal(id) {
-      var m = document.getElementById(id);
-      m.classList.add('hidden');
-      m.classList.remove('flex');
-      ['profile-err','profile-ok','address-err','address-ok','payment-err','payment-ok'].forEach(function(eid) {
-        var el = document.getElementById(eid);
-        if (el) el.classList.add('hidden');
+  });
+
+  // ── Layout ADMIN ───────────────────────────────────────────────────────────
+  function showAdminDashboard(user, profile) {
+    document.getElementById('admin-content').classList.remove('hidden');
+    // Nav buttons
+    document.getElementById('nav-admin-produtos').classList.remove('hidden');
+    document.getElementById('nav-admin-produtos').classList.add('flex');
+    document.getElementById('nav-admin-pedidos').classList.remove('hidden');
+    document.getElementById('nav-admin-pedidos').classList.add('flex');
+    document.getElementById('logout-btn').classList.remove('hidden');
+
+    var name = (profile && (profile.full_name || profile.name)) || user.email.split('@')[0];
+    document.getElementById('admin-name').innerText = 'Bem-vindo, ' + name + '!';
+    document.getElementById('admin-email').innerText = user.email;
+
+    var avatarUrl = (profile && profile.avatar_url) || (user.user_metadata && user.user_metadata.avatar_url);
+    if (avatarUrl) {
+      document.getElementById('admin-avatar').src = avatarUrl;
+      document.getElementById('admin-avatar').classList.remove('hidden');
+      document.getElementById('admin-avatar-placeholder').classList.add('hidden');
+    } else {
+      document.getElementById('admin-avatar-placeholder').innerText = name.charAt(0).toUpperCase();
+    }
+    if (profile && profile.phone) document.getElementById('profile-phone').value = profile.phone;
+    document.getElementById('profile-name').value = name;
+
+    loadOrdersToShip();
+    loadFaturamento(1);
+    loadTopProducts();
+  }
+
+  // ── Layout CLIENTE ─────────────────────────────────────────────────────────
+  function showUserDashboard(user, profile, cartItems, addresses, paymentMethods) {
+    document.getElementById('user-content').classList.remove('hidden');
+    document.getElementById('my-orders-btn').classList.remove('hidden');
+    document.getElementById('my-orders-btn').classList.add('flex');
+    document.getElementById('logout-btn').classList.remove('hidden');
+
+    var name = (profile && (profile.full_name || profile.name)) || user.email.split('@')[0];
+    document.getElementById('user-name').innerText = 'Bem-vindo, ' + name + '!';
+    document.getElementById('user-email').innerText = user.email;
+
+    var avatarUrl = (profile && profile.avatar_url) || (user.user_metadata && user.user_metadata.avatar_url);
+    if (avatarUrl) {
+      document.getElementById('user-avatar').src = avatarUrl;
+      document.getElementById('user-avatar').classList.remove('hidden');
+      document.getElementById('user-avatar-placeholder').classList.add('hidden');
+    } else {
+      document.getElementById('user-avatar-placeholder').innerText = name.charAt(0).toUpperCase();
+    }
+    if (profile && profile.phone) document.getElementById('profile-phone').value = profile.phone;
+    document.getElementById('profile-name').value = name;
+
+    if (window.renderCartUI) window.renderCartUI(cartItems || []);
+    renderAddressesUI(addresses || []);
+    renderPaymentsUI(paymentMethods || []);
+  }
+
+  // ── Dados Admin: Pedidos a enviar ──────────────────────────────────────────
+  async function loadOrdersToShip() {
+    var container = document.getElementById('orders-to-ship');
+    try {
+      // Busca pedidos com status diferente de entregue/cancelado
+      var r = await window.supabaseClient
+        .from('orders')
+        .select('*')
+        .in('status', ['pago', 'producao', 'aguardando'])
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      if (r.error) throw r.error;
+      var orders = r.data || [];
+      document.getElementById('orders-badge').innerText = orders.length;
+
+      if (orders.length === 0) {
+        container.innerHTML = '<div class="text-center py-10 border border-white/[0.06] bg-freo-dark">'
+          + '<div class="text-3xl mb-2">✅</div>'
+          + '<p class="font-mono text-sm text-white/30">Nenhum pedido pendente</p>'
+          + '</div>';
+        return;
+      }
+
+      var statusMap = {
+        aguardando: 'status-aguardando',
+        pago: 'status-pago',
+        producao: 'status-producao',
+        enviado: 'status-enviado',
+        entregue: 'status-entregue'
+      };
+      var statusLabel = {
+        aguardando: 'Aguardando pgto',
+        pago: 'Pago',
+        producao: 'Em produção',
+        enviado: 'Enviado',
+        entregue: 'Entregue'
+      };
+
+      container.innerHTML = orders.map(function(o) {
+        var statusClass = statusMap[o.status] || 'status-aguardando';
+        var label = statusLabel[o.status] || o.status;
+        var date = new Date(o.created_at).toLocaleDateString('pt-BR');
+        var total = o.total ? 'R$ ' + Number(o.total).toFixed(2).replace('.',',') : '—';
+        return '<div class="order-row">'
+          + '<div class="flex-1 min-w-0">'
+          + '<div class="flex items-center gap-2 mb-0.5">'
+          + '<p class="font-mono text-sm font-bold text-white">#' + o.id + '</p>'
+          + '<span class="status-badge ' + statusClass + '">' + label + '</span>'
+          + '</div>'
+          + '<p class="font-mono text-xs text-white/30">' + date + ' · ' + (o.user_email || o.user_id || '—') + '</p>'
+          + '</div>'
+          + '<div class="text-right flex-shrink-0">'
+          + '<p class="font-mono text-sm font-bold text-freo-orange">' + total + '</p>'
+          + '<a href="/admin/pedidos.html?id=' + o.id + '" class="font-mono text-[10px] text-white/30 hover:text-freo-orange transition-colors uppercase">Ver →</a>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    } catch(e) {
+      container.innerHTML = '<p class="font-mono text-xs text-red-400/60 p-4">Erro ao carregar pedidos: ' + e.message + '</p>'
+        + '<p class="font-mono text-[10px] text-white/20 px-4">Verifique se a tabela <strong>orders</strong> existe no Supabase.</p>';
+    }
+  }
+
+  // ── Dados Admin: Faturamento ───────────────────────────────────────────────
+  async function loadFaturamento(days) {
+    currentFatPeriod = days;
+
+    // Atualiza botões de período
+    [1, 7, 30].forEach(function(d) {
+      var btn = document.getElementById('period-' + d);
+      if (btn) {
+        btn.classList.toggle('active', d === days);
+      }
+    });
+
+    try {
+      var now = new Date();
+      var start = new Date(now);
+      start.setDate(start.getDate() - days);
+      var prevStart = new Date(start);
+      prevStart.setDate(prevStart.getDate() - days);
+
+      // Período atual
+      var r = await window.supabaseClient
+        .from('orders')
+        .select('total, created_at')
+        .gte('created_at', start.toISOString())
+        .in('status', ['pago', 'producao', 'enviado', 'entregue']);
+
+      // Período anterior (para comparação)
+      var rPrev = await window.supabaseClient
+        .from('orders')
+        .select('total')
+        .gte('created_at', prevStart.toISOString())
+        .lt('created_at', start.toISOString())
+        .in('status', ['pago', 'producao', 'enviado', 'entregue']);
+
+      var orders = (r.data || []);
+      var prevOrders = (rPrev.data || []);
+
+      var total = orders.reduce(function(s, o) { return s + (Number(o.total) || 0); }, 0);
+      var prevTotal = prevOrders.reduce(function(s, o) { return s + (Number(o.total) || 0); }, 0);
+      var ticket = orders.length > 0 ? total / orders.length : 0;
+
+      document.getElementById('fat-total').innerText = 'R$ ' + total.toFixed(2).replace('.', ',');
+      document.getElementById('fat-pedidos').innerText = orders.length;
+      document.getElementById('fat-ticket').innerText = 'R$ ' + ticket.toFixed(2).replace('.', ',');
+
+      // Delta
+      var deltaEl = document.getElementById('fat-delta');
+      if (prevTotal === 0 && total === 0) {
+        deltaEl.innerText = '— sem dados no período anterior';
+        deltaEl.className = 'stat-delta delta-zero';
+      } else if (prevTotal === 0) {
+        deltaEl.innerText = '↑ primeiro período com vendas';
+        deltaEl.className = 'stat-delta delta-up';
+      } else {
+        var pct = ((total - prevTotal) / prevTotal * 100).toFixed(1);
+        var up = total >= prevTotal;
+        deltaEl.innerText = (up ? '↑ +' : '↓ ') + pct + '% vs período anterior';
+        deltaEl.className = 'stat-delta ' + (up ? 'delta-up' : 'delta-down');
+        if (!up) deltaEl.style.color = '#f87171';
+      }
+
+    } catch(e) {
+      document.getElementById('fat-total').innerText = '—';
+      console.warn('Faturamento erro:', e.message);
+    }
+  }
+
+  // ── Dados Admin: Top produtos ──────────────────────────────────────────────
+  async function loadTopProducts() {
+    var container = document.getElementById('top-products');
+    try {
+      // Busca order_items agrupados por produto
+      var r = await window.supabaseClient
+        .from('order_items')
+        .select('product_id, product_name, quantity, price, image_url');
+
+      if (r.error) throw r.error;
+
+      var items = r.data || [];
+      // Agrupa por product_id
+      var map = {};
+      items.forEach(function(item) {
+        var id = item.product_id || item.product_name;
+        if (!map[id]) map[id] = { name: item.product_name, image: item.image_url, qty: 0, revenue: 0 };
+        map[id].qty += (item.quantity || 1);
+        map[id].revenue += (Number(item.price) || 0) * (item.quantity || 1);
       });
+
+      var sorted = Object.values(map).sort(function(a, b) { return b.qty - a.qty; }).slice(0, 5);
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<p class="font-mono text-xs text-white/25 text-center py-4">Nenhuma venda registrada ainda.</p>';
+        return;
+      }
+
+      var max = sorted[0].qty;
+      container.innerHTML = sorted.map(function(p, i) {
+        var barPct = Math.round((p.qty / max) * 100);
+        return '<div class="flex items-center gap-3 py-2 border-b border-white/[0.04] last:border-0">'
+          + '<span class="font-mono text-xs text-white/20 w-4 flex-shrink-0">' + (i+1) + '</span>'
+          + (p.image ? '<img src="' + p.image + '" class="top-product-img" onerror="this.style.display=\'none\'">' : '<div class="top-product-img flex items-center justify-center bg-freo-black"><svg class="w-5 h-5 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg></div>')
+          + '<div class="flex-1 min-w-0">'
+          + '<p class="font-body text-sm font-bold text-white truncate">' + (p.name || 'Produto') + '</p>'
+          + '<div class="flex items-center gap-2 mt-1">'
+          + '<div class="flex-1 bg-white/[0.06] h-1"><div class="h-full bg-freo-orange" style="width:' + barPct + '%"></div></div>'
+          + '<span class="font-mono text-[10px] text-freo-orange flex-shrink-0">' + p.qty + ' un.</span>'
+          + '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    } catch(e) {
+      container.innerHTML = '<p class="font-mono text-xs text-white/25 text-center py-4">Tabela order_items não encontrada.</p>';
     }
-    // Fechar clicando fora
-    document.querySelectorAll('[id^="modal-"]').forEach(function(modal) {
-      modal.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
+  }
+
+  // ── Modais ─────────────────────────────────────────────────────────────────
+  function openModal(id) {
+    var m = document.getElementById(id);
+    m.classList.remove('hidden'); m.classList.add('flex');
+  }
+  function closeModal(id) {
+    var m = document.getElementById(id);
+    m.classList.add('hidden'); m.classList.remove('flex');
+    ['profile-err','profile-ok','address-err','address-ok','payment-err','payment-ok'].forEach(function(eid) {
+      var el = document.getElementById(eid); if (el) el.classList.add('hidden');
     });
+  }
+  document.querySelectorAll('[id^="modal-"]').forEach(function(modal) {
+    modal.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
+  });
 
-    // ── Tabs ───────────────────────────────────────────────────────────────
-    function setCardType(type) {
-      currentCardType = type;
-      document.getElementById('tab-credit').classList.toggle('active', type === 'credit');
-      document.getElementById('tab-debit').classList.toggle('active', type === 'debit');
-    }
+  // ── Máscaras ───────────────────────────────────────────────────────────────
+  function maskCard(input)   { var v=input.value.replace(/\D/g,'').substring(0,16); input.value=v.replace(/(.{4})/g,'$1 ').trim(); }
+  function maskExpiry(input) { var v=input.value.replace(/\D/g,'').substring(0,4); if(v.length>2)v=v.substring(0,2)+'/'+v.substring(2); input.value=v; }
+  function maskCEP(input)    { var v=input.value.replace(/\D/g,'').substring(0,8); if(v.length>5)v=v.substring(0,5)+'-'+v.substring(5); input.value=v; }
+  function maskPhone(input)  { var v=input.value.replace(/\D/g,'').substring(0,11); if(v.length>6)v='('+v.substring(0,2)+') '+v.substring(2,7)+'-'+v.substring(7); else if(v.length>2)v='('+v.substring(0,2)+') '+v.substring(2); input.value=v; }
 
-    // ── Máscaras ───────────────────────────────────────────────────────────
-    function maskCard(input) {
-      var v = input.value.replace(/\D/g,'').substring(0,16);
-      input.value = v.replace(/(.{4})/g,'$1 ').trim();
-    }
-    function maskExpiry(input) {
-      var v = input.value.replace(/\D/g,'').substring(0,4);
-      if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2);
-      input.value = v;
-    }
-    function maskCEP(input) {
-      var v = input.value.replace(/\D/g,'').substring(0,8);
-      if (v.length > 5) v = v.substring(0,5) + '-' + v.substring(5);
-      input.value = v;
-    }
-    function maskPhone(input) {
-      var v = input.value.replace(/\D/g,'').substring(0,11);
-      if (v.length > 6) v = '(' + v.substring(0,2) + ') ' + v.substring(2,7) + '-' + v.substring(7);
-      else if (v.length > 2) v = '(' + v.substring(0,2) + ') ' + v.substring(2);
-      input.value = v;
-    }
+  // ── CEP ────────────────────────────────────────────────────────────────────
+  async function buscarCEP() {
+    var cep = document.getElementById('addr-cep').value.replace(/\D/g,'');
+    if (cep.length!==8) { alert('CEP inválido.'); return; }
+    document.getElementById('cep-loading').classList.remove('hidden');
+    try {
+      var r = await fetch('https://viacep.com.br/ws/'+cep+'/json/');
+      var d = await r.json();
+      if (!d.erro) {
+        document.getElementById('addr-street').value = d.logradouro||'';
+        document.getElementById('addr-neighborhood').value = d.bairro||'';
+        document.getElementById('addr-city').value = d.localidade||'';
+        document.getElementById('addr-state').value = d.uf||'';
+        document.getElementById('addr-number').focus();
+      } else { alert('CEP não encontrado. Preencha manualmente.'); }
+    } catch(e) { alert('Erro ao buscar CEP.'); }
+    document.getElementById('cep-loading').classList.add('hidden');
+  }
 
-    // ── Busca CEP ──────────────────────────────────────────────────────────
-    async function buscarCEP() {
-      var cep = document.getElementById('addr-cep').value.replace(/\D/g,'');
-      if (cep.length !== 8) { alert('CEP inválido. Digite 8 dígitos.'); return; }
-      document.getElementById('cep-loading').classList.remove('hidden');
-      try {
-        var r = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
-        var d = await r.json();
-        if (!d.erro) {
-          document.getElementById('addr-street').value = d.logradouro || '';
-          document.getElementById('addr-neighborhood').value = d.bairro || '';
-          document.getElementById('addr-city').value = d.localidade || '';
-          document.getElementById('addr-state').value = d.uf || '';
-          document.getElementById('addr-number').focus();
-        } else {
-          alert('CEP não encontrado. Preencha o endereço manualmente.');
-        }
-      } catch(e) { alert('Erro ao buscar CEP. Preencha manualmente.'); }
-      document.getElementById('cep-loading').classList.add('hidden');
-    }
+  // ── Salvar perfil ──────────────────────────────────────────────────────────
+  async function saveProfile() {
+    if (!currentUserId||!window.supabaseClient) return;
+    var name=document.getElementById('profile-name').value.trim();
+    var phone=document.getElementById('profile-phone').value.trim();
+    var errEl=document.getElementById('profile-err'); var okEl=document.getElementById('profile-ok');
+    var btn=document.getElementById('profile-save-btn');
+    errEl.classList.add('hidden'); okEl.classList.add('hidden');
+    if (!name){errEl.innerText='Informe seu nome.';errEl.classList.remove('hidden');return;}
+    btn.innerText='Salvando...'; btn.disabled=true;
+    try {
+      var res=await window.supabaseClient.from('profiles').upsert({id:currentUserId,full_name:name,phone:phone});
+      if(res.error)throw res.error;
+      var nameId = currentUserIsAdmin ? 'admin-name' : 'user-name';
+      var phId   = currentUserIsAdmin ? 'admin-avatar-placeholder' : 'user-avatar-placeholder';
+      var nameEl = document.getElementById(nameId);
+      if(nameEl) nameEl.innerText='Bem-vindo, '+name+'!';
+      var ph=document.getElementById(phId); if(ph) ph.innerText=name.charAt(0).toUpperCase();
+      okEl.classList.remove('hidden');
+      setTimeout(function(){closeModal('modal-profile');},1500);
+    }catch(e){errEl.innerText='Erro: '+e.message;errEl.classList.remove('hidden');}
+    btn.innerText='Salvar alterações'; btn.disabled=false;
+  }
 
-    // ── Salvar perfil ──────────────────────────────────────────────────────
-    async function saveProfile() {
-      if (!currentUserId || !window.supabaseClient) return;
-      var name = document.getElementById('profile-name').value.trim();
-      var phone = document.getElementById('profile-phone').value.trim();
-      var errEl = document.getElementById('profile-err');
-      var okEl = document.getElementById('profile-ok');
-      var btn = document.getElementById('profile-save-btn');
-      errEl.classList.add('hidden'); okEl.classList.add('hidden');
-      if (!name) { errEl.innerText = 'Informe seu nome.'; errEl.classList.remove('hidden'); return; }
-      btn.innerText = 'Salvando...'; btn.disabled = true;
-      try {
-        var res = await window.supabaseClient.from('profiles').upsert({ id: currentUserId, full_name: name, phone: phone });
-        if (res.error) throw res.error;
-        var nameEl = document.getElementById('user-name');
-        if (nameEl) nameEl.innerText = 'Bem-vindo, ' + name + '!';
-        var ph = document.getElementById('user-avatar-placeholder');
-        if (ph) ph.innerText = name.charAt(0).toUpperCase();
-        okEl.classList.remove('hidden');
-        setTimeout(function() { closeModal('modal-profile'); }, 1500);
-      } catch(e) { errEl.innerText = 'Erro: ' + e.message; errEl.classList.remove('hidden'); }
-      btn.innerText = 'Salvar alterações'; btn.disabled = false;
-    }
+  // ── Salvar endereço ────────────────────────────────────────────────────────
+  async function saveAddress() {
+    if(!currentUserId||!window.supabaseClient)return;
+    var errEl=document.getElementById('address-err');var okEl=document.getElementById('address-ok');var btn=document.getElementById('address-save-btn');
+    errEl.classList.add('hidden');okEl.classList.add('hidden');
+    var street=document.getElementById('addr-street').value.trim();
+    var number=document.getElementById('addr-number').value.trim();
+    var city=document.getElementById('addr-city').value.trim();
+    var state=document.getElementById('addr-state').value.trim().toUpperCase();
+    if(!street||!number||!city||!state){errEl.innerText='Preencha pelo menos: rua, número, cidade e estado.';errEl.classList.remove('hidden');return;}
+    btn.innerText='Salvando...';btn.disabled=true;
+    try{
+      var isMain=document.getElementById('addr-main').checked;
+      if(isMain)await window.supabaseClient.from('addresses').update({is_main:false}).eq('user_id',currentUserId);
+      var res=await window.supabaseClient.from('addresses').insert({user_id:currentUserId,zip_code:document.getElementById('addr-cep').value.trim(),street:street,number:number,complement:document.getElementById('addr-complement').value.trim(),neighborhood:document.getElementById('addr-neighborhood').value.trim(),city:city,state:state,is_main:isMain});
+      if(res.error)throw res.error;
+      okEl.classList.remove('hidden');
+      ['addr-cep','addr-street','addr-number','addr-complement','addr-neighborhood','addr-city','addr-state'].forEach(function(id){document.getElementById(id).value='';});
+      document.getElementById('addr-main').checked=false;
+      setTimeout(function(){closeModal('modal-address');reloadAddresses();},1200);
+    }catch(e){errEl.innerText='Erro: '+e.message;errEl.classList.remove('hidden');}
+    btn.innerText='Salvar endereço';btn.disabled=false;
+  }
 
-    // ── Salvar endereço ────────────────────────────────────────────────────
-    async function saveAddress() {
-      if (!currentUserId || !window.supabaseClient) return;
-      var errEl = document.getElementById('address-err');
-      var okEl = document.getElementById('address-ok');
-      var btn = document.getElementById('address-save-btn');
-      errEl.classList.add('hidden'); okEl.classList.add('hidden');
-      var street = document.getElementById('addr-street').value.trim();
-      var number = document.getElementById('addr-number').value.trim();
-      var city = document.getElementById('addr-city').value.trim();
-      var state = document.getElementById('addr-state').value.trim().toUpperCase();
-      if (!street || !number || !city || !state) {
-        errEl.innerText = 'Preencha pelo menos: rua, número, cidade e estado.';
-        errEl.classList.remove('hidden'); return;
-      }
-      btn.innerText = 'Salvando...'; btn.disabled = true;
-      try {
-        var isMain = document.getElementById('addr-main').checked;
-        if (isMain) await window.supabaseClient.from('addresses').update({ is_main: false }).eq('user_id', currentUserId);
-        var res = await window.supabaseClient.from('addresses').insert({
-          user_id: currentUserId,
-          zip_code: document.getElementById('addr-cep').value.trim(),
-          street: street, number: number,
-          complement: document.getElementById('addr-complement').value.trim(),
-          neighborhood: document.getElementById('addr-neighborhood').value.trim(),
-          city: city, state: state, is_main: isMain
-        });
-        if (res.error) throw res.error;
-        okEl.classList.remove('hidden');
-        // Limpa form
-        ['addr-cep','addr-street','addr-number','addr-complement','addr-neighborhood','addr-city','addr-state'].forEach(function(id){ document.getElementById(id).value=''; });
-        document.getElementById('addr-main').checked = false;
-        setTimeout(function() { closeModal('modal-address'); reloadAddresses(); }, 1200);
-      } catch(e) { errEl.innerText = 'Erro: ' + e.message; errEl.classList.remove('hidden'); }
-      btn.innerText = 'Salvar endereço'; btn.disabled = false;
-    }
+  // ── Salvar cartão ──────────────────────────────────────────────────────────
+  function setCardType(type){currentCardType=type;document.getElementById('tab-credit').classList.toggle('active',type==='credit');document.getElementById('tab-debit').classList.toggle('active',type==='debit');}
+  async function saveCard(){
+    if(!currentUserId||!window.supabaseClient)return;
+    var errEl=document.getElementById('payment-err');var okEl=document.getElementById('payment-ok');var btn=document.getElementById('card-save-btn');
+    errEl.classList.add('hidden');okEl.classList.add('hidden');
+    var cardName=document.getElementById('card-name').value.trim();
+    var cardNumber=document.getElementById('card-number').value.replace(/\s/g,'');
+    var expiry=document.getElementById('card-expiry').value.trim();
+    var cvv=document.getElementById('card-cvv').value.trim();
+    var brand=document.getElementById('card-brand').value;
+    if(!cardName||cardNumber.length<13||expiry.length<5||!cvv||!brand){errEl.innerText='Preencha todos os campos corretamente.';errEl.classList.remove('hidden');return;}
+    btn.innerText='Salvando...';btn.disabled=true;
+    var parts=expiry.split('/');
+    try{
+      var res=await window.supabaseClient.from('payment_methods').insert({user_id:currentUserId,type:currentCardType,brand:brand,last4:cardNumber.slice(-4),card_holder:cardName,exp_month:parts[0],exp_year:'20'+(parts[1]||'')});
+      if(res.error)throw res.error;
+      okEl.classList.remove('hidden');
+      ['card-name','card-number','card-expiry','card-cvv'].forEach(function(id){document.getElementById(id).value='';});
+      document.getElementById('card-brand').value='';
+      setTimeout(function(){closeModal('modal-payment');reloadPayments();},1200);
+    }catch(e){errEl.innerText='Erro: '+e.message;errEl.classList.remove('hidden');}
+    btn.innerText='Salvar cartão';btn.disabled=false;
+  }
 
-    // ── Salvar cartão ──────────────────────────────────────────────────────
-    async function saveCard() {
-      if (!currentUserId || !window.supabaseClient) return;
-      var errEl = document.getElementById('payment-err');
-      var okEl = document.getElementById('payment-ok');
-      var btn = document.getElementById('card-save-btn');
-      errEl.classList.add('hidden'); okEl.classList.add('hidden');
-      var cardName = document.getElementById('card-name').value.trim();
-      var cardNumber = document.getElementById('card-number').value.replace(/\s/g,'');
-      var expiry = document.getElementById('card-expiry').value.trim();
-      var cvv = document.getElementById('card-cvv').value.trim();
-      var brand = document.getElementById('card-brand').value;
-      if (!cardName || cardNumber.length < 13 || expiry.length < 5 || !cvv || !brand) {
-        errEl.innerText = 'Preencha todos os campos corretamente.';
-        errEl.classList.remove('hidden'); return;
-      }
-      btn.innerText = 'Salvando...'; btn.disabled = true;
-      var parts = expiry.split('/');
-      try {
-        var res = await window.supabaseClient.from('payment_methods').insert({
-          user_id: currentUserId, type: currentCardType, brand: brand,
-          last4: cardNumber.slice(-4), card_holder: cardName,
-          exp_month: parts[0], exp_year: '20' + (parts[1] || '')
-        });
-        if (res.error) throw res.error;
-        okEl.classList.remove('hidden');
-        ['card-name','card-number','card-expiry','card-cvv'].forEach(function(id){ document.getElementById(id).value=''; });
-        document.getElementById('card-brand').value = '';
-        setTimeout(function() { closeModal('modal-payment'); reloadPayments(); }, 1200);
-      } catch(e) { errEl.innerText = 'Erro: ' + e.message; errEl.classList.remove('hidden'); }
-      btn.innerText = 'Salvar cartão'; btn.disabled = false;
-    }
+  // ── Reload funções ─────────────────────────────────────────────────────────
+  async function reloadAddresses(){if(!currentUserId||!window.supabaseClient)return;var r=await window.supabaseClient.from('addresses').select('*').eq('user_id',currentUserId);renderAddressesUI(r.data||[]);}
+  async function reloadPayments(){if(!currentUserId||!window.supabaseClient)return;var r=await window.supabaseClient.from('payment_methods').select('*').eq('user_id',currentUserId);renderPaymentsUI(r.data||[]);}
 
-    // ── Recarregar dados ───────────────────────────────────────────────────
-    async function reloadAddresses() {
-      if (!currentUserId || !window.supabaseClient) return;
-      var r = await window.supabaseClient.from('addresses').select('*').eq('user_id', currentUserId);
-      renderAddressesUI(r.data || []);
-    }
-    async function reloadPayments() {
-      if (!currentUserId || !window.supabaseClient) return;
-      var r = await window.supabaseClient.from('payment_methods').select('*').eq('user_id', currentUserId);
-      renderPaymentsUI(r.data || []);
-    }
+  function renderAddressesUI(addresses){
+    var container=document.getElementById('addresses');var empty=document.getElementById('addresses-empty');
+    if(!container||!empty)return;
+    if(addresses&&addresses.length>0){
+      empty.classList.add('hidden');
+      container.innerHTML=addresses.map(function(addr){
+        return '<div class="p-3 border border-white/5 bg-freo-black relative">'
+          +(addr.is_main?'<span class="absolute top-0 right-0 bg-freo-orange text-freo-black text-[9px] font-bold px-1.5 py-0.5 uppercase font-mono">Principal</span>':'')
+          +'<p class="font-body text-sm font-bold mb-0.5 pr-16">'+(addr.street||'')+', '+(addr.number||'')+(addr.complement?' – '+addr.complement:'')+'</p>'
+          +'<p class="font-mono text-xs text-freo-light/40">'+(addr.neighborhood?addr.neighborhood+' · ':'')+( addr.city||'')+' – '+(addr.state||'')+'</p>'
+          +'<p class="font-mono text-xs text-freo-light/25 mt-0.5">CEP '+(addr.zip_code||'')+'</p>'
+          +'<div class="flex gap-3 mt-2">'
+          +'<button onclick="deleteAddress(\''+addr.id+'\')" class="text-[11px] font-mono text-red-500/50 hover:text-red-400 transition-colors uppercase">Remover</button>'
+          +(!addr.is_main?'<button onclick="setMainAddress(\''+addr.id+'\')" class="text-[11px] font-mono text-freo-orange/50 hover:text-freo-orange transition-colors uppercase">Tornar principal</button>':'')
+          +'</div></div>';
+      }).join('');
+    }else{empty.classList.remove('hidden');container.innerHTML='';}
+  }
 
-    // ── Renderizar endereços ───────────────────────────────────────────────
-    function renderAddressesUI(addresses) {
-      var container = document.getElementById('addresses');
-      var empty = document.getElementById('addresses-empty');
-      if (!container || !empty) return;
-      if (addresses && addresses.length > 0) {
-        empty.classList.add('hidden');
-        container.innerHTML = addresses.map(function(addr) {
-          return '<div class="p-3 border border-white/5 bg-freo-black relative">'
-            + (addr.is_main ? '<span class="absolute top-0 right-0 bg-freo-orange text-freo-black text-[9px] font-bold px-1.5 py-0.5 uppercase font-mono">Principal</span>' : '')
-            + '<p class="font-body text-sm font-bold mb-0.5 pr-16">' + (addr.street||'') + ', ' + (addr.number||'') + (addr.complement ? ' – ' + addr.complement : '') + '</p>'
-            + '<p class="font-mono text-xs text-freo-light/40">' + (addr.neighborhood ? addr.neighborhood + ' · ' : '') + (addr.city||'') + ' – ' + (addr.state||'') + '</p>'
-            + '<p class="font-mono text-xs text-freo-light/25 mt-0.5">CEP ' + (addr.zip_code||'') + '</p>'
-            + '<div class="flex gap-3 mt-2">'
-            + '<button onclick="deleteAddress(\'' + addr.id + '\')" class="text-[11px] font-mono text-red-500/50 hover:text-red-400 transition-colors uppercase">Remover</button>'
-            + (!addr.is_main ? '<button onclick="setMainAddress(\'' + addr.id + '\')" class="text-[11px] font-mono text-freo-orange/50 hover:text-freo-orange transition-colors uppercase">Tornar principal</button>' : '')
-            + '</div></div>';
-        }).join('');
-      } else {
-        empty.classList.remove('hidden');
-        container.innerHTML = '';
-      }
-    }
+  function renderPaymentsUI(methods){
+    var container=document.getElementById('payment-methods');var empty=document.getElementById('payments-empty');
+    if(!container||!empty)return;
+    if(methods&&methods.length>0){
+      empty.classList.add('hidden');
+      container.innerHTML=methods.map(function(card){
+        return '<div class="flex items-center gap-3 p-3 border border-white/5 bg-freo-black group">'
+          +'<div class="w-10 h-6 bg-white/10 flex items-center justify-center flex-shrink-0"><span class="font-mono text-[9px] font-bold uppercase text-freo-light/50">'+((card.brand||'card').substring(0,4).toUpperCase())+'</span></div>'
+          +'<div class="flex-1 min-w-0"><p class="font-mono text-sm">•••• '+(card.last4||'****')+'</p><p class="font-mono text-[10px] text-freo-light/40">'+(card.type==='credit'?'Crédito':'Débito')+' · '+(card.brand||'')+' · Exp '+(card.exp_month||'**')+'/'+((card.exp_year||'****').slice(-2))+'</p></div>'
+          +'<button onclick="deleteCard(\''+card.id+'\')" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-500/50 hover:text-red-400 flex-shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>'
+          +'</div>';
+      }).join('');
+    }else{empty.classList.remove('hidden');container.innerHTML='';}
+  }
 
-    // ── Renderizar pagamentos ──────────────────────────────────────────────
-    function renderPaymentsUI(methods) {
-      var container = document.getElementById('payment-methods');
-      var empty = document.getElementById('payments-empty');
-      if (!container || !empty) return;
-      if (methods && methods.length > 0) {
-        empty.classList.add('hidden');
-        container.innerHTML = methods.map(function(card) {
-          return '<div class="flex items-center gap-3 p-3 border border-white/5 bg-freo-black group">'
-            + '<div class="w-10 h-6 bg-white/10 flex items-center justify-center flex-shrink-0">'
-            + '<span class="font-mono text-[9px] font-bold uppercase text-freo-light/50">' + ((card.brand||'card').substring(0,4).toUpperCase()) + '</span>'
-            + '</div>'
-            + '<div class="flex-1 min-w-0">'
-            + '<p class="font-mono text-sm">•••• ' + (card.last4||'****') + '</p>'
-            + '<p class="font-mono text-[10px] text-freo-light/40">' + (card.type==='credit'?'Crédito':'Débito') + ' · ' + (card.brand||'') + ' · Exp ' + (card.exp_month||'**') + '/' + ((card.exp_year||'****').slice(-2)) + '</p>'
-            + '</div>'
-            + '<button onclick="deleteCard(\'' + card.id + '\')" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-500/50 hover:text-red-400 flex-shrink-0">'
-            + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
-            + '</button>'
-            + '</div>';
-        }).join('');
-      } else {
-        empty.classList.remove('hidden');
-        container.innerHTML = '';
-      }
-    }
+  async function deleteAddress(id){if(!window.supabaseClient)return;await window.supabaseClient.from('addresses').delete().eq('id',id);reloadAddresses();}
+  async function setMainAddress(id){if(!window.supabaseClient||!currentUserId)return;await window.supabaseClient.from('addresses').update({is_main:false}).eq('user_id',currentUserId);await window.supabaseClient.from('addresses').update({is_main:true}).eq('id',id);reloadAddresses();}
+  async function deleteCard(id){if(!window.supabaseClient)return;await window.supabaseClient.from('payment_methods').delete().eq('id',id);reloadPayments();}
 
-    async function deleteAddress(id) {
-      if (!window.supabaseClient) return;
-      await window.supabaseClient.from('addresses').delete().eq('id', id);
-      reloadAddresses();
-    }
-    async function setMainAddress(id) {
-      if (!window.supabaseClient || !currentUserId) return;
-      await window.supabaseClient.from('addresses').update({ is_main: false }).eq('user_id', currentUserId);
-      await window.supabaseClient.from('addresses').update({ is_main: true }).eq('id', id);
-      reloadAddresses();
-    }
-    async function deleteCard(id) {
-      if (!window.supabaseClient) return;
-      await window.supabaseClient.from('payment_methods').delete().eq('id', id);
-      reloadPayments();
-    }
-
-    // ── Escuta auth-listener ───────────────────────────────────────────────
-    window.addEventListener('auth-data-loaded', function(e) {
-      var d = e.detail;
-      currentUserId = d.user.id;
-      if (d.profile && d.profile.phone) {
-        document.getElementById('profile-phone').value = d.profile.phone;
-      }
-      renderAddressesUI(d.addresses || []);
-      renderPaymentsUI(d.paymentMethods || []);
-    });
-
-    // Logout
-    document.getElementById('logout-btn').addEventListener('click', async function() {
-      if (window.supabaseClient) {
-        await window.supabaseClient.auth.signOut();
-        window.location.href = '/login.html';
-      }
-    });
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', async function(){
+    if(window.supabaseClient){await window.supabaseClient.auth.signOut();window.location.href='/login.html';}
+  });
   </script>
 </body>
 </html>
