@@ -51,7 +51,6 @@
     ::-webkit-scrollbar-track { background: #0A0A0A; }
     ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 3px; }
 
-    /* ── Tabs ── */
     .tab-btn {
       position: relative;
       padding: 14px 24px;
@@ -91,7 +90,6 @@
       color: rgba(245,245,245,0.3);
     }
 
-    /* ── Status badges ── */
     .badge-pendente  { color: #eab308; background: rgba(234,179,8,0.1);  border: 1px solid rgba(234,179,8,0.25); }
     .badge-pago      { color: #3b82f6; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25); }
     .badge-enviado   { color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); }
@@ -99,7 +97,6 @@
     .badge-cancelado { color: #ef4444; background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.25); }
     .badge-default   { color: rgba(245,245,245,0.5); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
 
-    /* ── Order card ── */
     .order-card {
       background: rgba(18,18,18,0.7);
       border: 1px solid rgba(255,255,255,0.07);
@@ -108,24 +105,11 @@
       cursor: pointer;
       overflow: hidden;
     }
-    .order-card:hover {
-      border-color: rgba(212,175,55,0.4);
-      transform: translateY(-1px);
-    }
-    .order-card.is-pendente {
-      border-color: rgba(234,179,8,0.2);
-    }
-    .order-card.is-pendente:hover {
-      border-color: rgba(234,179,8,0.5);
-    }
+    .order-card:hover { border-color: rgba(212,175,55,0.4); transform: translateY(-1px); }
+    .order-card.is-pendente { border-color: rgba(234,179,8,0.2); }
+    .order-card.is-pendente:hover { border-color: rgba(234,179,8,0.5); }
 
-    /* Barra lateral colorida por status */
-    .order-card-bar {
-      width: 3px;
-      flex-shrink: 0;
-      border-radius: 3px 0 0 3px;
-      align-self: stretch;
-    }
+    .order-card-bar { width: 3px; flex-shrink: 0; border-radius: 3px 0 0 3px; align-self: stretch; }
     .bar-pendente  { background: #eab308; }
     .bar-pago      { background: #3b82f6; }
     .bar-enviado   { background: #a855f7; }
@@ -133,7 +117,6 @@
     .bar-cancelado { background: #ef4444; }
     .bar-default   { background: rgba(255,255,255,0.1); }
 
-    /* ── Pix alert no card pendente ── */
     .pix-alert {
       background: rgba(234,179,8,0.06);
       border-top: 1px solid rgba(234,179,8,0.15);
@@ -161,7 +144,6 @@
     }
     .pix-alert-btn:hover { background: #fbbf24; }
 
-    /* ── Skeleton ── */
     @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
     .skeleton {
       background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
@@ -170,15 +152,9 @@
       border-radius: 8px;
     }
 
-    /* ── Modal ── */
-    #order-modal {
-      transition: opacity 0.25s;
-    }
-    #order-modal-card {
-      transition: transform 0.25s, opacity 0.25s;
-    }
+    #order-modal { transition: opacity 0.25s; }
+    #order-modal-card { transition: transform 0.25s, opacity 0.25s; }
 
-    /* ── PIX Modal ── */
     @keyframes pixIn {
       from { opacity: 0; transform: scale(0.9) translateY(20px); }
       to   { opacity: 1; transform: scale(1) translateY(0); }
@@ -191,7 +167,6 @@
     }
     .pix-qr-pulse { animation: pixPulse 2.5s ease-in-out infinite; border-radius: 12px; display: inline-block; }
 
-    /* ── Timeline status ── */
     .timeline-step { display: flex; align-items: flex-start; gap: 12px; position: relative; }
     .timeline-step:not(:last-child)::after {
       content: '';
@@ -218,7 +193,6 @@
 </head>
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col">
 
-  <!-- HEADER -->
   <header class="glass sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-white/10">
     <div class="flex items-center gap-4 cursor-pointer" onclick="window.location.href='/dashboard.html'">
       <svg class="w-5 h-5 text-freo-light/50 hover:text-freo-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,10 +208,8 @@
     <span id="user-greeting" class="font-mono text-xs text-freo-light/40 hidden sm:inline"></span>
   </header>
 
-  <!-- MAIN -->
   <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
 
-    <!-- Tabs -->
     <div class="flex border-b border-white/10 overflow-x-auto mb-8" style="scrollbar-width:none">
       <button class="tab-btn active" data-filter="todos">
         Todos <span class="tab-count" id="count-todos">0</span>
@@ -256,14 +228,12 @@
       </button>
     </div>
 
-    <!-- Skeleton loading -->
     <div id="orders-loading" class="space-y-4">
       <div class="skeleton h-28 w-full"></div>
       <div class="skeleton h-28 w-full"></div>
       <div class="skeleton h-28 w-full"></div>
     </div>
 
-    <!-- Empty state -->
     <div id="orders-empty" class="hidden glass rounded-2xl p-14 text-center">
       <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
         <svg class="w-9 h-9 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -277,16 +247,14 @@
       </a>
     </div>
 
-    <!-- Orders list -->
     <div id="orders-container" class="hidden space-y-4"></div>
 
   </main>
 
-  <!-- ═══ MODAL DETALHES ═══ -->
+  <!-- MODAL DETALHES -->
   <div id="order-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm hidden opacity-0">
     <div id="order-modal-card" class="glass w-full sm:max-w-2xl max-h-[92vh] rounded-t-3xl sm:rounded-2xl flex flex-col overflow-hidden opacity-0 translate-y-4">
 
-      <!-- Modal header -->
       <div class="p-5 border-b border-white/10 flex justify-between items-start flex-shrink-0">
         <div>
           <h3 class="text-xl font-display font-bold text-white uppercase tracking-widest" id="modal-order-id">Pedido #---</h3>
@@ -300,13 +268,11 @@
         </div>
       </div>
 
-      <!-- Modal body -->
       <div class="flex-1 overflow-y-auto p-5 space-y-6">
 
-        <!-- Aviso pix pendente no modal -->
         <div id="modal-pix-alert" class="hidden bg-yellow-500/8 border border-yellow-500/20 rounded-xl p-4 flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-yellow-500/15 flex items-center justify-center flex-shrink-0">
+            <div class="w-9 h-9 rounded-full bg-yellow-500/15 flex items-center justify-content:center flex-shrink-0">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2L6.5 7.5H9V11H6L2 12L6 13H9V16.5H6.5L12 22L17.5 16.5H15V13H18L22 12L18 11H15V7.5H17.5L12 2Z" fill="#32BCAD"/>
               </svg>
@@ -316,18 +282,16 @@
               <p class="font-mono text-[11px] text-white/40 mt-0.5">Clique para ver o QR Code novamente</p>
             </div>
           </div>
-          <button id="modal-pix-btn" onclick="" class="flex-shrink-0 bg-yellow-400 text-black font-display font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-lg hover:bg-yellow-300 transition-colors">
+          <button id="modal-pix-btn" class="flex-shrink-0 bg-yellow-400 text-black font-display font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-lg hover:bg-yellow-300 transition-colors">
             Ver QR Code
           </button>
         </div>
 
-        <!-- Itens -->
         <div>
           <p class="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-3">Itens do Pedido</p>
           <div id="modal-items" class="space-y-3"></div>
         </div>
 
-        <!-- Resumo financeiro -->
         <div class="bg-white/3 border border-white/8 rounded-xl p-5">
           <p class="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-4">Resumo</p>
           <div class="space-y-2 font-mono text-sm">
@@ -346,7 +310,6 @@
           </div>
         </div>
 
-        <!-- Timeline de status -->
         <div>
           <p class="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-4">Histórico</p>
           <div id="modal-timeline" class="space-y-4 pl-1"></div>
@@ -356,7 +319,7 @@
     </div>
   </div>
 
-  <!-- ═══ PIX MODAL ═══ -->
+  <!-- PIX MODAL -->
   <div id="pix-modal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm hidden">
     <div id="pix-modal-inner" style="background:#111;border:1px solid rgba(212,175,55,0.25);border-radius:20px;padding:36px 28px 28px;max-width:400px;width:100%;text-align:center;font-family:'Space Grotesk',sans-serif;position:relative;">
       <button onclick="closePixModal()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.06);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(245,245,245,0.4);font-size:16px;">✕</button>
@@ -403,16 +366,25 @@
     var currentFilter = 'todos';
     var currentUser = null;
 
+    // ── CORREÇÃO PRINCIPAL ─────────────────────────────────────────────────────
+    // order.id é bigint (number) no Supabase — NUNCA chamar .substring() diretamente.
+    // Sempre usar String(id) antes de qualquer operação de string.
+    function formatOrderId(id) {
+      return String(id).slice(-6).toUpperCase();
+    }
+
     var formatCurrency = function(v) {
       return new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(parseFloat(v)||0);
     };
 
     var formatDate = function(d) {
       if (!d) return '—';
-      return new Intl.DateTimeFormat('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(d));
+      return new Intl.DateTimeFormat('pt-BR', {
+        day:'2-digit', month:'2-digit', year:'numeric',
+        hour:'2-digit', minute:'2-digit'
+      }).format(new Date(d));
     };
 
-    // ── Status config ──────────────────────────────────────────────────────────
     var STATUS_MAP = {
       'pendente':  { label:'A Pagar',   badge:'badge-pendente',  bar:'bar-pendente',  emoji:'⏳', timeline:'Aguardando pagamento' },
       'pago':      { label:'Pago',      badge:'badge-pago',      bar:'bar-pago',      emoji:'✅', timeline:'Pagamento confirmado' },
@@ -440,7 +412,6 @@
       catch(e) { return []; }
     }
 
-    // ── Contagem por tab ───────────────────────────────────────────────────────
     function updateCounts() {
       var counts = { todos: allOrders.length, pendente: 0, pago: 0, enviado: 0, entregue: 0 };
       allOrders.forEach(function(o) {
@@ -453,7 +424,6 @@
       });
     }
 
-    // ── Render ─────────────────────────────────────────────────────────────────
     function renderOrders() {
       var filtered = allOrders.filter(function(o) {
         if (currentFilter === 'todos') return true;
@@ -486,33 +456,41 @@
         var isPendente = (order.status||'').toLowerCase() === 'pendente';
         var hasPixData = order.pix_qr_code && order.pix_qr_code_base64;
 
-        // Thumbnails (até 3)
+        // CORREÇÃO: converte id para string uma única vez
+        var orderId = String(order.id);
+        var orderIdDisplay = formatOrderId(order.id);
+
         var thumbs = items.slice(0,3).map(function(item) {
           return item.image_url
             ? '<img src="' + item.image_url + '" class="w-10 h-10 rounded object-cover border border-white/10" onerror="this.style.display=\'none\'">'
             : '<div class="w-10 h-10 rounded bg-white/5 border border-white/10 flex items-center justify-center text-white/20"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
         }).join('');
 
-        var extraItems = items.length > 3 ? '<span class="w-10 h-10 rounded bg-white/5 border border-white/10 flex items-center justify-center font-mono text-xs text-white/40">+' + (items.length-3) + '</span>' : '';
+        var extraItems = items.length > 3
+          ? '<span class="w-10 h-10 rounded bg-white/5 border border-white/10 flex items-center justify-center font-mono text-xs text-white/40">+' + (items.length-3) + '</span>'
+          : '';
 
+        // CORREÇÃO: usa data-order-id (attribute) em vez de interpolação inline no onclick
+        // para evitar qualquer coerção de tipo e problemas com aspas
         var pixBanner = (isPendente && hasPixData)
           ? '<div class="pix-alert">'
             + '<div style="display:flex;align-items:center;gap:10px;">'
             + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L6.5 7.5H9V11H6L2 12L6 13H9V16.5H6.5L12 22L17.5 16.5H15V13H18L22 12L18 11H15V7.5H17.5L12 2Z" fill="#32BCAD"/></svg>'
             + '<span style="font-family:ui-monospace,monospace;font-size:11px;color:rgba(234,179,8,0.8);">Pix gerado — aguardando pagamento</span>'
             + '</div>'
-            + '<button class="pix-alert-btn" onclick="event.stopPropagation(); showPixModal(\'' + order.id + '\')" >Ver QR Code</button>'
+            + '<button class="pix-alert-btn" data-order-id="' + orderId + '" onclick="event.stopPropagation(); showPixModal(this.dataset.orderId)">Ver QR Code</button>'
             + '</div>'
           : '';
 
-        return '<div class="order-card ' + (isPendente ? 'is-pendente' : '') + '" onclick="openModal(\'' + order.id + '\')">'
+        // CORREÇÃO: data-order-id no card — openModal recebe string via dataset
+        return '<div class="order-card ' + (isPendente ? 'is-pendente' : '') + '" data-order-id="' + orderId + '" onclick="openModal(this.dataset.orderId)">'
           + '<div style="display:flex;">'
           + '<div class="order-card-bar ' + st.bar + '"></div>'
           + '<div style="flex:1;padding:18px 20px;">'
             + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">'
               + '<div>'
                 + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
-                  + '<p class="font-display font-bold text-white uppercase tracking-widest" style="font-size:15px;">Pedido #' + String(order.id).slice(-6).toUpperCase() + '</p>'
+                  + '<p class="font-display font-bold text-white uppercase tracking-widest" style="font-size:15px;">Pedido #' + orderIdDisplay + '</p>'
                   + '<span class="' + st.badge + ' px-2 py-0.5 rounded-full font-mono font-bold uppercase tracking-widest" style="font-size:10px;">' + st.label + '</span>'
                 + '</div>'
                 + '<p class="font-mono text-white/35" style="font-size:11px;">' + formatDate(order.created_at) + '</p>'
@@ -532,8 +510,8 @@
       }).join('');
     }
 
-    // ── Modal detalhes ─────────────────────────────────────────────────────────
     function openModal(orderId) {
+      // CORREÇÃO: comparação via String() — seguro independente do tipo do id
       var order = allOrders.find(function(o) { return String(o.id) === String(orderId); });
       if (!order) return;
 
@@ -542,30 +520,30 @@
       var isPendente = (order.status||'').toLowerCase() === 'pendente';
       var hasPixData = order.pix_qr_code && order.pix_qr_code_base64;
 
-      document.getElementById('modal-order-id').innerText = 'Pedido #' + String(order.id).slice(-6).toUpperCase();
+      // CORREÇÃO: formatOrderId() sempre converte para string antes de .slice()
+      document.getElementById('modal-order-id').innerText = 'Pedido #' + formatOrderId(order.id);
       document.getElementById('modal-order-date').innerText = formatDate(order.created_at);
 
       var badge = document.getElementById('modal-status-badge');
       badge.className = st.badge + ' px-3 py-1 rounded-full text-[10px] font-bold font-mono uppercase tracking-widest';
       badge.innerText = st.label;
 
-      // Total e frete
       var freteVal = order.frete_valor ? parseFloat(order.frete_valor) : 0;
       var subtotalVal = parseFloat(order.total||0) - freteVal;
       document.getElementById('modal-subtotal').innerText = formatCurrency(subtotalVal > 0 ? subtotalVal : order.total);
       document.getElementById('modal-frete').innerText = freteVal > 0 ? formatCurrency(freteVal) : 'Grátis';
       document.getElementById('modal-total').innerText = formatCurrency(order.total);
 
-      // Alerta pix pendente no modal
       var pixAlert = document.getElementById('modal-pix-alert');
       if (isPendente && hasPixData) {
         pixAlert.classList.remove('hidden');
-        document.getElementById('modal-pix-btn').onclick = function() { showPixModal(order.id); };
+        // CORREÇÃO: captura o id em closure (já é string via String())
+        var safeId = String(order.id);
+        document.getElementById('modal-pix-btn').onclick = function() { showPixModal(safeId); };
       } else {
         pixAlert.classList.add('hidden');
       }
 
-      // Itens
       var itemsHtml = items.length > 0
         ? items.map(function(item) {
             var subtotal = (parseFloat(item.price)||0) * (item.quantity||1);
@@ -583,7 +561,6 @@
         : '<p class="font-mono text-white/30 text-sm">Detalhes não disponíveis.</p>';
       document.getElementById('modal-items').innerHTML = itemsHtml;
 
-      // Timeline
       var allStatuses = ['pendente','pago','enviado','entregue'];
       var currentIdx = allStatuses.indexOf((order.status||'').toLowerCase());
       if (currentIdx === -1 && (order.status||'').toLowerCase() === 'aprovado') currentIdx = 1;
@@ -601,7 +578,6 @@
       }).join('');
       document.getElementById('modal-timeline').innerHTML = timelineHtml;
 
-      // Mostra modal
       var modal = document.getElementById('order-modal');
       var card = document.getElementById('order-modal-card');
       modal.classList.remove('hidden');
@@ -623,8 +599,8 @@
       if (e.target === this) closeModal();
     });
 
-    // ── Pix Modal ──────────────────────────────────────────────────────────────
     function showPixModal(orderId) {
+      // CORREÇÃO: comparação robusta
       var order = allOrders.find(function(o) { return String(o.id) === String(orderId); });
       if (!order || !order.pix_qr_code_base64) return;
 
@@ -661,7 +637,6 @@
       });
     }
 
-    // ── Tabs ───────────────────────────────────────────────────────────────────
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -671,7 +646,6 @@
       });
     });
 
-    // ── Fetch ──────────────────────────────────────────────────────────────────
     async function fetchOrders(userId) {
       try {
         var result = await window.supabaseClient
@@ -685,14 +659,20 @@
       } catch(err) {
         console.error('Erro ao buscar pedidos:', err);
         allOrders = [];
-      } finally {
         document.getElementById('orders-loading').classList.add('hidden');
-        updateCounts();
-        renderOrders();
+        var container = document.getElementById('orders-container');
+        container.classList.remove('hidden');
+        container.innerHTML = '<div class="glass rounded-2xl p-10 text-center">'
+          + '<p class="font-mono text-red-400 text-sm mb-4">Erro ao carregar pedidos. Tente novamente.</p>'
+          + '<button onclick="fetchOrders(currentUser.id)" class="px-6 py-2 bg-freo-orange text-freo-black font-display font-bold uppercase text-xs rounded hover:bg-white transition-colors">Tentar novamente</button>'
+          + '</div>';
+        return;
       }
+      document.getElementById('orders-loading').classList.add('hidden');
+      updateCounts();
+      renderOrders();
     }
 
-    // ── Auth ───────────────────────────────────────────────────────────────────
     window.addEventListener('auth-not-logged-in', function() { window.location.href = '/login.html'; });
 
     window.addEventListener('auth-data-loaded', async function(e) {
@@ -701,7 +681,9 @@
       var profile = detail.profile;
       if (!user) { window.location.href = '/login.html'; return; }
       currentUser = user;
-      var name = (profile && (profile.name || profile.full_name)) || (user.user_metadata && user.user_metadata.name) || user.email.split('@')[0];
+      var name = (profile && (profile.name || profile.full_name))
+        || (user.user_metadata && user.user_metadata.name)
+        || user.email.split('@')[0];
       document.getElementById('user-greeting').innerText = 'Olá, ' + name;
       await fetchOrders(user.id);
     });
