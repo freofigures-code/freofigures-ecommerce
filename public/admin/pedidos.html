@@ -302,32 +302,44 @@
       `;
 
       try {
-        // ── CORREÇÃO: join com profiles para trazer nome, email e telefone ──
-        const { data, error } = await window.supabaseClient
+        // 1. Busca todos os pedidos
+        const { data: orders, error: ordersError } = await window.supabaseClient
           .from('orders')
-          .select('*, profiles(name, email, phone)')
+          .select('*')
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (ordersError) throw ordersError;
 
-        allOrders = data || [];
+        // 2. Busca profiles dos user_ids únicos presentes nos pedidos
+        const uniqueUserIds = [...new Set((orders || []).map(o => o.user_id).filter(Boolean))];
+        let profilesMap = {};
+
+        if (uniqueUserIds.length > 0) {
+          const { data: profiles } = await window.supabaseClient
+            .from('profiles')
+            .select('id, name, email, phone')
+            .in('id', uniqueUserIds);
+
+          (profiles || []).forEach(p => { profilesMap[p.id] = p; });
+        }
+
+        // 3. Anexa o profile a cada pedido
+        allOrders = (orders || []).map(o => ({
+          ...o,
+          profiles: profilesMap[o.user_id] || null
+        }));
+
         renderOrders();
         updateStats();
       } catch (err) {
         console.error("Erro ao buscar pedidos:", err);
-        if (err.code === '42P01') {
-          allOrders = [];
-          renderOrders();
-          updateStats();
-        } else {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="7" class="p-8 text-center text-red-400 font-mono text-sm">
-                Erro ao carregar pedidos. Tente novamente.
-              </td>
-            </tr>
-          `;
-        }
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="p-8 text-center text-red-400 font-mono text-sm">
+              Erro ao carregar pedidos. Tente novamente.
+            </td>
+          </tr>
+        `;
       }
     }
 
