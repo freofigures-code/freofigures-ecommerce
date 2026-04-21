@@ -50,11 +50,11 @@
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
     
-    .status-pendente  { color: #F59E0B; border-color: rgba(245,158,11,0.3);  background: rgba(245,158,11,0.1); }
-    .status-processando { color: #3B82F6; border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.1); }
-    .status-enviado   { color: #8B5CF6; border-color: rgba(139,92,246,0.3);  background: rgba(139,92,246,0.1); }
-    .status-entregue  { color: #10B981; border-color: rgba(16,185,129,0.3);  background: rgba(16,185,129,0.1); }
-    .status-cancelado { color: #EF4444; border-color: rgba(239,68,68,0.3);   background: rgba(239,68,68,0.1); }
+    .status-pendente    { color: #F59E0B; border-color: rgba(245,158,11,0.3);  background: rgba(245,158,11,0.1); }
+    .status-processando { color: #3B82F6; border-color: rgba(59,130,246,0.3);  background: rgba(59,130,246,0.1); }
+    .status-enviado     { color: #8B5CF6; border-color: rgba(139,92,246,0.3);  background: rgba(139,92,246,0.1); }
+    .status-entregue    { color: #10B981; border-color: rgba(16,185,129,0.3);  background: rgba(16,185,129,0.1); }
+    .status-cancelado   { color: #EF4444; border-color: rgba(239,68,68,0.3);   background: rgba(239,68,68,0.1); }
   </style>
 </head>
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col selection:bg-freo-orange selection:text-white">
@@ -219,12 +219,16 @@
             </h4>
             <div class="space-y-2">
               <div class="flex justify-between text-sm font-mono text-freo-light/70">
-                <span>Subtotal</span>
+                <span>Subtotal (sem frete)</span>
                 <span id="modal-subtotal">R$ 0,00</span>
               </div>
               <div class="flex justify-between text-sm font-mono text-freo-light/70">
                 <span>Frete</span>
                 <span id="modal-frete" class="text-green-400">Grátis</span>
+              </div>
+              <!-- Transportadora e prazo -->
+              <div id="modal-frete-info-row" class="hidden pt-1">
+                <p class="text-[10px] font-mono text-freo-light/30 uppercase tracking-widest" id="modal-frete-info">—</p>
               </div>
               <div class="flex justify-between items-end pt-4 border-t border-white/10 mt-4">
                 <span class="font-display font-bold uppercase text-white">Total</span>
@@ -243,7 +247,6 @@
     let allOrders = [];
     let currentOrder = null;
 
-    // ── CORREÇÃO: id é bigint (number) — nunca usar .substring() direto ────────
     function formatOrderId(id) {
       return String(id).slice(-8).toUpperCase();
     }
@@ -269,7 +272,6 @@
       if (s === 'enviado')     return { label: 'Enviado',     class: 'status-enviado' };
       if (s === 'entregue')    return { label: 'Entregue',    class: 'status-entregue' };
       if (s === 'cancelado')   return { label: 'Cancelado',   class: 'status-cancelado' };
-      // CORREÇÃO: inclui 'pago' e 'aprovado' que vêm do Mercado Pago
       if (s === 'pago' || s === 'aprovado') return { label: 'Pago', class: 'status-entregue' };
       return { label: status || 'Desconhecido', class: 'text-white border-white/20 bg-white/5' };
     };
@@ -300,9 +302,10 @@
       `;
 
       try {
+        // ── CORREÇÃO: join com profiles para trazer nome, email e telefone ──
         const { data, error } = await window.supabaseClient
           .from('orders')
-          .select('*')
+          .select('*, profiles(name, email, phone)')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -336,7 +339,6 @@
       ).length;
       document.getElementById('stat-pending').innerText = pending;
 
-      // CORREÇÃO: usa o campo 'total' (não 'total_amount' que não existe na tabela)
       const revenue = allOrders
         .filter(o => (o.status || '').toLowerCase() !== 'cancelado')
         .reduce((acc, o) => acc + (parseFloat(o.total) || 0), 0);
@@ -374,11 +376,10 @@
         const itemsCount = items.reduce((acc, item) => acc + (item.quantity || 1), 0);
         const itemsSummary = items.length > 0 ? `${itemsCount} item(s)` : '-';
 
-        const customerName  = order.customer_name  || 'Cliente';
-        const customerEmail = order.customer_email || 'Sem email';
+        // ── CORREÇÃO: dados do cliente vêm de profiles ─────────────────────
+        const customerName  = order.profiles?.name  || 'Cliente';
+        const customerEmail = order.profiles?.email || 'Sem email';
 
-        // CORREÇÃO: usa data-order-id (attribute) em vez de interpolação inline no onclick
-        // Evita TypeError pois order.id é number (bigint), não string
         return `
           <tr class="hover:bg-white/5 transition-colors cursor-pointer group"
               data-order-id="${order.id}"
@@ -415,18 +416,17 @@
     const modalContent = document.getElementById('order-modal-content');
 
     function openOrderModal(orderId) {
-      // CORREÇÃO: comparação robusta — String() nos dois lados
       currentOrder = allOrders.find(o => String(o.id) === String(orderId));
       if (!currentOrder) return;
 
-      // CORREÇÃO: formatOrderId() usa String(id).slice() em vez de id.substring()
       document.getElementById('modal-order-id').innerText = `Pedido #${formatOrderId(currentOrder.id)}`;
       document.getElementById('modal-order-date').innerText = formatDate(currentOrder.created_at);
       document.getElementById('modal-status-select').value = (currentOrder.status || 'pendente').toLowerCase();
       
-      document.getElementById('modal-customer-name').innerText  = currentOrder.customer_name  || 'Não informado';
-      document.getElementById('modal-customer-email').innerText = currentOrder.customer_email || 'Não informado';
-      document.getElementById('modal-customer-phone').innerText = currentOrder.customer_phone || 'Não informado';
+      // ── CORREÇÃO: dados do cliente via profiles ────────────────────────────
+      document.getElementById('modal-customer-name').innerText  = currentOrder.profiles?.name  || 'Não informado';
+      document.getElementById('modal-customer-email').innerText = currentOrder.profiles?.email || 'Não informado';
+      document.getElementById('modal-customer-phone').innerText = currentOrder.profiles?.phone || 'Não informado';
 
       // Endereço
       const addrContainer = document.getElementById('modal-shipping-address');
@@ -469,11 +469,36 @@
         itemsContainer.innerHTML = `<p class="text-freo-light/40 italic text-sm">Nenhum item detalhado.</p>`;
       }
 
-      // Financeiro — CORREÇÃO: usa 'total' (coluna real) em vez de 'total_amount'
-      const freteVal = parseFloat(currentOrder.frete_valor) || 0;
+      // ── CORREÇÃO: frete usando os campos corretos da tabela ───────────────
+      const freteVal   = parseFloat(currentOrder.frete_valor) || 0;
+      const freteNome  = currentOrder.frete_nome  || null;
+      const fretePrazo = currentOrder.frete_prazo || null;
+
+      // Subtotal = total - frete
       const subtotal = parseFloat(currentOrder.total || 0) - freteVal;
-      document.getElementById('modal-subtotal').innerText = formatCurrency(subtotal > 0 ? subtotal : currentOrder.total);
-      document.getElementById('modal-frete').innerText = freteVal > 0 ? formatCurrency(freteVal) : 'Grátis';
+      document.getElementById('modal-subtotal').innerText = formatCurrency(subtotal >= 0 ? subtotal : 0);
+
+      // Frete
+      document.getElementById('modal-frete').innerText = freteVal > 0
+        ? formatCurrency(freteVal)
+        : 'Grátis';
+      document.getElementById('modal-frete').className = freteVal > 0
+        ? 'text-freo-orange font-bold'
+        : 'text-green-400';
+
+      // Transportadora + prazo logo abaixo do frete
+      const freteInfoRow = document.getElementById('modal-frete-info-row');
+      const freteInfoEl  = document.getElementById('modal-frete-info');
+      if (freteNome || fretePrazo) {
+        let infoText = [];
+        if (freteNome)  infoText.push(freteNome);
+        if (fretePrazo) infoText.push(`Prazo: ${fretePrazo} dia(s) úteis`);
+        freteInfoEl.innerText = infoText.join(' · ');
+        freteInfoRow.classList.remove('hidden');
+      } else {
+        freteInfoRow.classList.add('hidden');
+      }
+
       document.getElementById('modal-total').innerText = formatCurrency(currentOrder.total);
 
       modal.classList.remove('hidden');
@@ -508,12 +533,11 @@
         const { error } = await window.supabaseClient
           .from('orders')
           .update({ status: newStatus })
-          .eq('id', currentOrder.id);  // bigint — Supabase aceita number diretamente
+          .eq('id', currentOrder.id);
 
         if (error) throw error;
 
         currentOrder.status = newStatus;
-        // CORREÇÃO: comparação via String() para encontrar o índice
         const index = allOrders.findIndex(o => String(o.id) === String(currentOrder.id));
         if (index !== -1) allOrders[index].status = newStatus;
 
@@ -550,7 +574,8 @@
         return;
       }
 
-      const textToCopy = `Nome: ${currentOrder.customer_name || ''}
+      const customerName = currentOrder.profiles?.name || '';
+      const textToCopy = `Nome: ${customerName}
 Logradouro: ${addr.street || addr.logradouro}, ${addr.number || addr.numero || 'S/N'}
 Complemento: ${addr.complement || addr.complemento || ''}
 Bairro: ${addr.neighborhood || addr.bairro || ''}
