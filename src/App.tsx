@@ -757,7 +757,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: 
                   <span className="text-freo-light/70 uppercase text-sm">Total</span>
                   <span className="text-2xl font-bold text-freo-orange">R$ {total.toFixed(2).replace('.', ',')}</span>
                 </div>
-                <button className="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors">Finalizar Compra</button>
+                <button onClick={() => window.location.href = '/checkout.html'} className="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors">Finalizar Compra</button>
               </div>
             )}
           </motion.div>
