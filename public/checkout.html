@@ -82,6 +82,20 @@
     .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
 
     .carrier-badge { font-family: ui-monospace, monospace; font-size: 9px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; }
+
+    /* PIX MODAL */
+    @keyframes pixModalIn {
+      from { opacity: 0; transform: scale(0.92) translateY(16px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    #pix-modal-card {
+      animation: pixModalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes pixPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(212,175,55,0.4); }
+      50%       { box-shadow: 0 0 0 12px rgba(212,175,55,0); }
+    }
+    .pix-qr-wrap { animation: pixPulse 2.5s ease-in-out infinite; border-radius: 12px; display: inline-block; }
   </style>
 </head>
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col selection:bg-freo-orange selection:text-white">
@@ -521,7 +535,6 @@
             document.getElementById('section-payment').scrollIntoView({ behavior: 'smooth', block: 'start' });
           },
 
-          // ── onSubmit corrigido ──────────────────────────────────────────
           onSubmit: function(params) {
             var payload = Object.assign({}, params.formData, {
               action: 'process_payment',
@@ -531,8 +544,6 @@
               backUrls: backUrls
             });
 
-            // Retorna a Promise do fetch diretamente — o Brick usa o valor
-            // resolvido para decidir o que exibir (QR code, confirmação, erro)
             return fetch(N8N_WEBHOOK_URL, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -543,22 +554,37 @@
               return r.json();
             })
             .then(function(response) {
-              // n8n pode retornar array ou objeto — normaliza para objeto
+              // n8n retorna array — normaliza para objeto
               var data = Array.isArray(response) ? response[0] : response;
 
-              // Redireciona conforme status final
-              if (data.status === 'approved') {
-                setTimeout(function() { window.location.href = backUrls.success; }, 3000);
-              } else if (data.status === 'rejected') {
-                setTimeout(function() { window.location.href = backUrls.failure; }, 3000);
+              // PIX pendente → exibe QR + copia-e-cola manualmente na página
+              if (
+                data.status === 'pending' &&
+                data.payment_method_id === 'pix' &&
+                data.point_of_interaction &&
+                data.point_of_interaction.transaction_data
+              ) {
+                var txData = data.point_of_interaction.transaction_data;
+                exibirPixNaPagina(
+                  txData.qr_code,
+                  txData.qr_code_base64,
+                  txData.ticket_url
+                );
               }
-              // status 'pending' (Pix/boleto): o Brick exibe o QR code/código
-              // automaticamente quando recebe o objeto com point_of_interaction
 
-              return data; // ← retorna o objeto normalizado para o Brick renderizar
+              // Cartão aprovado
+              if (data.status === 'approved') {
+                setTimeout(function() { window.location.href = backUrls.success; }, 2000);
+              }
+
+              // Cartão rejeitado
+              if (data.status === 'rejected') {
+                setTimeout(function() { window.location.href = backUrls.failure; }, 2000);
+              }
+
+              return data;
             });
           },
-          // ───────────────────────────────────────────────────────────────
 
           onError: function(error) { console.error('Brick error:', error); }
         }
@@ -566,6 +592,167 @@
 
       window.paymentBrickController = await bricksBuilder.create("payment", "paymentBrick_container", settings);
     }
+
+    // ─── Modal Pix ────────────────────────────────────────────────────────────
+
+    function exibirPixNaPagina(qrCode, qrCodeBase64, ticketUrl) {
+      // Remove instância anterior se existir
+      var old = document.getElementById('pix-modal');
+      if (old) old.remove();
+
+      var modal = document.createElement('div');
+      modal.id = 'pix-modal';
+      modal.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:9999',
+        'background:rgba(10,10,10,0.93)',
+        'backdrop-filter:blur(10px)',
+        '-webkit-backdrop-filter:blur(10px)',
+        'display:flex', 'align-items:center', 'justify-content:center',
+        'padding:16px', 'overflow-y:auto'
+      ].join(';');
+
+      var ticketLink = ticketUrl
+        ? '<a href="' + ticketUrl + '" target="_blank" style="display:block;margin-top:4px;font-family:ui-monospace,monospace;font-size:11px;color:rgba(212,175,55,0.5);text-decoration:underline;">Ver no Mercado Pago →</a>'
+        : '';
+
+      modal.innerHTML = [
+        '<div id="pix-modal-card" style="',
+          'background:#111111;',
+          'border:1px solid rgba(212,175,55,0.25);',
+          'border-radius:20px;',
+          'padding:36px 28px 28px;',
+          'max-width:400px;',
+          'width:100%;',
+          'text-align:center;',
+          'font-family:\'Space Grotesk\',sans-serif;',
+          'position:relative;',
+        '">',
+
+          /* Fechar */
+          '<button onclick="fecharPixModal()" style="',
+            'position:absolute;top:14px;right:14px;',
+            'background:rgba(255,255,255,0.06);',
+            'border:none;border-radius:50%;',
+            'width:30px;height:30px;',
+            'display:flex;align-items:center;justify-content:center;',
+            'cursor:pointer;color:rgba(245,245,245,0.4);font-size:16px;',
+          '">✕</button>',
+
+          /* Ícone Pix */
+          '<div style="width:48px;height:48px;background:rgba(0,155,119,0.15);border:1px solid rgba(0,155,119,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">',
+            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none">',
+              '<path d="M12 2L6.5 7.5H9V11H6L2 12L6 13H9V16.5H6.5L12 22L17.5 16.5H15V13H18L22 12L18 11H15V7.5H17.5L12 2Z" fill="#32BCAD"/>',
+            '</svg>',
+          '</div>',
+
+          /* Título */
+          '<p style="font-family:\'Outfit\',sans-serif;font-weight:900;font-size:22px;color:#F5F5F5;margin:0 0 4px;letter-spacing:-0.5px;">Pague via Pix</p>',
+          '<p style="font-size:12px;color:rgba(245,245,245,0.35);margin:0 0 24px;font-family:ui-monospace,monospace;">Escaneie o QR Code com o app do seu banco</p>',
+
+          /* QR Code */
+          '<div class="pix-qr-wrap" style="margin-bottom:24px;">',
+            '<div style="background:#ffffff;padding:14px;border-radius:12px;display:inline-block;">',
+              '<img src="data:image/png;base64,' + qrCodeBase64 + '" style="width:180px;height:180px;display:block;" alt="QR Code Pix">',
+            '</div>',
+          '</div>',
+
+          /* Separador */
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">',
+            '<div style="flex:1;height:1px;background:rgba(255,255,255,0.07);"></div>',
+            '<span style="font-family:ui-monospace,monospace;font-size:10px;color:rgba(245,245,245,0.25);text-transform:uppercase;letter-spacing:2px;">ou copie o código</span>',
+            '<div style="flex:1;height:1px;background:rgba(255,255,255,0.07);"></div>',
+          '</div>',
+
+          /* Copia e cola */
+          '<div style="display:flex;gap:8px;margin-bottom:16px;">',
+            '<input id="pix-code-input" readonly value="' + qrCode + '" style="',
+              'flex:1;min-width:0;',
+              'background:#0A0A0A;',
+              'border:1px solid rgba(212,175,55,0.25);',
+              'color:rgba(212,175,55,0.8);',
+              'font-family:ui-monospace,monospace;',
+              'font-size:9px;',
+              'padding:10px 12px;',
+              'border-radius:8px;',
+              'outline:none;',
+              'overflow:hidden;',
+              'text-overflow:ellipsis;',
+              'white-space:nowrap;',
+            '">',
+            '<button onclick="copiarPix()" id="pix-copy-btn" style="',
+              'flex-shrink:0;',
+              'background:#D4AF37;',
+              'color:#0A0A0A;',
+              'font-family:\'Outfit\',sans-serif;',
+              'font-weight:800;',
+              'font-size:11px;',
+              'text-transform:uppercase;',
+              'letter-spacing:1px;',
+              'padding:10px 18px;',
+              'border:none;',
+              'border-radius:8px;',
+              'cursor:pointer;',
+              'white-space:nowrap;',
+              'transition:background 0.2s;',
+            '">Copiar</button>',
+          '</div>',
+
+          /* Info validade */
+          '<div style="background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.1);border-radius:10px;padding:12px;margin-bottom:16px;">',
+            '<p style="font-size:11px;color:rgba(245,245,245,0.4);font-family:ui-monospace,monospace;margin:0;line-height:1.6;">',
+              '⏱ Código válido por <strong style="color:rgba(212,175,55,0.7);">24 horas</strong><br>',
+              '📧 Confirmação enviada por e-mail após o pagamento',
+            '</p>',
+          '</div>',
+
+          ticketLink,
+
+        '</div>'
+      ].join('');
+
+      document.body.appendChild(modal);
+
+      // Fecha ao clicar fora do card
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) fecharPixModal();
+      });
+    }
+
+    function fecharPixModal() {
+      var modal = document.getElementById('pix-modal');
+      if (modal) {
+        modal.style.opacity = '0';
+        modal.style.transition = 'opacity 0.2s';
+        setTimeout(function() { modal.remove(); }, 200);
+      }
+    }
+
+    function copiarPix() {
+      var input = document.getElementById('pix-code-input');
+      var btn = document.getElementById('pix-copy-btn');
+      if (!input || !btn) return;
+
+      navigator.clipboard.writeText(input.value).then(function() {
+        btn.innerText = '✓ Copiado!';
+        btn.style.background = '#4ade80';
+        setTimeout(function() {
+          btn.innerText = 'Copiar';
+          btn.style.background = '#D4AF37';
+        }, 2500);
+      }).catch(function() {
+        // Fallback para navegadores sem clipboard API
+        input.select();
+        document.execCommand('copy');
+        btn.innerText = '✓ Copiado!';
+        btn.style.background = '#4ade80';
+        setTimeout(function() {
+          btn.innerText = 'Copiar';
+          btn.style.background = '#D4AF37';
+        }, 2500);
+      });
+    }
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
 
     async function initCheckout() {
       showLoading();
