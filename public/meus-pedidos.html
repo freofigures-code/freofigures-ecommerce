@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -30,7 +30,6 @@
     }
   </script>
 
-  <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
@@ -39,343 +38,673 @@
   </script>
 
   <style>
+    * { box-sizing: border-box; }
+
     .glass {
-      background: rgba(18, 18, 18, 0.7);
+      background: rgba(18,18,18,0.7);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255,255,255,0.05);
     }
-    ::-webkit-scrollbar { width: 8px; }
+
+    ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #0A0A0A; }
-    ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #b5952f; }
-    
-    .status-pendente { color: #eab308; background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.2); }
-    .status-aprovado, .status-processando { color: #3b82f6; background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); }
-    .status-finalizado, .status-entregue { color: #22c55e; background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.2); }
-    .status-cancelado { color: #ef4444; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); }
+    ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 3px; }
+
+    /* ── Tabs ── */
+    .tab-btn {
+      position: relative;
+      padding: 14px 24px;
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(245,245,245,0.35);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: color 0.2s;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+    }
+    .tab-btn:hover { color: rgba(245,245,245,0.7); }
+    .tab-btn.active { color: #D4AF37; border-bottom-color: #D4AF37; }
+
+    .tab-btn .tab-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      margin-left: 7px;
+      background: rgba(212,175,55,0.15);
+      color: #D4AF37;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: bold;
+      vertical-align: middle;
+    }
+    .tab-btn:not(.active) .tab-count {
+      background: rgba(255,255,255,0.07);
+      color: rgba(245,245,245,0.3);
+    }
+
+    /* ── Status badges ── */
+    .badge-pendente  { color: #eab308; background: rgba(234,179,8,0.1);  border: 1px solid rgba(234,179,8,0.25); }
+    .badge-pago      { color: #3b82f6; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25); }
+    .badge-enviado   { color: #a855f7; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); }
+    .badge-entregue  { color: #22c55e; background: rgba(34,197,94,0.1);  border: 1px solid rgba(34,197,94,0.25); }
+    .badge-cancelado { color: #ef4444; background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.25); }
+    .badge-default   { color: rgba(245,245,245,0.5); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+
+    /* ── Order card ── */
+    .order-card {
+      background: rgba(18,18,18,0.7);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      transition: border-color 0.2s, transform 0.15s;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .order-card:hover {
+      border-color: rgba(212,175,55,0.4);
+      transform: translateY(-1px);
+    }
+    .order-card.is-pendente {
+      border-color: rgba(234,179,8,0.2);
+    }
+    .order-card.is-pendente:hover {
+      border-color: rgba(234,179,8,0.5);
+    }
+
+    /* Barra lateral colorida por status */
+    .order-card-bar {
+      width: 3px;
+      flex-shrink: 0;
+      border-radius: 3px 0 0 3px;
+      align-self: stretch;
+    }
+    .bar-pendente  { background: #eab308; }
+    .bar-pago      { background: #3b82f6; }
+    .bar-enviado   { background: #a855f7; }
+    .bar-entregue  { background: #22c55e; }
+    .bar-cancelado { background: #ef4444; }
+    .bar-default   { background: rgba(255,255,255,0.1); }
+
+    /* ── Pix alert no card pendente ── */
+    .pix-alert {
+      background: rgba(234,179,8,0.06);
+      border-top: 1px solid rgba(234,179,8,0.15);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .pix-alert-btn {
+      flex-shrink: 0;
+      background: #eab308;
+      color: #0A0A0A;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .pix-alert-btn:hover { background: #fbbf24; }
+
+    /* ── Skeleton ── */
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.6s infinite;
+      border-radius: 8px;
+    }
+
+    /* ── Modal ── */
+    #order-modal {
+      transition: opacity 0.25s;
+    }
+    #order-modal-card {
+      transition: transform 0.25s, opacity 0.25s;
+    }
+
+    /* ── PIX Modal ── */
+    @keyframes pixIn {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    #pix-modal-inner { animation: pixIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+    @keyframes pixPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(234,179,8,0.5); }
+      50%      { box-shadow: 0 0 0 14px rgba(234,179,8,0); }
+    }
+    .pix-qr-pulse { animation: pixPulse 2.5s ease-in-out infinite; border-radius: 12px; display: inline-block; }
+
+    /* ── Timeline status ── */
+    .timeline-step { display: flex; align-items: flex-start; gap: 12px; position: relative; }
+    .timeline-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 32px;
+      width: 2px;
+      height: calc(100% - 4px);
+      background: rgba(255,255,255,0.07);
+    }
+    .timeline-dot {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      color: rgba(245,245,245,0.3);
+    }
+    .timeline-dot.done { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); color: #4ade80; }
+    .timeline-dot.active { background: rgba(212,175,55,0.15); border-color: rgba(212,175,55,0.4); color: #D4AF37; }
   </style>
 </head>
-<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col selection:bg-freo-orange selection:text-white">
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col">
 
-  <!-- Auth Listener -->
-  <script src="/auth-listener.js"></script>
-
-  <!-- Header -->
+  <!-- HEADER -->
   <header class="glass sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-white/10">
     <div class="flex items-center gap-4 cursor-pointer" onclick="window.location.href='/dashboard.html'">
-      <svg class="w-6 h-6 text-freo-light/60 hover:text-freo-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-      <h1 class="text-xl font-display font-bold uppercase tracking-widest text-white">Meus Pedidos</h1>
+      <svg class="w-5 h-5 text-freo-light/50 hover:text-freo-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      <div class="flex items-center gap-3">
+        <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" class="w-8 h-8 rounded-full border border-freo-orange/50" onerror="this.style.display='none'">
+        <span class="font-display font-black text-lg tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
+      </div>
+      <span class="text-white/20 font-mono text-xs hidden sm:block">/</span>
+      <span class="font-mono text-xs text-freo-orange uppercase tracking-widest hidden sm:block">Meus Pedidos</span>
     </div>
-    <div class="flex items-center gap-4">
-      <span id="user-greeting" class="font-mono text-xs text-freo-light/50 hidden sm:inline"></span>
-    </div>
+    <span id="user-greeting" class="font-mono text-xs text-freo-light/40 hidden sm:inline"></span>
   </header>
 
-  <!-- Main Content -->
-  <main class="flex-1 max-w-5xl w-full mx-auto p-6 mt-4">
-    
+  <!-- MAIN -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
+
     <!-- Tabs -->
-    <div class="flex border-b border-white/10 overflow-x-auto hide-scrollbar mb-8">
-      <button class="tab-btn active px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-orange border-b-2 border-freo-orange whitespace-nowrap" data-filter="todos">Todos</button>
-      <button class="tab-btn px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent whitespace-nowrap" data-filter="pendente">A Pagar</button>
-      <button class="tab-btn px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent whitespace-nowrap" data-filter="andamento">Em Andamento</button>
-      <button class="tab-btn px-6 py-4 font-mono text-sm uppercase tracking-widest text-freo-light/50 hover:text-white transition-colors border-b-2 border-transparent whitespace-nowrap" data-filter="finalizado">Finalizados</button>
+    <div class="flex border-b border-white/10 overflow-x-auto mb-8" style="scrollbar-width:none">
+      <button class="tab-btn active" data-filter="todos">
+        Todos <span class="tab-count" id="count-todos">0</span>
+      </button>
+      <button class="tab-btn" data-filter="pendente">
+        A Pagar <span class="tab-count" id="count-pendente">0</span>
+      </button>
+      <button class="tab-btn" data-filter="pago">
+        Pagos <span class="tab-count" id="count-pago">0</span>
+      </button>
+      <button class="tab-btn" data-filter="enviado">
+        Enviados <span class="tab-count" id="count-enviado">0</span>
+      </button>
+      <button class="tab-btn" data-filter="entregue">
+        Entregues <span class="tab-count" id="count-entregue">0</span>
+      </button>
     </div>
 
-    <!-- Loading State -->
-    <div id="orders-loading" class="flex justify-center py-20">
-      <div class="w-12 h-12 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
+    <!-- Skeleton loading -->
+    <div id="orders-loading" class="space-y-4">
+      <div class="skeleton h-28 w-full"></div>
+      <div class="skeleton h-28 w-full"></div>
+      <div class="skeleton h-28 w-full"></div>
     </div>
 
-    <!-- Orders Container -->
-    <div id="orders-container" class="space-y-6 hidden">
-      <!-- Cards injetados aqui -->
-    </div>
-
-    <!-- Empty State -->
-    <div id="orders-empty" class="glass rounded-2xl p-12 text-center hidden">
+    <!-- Empty state -->
+    <div id="orders-empty" class="hidden glass rounded-2xl p-14 text-center">
       <div class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-        <svg class="w-10 h-10 text-freo-light/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+        <svg class="w-9 h-9 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
       </div>
-      <h2 class="text-2xl font-display font-bold text-white mb-2">Nenhum pedido encontrado</h2>
-      <p class="text-freo-light/50 font-body mb-8 max-w-md mx-auto">Você ainda não fez nenhuma compra. Que tal explorar nosso catálogo e encontrar sua próxima peça épica?</p>
-      <a href="/" class="inline-block px-8 py-4 bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest hover:bg-white transition-colors rounded shadow-[0_0_20px_rgba(212,175,55,0.3)]">
-        Fazer minha primeira compra
+      <h2 class="text-2xl font-display font-bold text-white mb-2 uppercase">Nenhum pedido aqui</h2>
+      <p class="text-freo-light/40 font-mono text-sm mb-8" id="empty-subtitle">Você ainda não realizou nenhuma compra.</p>
+      <a href="/" class="inline-block px-8 py-4 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest hover:bg-white transition-colors rounded shadow-[0_0_24px_rgba(212,175,55,0.3)]">
+        Explorar catálogo
       </a>
     </div>
 
+    <!-- Orders list -->
+    <div id="orders-container" class="hidden space-y-4"></div>
+
   </main>
 
-  <!-- Modal Detalhes do Pedido -->
-  <div id="order-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-    <div class="glass w-full max-w-2xl max-h-[90vh] rounded-2xl flex flex-col overflow-hidden transform scale-95 transition-transform duration-300" id="order-modal-content">
-      
-      <!-- Modal Header -->
-      <div class="p-6 border-b border-white/10 flex justify-between items-center bg-freo-dark/50">
+  <!-- ═══ MODAL DETALHES ═══ -->
+  <div id="order-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm hidden opacity-0">
+    <div id="order-modal-card" class="glass w-full sm:max-w-2xl max-h-[92vh] rounded-t-3xl sm:rounded-2xl flex flex-col overflow-hidden opacity-0 translate-y-4">
+
+      <!-- Modal header -->
+      <div class="p-5 border-b border-white/10 flex justify-between items-start flex-shrink-0">
         <div>
           <h3 class="text-xl font-display font-bold text-white uppercase tracking-widest" id="modal-order-id">Pedido #---</h3>
-          <p class="text-xs font-mono text-freo-light/50 mt-1" id="modal-order-date">--/--/----</p>
+          <p class="text-xs font-mono text-freo-light/40 mt-1" id="modal-order-date">--/--/----</p>
         </div>
-        <button id="close-modal-btn" class="p-2 text-freo-light/50 hover:text-white transition-colors rounded-full hover:bg-white/10">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
+        <div class="flex items-center gap-3">
+          <div id="modal-status-badge" class="px-3 py-1 rounded-full text-[10px] font-bold font-mono uppercase tracking-widest">—</div>
+          <button onclick="closeModal()" class="p-2 rounded-full hover:bg-white/10 transition-colors text-freo-light/50 hover:text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
       </div>
 
-      <!-- Modal Body -->
-      <div class="p-6 overflow-y-auto flex-1 space-y-8">
-        
-        <!-- Status -->
-        <div>
-          <h4 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-3">Status do Pedido</h4>
-          <div id="modal-order-status" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-widest border">
-            Status
+      <!-- Modal body -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-6">
+
+        <!-- Aviso pix pendente no modal -->
+        <div id="modal-pix-alert" class="hidden bg-yellow-500/8 border border-yellow-500/20 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-yellow-500/15 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L6.5 7.5H9V11H6L2 12L6 13H9V16.5H6.5L12 22L17.5 16.5H15V13H18L22 12L18 11H15V7.5H17.5L12 2Z" fill="#32BCAD"/>
+              </svg>
+            </div>
+            <div>
+              <p class="font-mono text-xs font-bold text-yellow-400">Pagamento Pix pendente</p>
+              <p class="font-mono text-[11px] text-white/40 mt-0.5">Clique para ver o QR Code novamente</p>
+            </div>
           </div>
+          <button id="modal-pix-btn" onclick="" class="flex-shrink-0 bg-yellow-400 text-black font-display font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-lg hover:bg-yellow-300 transition-colors">
+            Ver QR Code
+          </button>
         </div>
 
         <!-- Itens -->
         <div>
-          <h4 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-4">Itens Comprados</h4>
-          <div id="modal-order-items" class="space-y-4">
-            <!-- Items injected here -->
+          <p class="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-3">Itens do Pedido</p>
+          <div id="modal-items" class="space-y-3"></div>
+        </div>
+
+        <!-- Resumo financeiro -->
+        <div class="bg-white/3 border border-white/8 rounded-xl p-5">
+          <p class="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-4">Resumo</p>
+          <div class="space-y-2 font-mono text-sm">
+            <div class="flex justify-between text-white/50">
+              <span>Subtotal</span>
+              <span id="modal-subtotal">—</span>
+            </div>
+            <div class="flex justify-between text-white/50">
+              <span>Frete</span>
+              <span id="modal-frete">—</span>
+            </div>
+            <div class="flex justify-between items-end pt-3 border-t border-white/10 mt-3">
+              <span class="font-display font-bold uppercase text-white text-base">Total</span>
+              <span id="modal-total" class="font-mono font-bold text-2xl text-freo-orange">—</span>
+            </div>
           </div>
         </div>
 
-        <!-- Resumo Financeiro -->
-        <div class="bg-white/5 rounded-xl p-6 border border-white/5">
-          <h4 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-4">Resumo Financeiro</h4>
-          <div class="space-y-2">
-            <div class="flex justify-between text-sm font-mono text-freo-light/70">
-              <span>Subtotal</span>
-              <span id="modal-subtotal">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between text-sm font-mono text-freo-light/70">
-              <span>Frete</span>
-              <span class="text-green-400">Grátis</span>
-            </div>
-            <div class="flex justify-between items-end pt-4 border-t border-white/10 mt-4">
-              <span class="font-display font-bold uppercase text-white">Total</span>
-              <span id="modal-total" class="font-mono font-bold text-2xl text-freo-orange">R$ 0,00</span>
-            </div>
-          </div>
+        <!-- Timeline de status -->
+        <div>
+          <p class="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-4">Histórico</p>
+          <div id="modal-timeline" class="space-y-4 pl-1"></div>
         </div>
 
       </div>
     </div>
   </div>
 
+  <!-- ═══ PIX MODAL ═══ -->
+  <div id="pix-modal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm hidden">
+    <div id="pix-modal-inner" style="background:#111;border:1px solid rgba(212,175,55,0.25);border-radius:20px;padding:36px 28px 28px;max-width:400px;width:100%;text-align:center;font-family:'Space Grotesk',sans-serif;position:relative;">
+      <button onclick="closePixModal()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.06);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(245,245,245,0.4);font-size:16px;">✕</button>
+
+      <div style="width:48px;height:48px;background:rgba(0,155,119,0.15);border:1px solid rgba(0,155,119,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L6.5 7.5H9V11H6L2 12L6 13H9V16.5H6.5L12 22L17.5 16.5H15V13H18L22 12L18 11H15V7.5H17.5L12 2Z" fill="#32BCAD"/></svg>
+      </div>
+
+      <p style="font-family:'Outfit',sans-serif;font-weight:900;font-size:22px;color:#F5F5F5;margin:0 0 4px;letter-spacing:-0.5px;">Pague via Pix</p>
+      <p style="font-size:12px;color:rgba(245,245,245,0.35);margin:0 0 24px;font-family:ui-monospace,monospace;">Escaneie com o app do seu banco</p>
+
+      <div class="pix-qr-pulse" style="margin-bottom:24px;">
+        <div style="background:#fff;padding:14px;border-radius:12px;display:inline-block;">
+          <img id="pix-qr-img" src="" style="width:180px;height:180px;display:block;" alt="QR Code Pix">
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.07);"></div>
+        <span style="font-family:ui-monospace,monospace;font-size:10px;color:rgba(245,245,245,0.25);text-transform:uppercase;letter-spacing:2px;">ou copie o código</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.07);"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input id="pix-code-input" readonly style="flex:1;min-width:0;background:#0A0A0A;border:1px solid rgba(212,175,55,0.25);color:rgba(212,175,55,0.8);font-family:ui-monospace,monospace;font-size:9px;padding:10px 12px;border-radius:8px;outline:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        <button onclick="copiarPix()" id="pix-copy-btn" style="flex-shrink:0;background:#D4AF37;color:#0A0A0A;font-family:'Outfit',sans-serif;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:10px 18px;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Copiar</button>
+      </div>
+
+      <div style="background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.1);border-radius:10px;padding:12px;">
+        <p style="font-size:11px;color:rgba(245,245,245,0.4);font-family:ui-monospace,monospace;margin:0;line-height:1.6;">
+          ⏱ Código válido por <strong style="color:rgba(212,175,55,0.7);">24 horas</strong><br>
+          📧 Confirmação enviada por e-mail após o pagamento
+        </p>
+      </div>
+
+      <div id="pix-ticket-link" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <script src="/auth-listener.js"></script>
+
   <script>
-    let allOrders = [];
-    let currentFilter = 'todos';
+    var allOrders = [];
+    var currentFilter = 'todos';
+    var currentUser = null;
 
-    const formatCurrency = (value) => {
-      const num = parseFloat(value);
-      if (isNaN(num)) return 'R$ 0,00';
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
+    var formatCurrency = function(v) {
+      return new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(parseFloat(v)||0);
     };
 
-    const formatDate = (dateString) => {
-      if (!dateString) return '--/--/----';
-      const date = new Date(dateString);
-      return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+    var formatDate = function(d) {
+      if (!d) return '—';
+      return new Intl.DateTimeFormat('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(d));
     };
 
-    const getStatusConfig = (status) => {
-      const s = (status || '').toLowerCase();
-      if (s === 'pendente') return { label: 'A Pagar', class: 'status-pendente' };
-      if (s === 'aprovado' || s === 'processando') return { label: 'Em Andamento', class: 'status-processando' };
-      if (s === 'finalizado' || s === 'entregue') return { label: 'Finalizado', class: 'status-finalizado' };
-      if (s === 'cancelado') return { label: 'Cancelado', class: 'status-cancelado' };
-      return { label: status || 'Desconhecido', class: 'text-white border-white/20 bg-white/5' };
+    // ── Status config ──────────────────────────────────────────────────────────
+    var STATUS_MAP = {
+      'pendente':  { label:'A Pagar',   badge:'badge-pendente',  bar:'bar-pendente',  emoji:'⏳', timeline:'Aguardando pagamento' },
+      'pago':      { label:'Pago',      badge:'badge-pago',      bar:'bar-pago',      emoji:'✅', timeline:'Pagamento confirmado' },
+      'aprovado':  { label:'Pago',      badge:'badge-pago',      bar:'bar-pago',      emoji:'✅', timeline:'Pagamento confirmado' },
+      'enviado':   { label:'Enviado',   badge:'badge-enviado',   bar:'bar-enviado',   emoji:'🚚', timeline:'Pedido enviado' },
+      'entregue':  { label:'Entregue',  badge:'badge-entregue',  bar:'bar-entregue',  emoji:'📦', timeline:'Pedido entregue' },
+      'cancelado': { label:'Cancelado', badge:'badge-cancelado', bar:'bar-cancelado', emoji:'✕',  timeline:'Pedido cancelado' },
     };
 
-    // Escuta auth-listener
-    window.addEventListener('auth-not-logged-in', () => {
-      window.location.href = '/login.html';
-    });
-
-    window.addEventListener('auth-data-loaded', async (e) => {
-      const { user, profile } = e.detail;
-      
-      if (!user) {
-        window.location.href = '/login.html';
-        return;
-      }
-
-      const name = profile?.name || profile?.full_name || user.user_metadata?.name || user.email.split('@')[0];
-      document.getElementById('user-greeting').innerText = `Olá, ${name}`;
-
-      await fetchOrders(user.id);
-    });
-
-    async function fetchOrders(userId) {
-      try {
-        const { data, error } = await window.supabaseClient
-          .from('orders')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        allOrders = data || [];
-        renderOrders();
-      } catch (err) {
-        console.error("Erro ao buscar pedidos:", err);
-        // Fallback visual para teste caso a tabela orders não exista ainda
-        if (err.code === '42P01') {
-          console.warn("Tabela orders não existe. Mostrando estado vazio.");
-          allOrders = [];
-          renderOrders();
-        }
-      } finally {
-        document.getElementById('orders-loading').classList.add('hidden');
-      }
+    function getStatus(s) {
+      return STATUS_MAP[(s||'').toLowerCase()] || { label: s||'—', badge:'badge-default', bar:'bar-default', emoji:'•', timeline: s };
     }
 
+    function getFilterGroup(s) {
+      var sl = (s||'').toLowerCase();
+      if (sl === 'pendente') return 'pendente';
+      if (sl === 'pago' || sl === 'aprovado') return 'pago';
+      if (sl === 'enviado') return 'enviado';
+      if (sl === 'entregue') return 'entregue';
+      return 'outros';
+    }
+
+    function parseItems(raw) {
+      try { return typeof raw === 'string' ? JSON.parse(raw) : (raw || []); }
+      catch(e) { return []; }
+    }
+
+    // ── Contagem por tab ───────────────────────────────────────────────────────
+    function updateCounts() {
+      var counts = { todos: allOrders.length, pendente: 0, pago: 0, enviado: 0, entregue: 0 };
+      allOrders.forEach(function(o) {
+        var g = getFilterGroup(o.status);
+        if (counts[g] !== undefined) counts[g]++;
+      });
+      Object.keys(counts).forEach(function(k) {
+        var el = document.getElementById('count-' + k);
+        if (el) el.innerText = counts[k];
+      });
+    }
+
+    // ── Render ─────────────────────────────────────────────────────────────────
     function renderOrders() {
-      const container = document.getElementById('orders-container');
-      const emptyState = document.getElementById('orders-empty');
-      
-      let filteredOrders = allOrders;
+      var filtered = allOrders.filter(function(o) {
+        if (currentFilter === 'todos') return true;
+        return getFilterGroup(o.status) === currentFilter;
+      });
 
-      if (currentFilter === 'pendente') {
-        filteredOrders = allOrders.filter(o => o.status?.toLowerCase() === 'pendente');
-      } else if (currentFilter === 'andamento') {
-        filteredOrders = allOrders.filter(o => ['aprovado', 'processando'].includes(o.status?.toLowerCase()));
-      } else if (currentFilter === 'finalizado') {
-        filteredOrders = allOrders.filter(o => ['finalizado', 'entregue'].includes(o.status?.toLowerCase()));
-      }
+      var container = document.getElementById('orders-container');
+      var empty = document.getElementById('orders-empty');
 
-      if (filteredOrders.length === 0) {
+      if (filtered.length === 0) {
         container.classList.add('hidden');
-        emptyState.classList.remove('hidden');
+        empty.classList.remove('hidden');
+        var subtitles = {
+          pendente: 'Nenhum pedido aguardando pagamento.',
+          pago: 'Nenhum pedido pago ainda.',
+          enviado: 'Nenhum pedido em trânsito.',
+          entregue: 'Nenhum pedido entregue ainda.',
+          todos: 'Você ainda não realizou nenhuma compra.',
+        };
+        document.getElementById('empty-subtitle').innerText = subtitles[currentFilter] || subtitles.todos;
         return;
       }
 
-      emptyState.classList.add('hidden');
+      empty.classList.add('hidden');
       container.classList.remove('hidden');
 
-      container.innerHTML = filteredOrders.map(order => {
-        const statusConfig = getStatusConfig(order.status);
-        // Parse items if it's a JSON string, or use as is if it's an array/object
-        let items = [];
-        try {
-          items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
-        } catch(e) { console.error("Erro ao parsear itens", e); }
-        
-        const itemsSummary = items.length > 0 
-          ? `${items.length} item(s) - ${items[0].product_name || items[0].name || 'Produto'} ${items.length > 1 ? '...' : ''}`
-          : 'Itens não detalhados';
+      container.innerHTML = filtered.map(function(order) {
+        var st = getStatus(order.status);
+        var items = parseItems(order.items);
+        var isPendente = (order.status||'').toLowerCase() === 'pendente';
+        var hasPixData = order.pix_qr_code && order.pix_qr_code_base64;
 
-        return `
-          <div class="glass rounded-xl p-6 border border-white/10 hover:border-freo-orange/50 transition-colors cursor-pointer group" onclick="openModal('${order.id}')">
-            <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
-              
-              <div class="flex-1">
-                <div class="flex items-center gap-3 mb-2">
-                  <h3 class="text-lg font-display font-bold text-white uppercase tracking-widest group-hover:text-freo-orange transition-colors">Pedido #${order.id.substring(0,8).toUpperCase()}</h3>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase tracking-widest border ${statusConfig.class}">
-                    ${statusConfig.label}
-                  </span>
-                </div>
-                <p class="text-sm font-mono text-freo-light/50">${formatDate(order.created_at)}</p>
-                <p class="text-sm font-body text-freo-light/70 mt-3">${itemsSummary}</p>
-              </div>
+        // Thumbnails (até 3)
+        var thumbs = items.slice(0,3).map(function(item) {
+          return item.image_url
+            ? '<img src="' + item.image_url + '" class="w-10 h-10 rounded object-cover border border-white/10" onerror="this.style.display=\'none\'">'
+            : '<div class="w-10 h-10 rounded bg-white/5 border border-white/10 flex items-center justify-center text-white/20"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
+        }).join('');
 
-              <div class="flex items-center justify-between md:flex-col md:items-end gap-2 md:pl-6 md:border-l border-white/10">
-                <p class="text-xs font-mono text-freo-light/40 uppercase tracking-widest">Total</p>
-                <p class="text-xl font-mono font-bold text-freo-orange">${formatCurrency(order.total_amount)}</p>
-              </div>
+        var extraItems = items.length > 3 ? '<span class="w-10 h-10 rounded bg-white/5 border border-white/10 flex items-center justify-center font-mono text-xs text-white/40">+' + (items.length-3) + '</span>' : '';
 
-            </div>
-          </div>
-        `;
+        var pixBanner = (isPendente && hasPixData)
+          ? '<div class="pix-alert">'
+            + '<div style="display:flex;align-items:center;gap:10px;">'
+            + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L6.5 7.5H9V11H6L2 12L6 13H9V16.5H6.5L12 22L17.5 16.5H15V13H18L22 12L18 11H15V7.5H17.5L12 2Z" fill="#32BCAD"/></svg>'
+            + '<span style="font-family:ui-monospace,monospace;font-size:11px;color:rgba(234,179,8,0.8);">Pix gerado — aguardando pagamento</span>'
+            + '</div>'
+            + '<button class="pix-alert-btn" onclick="event.stopPropagation(); showPixModal(\'' + order.id + '\')" >Ver QR Code</button>'
+            + '</div>'
+          : '';
+
+        return '<div class="order-card ' + (isPendente ? 'is-pendente' : '') + '" onclick="openModal(\'' + order.id + '\')">'
+          + '<div style="display:flex;">'
+          + '<div class="order-card-bar ' + st.bar + '"></div>'
+          + '<div style="flex:1;padding:18px 20px;">'
+            + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">'
+              + '<div>'
+                + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
+                  + '<p class="font-display font-bold text-white uppercase tracking-widest" style="font-size:15px;">Pedido #' + String(order.id).slice(-6).toUpperCase() + '</p>'
+                  + '<span class="' + st.badge + ' px-2 py-0.5 rounded-full font-mono font-bold uppercase tracking-widest" style="font-size:10px;">' + st.label + '</span>'
+                + '</div>'
+                + '<p class="font-mono text-white/35" style="font-size:11px;">' + formatDate(order.created_at) + '</p>'
+              + '</div>'
+              + '<div style="text-align:right;">'
+                + '<p class="font-mono text-white/30" style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">Total</p>'
+                + '<p class="font-mono font-bold text-freo-orange" style="font-size:18px;">' + formatCurrency(order.total) + '</p>'
+              + '</div>'
+            + '</div>'
+            + '<div style="display:flex;align-items:center;gap:6px;margin-top:14px;">' + thumbs + extraItems
+              + '<span class="font-mono text-white/30" style="font-size:11px;margin-left:4px;">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span>'
+            + '</div>'
+          + '</div>'
+          + '</div>'
+          + pixBanner
+          + '</div>';
       }).join('');
     }
 
-    // Tabs Logic
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        tabBtns.forEach(b => {
-          b.classList.remove('text-freo-orange', 'border-freo-orange');
-          b.classList.add('text-freo-light/50', 'border-transparent');
-        });
-        btn.classList.remove('text-freo-light/50', 'border-transparent');
-        btn.classList.add('text-freo-orange', 'border-freo-orange');
-        
+    // ── Modal detalhes ─────────────────────────────────────────────────────────
+    function openModal(orderId) {
+      var order = allOrders.find(function(o) { return String(o.id) === String(orderId); });
+      if (!order) return;
+
+      var st = getStatus(order.status);
+      var items = parseItems(order.items);
+      var isPendente = (order.status||'').toLowerCase() === 'pendente';
+      var hasPixData = order.pix_qr_code && order.pix_qr_code_base64;
+
+      document.getElementById('modal-order-id').innerText = 'Pedido #' + String(order.id).slice(-6).toUpperCase();
+      document.getElementById('modal-order-date').innerText = formatDate(order.created_at);
+
+      var badge = document.getElementById('modal-status-badge');
+      badge.className = st.badge + ' px-3 py-1 rounded-full text-[10px] font-bold font-mono uppercase tracking-widest';
+      badge.innerText = st.label;
+
+      // Total e frete
+      var freteVal = order.frete_valor ? parseFloat(order.frete_valor) : 0;
+      var subtotalVal = parseFloat(order.total||0) - freteVal;
+      document.getElementById('modal-subtotal').innerText = formatCurrency(subtotalVal > 0 ? subtotalVal : order.total);
+      document.getElementById('modal-frete').innerText = freteVal > 0 ? formatCurrency(freteVal) : 'Grátis';
+      document.getElementById('modal-total').innerText = formatCurrency(order.total);
+
+      // Alerta pix pendente no modal
+      var pixAlert = document.getElementById('modal-pix-alert');
+      if (isPendente && hasPixData) {
+        pixAlert.classList.remove('hidden');
+        document.getElementById('modal-pix-btn').onclick = function() { showPixModal(order.id); };
+      } else {
+        pixAlert.classList.add('hidden');
+      }
+
+      // Itens
+      var itemsHtml = items.length > 0
+        ? items.map(function(item) {
+            var subtotal = (parseFloat(item.price)||0) * (item.quantity||1);
+            return '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;">'
+              + '<div style="width:52px;height:52px;background:#0A0A0A;border-radius:8px;flex-shrink:0;overflow:hidden;">'
+              + (item.image_url ? '<img src="' + item.image_url + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">' : '')
+              + '</div>'
+              + '<div style="flex:1;min-width:0;">'
+              + '<p class="font-display font-bold text-sm text-white" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (item.product_name||item.name||'Produto') + '</p>'
+              + '<p class="font-mono text-white/40" style="font-size:11px;margin-top:2px;">Qtd: ' + (item.quantity||1) + ' × ' + formatCurrency(item.price||0) + '</p>'
+              + '</div>'
+              + '<p class="font-mono font-bold text-freo-orange" style="font-size:14px;flex-shrink:0;">' + formatCurrency(subtotal) + '</p>'
+              + '</div>';
+          }).join('')
+        : '<p class="font-mono text-white/30 text-sm">Detalhes não disponíveis.</p>';
+      document.getElementById('modal-items').innerHTML = itemsHtml;
+
+      // Timeline
+      var allStatuses = ['pendente','pago','enviado','entregue'];
+      var currentIdx = allStatuses.indexOf((order.status||'').toLowerCase());
+      if (currentIdx === -1 && (order.status||'').toLowerCase() === 'aprovado') currentIdx = 1;
+
+      var timelineHtml = allStatuses.map(function(s, i) {
+        var sc = getStatus(s);
+        var dotClass = i < currentIdx ? 'done' : (i === currentIdx ? 'active' : '');
+        return '<div class="timeline-step pb-4">'
+          + '<div class="timeline-dot ' + dotClass + '">' + sc.emoji + '</div>'
+          + '<div style="padding-top:4px;">'
+          + '<p class="font-mono font-bold" style="font-size:12px;color:' + (i <= currentIdx ? '#F5F5F5' : 'rgba(245,245,245,0.2)') + ';">' + sc.label + '</p>'
+          + '<p class="font-mono" style="font-size:11px;color:rgba(245,245,245,0.3);margin-top:1px;">' + sc.timeline + '</p>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+      document.getElementById('modal-timeline').innerHTML = timelineHtml;
+
+      // Mostra modal
+      var modal = document.getElementById('order-modal');
+      var card = document.getElementById('order-modal-card');
+      modal.classList.remove('hidden');
+      setTimeout(function() {
+        modal.classList.remove('opacity-0');
+        card.classList.remove('opacity-0', 'translate-y-4');
+      }, 10);
+    }
+
+    function closeModal() {
+      var modal = document.getElementById('order-modal');
+      var card = document.getElementById('order-modal-card');
+      modal.classList.add('opacity-0');
+      card.classList.add('opacity-0', 'translate-y-4');
+      setTimeout(function() { modal.classList.add('hidden'); }, 280);
+    }
+
+    document.getElementById('order-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    // ── Pix Modal ──────────────────────────────────────────────────────────────
+    function showPixModal(orderId) {
+      var order = allOrders.find(function(o) { return String(o.id) === String(orderId); });
+      if (!order || !order.pix_qr_code_base64) return;
+
+      document.getElementById('pix-qr-img').src = 'data:image/png;base64,' + order.pix_qr_code_base64;
+      document.getElementById('pix-code-input').value = order.pix_qr_code || '';
+
+      var ticketDiv = document.getElementById('pix-ticket-link');
+      ticketDiv.innerHTML = order.pix_ticket_url
+        ? '<a href="' + order.pix_ticket_url + '" target="_blank" style="font-family:ui-monospace,monospace;font-size:11px;color:rgba(212,175,55,0.5);text-decoration:underline;">Ver no Mercado Pago →</a>'
+        : '';
+
+      document.getElementById('pix-modal').classList.remove('hidden');
+    }
+
+    function closePixModal() {
+      document.getElementById('pix-modal').classList.add('hidden');
+    }
+
+    document.getElementById('pix-modal').addEventListener('click', function(e) {
+      if (e.target === this) closePixModal();
+    });
+
+    function copiarPix() {
+      var input = document.getElementById('pix-code-input');
+      var btn = document.getElementById('pix-copy-btn');
+      navigator.clipboard.writeText(input.value).then(function() {
+        btn.innerText = '✓ Copiado!';
+        btn.style.background = '#4ade80';
+        setTimeout(function() { btn.innerText = 'Copiar'; btn.style.background = '#D4AF37'; }, 2500);
+      }).catch(function() {
+        input.select(); document.execCommand('copy');
+        btn.innerText = '✓ Copiado!'; btn.style.background = '#4ade80';
+        setTimeout(function() { btn.innerText = 'Copiar'; btn.style.background = '#D4AF37'; }, 2500);
+      });
+    }
+
+    // ── Tabs ───────────────────────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
         currentFilter = btn.getAttribute('data-filter');
         renderOrders();
       });
     });
 
-    // Modal Logic
-    const modal = document.getElementById('order-modal');
-    const modalContent = document.getElementById('order-modal-content');
-    const closeBtn = document.getElementById('close-modal-btn');
-
-    window.openModal = (orderId) => {
-      const order = allOrders.find(o => o.id === orderId);
-      if (!order) return;
-
-      document.getElementById('modal-order-id').innerText = `Pedido #${order.id.substring(0,8).toUpperCase()}`;
-      document.getElementById('modal-order-date').innerText = formatDate(order.created_at);
-      
-      const statusConfig = getStatusConfig(order.status);
-      const statusEl = document.getElementById('modal-order-status');
-      statusEl.className = `inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-mono uppercase tracking-widest border ${statusConfig.class}`;
-      statusEl.innerText = statusConfig.label;
-
-      document.getElementById('modal-subtotal').innerText = formatCurrency(order.total_amount);
-      document.getElementById('modal-total').innerText = formatCurrency(order.total_amount);
-
-      let items = [];
+    // ── Fetch ──────────────────────────────────────────────────────────────────
+    async function fetchOrders(userId) {
       try {
-        items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
-      } catch(e) {}
+        var result = await window.supabaseClient
+          .from('orders')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
 
-      const itemsContainer = document.getElementById('modal-order-items');
-      if (items.length > 0) {
-        itemsContainer.innerHTML = items.map(item => `
-          <div class="flex items-center gap-4 p-3 bg-white/5 rounded-lg border border-white/5">
-            <div class="w-16 h-16 bg-freo-black rounded flex-shrink-0 overflow-hidden">
-              ${item.image_url ? `<img src="${item.image_url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-white/20"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>`}
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-display font-bold text-sm text-white truncate">${item.product_name || item.name || 'Figura 3D'}</h3>
-              <p class="font-mono text-xs text-freo-light/50 mt-1">Qtd: ${item.quantity || 1} x ${formatCurrency(item.price || 0)}</p>
-            </div>
-            <div class="text-right">
-              <p class="font-mono font-bold text-freo-orange text-sm">${formatCurrency((item.price || 0) * (item.quantity || 1))}</p>
-            </div>
-          </div>
-        `).join('');
-      } else {
-        itemsContainer.innerHTML = '<p class="text-sm font-mono text-freo-light/50">Detalhes dos itens não disponíveis.</p>';
+        if (result.error) throw result.error;
+        allOrders = result.data || [];
+      } catch(err) {
+        console.error('Erro ao buscar pedidos:', err);
+        allOrders = [];
+      } finally {
+        document.getElementById('orders-loading').classList.add('hidden');
+        updateCounts();
+        renderOrders();
       }
+    }
 
-      modal.classList.remove('hidden');
-      // Small delay for transition
-      setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        modalContent.classList.remove('scale-95');
-      }, 10);
-    };
+    // ── Auth ───────────────────────────────────────────────────────────────────
+    window.addEventListener('auth-not-logged-in', function() { window.location.href = '/login.html'; });
 
-    const closeModal = () => {
-      modal.classList.add('opacity-0');
-      modalContent.classList.add('scale-95');
-      setTimeout(() => {
-        modal.classList.add('hidden');
-      }, 300);
-    };
-
-    closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal();
+    window.addEventListener('auth-data-loaded', async function(e) {
+      var detail = e.detail || {};
+      var user = detail.user;
+      var profile = detail.profile;
+      if (!user) { window.location.href = '/login.html'; return; }
+      currentUser = user;
+      var name = (profile && (profile.name || profile.full_name)) || (user.user_metadata && user.user_metadata.name) || user.email.split('@')[0];
+      document.getElementById('user-greeting').innerText = 'Olá, ' + name;
+      await fetchOrders(user.id);
     });
-
   </script>
 </body>
 </html>
