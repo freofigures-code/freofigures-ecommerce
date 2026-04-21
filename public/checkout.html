@@ -376,7 +376,7 @@
         var company = opcao.company ? (opcao.company.name || opcao.company) : '';
         var days = opcao.delivery_time || opcao.prazo || opcao.days || '?';
         var color = getCarrierColor(company || name);
-        return '<label class="frete-option flex items-center gap-4 p-4 rounded-lg cursor-pointer" onclick="selectShipping(' + i + ', \'' + name.replace(/'/g, '') + '\', ' + price + ', ' + days + ')">'
+        return '<label class="frete-option flex items-center gap-4 p-4 rounded-lg cursor-pointer" onclick="selectShipping(' + i + ', \'' + name.replace(/'/g, '') + '\', ' + price + ', \'' + days + '\')">'
           + '<input type="radio" name="frete" value="' + i + '" class="flex-shrink-0">'
           + '<div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-0.5">'
           + '<span class="carrier-badge" style="background:' + color + '20;color:' + color + ';border:1px solid ' + color + '30">' + (company || 'Envio').substring(0,10) + '</span>'
@@ -388,6 +388,7 @@
       document.getElementById('frete-options').classList.remove('hidden');
     }
 
+    // ── CORREÇÃO: days agora vem como string para preservar o valor correto ──
     function selectShipping(index, name, price, days) {
       selectedShipping = { name: name, price: price, days: days };
       freteAmount = price;
@@ -444,7 +445,7 @@
           },
 
           // ═══════════════════════════════════════════════════════════════════
-          // onSubmit — LÓGICA COMPLETA
+          // onSubmit — LÓGICA COMPLETA COM FRETE SALVO CORRETAMENTE
           // ═══════════════════════════════════════════════════════════════════
           onSubmit: function(params) {
 
@@ -471,13 +472,17 @@
             var userId = currentUser.id;
 
             // 2. Cria a order como "pendente" ANTES de chamar o gateway
+            // ── CORREÇÃO: salva frete_valor, frete_nome e frete_prazo ────────
             return window.supabaseClient
               .from('orders')
               .insert({
-                user_id: userId,
-                status:  'pendente',
-                total:   totalFinal,
-                items:   itensPedido
+                user_id:     userId,
+                status:      'pendente',
+                total:       totalFinal,
+                items:       itensPedido,
+                frete_valor: selectedShipping ? selectedShipping.price        : 0,
+                frete_nome:  selectedShipping ? selectedShipping.name         : null,
+                frete_prazo: selectedShipping ? String(selectedShipping.days) : null
               })
               .select('id')
               .single()
