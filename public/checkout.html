@@ -51,7 +51,6 @@
     ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 3px; }
     #paymentBrick_container { min-height: 500px; }
 
-    /* Frete option */
     .frete-option { 
       border: 1px solid rgba(255,255,255,0.08); 
       cursor: pointer; 
@@ -61,7 +60,6 @@
     .frete-option.selected { border-color: #D4AF37; background: rgba(212,175,55,0.08); }
     .frete-option input[type="radio"] { accent-color: #D4AF37; }
 
-    /* CEP input */
     .cep-input {
       background: #0A0A0A;
       border: 1px solid rgba(255,255,255,0.1);
@@ -73,7 +71,6 @@
     .cep-input:focus { border-color: #D4AF37; }
     .cep-input::placeholder { color: rgba(245,245,245,0.25); }
 
-    /* Steps */
     .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: ui-monospace, monospace; font-size: 11px; font-weight: bold; flex-shrink: 0; }
     .step-dot.active { background: #D4AF37; color: #0A0A0A; }
     .step-dot.done { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
@@ -81,11 +78,9 @@
     .step-line { flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
     .step-line.done { background: rgba(34,197,94,0.3); }
 
-    /* Skeleton */
     @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
     .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
 
-    /* Transportadora logos via text badges */
     .carrier-badge { font-family: ui-monospace, monospace; font-size: 9px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; }
   </style>
 </head>
@@ -128,7 +123,6 @@
   <!-- CHECKOUT PRINCIPAL -->
   <main id="checkout-main" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 py-8">
 
-    <!-- Steps indicator -->
     <div class="flex items-center gap-2 mb-10 max-w-md mx-auto">
       <div class="step-dot active" id="step1-dot">1</div>
       <div class="step-line" id="step1-line"></div>
@@ -144,10 +138,9 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-      <!-- COLUNA ESQUERDA -->
       <div class="lg:col-span-7 space-y-6">
 
-        <!-- ── STEP 1: Resumo do carrinho ── -->
+        <!-- STEP 1: Itens -->
         <div id="section-cart" class="glass rounded-xl p-6">
           <h2 class="text-lg font-display font-bold uppercase text-freo-orange mb-5 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
@@ -156,7 +149,7 @@
           <div id="checkout-items" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
         </div>
 
-        <!-- ── STEP 2: Cálculo de frete ── -->
+        <!-- STEP 2: Frete -->
         <div id="section-shipping" class="glass rounded-xl p-6">
           <h2 class="text-lg font-display font-bold uppercase text-white mb-5 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M10 12a1 1 0 000 2h4a1 1 0 000-2h-4z"/></svg>
@@ -183,40 +176,34 @@
             </button>
           </div>
 
-          <!-- Link para buscar CEP -->
           <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" class="font-mono text-xs text-freo-orange/50 hover:text-freo-orange transition-colors">Não sei meu CEP →</a>
 
-          <!-- Loading frete -->
           <div id="frete-loading" class="hidden mt-5 space-y-3">
             <div class="skeleton h-16 w-full"></div>
             <div class="skeleton h-16 w-full"></div>
             <div class="skeleton h-16 w-full"></div>
           </div>
 
-          <!-- Erro frete -->
           <div id="frete-error" class="hidden mt-5 p-4 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xs rounded"></div>
 
-          <!-- Opções de frete -->
           <div id="frete-options" class="hidden mt-5 space-y-2">
             <p class="font-mono text-xs text-white/40 uppercase tracking-widest mb-3">Escolha a opção de entrega:</p>
             <div id="frete-list" class="space-y-2"></div>
           </div>
         </div>
 
-        <!-- ── STEP 3: Pagamento ── -->
+        <!-- STEP 3: Pagamento -->
         <div id="section-payment" class="glass rounded-xl p-6 relative">
           <h2 class="text-lg font-display font-bold uppercase text-white mb-5 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
             Pagamento
           </h2>
 
-          <!-- Overlay: precisa selecionar frete primeiro -->
           <div id="payment-overlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-freo-dark/90 backdrop-blur-sm rounded-xl">
             <svg class="w-10 h-10 text-white/20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M10 12a1 1 0 000 2h4a1 1 0 000-2h-4z"/></svg>
             <p class="font-mono text-sm text-white/40 uppercase tracking-widest text-center px-8">Calcule o frete primeiro para liberar o pagamento</p>
           </div>
 
-          <!-- Loading MP -->
           <div id="brick-loading" class="hidden absolute inset-0 z-10 flex flex-col items-center justify-center bg-freo-dark/80 backdrop-blur-sm rounded-xl">
             <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin mb-3"></div>
             <p class="font-mono text-xs text-freo-orange uppercase tracking-widest animate-pulse">Preparando pagamento...</p>
@@ -226,7 +213,7 @@
         </div>
       </div>
 
-      <!-- COLUNA DIREITA: Resumo do pedido -->
+      <!-- Resumo -->
       <div class="lg:col-span-5">
         <div class="glass rounded-xl p-6 sticky top-24">
           <h2 class="text-lg font-display font-bold uppercase text-freo-orange mb-5">Resumo</h2>
@@ -235,10 +222,6 @@
             <div class="flex justify-between text-freo-light/60">
               <span>Subtotal</span>
               <span id="summary-subtotal">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between text-freo-light/60" id="frete-summary-row" style="display:none!important">
-              <span id="frete-summary-label">Frete</span>
-              <span id="frete-summary-value" class="text-freo-orange">—</span>
             </div>
             <div class="flex justify-between text-freo-light/60">
               <span>Frete</span>
@@ -254,7 +237,6 @@
             </div>
           </div>
 
-          <!-- Frete selecionado info -->
           <div id="selected-shipping-info" class="hidden mt-4 p-3 bg-green-500/5 border border-green-500/20 rounded">
             <div class="flex items-center gap-2">
               <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -265,7 +247,6 @@
             </div>
           </div>
 
-          <!-- Selos de confiança -->
           <div class="mt-6 pt-4 border-t border-white/5 space-y-2">
             <div class="flex items-center gap-2 text-white/30">
               <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
@@ -284,18 +265,12 @@
   <script src="/auth-listener.js"></script>
 
   <script>
-    // ── Configurações ──────────────────────────────────────────────────────
     var MP_PUBLIC_KEY = 'APP_USR-7eb3299c-7dd3-4e5e-aaf0-c2ca09b1f5ad';
     var N8N_WEBHOOK_URL = 'https://n8nwebhook.solviaoficial.com/webhook/criar-pagamento';
-
-    // Melhor Envio — chamada via n8n para evitar expor o token no frontend
-    // Você precisará criar um webhook no n8n que recebe {cep_destino, produtos} e retorna as opções de frete
     var N8N_FRETE_URL = 'https://n8nwebhook.solviaoficial.com/webhook/calcular-frete';
 
-    // Dados da sua loja (origem do envio)
     var LOJA = {
       cep: '09691-000',
-      // Dimensões padrão da embalagem (cm / kg)
       embalagem: { altura: 8, largura: 15, comprimento: 20, peso: 0.5 }
     };
 
@@ -316,7 +291,6 @@
       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(v) || 0);
     };
 
-    // ── Helpers UI ─────────────────────────────────────────────────────────
     function showLoading()  { document.getElementById('page-loading').classList.remove('hidden'); document.getElementById('checkout-main').classList.add('hidden'); document.getElementById('cart-empty-state').classList.add('hidden'); }
     function showEmpty()    { document.getElementById('page-loading').classList.add('hidden'); document.getElementById('checkout-main').classList.add('hidden'); document.getElementById('cart-empty-state').classList.remove('hidden'); document.getElementById('cart-empty-state').classList.add('flex'); }
     function showCheckout() { document.getElementById('page-loading').classList.add('hidden'); document.getElementById('checkout-main').classList.remove('hidden'); document.getElementById('cart-empty-state').classList.add('hidden'); }
@@ -331,9 +305,14 @@
       var total = subtotalAmount + freteAmount;
       document.getElementById('summary-subtotal').innerText = formatCurrency(subtotalAmount);
       document.getElementById('summary-total').innerText = formatCurrency(total);
+      var freteEl = document.getElementById('frete-placeholder');
+      if (freteAmount > 0) {
+        freteEl.innerText = formatCurrency(freteAmount);
+        freteEl.classList.remove('text-white/30', 'italic', 'text-xs');
+        freteEl.classList.add('text-freo-orange');
+      }
     }
 
-    // ── Renderiza itens ────────────────────────────────────────────────────
     function renderItems(items) {
       subtotalAmount = 0;
       var html = items.map(function(item) {
@@ -356,7 +335,6 @@
       updateTotals();
     }
 
-    // ── Calcular frete via n8n → Melhor Envio ──────────────────────────────
     async function calcularFrete() {
       var cep = document.getElementById('cep-input').value.replace(/\D/g, '');
       if (cep.length !== 8) {
@@ -372,7 +350,6 @@
       document.getElementById('frete-options').classList.add('hidden');
       document.getElementById('frete-loading').classList.remove('hidden');
 
-      // Calcula peso estimado baseado na quantidade de itens
       var totalQty = cartItemsData.reduce(function(s, i) { return s + (i.quantity || 1); }, 0);
       var pesoTotal = Math.max(0.1, LOJA.embalagem.peso * totalQty);
 
@@ -399,13 +376,11 @@
 
         document.getElementById('frete-loading').classList.add('hidden');
 
-        // Trata a resposta — pode vir como array direto ou aninhado
         var opcoes = Array.isArray(data) ? data : (data.opcoes || data.fretes || data.services || []);
 
         if (!opcoes || opcoes.length === 0) {
           showFreteError('Nenhuma opção de frete disponível para este CEP. Tente outro endereço.');
         } else {
-          // Filtra apenas os que têm preço (remove erros individuais)
           opcoes = opcoes.filter(function(o) { return o.price && parseFloat(o.price) > 0; });
           if (opcoes.length === 0) {
             showFreteError('Não foi possível calcular o frete para este CEP. Verifique se o CEP está correto.');
@@ -417,9 +392,6 @@
       } catch(err) {
         console.error('Erro frete:', err);
         document.getElementById('frete-loading').classList.add('hidden');
-
-        // Fallback: oferece opções dos Correios calculadas de forma simplificada
-        // (quando o n8n ainda não está configurado)
         showFreteError(
           'Não foi possível calcular o frete automaticamente. ' +
           'Por favor, entre em contato via WhatsApp para combinar o envio: ' +
@@ -438,27 +410,18 @@
       document.getElementById('frete-loading').classList.add('hidden');
     }
 
-    // Cores por transportadora
     var carrierColors = {
-      'correios': '#FFD700',
-      'jadlog': '#E63946',
-      'latam': '#023E8A',
-      'azul': '#0077B6',
-      'sequoia': '#2DC653',
-      'loggi': '#7B2FBE',
-      'buslog': '#F77F00',
+      'correios': '#FFD700', 'jadlog': '#E63946', 'latam': '#023E8A',
+      'azul': '#0077B6', 'sequoia': '#2DC653', 'loggi': '#7B2FBE', 'buslog': '#F77F00',
     };
 
     function getCarrierColor(name) {
       var n = (name || '').toLowerCase();
-      for (var key in carrierColors) {
-        if (n.includes(key)) return carrierColors[key];
-      }
+      for (var key in carrierColors) { if (n.includes(key)) return carrierColors[key]; }
       return '#D4AF37';
     }
 
     function renderFreteOptions(opcoes) {
-      // Ordena por preço
       opcoes.sort(function(a, b) { return parseFloat(a.price) - parseFloat(b.price); });
 
       var html = opcoes.slice(0, 6).map(function(opcao, i) {
@@ -491,43 +454,31 @@
       selectedShipping = { name: name, price: price, days: days };
       freteAmount = price;
 
-      // Marca visualmente
       document.querySelectorAll('.frete-option').forEach(function(el, i) {
         el.classList.toggle('selected', i === index);
       });
 
-      // Atualiza resumo
       updateTotals();
 
-      // Mostra info do frete selecionado
       document.getElementById('selected-shipping-name').innerText = name + ' — ' + formatCurrency(price);
       document.getElementById('selected-shipping-deadline').innerText = 'Prazo estimado: ' + days + ' dia(s) úteis';
       document.getElementById('selected-shipping-info').classList.remove('hidden');
-
-      // Atualiza linha de frete no resumo
       document.getElementById('frete-placeholder').parentElement.style.display = 'none';
 
-      // Libera o pagamento
       liberarPagamento();
 
-      // Atualiza steps
       document.getElementById('step2-dot').className = 'step-dot done';
       document.getElementById('step2-dot').innerHTML = '✓';
       document.getElementById('step2-line').className = 'step-line done';
       document.getElementById('step3-dot').className = 'step-dot active';
     }
 
-    // ── Libera e inicializa o Mercado Pago ──────────────────────────────────
     async function liberarPagamento() {
       document.getElementById('payment-overlay').classList.add('hidden');
 
-      if (paymentBrickInitialized) {
-        // Apenas atualiza o total se o Brick já foi inicializado
-        // (o Brick não suporta update de amount, então precisa recriar)
-        if (window.paymentBrickController) {
-          await window.paymentBrickController.unmount();
-          paymentBrickInitialized = false;
-        }
+      if (paymentBrickInitialized && window.paymentBrickController) {
+        await window.paymentBrickController.unmount();
+        paymentBrickInitialized = false;
       }
 
       if (!paymentBrickInitialized) {
@@ -536,28 +487,7 @@
       }
     }
 
-    async function notifyN8nOnLoad() {
-      try {
-        var response = await fetch(N8N_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'init_checkout',
-            user_id: currentUser.id,
-            user_email: currentUser.email,
-            itens: cartItemsData,
-            total: subtotalAmount + freteAmount,
-            frete: selectedShipping,
-            backUrls: backUrls
-          })
-        });
-        return await response.json();
-      } catch(e) {
-        return null;
-      }
-    }
-
-    async function initPaymentBrick(preferenceId) {
+    async function initPaymentBrick() {
       paymentBrickInitialized = true;
       var totalFinal = subtotalAmount + freteAmount;
 
@@ -566,8 +496,7 @@
 
       var settings = {
         initialization: {
-          amount: totalFinal,
-          preferenceId: preferenceId || undefined
+          amount: totalFinal
         },
         customization: {
           paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", mercadoPago: "all" },
@@ -589,9 +518,10 @@
         callbacks: {
           onReady: function() {
             document.getElementById('brick-loading').classList.add('hidden');
-            // Scrolla até a seção de pagamento
             document.getElementById('section-payment').scrollIntoView({ behavior: 'smooth', block: 'start' });
           },
+
+          // ── onSubmit corrigido ──────────────────────────────────────────
           onSubmit: function(params) {
             var payload = Object.assign({}, params.formData, {
               action: 'process_payment',
@@ -600,21 +530,36 @@
               total_com_frete: subtotalAmount + freteAmount,
               backUrls: backUrls
             });
-            return new Promise(function(resolve, reject) {
-              fetch(N8N_WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              })
-              .then(function(r) { return r.json(); })
-              .then(function(response) {
-                resolve(response);
-                if (response.status === 'approved') setTimeout(function() { window.location.href = backUrls.success; }, 3000);
-                else if (response.status === 'rejected') setTimeout(function() { window.location.href = backUrls.failure; }, 3000);
-              })
-              .catch(reject);
+
+            // Retorna a Promise do fetch diretamente — o Brick usa o valor
+            // resolvido para decidir o que exibir (QR code, confirmação, erro)
+            return fetch(N8N_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            })
+            .then(function(r) {
+              if (!r.ok) throw new Error('Erro HTTP: ' + r.status);
+              return r.json();
+            })
+            .then(function(response) {
+              // n8n pode retornar array ou objeto — normaliza para objeto
+              var data = Array.isArray(response) ? response[0] : response;
+
+              // Redireciona conforme status final
+              if (data.status === 'approved') {
+                setTimeout(function() { window.location.href = backUrls.success; }, 3000);
+              } else if (data.status === 'rejected') {
+                setTimeout(function() { window.location.href = backUrls.failure; }, 3000);
+              }
+              // status 'pending' (Pix/boleto): o Brick exibe o QR code/código
+              // automaticamente quando recebe o objeto com point_of_interaction
+
+              return data; // ← retorna o objeto normalizado para o Brick renderizar
             });
           },
+          // ───────────────────────────────────────────────────────────────
+
           onError: function(error) { console.error('Brick error:', error); }
         }
       };
@@ -622,7 +567,6 @@
       window.paymentBrickController = await bricksBuilder.create("payment", "paymentBrick_container", settings);
     }
 
-    // ── FLUXO PRINCIPAL ────────────────────────────────────────────────────
     async function initCheckout() {
       showLoading();
       try {
@@ -643,7 +587,6 @@
         showCheckout();
         renderItems(cartItemsData);
 
-        // Preenche CEP automaticamente se o usuário já tem endereço cadastrado
         try {
           var addrResult = await window.supabaseClient
             .from('addresses')
@@ -652,12 +595,10 @@
             .eq('is_main', true)
             .single();
           if (addrResult.data && addrResult.data.zip_code) {
-            var cepEl = document.getElementById('cep-input');
-            cepEl.value = addrResult.data.zip_code;
-            // Calcula automaticamente
+            document.getElementById('cep-input').value = addrResult.data.zip_code;
             setTimeout(calcularFrete, 500);
           }
-        } catch(e) { /* sem endereço salvo, ok */ }
+        } catch(e) { /* sem endereço salvo */ }
 
       } catch(err) {
         console.error('Erro checkout:', err);
