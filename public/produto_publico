@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produto | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#111111',
+            'freo-card': '#161616',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#DDAF34',
+            'freo-orange2': '#D4AF37',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    /* ── Imagem principal ── */
+    #main-img {
+      transition: opacity 0.2s ease;
+    }
+    .thumb {
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s, transform 0.15s;
+      aspect-ratio: 1;
+      overflow: hidden;
+    }
+    .thumb:hover { transform: scale(1.04); }
+    .thumb.active { border-color: #DDAF34; }
+
+    /* ── Zoom hover ── */
+    .img-zoom-wrap {
+      overflow: hidden;
+      position: relative;
+      cursor: zoom-in;
+    }
+    .img-zoom-wrap img {
+      transition: transform 0.4s ease;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .img-zoom-wrap:hover img { transform: scale(1.08); }
+
+    /* ── Badge de tag ── */
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      font-family: ui-monospace, monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      border-radius: 2px;
+      background: rgba(221,175,52,0.1);
+      border: 1px solid rgba(221,175,52,0.25);
+      color: #DDAF34;
+    }
+
+    /* ── Variante selector ── */
+    .variant-btn {
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(245,245,245,0.6);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.8rem;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: transparent;
+    }
+    .variant-btn:hover { border-color: rgba(221,175,52,0.5); color: #F5F5F5; }
+    .variant-btn.active { border-color: #DDAF34; color: #DDAF34; background: rgba(221,175,52,0.08); }
+
+    /* ── Quantidade ── */
+    .qty-btn {
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #F5F5F5;
+      cursor: pointer;
+      font-size: 18px;
+      transition: background 0.15s;
+    }
+    .qty-btn:hover { background: rgba(221,175,52,0.15); border-color: rgba(221,175,52,0.4); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 2rem; right: 2rem;
+      z-index: 9999;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.875rem;
+      padding: 0.875rem 1.25rem;
+      border-radius: 4px;
+      transform: translateY(120%);
+      transition: transform 0.25s;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #toast.show { transform: translateY(0); }
+    #toast.success { background: #1a2e1a; border: 1px solid rgba(34,197,94,0.4); color: #86efac; }
+    #toast.error   { background: #2e1a1a; border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; }
+
+    /* ── Skeleton ── */
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    .skeleton {
+      background: linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.04) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.6s infinite;
+      border-radius: 4px;
+    }
+
+    /* ── Estoque badge ── */
+    .estoque-ok   { color: #4ade80; background: rgba(34,197,94,0.08);  border: 1px solid rgba(34,197,94,0.2); }
+    .estoque-low  { color: #fb923c; background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.2); }
+    .estoque-out  { color: #f87171; background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.2); }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0A0A0A; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #DDAF34; }
+  </style>
+</head>
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col">
+
+  <!-- NAV -->
+  <nav class="bg-freo-dark/80 backdrop-blur-md border-b border-white/[0.06] py-4 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3">
+        <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" class="w-9 h-9 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.4)]" onerror="this.style.display='none'">
+        <span class="font-display font-black text-xl tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
+      </a>
+      <div class="flex items-center gap-2 text-freo-light/40 font-mono text-xs">
+        <a href="/" class="hover:text-freo-orange transition-colors">Início</a>
+        <span class="text-white/20">/</span>
+        <span id="breadcrumb-cat" class="text-white/40"></span>
+        <span class="text-white/20" id="breadcrumb-sep" style="display:none">/</span>
+        <span id="breadcrumb-title" class="text-freo-orange truncate max-w-40"></span>
+      </div>
+      <a href="/dashboard.html" class="font-mono text-xs text-freo-light/40 hover:text-freo-orange transition-colors hidden sm:block">
+        Minha Conta →
+      </a>
+    </div>
+  </nav>
+
+  <!-- LOADING SKELETON -->
+  <div id="page-loading" class="max-w-7xl mx-auto px-6 py-12 w-full flex-1">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div class="space-y-4">
+        <div class="skeleton aspect-square w-full"></div>
+        <div class="flex gap-2">
+          <div class="skeleton w-20 h-20"></div>
+          <div class="skeleton w-20 h-20"></div>
+          <div class="skeleton w-20 h-20"></div>
+        </div>
+      </div>
+      <div class="space-y-4 pt-4">
+        <div class="skeleton h-4 w-24"></div>
+        <div class="skeleton h-10 w-3/4"></div>
+        <div class="skeleton h-10 w-2/4"></div>
+        <div class="skeleton h-4 w-full mt-8"></div>
+        <div class="skeleton h-4 w-full"></div>
+        <div class="skeleton h-4 w-2/3"></div>
+        <div class="skeleton h-14 w-full mt-8"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUTO NÃO ENCONTRADO -->
+  <div id="page-notfound" class="hidden flex-1 flex items-center justify-center min-h-[60vh]">
+    <div class="text-center">
+      <div class="text-6xl mb-4">📦</div>
+      <h2 class="font-display font-bold text-2xl uppercase text-white/30 mb-3">Produto não encontrado</h2>
+      <p class="font-mono text-sm text-white/20 mb-6">O produto que você procura não existe ou foi removido.</p>
+      <a href="/" class="inline-block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-white transition-colors">
+        Ver catálogo
+      </a>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO DO PRODUTO -->
+  <main id="page-content" class="hidden max-w-7xl mx-auto px-6 py-10 w-full flex-1">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-start">
+
+      <!-- GALERIA DE IMAGENS -->
+      <div class="lg:sticky lg:top-24 space-y-3">
+        <!-- Imagem principal -->
+        <div class="img-zoom-wrap aspect-square bg-freo-dark border border-white/[0.06] rounded-lg overflow-hidden">
+          <img id="main-img" src="" alt="Produto" class="w-full h-full object-cover">
+          <!-- Placeholder quando sem imagem -->
+          <div id="main-img-placeholder" class="hidden w-full h-full flex items-center justify-center">
+            <svg class="w-20 h-20 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+        </div>
+
+        <!-- Thumbnails -->
+        <div id="thumbs-grid" class="flex gap-2 flex-wrap"></div>
+
+        <!-- Vídeo (se houver) -->
+        <div id="video-section" class="hidden">
+          <p class="font-mono text-xs text-white/30 uppercase tracking-widest mb-2">Vídeo do produto</p>
+          <div class="aspect-video bg-freo-dark border border-white/[0.06] rounded overflow-hidden">
+            <iframe id="product-video" class="w-full h-full" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- INFORMAÇÕES DO PRODUTO -->
+      <div class="space-y-6">
+
+        <!-- Categoria e tags -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="product-category" class="font-mono text-xs text-freo-orange uppercase tracking-widest"></span>
+          <div id="product-tags" class="flex gap-1.5 flex-wrap"></div>
+        </div>
+
+        <!-- Título -->
+        <h1 id="product-title" class="font-display font-black text-3xl md:text-4xl uppercase tracking-tighter leading-tight text-white"></h1>
+
+        <!-- Preços -->
+        <div class="flex items-end gap-4">
+          <div id="price-promo" class="hidden">
+            <span class="font-mono text-sm text-white/30 line-through" id="price-original"></span>
+          </div>
+          <span id="price-main" class="font-mono font-bold text-4xl text-freo-orange"></span>
+          <div id="price-discount-badge" class="hidden font-mono text-xs bg-green-500/15 text-green-400 border border-green-500/25 px-2 py-1">
+            — <span id="price-discount-pct"></span>% OFF
+          </div>
+        </div>
+
+        <!-- Estoque -->
+        <div id="estoque-badge" class="inline-flex items-center gap-1.5 font-mono text-xs px-3 py-1.5"></div>
+
+        <!-- Divisor -->
+        <div class="border-t border-white/[0.06]"></div>
+
+        <!-- Variantes -->
+        <div id="variants-section" class="hidden space-y-4"></div>
+
+        <!-- Quantidade -->
+        <div class="space-y-2">
+          <label class="font-mono text-xs text-white/40 uppercase tracking-widest">Quantidade</label>
+          <div class="flex items-center gap-0">
+            <button class="qty-btn" onclick="changeQty(-1)">−</button>
+            <div class="w-14 h-9 flex items-center justify-center border-t border-b border-white/10 font-mono text-sm font-bold text-white bg-freo-dark">
+              <span id="qty-display">1</span>
+            </div>
+            <button class="qty-btn" onclick="changeQty(1)">+</button>
+          </div>
+        </div>
+
+        <!-- Botões de ação -->
+        <div class="flex flex-col gap-3 pt-2">
+          <button id="btn-cart" onclick="addToCart()" class="w-full bg-freo-orange text-freo-black font-display font-black uppercase tracking-widest py-4 text-base hover:bg-white transition-colors flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Adicionar ao Carrinho
+          </button>
+          <a href="https://wa.me/5511961789176" target="_blank" class="w-full border border-white/10 text-white/60 font-mono text-sm uppercase tracking-widest py-3.5 hover:border-green-500/40 hover:text-green-400 transition-colors flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Tirar dúvida pelo WhatsApp
+          </a>
+        </div>
+
+        <!-- Selos de confiança -->
+        <div class="grid grid-cols-3 gap-3 pt-2">
+          <div class="text-center p-3 border border-white/[0.06] rounded">
+            <div class="text-freo-orange mb-1.5">
+              <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <p class="font-mono text-[10px] text-white/30 uppercase leading-tight">Compra<br>Segura</p>
+          </div>
+          <div class="text-center p-3 border border-white/[0.06] rounded">
+            <div class="text-freo-orange mb-1.5">
+              <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </div>
+            <p class="font-mono text-[10px] text-white/30 uppercase leading-tight">Frete<br>Calculado</p>
+          </div>
+          <div class="text-center p-3 border border-white/[0.06] rounded">
+            <div class="text-freo-orange mb-1.5">
+              <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <p class="font-mono text-[10px] text-white/30 uppercase leading-tight">Qualidade<br>Garantida</p>
+          </div>
+        </div>
+
+        <!-- Descrição -->
+        <div class="border-t border-white/[0.06] pt-6 space-y-3">
+          <h3 class="font-mono text-xs text-white/40 uppercase tracking-widest">Descrição</h3>
+          <div id="product-description" class="font-body text-sm text-freo-light/70 leading-relaxed space-y-2"></div>
+        </div>
+
+        <!-- Variantes detalhadas (se houver) -->
+        <div id="variants-detail" class="hidden border-t border-white/[0.06] pt-6 space-y-3">
+          <h3 class="font-mono text-xs text-white/40 uppercase tracking-widest">Opções disponíveis</h3>
+          <div id="variants-detail-content" class="space-y-3"></div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script src="/auth-listener.js"></script>
+
+  <script>
+    var product = null;
+    var currentUser = null;
+    var qty = 1;
+    var maxStock = 99;
+
+    var formatCurrency = function(v) {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(v) || 0);
+    };
+
+    // ── Toast ───────────────────────────────────────────────────────────────
+    var toastTimer;
+    function showToast(msg, type) {
+      var el = document.getElementById('toast');
+      el.innerHTML = (type === 'success' ? '✅ ' : '❌ ') + msg;
+      el.className = 'show ' + (type || 'success');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() { el.className = type || 'success'; }, 3000);
+    }
+
+    // ── Quantidade ──────────────────────────────────────────────────────────
+    function changeQty(delta) {
+      qty = Math.max(1, Math.min(maxStock, qty + delta));
+      document.getElementById('qty-display').innerText = qty;
+    }
+
+    // ── Converter URL YouTube para embed ────────────────────────────────────
+    function getYouTubeEmbed(url) {
+      if (!url) return null;
+      var match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^&?\/]+)/);
+      return match ? 'https://www.youtube.com/embed/' + match[1] : null;
+    }
+
+    // ── Renderiza imagem principal ──────────────────────────────────────────
+    function setMainImage(url) {
+      var img = document.getElementById('main-img');
+      var placeholder = document.getElementById('main-img-placeholder');
+      if (url) {
+        img.src = url;
+        img.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+      } else {
+        img.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+      }
+    }
+
+    // ── Renderiza produto ───────────────────────────────────────────────────
+    function renderProduct(p) {
+      product = p;
+      maxStock = p.stock || 99;
+
+      // Meta title
+      document.title = (p.title || 'Produto') + ' | FreoFigures';
+
+      // Breadcrumb
+      if (p.category) {
+        document.getElementById('breadcrumb-cat').innerText = p.category;
+        document.getElementById('breadcrumb-sep').style.display = 'inline';
+      }
+      document.getElementById('breadcrumb-title').innerText = p.title || '';
+
+      // Categoria
+      document.getElementById('product-category').innerText = p.category || '';
+
+      // Tags
+      var tagsEl = document.getElementById('product-tags');
+      if (p.tags && p.tags.length > 0) {
+        tagsEl.innerHTML = p.tags.map(function(tag) {
+          return '<span class="tag-pill">' + tag + '</span>';
+        }).join('');
+      }
+
+      // Título
+      document.getElementById('product-title').innerText = p.title || '';
+
+      // Preços
+      var hasPromo = p.promotional_price && parseFloat(p.promotional_price) < parseFloat(p.price);
+      var displayPrice = hasPromo ? p.promotional_price : p.price;
+      document.getElementById('price-main').innerText = formatCurrency(displayPrice);
+
+      if (hasPromo) {
+        document.getElementById('price-promo').classList.remove('hidden');
+        document.getElementById('price-original').innerText = formatCurrency(p.price);
+        var pct = Math.round((1 - parseFloat(p.promotional_price) / parseFloat(p.price)) * 100);
+        document.getElementById('price-discount-badge').classList.remove('hidden');
+        document.getElementById('price-discount-pct').innerText = pct;
+      }
+
+      // Estoque
+      var estoqueEl = document.getElementById('estoque-badge');
+      var stock = p.stock || 0;
+      if (stock <= 0) {
+        estoqueEl.className = 'estoque-out inline-flex items-center gap-1.5 font-mono text-xs px-3 py-1.5';
+        estoqueEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#f87171;display:inline-block;flex-shrink:0"></span> Fora de estoque';
+        document.getElementById('btn-cart').disabled = true;
+      } else if (stock <= 5) {
+        estoqueEl.className = 'estoque-low inline-flex items-center gap-1.5 font-mono text-xs px-3 py-1.5';
+        estoqueEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#fb923c;display:inline-block;flex-shrink:0"></span> Últimas ' + stock + ' unidades';
+        maxStock = stock;
+      } else {
+        estoqueEl.className = 'estoque-ok inline-flex items-center gap-1.5 font-mono text-xs px-3 py-1.5';
+        estoqueEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;flex-shrink:0"></span> Em estoque';
+      }
+
+      // Imagens
+      var images = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+      if (images.length > 0) {
+        setMainImage(images[0]);
+        var thumbsGrid = document.getElementById('thumbs-grid');
+        if (images.length > 1) {
+          thumbsGrid.innerHTML = images.map(function(url, i) {
+            return '<div class="thumb w-20 h-20 bg-freo-dark border border-white/[0.06] rounded overflow-hidden' + (i === 0 ? ' active' : '') + '" onclick="selectThumb(this, \'' + url + '\')">'
+              + '<img src="' + url + '" class="w-full h-full object-cover" onerror="this.parentElement.style.display=\'none\'">'
+              + '</div>';
+          }).join('');
+        }
+      } else {
+        setMainImage(null);
+      }
+
+      // Vídeo
+      var embedUrl = getYouTubeEmbed(p.video_url);
+      if (embedUrl) {
+        document.getElementById('product-video').src = embedUrl;
+        document.getElementById('video-section').classList.remove('hidden');
+      }
+
+      // Descrição
+      var descEl = document.getElementById('product-description');
+      if (p.description) {
+        descEl.innerHTML = p.description.split('\n').map(function(line) {
+          return line.trim() ? '<p>' + line + '</p>' : '';
+        }).join('');
+      } else {
+        descEl.innerHTML = '<p class="text-white/30 italic">Sem descrição disponível.</p>';
+      }
+
+      // Variantes
+      var variants = Array.isArray(p.variants) ? p.variants : [];
+      if (variants.length > 0) {
+        var validVariants = variants.filter(function(v) { return v.name && v.options && v.options.length > 0; });
+        if (validVariants.length > 0) {
+          // Seção de seleção
+          var varSection = document.getElementById('variants-section');
+          varSection.classList.remove('hidden');
+          varSection.innerHTML = validVariants.map(function(v) {
+            return '<div>'
+              + '<label class="font-mono text-xs text-white/40 uppercase tracking-widest mb-2 block">' + v.name + '</label>'
+              + '<div class="flex gap-2 flex-wrap">'
+              + v.options.map(function(opt) {
+                  return '<button class="variant-btn" onclick="selectVariant(this)">' + opt + '</button>';
+                }).join('')
+              + '</div>'
+              + '</div>';
+          }).join('');
+
+          // Detalhe na descrição
+          var varDetail = document.getElementById('variants-detail');
+          var varDetailContent = document.getElementById('variants-detail-content');
+          varDetail.classList.remove('hidden');
+          varDetailContent.innerHTML = validVariants.map(function(v) {
+            return '<div class="flex gap-3">'
+              + '<span class="font-mono text-xs text-white/40 uppercase tracking-widest w-20 flex-shrink-0 pt-0.5">' + v.name + ':</span>'
+              + '<span class="font-body text-sm text-freo-light/60">' + v.options.join(', ') + '</span>'
+              + '</div>';
+          }).join('');
+        }
+      }
+
+      // Mostra conteúdo
+      document.getElementById('page-loading').classList.add('hidden');
+      document.getElementById('page-content').classList.remove('hidden');
+    }
+
+    function selectThumb(el, url) {
+      document.querySelectorAll('.thumb').forEach(function(t) { t.classList.remove('active'); });
+      el.classList.add('active');
+      var img = document.getElementById('main-img');
+      img.style.opacity = '0';
+      setTimeout(function() { setMainImage(url); img.style.opacity = '1'; }, 150);
+    }
+
+    function selectVariant(btn) {
+      var parent = btn.parentElement;
+      parent.querySelectorAll('.variant-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    }
+
+    // ── Adicionar ao carrinho ───────────────────────────────────────────────
+    async function addToCart() {
+      if (!product) return;
+
+      var session = await window.supabaseClient.auth.getSession();
+      var s = session.data && session.data.session;
+
+      if (!s) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      var btn = document.getElementById('btn-cart');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div> Adicionando...';
+
+      try {
+        var priceNum = product.promotional_price && parseFloat(product.promotional_price) < parseFloat(product.price)
+          ? parseFloat(product.promotional_price)
+          : parseFloat(product.price);
+
+        var thumb = (product.images && product.images.length > 0) ? product.images[0] : null;
+
+        // Verifica se já existe no carrinho
+        var existing = await window.supabaseClient
+          .from('cart_items')
+          .select('id, quantity')
+          .eq('user_id', s.user.id)
+          .eq('product_id', String(product.id))
+          .single();
+
+        if (existing.data) {
+          // Atualiza quantidade
+          await window.supabaseClient
+            .from('cart_items')
+            .update({ quantity: existing.data.quantity + qty })
+            .eq('id', existing.data.id);
+        } else {
+          // Insere novo
+          var r = await window.supabaseClient.from('cart_items').insert({
+            user_id:      s.user.id,
+            product_id:   String(product.id),
+            product_name: product.title,
+            quantity:     qty,
+            price:        priceNum,
+            total_price:  priceNum * qty,
+            image_url:    thumb
+          });
+          if (r.error) throw r.error;
+        }
+
+        showToast('Adicionado ao carrinho!', 'success');
+
+        // Botão temporário de ir ao carrinho
+        btn.innerHTML = '✅ No carrinho — <span style="text-decoration:underline;cursor:pointer" onclick="window.location.href=\'/dashboard.html\'">Ver carrinho</span>';
+        btn.disabled = false;
+        btn.classList.remove('bg-freo-orange');
+        btn.classList.add('bg-green-600', 'text-white');
+
+        setTimeout(function() {
+          btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg> Adicionar ao Carrinho';
+          btn.classList.remove('bg-green-600', 'text-white');
+          btn.classList.add('bg-freo-orange');
+          btn.disabled = false;
+        }, 4000);
+
+      } catch(err) {
+        console.error('Erro ao adicionar:', err);
+        showToast('Erro ao adicionar ao carrinho.', 'error');
+        btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg> Adicionar ao Carrinho';
+        btn.disabled = false;
+      }
+    }
+
+    // ── Init: busca produto pelo ID na URL ──────────────────────────────────
+    async function init() {
+      var params = new URLSearchParams(window.location.search);
+      var id = params.get('id');
+
+      if (!id) {
+        document.getElementById('page-loading').classList.add('hidden');
+        document.getElementById('page-notfound').classList.remove('hidden');
+        document.getElementById('page-notfound').classList.add('flex');
+        return;
+      }
+
+      try {
+        var result = await window.supabaseClient
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .eq('is_active', true)
+          .single();
+
+        if (result.error || !result.data) {
+          document.getElementById('page-loading').classList.add('hidden');
+          document.getElementById('page-notfound').classList.remove('hidden');
+          document.getElementById('page-notfound').classList.add('flex');
+          return;
+        }
+
+        renderProduct(result.data);
+
+      } catch(err) {
+        console.error('Erro ao carregar produto:', err);
+        document.getElementById('page-loading').classList.add('hidden');
+        document.getElementById('page-notfound').classList.remove('hidden');
+        document.getElementById('page-notfound').classList.add('flex');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    window.addEventListener('auth-data-loaded', function(e) {
+      currentUser = e.detail.user;
+    });
+  </script>
+</body>
+</html>
