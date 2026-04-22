@@ -250,9 +250,14 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
   const displayPrice = hasPromo ? product.promotional_price! : product.price;
   const tag = product.tags && product.tags.length > 0 ? product.tags[0] : null;
 
+  const goToProduct = () => { window.location.href = '/produto.html?id=' + product.id; };
+
   return (
     <div className={`group flex flex-col ${compact ? '' : 'bg-freo-dark border border-white/5 hover:border-freo-orange/50 transition-colors'}`}>
-      <div className={`relative ${compact ? 'aspect-square' : 'aspect-square bg-freo-black'} overflow-hidden ${compact ? 'border border-white/5 group-hover:border-freo-orange/50 transition-colors' : ''} mb-4`}>
+      <div
+        className={`relative ${compact ? 'aspect-square' : 'aspect-square bg-freo-black'} overflow-hidden ${compact ? 'border border-white/5 group-hover:border-freo-orange/50 transition-colors' : ''} mb-4 cursor-pointer`}
+        onClick={goToProduct}
+      >
         {tag && (
           <div className="absolute top-3 left-3 z-10 bg-freo-orange text-freo-black text-[10px] font-bold uppercase tracking-widest px-2 py-1">
             {tag}
@@ -270,14 +275,17 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
 
       <div className={`flex flex-col flex-grow ${compact ? '' : 'p-5'}`}>
         <span className="text-freo-orange text-[10px] font-mono uppercase mb-1 tracking-wider">{product.category || 'Geral'}</span>
-        <h3 className={`font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors ${compact ? 'text-lg' : 'text-lg'}`}>{product.title}</h3>
+        <h3
+          className={`font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors cursor-pointer ${compact ? 'text-lg' : 'text-lg'}`}
+          onClick={goToProduct}
+        >{product.title}</h3>
         <div className="mt-auto flex flex-col gap-3">
           <div className="flex items-end gap-2">
             {hasPromo && <span className="font-mono text-sm text-white/30 line-through">{formatPrice(product.price)}</span>}
             <span className="font-mono text-xl font-bold text-freo-orange">{formatPrice(displayPrice)}</span>
           </div>
           <button
-            onClick={() => onAddToCart(product)}
+            onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
             className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-wider py-3 hover:bg-white transition-colors flex items-center justify-center gap-2"
           >
             <ShoppingCart className="w-5 h-5" />
