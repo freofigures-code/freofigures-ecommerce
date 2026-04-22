@@ -250,7 +250,7 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
   const displayPrice = hasPromo ? product.promotional_price! : product.price;
   const tag = product.tags && product.tags.length > 0 ? product.tags[0] : null;
 
-  const goToProduct = () => { window.location.href = '/produto.html?id=' + product.id; };
+  const goToProduct = () => { window.location.href = '/produto?id=' + product.id; };
 
   return (
     <div className={`group flex flex-col ${compact ? '' : 'bg-freo-dark border border-white/5 hover:border-freo-orange/50 transition-colors'}`}>
