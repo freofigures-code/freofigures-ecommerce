@@ -1,48 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingCart, Menu, X, ChevronRight, Box, Hexagon, Search, User, Trash2, Plus, Minus, Layers, Zap } from 'lucide-react';
+import { ShoppingCart, Menu, X, ChevronRight, Box, Hexagon, Search, User, Trash2, Plus, Minus } from 'lucide-react';
 
 // --- Types ---
-type CartItem = {
-  name: string;
-  price: string;
-  img: string;
-  quantity: number;
-};
+type CartItem = { name: string; price: string; img: string; quantity: number; };
+type Product = { id: number; title: string; price: number; promotional_price: number | null; category: string | null; images: string[]; tags: string[] | null; is_active: boolean; };
 
-type Product = {
-  id: number;
-  title: string;
-  price: number;
-  promotional_price: number | null;
-  category: string | null;
-  images: string[];
-  tags: string[] | null;
-  is_active: boolean;
-};
-
-// --- Components ---
-
+// --- Navbar ---
 const Navbar = ({ currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart, user }: any) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-freo-black/80 backdrop-blur-md border-b border-white/10 py-4' : 'bg-transparent py-6'}`}>
+    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-black/90 backdrop-blur-md border-b border-freo-orange/20 py-4' : 'bg-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         <div className="flex items-center gap-3 z-50 cursor-pointer" onClick={() => setCurrentView('home')}>
-          <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Freo Figures Logo" className="w-10 h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]" />
-          <span className="font-display font-black text-2xl tracking-tighter uppercase">
-            Freo<span className="text-freo-orange font-light">Figures</span>
-          </span>
+          <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]" />
+          <span className="font-display font-black text-2xl tracking-tighter uppercase">Freo<span className="text-freo-orange font-light">Figures</span></span>
         </div>
-
         <div className="hidden md:flex items-center gap-8 font-body text-sm font-semibold tracking-widest uppercase text-freo-light">
           {currentView === 'home' ? (
             <>
@@ -59,39 +38,25 @@ const Navbar = ({ currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart
             </>
           )}
         </div>
-
         <div className="hidden md:flex items-center gap-6">
           {user && (
             <a href="/meus-pedidos.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded">
-              <Box className="w-4 h-4" />
-              Meus Pedidos
+              <Box className="w-4 h-4" /> Meus Pedidos
             </a>
           )}
           <button className="text-freo-light hover:text-freo-orange transition-colors"><Search className="w-5 h-5" /></button>
           <button onClick={onOpenAuth} className="text-freo-light hover:text-freo-orange transition-colors"><User className="w-5 h-5" /></button>
           <button onClick={onOpenCart} className="text-freo-light hover:text-freo-orange transition-colors relative">
             <ShoppingCart className="w-5 h-5" />
-            {cartItems.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-freo-orange text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {cartItems.reduce((acc: number, item: any) => acc + item.quantity, 0)}
-              </span>
-            )}
+            {cartItems.length > 0 && <span className="absolute -top-2 -right-2 bg-freo-orange text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{cartItems.reduce((a: number, i: any) => a + i.quantity, 0)}</span>}
           </button>
         </div>
-
-        <button className="md:hidden text-freo-white z-50" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-          {mobileMenuOpen ? <X /> : <Menu />}
-        </button>
+        <button className="md:hidden z-50" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>{mobileMenuOpen ? <X /> : <Menu />}</button>
       </div>
-
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-0 left-0 w-full h-screen bg-freo-black flex flex-col items-center justify-center gap-8 text-2xl font-display font-bold uppercase"
-          >
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+            className="absolute top-0 left-0 w-full h-screen bg-black flex flex-col items-center justify-center gap-8 text-2xl font-display font-bold uppercase">
             {currentView === 'home' ? (
               <>
                 <a href="#categorias" onClick={() => setMobileMenuOpen(false)} className="hover:text-freo-orange">Categorias</a>
@@ -106,11 +71,7 @@ const Navbar = ({ currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart
                 <span className="text-freo-orange">Catálogo</span>
               </>
             )}
-            {user && (
-              <a href="/meus-pedidos.html" className="text-freo-orange flex items-center gap-2 mt-4 text-lg border border-freo-orange/30 px-6 py-2 rounded bg-freo-orange/10">
-                <Box className="w-6 h-6" /> Meus Pedidos
-              </a>
-            )}
+            {user && <a href="/meus-pedidos.html" className="text-freo-orange flex items-center gap-2 mt-4 text-lg border border-freo-orange/30 px-6 py-2 rounded bg-freo-orange/10"><Box className="w-6 h-6" /> Meus Pedidos</a>}
             <button onClick={() => { onOpenAuth(); setMobileMenuOpen(false); }} className="text-freo-light hover:text-freo-orange flex items-center gap-2 mt-4 text-lg">
               <User className="w-6 h-6" /> {user ? 'Minha Conta' : 'Entrar / Criar Conta'}
             </button>
@@ -121,10 +82,290 @@ const Navbar = ({ currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart
   );
 };
 
-// ── HERO — novo design cyberpunk ───────────────────────────────────────────
+// --- Figure SVG cyberpunk (lado direito do Hero) ---
+const CyberpunkFigure = () => {
+  const [pulse, setPulse] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setPulse(v => !v), 1200);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center select-none">
+
+      {/* Glow de fundo */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-72 h-72 rounded-full" style={{
+          background: 'radial-gradient(circle, rgba(221,175,52,0.18) 0%, rgba(221,175,52,0.06) 50%, transparent 75%)',
+          filter: 'blur(20px)'
+        }} />
+      </div>
+
+      {/* Frame hexagonal externo girando */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+        className="absolute w-[420px] h-[420px] pointer-events-none"
+        style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+      >
+        <svg viewBox="0 0 420 420" className="w-full h-full">
+          <polygon points="210,8 400,115 400,305 210,412 20,305 20,115"
+            fill="none" stroke="rgba(221,175,52,0.15)" strokeWidth="1" strokeDasharray="8 6" />
+          {[0,60,120,180,240,300].map((angle, i) => {
+            const rad = (angle * Math.PI) / 180;
+            const cx = 210 + 200 * Math.sin(rad);
+            const cy = 210 - 200 * Math.cos(rad);
+            return <circle key={i} cx={cx} cy={cy} r="3" fill="rgba(221,175,52,0.4)" />;
+          })}
+        </svg>
+      </motion.div>
+
+      {/* Frame hexagonal interno girando inverso */}
+      <motion.div
+        animate={{ rotate: -360 }}
+        transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+        className="absolute w-[310px] h-[310px] pointer-events-none"
+        style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+      >
+        <svg viewBox="0 0 310 310" className="w-full h-full">
+          <polygon points="155,6 295,82 295,228 155,304 15,228 15,82"
+            fill="none" stroke="rgba(221,175,52,0.08)" strokeWidth="1" />
+        </svg>
+      </motion.div>
+
+      {/* Plataforma base */}
+      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 pointer-events-none">
+        <svg viewBox="0 0 260 40" width="260" height="40">
+          <ellipse cx="130" cy="20" rx="110" ry="14" fill="rgba(221,175,52,0.06)" stroke="rgba(221,175,52,0.2)" strokeWidth="1"/>
+          <ellipse cx="130" cy="18" rx="80" ry="9" fill="rgba(221,175,52,0.04)" stroke="rgba(221,175,52,0.15)" strokeWidth="1"/>
+          {/* Glow da plataforma */}
+          <ellipse cx="130" cy="22" rx="90" ry="8" fill="rgba(221,175,52,0.12)" style={{ filter: 'blur(6px)' }}/>
+        </svg>
+      </div>
+
+      {/* Figura principal — silhueta humanoide cyberpunk */}
+      <motion.div
+        animate={{ y: [-8, 8, -8] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        className="relative z-10"
+        style={{ marginTop: '-20px' }}
+      >
+        <svg viewBox="0 0 200 380" width="200" height="380">
+          <defs>
+            <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#DDAF34" stopOpacity="0.9"/>
+              <stop offset="50%" stopColor="#C9A227" stopOpacity="0.7"/>
+              <stop offset="100%" stopColor="#8B6914" stopOpacity="0.5"/>
+            </linearGradient>
+            <linearGradient id="bodyGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1a1a1a" stopOpacity="1"/>
+              <stop offset="100%" stopColor="#0a0a0a" stopOpacity="1"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glowStrong">
+              <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          {/* === CABEÇA === */}
+          {/* Capacete base */}
+          <ellipse cx="100" cy="52" rx="34" ry="38" fill="url(#bodyGradDark)" stroke="url(#bodyGrad)" strokeWidth="1.5"/>
+          {/* Visor */}
+          <rect x="72" y="44" width="56" height="18" rx="4" fill="rgba(221,175,52,0.15)" stroke="rgba(221,175,52,0.6)" strokeWidth="1" filter="url(#glow)"/>
+          {/* Olhos */}
+          <rect x="78" y="49" width="16" height="6" rx="2" fill="#DDAF34" filter="url(#glowStrong)"/>
+          <rect x="106" y="49" width="16" height="6" rx="2" fill="#DDAF34" filter="url(#glowStrong)"/>
+          {/* Detalhe capacete topo */}
+          <path d="M80 20 Q100 10 120 20" fill="none" stroke="rgba(221,175,52,0.5)" strokeWidth="1.5"/>
+          <rect x="96" y="10" width="8" height="12" rx="1" fill="rgba(221,175,52,0.4)"/>
+          {/* Antena */}
+          <line x1="100" y1="10" x2="100" y2="0" stroke="rgba(221,175,52,0.6)" strokeWidth="1.5"/>
+          <circle cx="100" cy="0" r="2.5" fill="#DDAF34" filter="url(#glowStrong)"/>
+          {/* Detalhes laterais capacete */}
+          <rect x="64" y="50" width="6" height="10" rx="1" fill="rgba(221,175,52,0.3)" stroke="rgba(221,175,52,0.5)" strokeWidth="0.5"/>
+          <rect x="130" y="50" width="6" height="10" rx="1" fill="rgba(221,175,52,0.3)" stroke="rgba(221,175,52,0.5)" strokeWidth="0.5"/>
+
+          {/* === PESCOÇO === */}
+          <rect x="90" y="88" width="20" height="14" rx="2" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
+          <line x1="96" y1="88" x2="96" y2="102" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
+          <line x1="104" y1="88" x2="104" y2="102" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
+
+          {/* === TÓRAX === */}
+          {/* Peitoral */}
+          <path d="M58 102 Q100 95 142 102 L148 170 Q100 178 52 170 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1.5"/>
+          {/* Placa peitoral esquerda */}
+          <path d="M65 108 Q85 104 98 108 L100 148 Q82 152 66 148 Z" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.35)" strokeWidth="1"/>
+          {/* Placa peitoral direita */}
+          <path d="M102 108 Q115 104 135 108 L134 148 Q118 152 100 148 Z" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.35)" strokeWidth="1"/>
+          {/* Núcleo de energia central */}
+          <rect x="88" y="126" width="24" height="16" rx="3" fill="rgba(221,175,52,0.1)" stroke="rgba(221,175,52,0.6)" strokeWidth="1.5" filter="url(#glow)"/>
+          <rect x="92" y="129" width="16" height="10" rx="2" fill={pulse ? "rgba(221,175,52,0.5)" : "rgba(221,175,52,0.2)"} style={{ transition: 'fill 0.3s' }} filter="url(#glowStrong)"/>
+          {/* Logo FF no peito */}
+          <text x="100" y="122" textAnchor="middle" fontSize="8" fill="rgba(221,175,52,0.6)" fontFamily="monospace" fontWeight="bold">FF</text>
+          {/* Linhas de detalhe tórax */}
+          <line x1="70" y1="158" x2="130" y2="158" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
+          <line x1="68" y1="164" x2="132" y2="164" stroke="rgba(221,175,52,0.15)" strokeWidth="0.5"/>
+
+          {/* === OMBROS === */}
+          {/* Ombro esquerdo */}
+          <ellipse cx="48" cy="112" rx="16" ry="14" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.45)" strokeWidth="1.5"/>
+          <ellipse cx="48" cy="108" rx="10" ry="7" fill="rgba(221,175,52,0.1)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
+          {/* Ombro direito */}
+          <ellipse cx="152" cy="112" rx="16" ry="14" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.45)" strokeWidth="1.5"/>
+          <ellipse cx="152" cy="108" rx="10" ry="7" fill="rgba(221,175,52,0.1)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
+
+          {/* === BRAÇOS === */}
+          {/* Braço esquerdo */}
+          <path d="M38 122 Q28 148 32 180" fill="none" stroke="none"/>
+          <rect x="28" y="122" width="18" height="52" rx="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1" transform="rotate(-5 37 148)"/>
+          {/* Cotovelo esquerdo */}
+          <circle cx="35" cy="175" r="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1"/>
+          {/* Antebraço esquerdo */}
+          <rect x="26" y="180" width="16" height="44" rx="7" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1" transform="rotate(8 34 202)"/>
+          {/* Detalhe braço */}
+          <line x1="32" y1="140" x2="44" y2="140" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
+          <line x1="30" y1="148" x2="42" y2="148" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
+
+          {/* Braço direito */}
+          <rect x="154" y="122" width="18" height="52" rx="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1" transform="rotate(5 163 148)"/>
+          {/* Cotovelo direito */}
+          <circle cx="165" cy="175" r="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1"/>
+          {/* Antebraço direito */}
+          <rect x="158" y="180" width="16" height="44" rx="7" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1" transform="rotate(-8 166 202)"/>
+
+          {/* Mão esquerda */}
+          <ellipse cx="30" cy="228" rx="9" ry="12" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
+          {/* Mão direita */}
+          <ellipse cx="170" cy="228" rx="9" ry="12" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
+
+          {/* === CINTURA / ABDOMEM === */}
+          <path d="M58 168 Q100 175 142 168 L138 210 Q100 218 62 210 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
+          {/* Fivela */}
+          <rect x="85" y="198" width="30" height="10" rx="2" fill="rgba(221,175,52,0.15)" stroke="rgba(221,175,52,0.5)" strokeWidth="1"/>
+          <rect x="95" y="200" width="10" height="6" rx="1" fill="rgba(221,175,52,0.4)" filter="url(#glow)"/>
+          {/* Detalhes abdomen */}
+          {[0,1,2].map(i => (
+            <rect key={i} x={75 + i*18} y="178" width="12" height="8" rx="1" fill="rgba(221,175,52,0.06)" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
+          ))}
+
+          {/* === QUADRIL === */}
+          <path d="M62 208 Q100 215 138 208 L140 230 Q100 238 60 230 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.25)" strokeWidth="1"/>
+
+          {/* === PERNAS === */}
+          {/* Coxa esquerda */}
+          <rect x="64" y="228" width="30" height="62" rx="10" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1.5"/>
+          <rect x="68" y="238" width="22" height="8" rx="2" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
+          <rect x="68" y="252" width="22" height="8" rx="2" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
+          {/* Joelho esquerdo */}
+          <ellipse cx="79" cy="292" rx="15" ry="10" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1.5"/>
+          <ellipse cx="79" cy="290" rx="8" ry="5" fill="rgba(221,175,52,0.12)" filter="url(#glow)"/>
+          {/* Canela esquerda */}
+          <rect x="66" y="298" width="26" height="54" rx="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1.5"/>
+          <line x1="70" y1="316" x2="88" y2="316" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
+          <line x1="70" y1="328" x2="88" y2="328" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
+
+          {/* Coxa direita */}
+          <rect x="106" y="228" width="30" height="62" rx="10" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1.5"/>
+          <rect x="110" y="238" width="22" height="8" rx="2" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
+          <rect x="110" y="252" width="22" height="8" rx="2" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
+          {/* Joelho direito */}
+          <ellipse cx="121" cy="292" rx="15" ry="10" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1.5"/>
+          <ellipse cx="121" cy="290" rx="8" ry="5" fill="rgba(221,175,52,0.12)" filter="url(#glow)"/>
+          {/* Canela direita */}
+          <rect x="108" y="298" width="26" height="54" rx="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1.5"/>
+          <line x1="112" y1="316" x2="130" y2="316" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
+          <line x1="112" y1="328" x2="130" y2="328" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
+
+          {/* === BOTAS === */}
+          {/* Bota esquerda */}
+          <path d="M62 350 Q64 366 58 374 L96 374 L94 350 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1.5"/>
+          <line x1="60" y1="368" x2="95" y2="368" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
+          {/* Bota direita */}
+          <path d="M106 350 Q108 366 104 374 L142 374 L138 350 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1.5"/>
+          <line x1="106" y1="368" x2="141" y2="368" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
+
+          {/* === LINHAS DE ENERGIA === */}
+          {/* Linha esquerda do tórax ao braço */}
+          <path d="M65 130 Q50 130 42 145" fill="none" stroke="rgba(221,175,52,0.3)" strokeWidth="1" strokeDasharray="3 2"/>
+          {/* Linha direita */}
+          <path d="M135 130 Q150 130 158 145" fill="none" stroke="rgba(221,175,52,0.3)" strokeWidth="1" strokeDasharray="3 2"/>
+          {/* Linha central tórax-perna esquerda */}
+          <path d="M85 175 Q79 210 79 228" fill="none" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5" strokeDasharray="2 3"/>
+          {/* Linha central tórax-perna direita */}
+          <path d="M115 175 Q121 210 121 228" fill="none" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5" strokeDasharray="2 3"/>
+        </svg>
+      </motion.div>
+
+      {/* HUD: Resolução — canto superior direito */}
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+        className="absolute top-8 right-0 flex items-center gap-3 bg-black/90 border border-freo-orange/30 backdrop-blur-sm px-4 py-3 z-20"
+      >
+        <div className="text-freo-orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 3H3v3M18 3h3v3M6 21H3v-3M18 21h3v-3"/>
+            <rect x="7" y="7" width="10" height="10" rx="0.5"/>
+          </svg>
+        </div>
+        <div>
+          <div className="font-mono text-[9px] text-freo-orange/50 uppercase tracking-widest mb-0.5">Resolução</div>
+          <div className="font-display font-black text-xl text-white leading-none">0.05mm</div>
+        </div>
+        <div className="ml-1 flex flex-col gap-1">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: i < 4 ? '#DDAF34' : 'rgba(221,175,52,0.18)' }}/>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* HUD: Material — canto inferior esquerdo */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9 }}
+        className="absolute bottom-28 left-0 flex items-center gap-3 bg-black/90 border border-freo-orange/30 backdrop-blur-sm px-4 py-3 z-20"
+      >
+        <div className="w-8 h-8 flex items-center justify-center text-freo-orange border border-freo-orange/30 flex-shrink-0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+          </svg>
+        </div>
+        <div>
+          <div className="font-mono text-[9px] text-freo-orange/50 uppercase tracking-widest mb-0.5">Material</div>
+          <div className="font-display font-bold text-base text-white leading-tight">PLA Silk Premium</div>
+        </div>
+      </motion.div>
+
+      {/* HUD: Edição — canto inferior direito */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1.05 }}
+        className="absolute bottom-10 right-0 bg-black/95 border border-freo-orange/30 px-5 py-4 z-20 text-center min-w-[120px]"
+      >
+        <div className="font-display font-black text-xl text-freo-orange leading-none">FREO</div>
+        <div className="font-display font-black text-lg text-white leading-none mb-2">FIGURES</div>
+        <div className="w-full h-px bg-freo-orange/20 mb-2"/>
+        <div className="font-mono text-[8px] text-freo-orange/40 uppercase tracking-widest">001/999</div>
+        <div className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-widest">Edição Limitada</div>
+      </motion.div>
+
+      {/* Cantos do frame */}
+      <div className="absolute top-10 left-[18%] w-6 h-6 border-t border-l border-freo-orange/30 z-20"/>
+      <div className="absolute top-10 right-[18%] w-6 h-6 border-t border-r border-freo-orange/30 z-20"/>
+    </div>
+  );
+};
+
+// --- HERO ---
 const Hero = ({ setCurrentView }: any) => {
   const [scanLine, setScanLine] = useState(0);
-
   useEffect(() => {
     const t = setInterval(() => setScanLine(v => (v + 1) % 100), 80);
     return () => clearInterval(t);
@@ -132,279 +373,109 @@ const Hero = ({ setCurrentView }: any) => {
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]">
-
-      {/* Grid background */}
+      {/* Grid */}
       <div className="absolute inset-0 z-0" style={{
-        backgroundImage: `
-          linear-gradient(rgba(221,175,52,0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(221,175,52,0.04) 1px, transparent 1px)
-        `,
+        backgroundImage: `linear-gradient(rgba(221,175,52,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(221,175,52,0.04) 1px, transparent 1px)`,
         backgroundSize: '60px 60px'
-      }} />
-
-      {/* Noise overlay */}
+      }}/>
+      {/* Noise */}
       <div className="absolute inset-0 z-0 opacity-[0.12]" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-      }} />
-
-      {/* Left ambient glow */}
-      <div className="absolute inset-0 z-0" style={{
-        background: 'radial-gradient(ellipse 55% 75% at 22% 55%, rgba(221,175,52,0.07) 0%, transparent 70%)'
-      }} />
-
-      {/* Right ambient glow behind figure */}
-      <div className="absolute right-0 top-0 h-full w-[55%] z-0" style={{
-        background: 'radial-gradient(ellipse 80% 100% at 65% 52%, rgba(221,175,52,0.13) 0%, transparent 65%)'
-      }} />
-
-      {/* Top border */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-freo-orange/40 to-transparent z-10" />
-
-      {/* Corner decorations */}
-      <div className="absolute top-24 left-5 w-7 h-7 border-t-2 border-l-2 border-freo-orange/45 z-20" />
-      <div className="absolute top-24 right-5 w-7 h-7 border-t-2 border-r-2 border-freo-orange/45 z-20" />
-      <div className="absolute bottom-5 left-5 w-7 h-7 border-b-2 border-l-2 border-freo-orange/25 z-20" />
-      <div className="absolute bottom-5 right-5 w-7 h-7 border-b-2 border-r-2 border-freo-orange/25 z-20" />
-
-      {/* Left vertical label */}
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
+      }}/>
+      {/* Glows */}
+      <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse 55% 75% at 22% 55%, rgba(221,175,52,0.07) 0%, transparent 70%)' }}/>
+      <div className="absolute right-0 top-0 h-full w-[55%] z-0" style={{ background: 'radial-gradient(ellipse 80% 100% at 65% 52%, rgba(221,175,52,0.13) 0%, transparent 65%)' }}/>
+      {/* Borda topo */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-freo-orange/40 to-transparent z-10"/>
+      {/* Cantos */}
+      <div className="absolute top-24 left-5 w-7 h-7 border-t-2 border-l-2 border-freo-orange/45 z-20"/>
+      <div className="absolute top-24 right-5 w-7 h-7 border-t-2 border-r-2 border-freo-orange/45 z-20"/>
+      <div className="absolute bottom-5 left-5 w-7 h-7 border-b-2 border-l-2 border-freo-orange/25 z-20"/>
+      <div className="absolute bottom-5 right-5 w-7 h-7 border-b-2 border-r-2 border-freo-orange/25 z-20"/>
+      {/* Texto lateral esquerdo */}
       <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 hidden xl:flex flex-col items-center gap-3">
-        <div className="w-px h-20 bg-gradient-to-b from-transparent to-freo-orange/25" />
-        <span className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-[0.45em]"
-          style={{ writingMode: 'vertical-rl' }}>FREOFIGURES</span>
-        <div className="w-px h-20 bg-gradient-to-t from-transparent to-freo-orange/25" />
+        <div className="w-px h-20 bg-gradient-to-b from-transparent to-freo-orange/25"/>
+        <span className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-[0.45em]" style={{ writingMode: 'vertical-rl' }}>FREOFIGURES</span>
+        <div className="w-px h-20 bg-gradient-to-t from-transparent to-freo-orange/25"/>
       </div>
-
-      {/* Right vertical label */}
+      {/* Texto lateral direito */}
       <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 hidden xl:flex flex-col items-center gap-3">
-        <div className="w-px h-20 bg-gradient-to-b from-transparent to-freo-orange/25" />
-        <span className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-[0.45em]"
-          style={{ writingMode: 'vertical-rl' }}>BRASIL</span>
-        <div className="w-px h-20 bg-gradient-to-t from-transparent to-freo-orange/25" />
+        <div className="w-px h-20 bg-gradient-to-b from-transparent to-freo-orange/25"/>
+        <span className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-[0.45em]" style={{ writingMode: 'vertical-rl' }}>BRASIL</span>
+        <div className="w-px h-20 bg-gradient-to-t from-transparent to-freo-orange/25"/>
       </div>
 
-      {/* Main grid */}
       <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-6 items-center relative z-10 w-full pt-28 pb-12 min-h-screen">
 
-        {/* ── LEFT: Copy ── */}
+        {/* ESQUERDA */}
         <div className="flex flex-col gap-7">
-
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, x: -24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.55 }}
-            className="inline-flex items-center gap-2 self-start border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5"
-          >
-            <div className="w-1.5 h-1.5 rounded-full bg-freo-orange animate-pulse" />
-            <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">
-              Layer by Layer, Legend by Design.
-            </span>
+          <motion.div initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.55 }}
+            className="inline-flex items-center gap-2 self-start border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-freo-orange animate-pulse"/>
+            <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">Layer by Layer, Legend by Design.</span>
           </motion.div>
 
-          {/* Title */}
-          <motion.h1
-            initial={{ opacity: 0, y: 44 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="font-display font-black leading-[0.88] uppercase"
-          >
-            <span className="block text-white" style={{
-              fontSize: 'clamp(2.8rem, 6.2vw, 5.8rem)',
-              textShadow: '0 0 60px rgba(255,255,255,0.05)'
-            }}>
+          <motion.h1 initial={{ opacity: 0, y: 44 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
+            className="font-display font-black leading-[0.88] uppercase">
+            <span className="block text-white" style={{ fontSize: 'clamp(2.8rem, 6.2vw, 5.8rem)', textShadow: '0 0 60px rgba(255,255,255,0.05)' }}>
               Tornando o
             </span>
-            <span className="block" style={{
-              fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)',
-              color: '#DDAF34',
-              textShadow: '0 0 80px rgba(221,175,52,0.38)',
-            }}>
+            <span className="block" style={{ fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>
               inimaginável
             </span>
-            <span className="block" style={{
-              fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)',
-              color: '#DDAF34',
-              textShadow: '0 0 80px rgba(221,175,52,0.38)',
-            }}>
+            <span className="block" style={{ fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>
               palpável
             </span>
           </motion.h1>
 
-          {/* Description */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.32 }}
-            className="text-freo-light/65 text-base md:text-lg max-w-[420px] font-body leading-relaxed"
-          >
-            Arte, utilidade e cultura pop esculpidas camada por camada. Impressão 3D de alta
-            precisão com design exclusivo{' '}
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.32 }}
+            className="text-freo-light/65 text-base md:text-lg max-w-[420px] font-body leading-relaxed">
+            Arte, utilidade e cultura pop esculpidas camada por camada. Impressão 3D de alta precisão com design exclusivo{' '}
             <span className="text-freo-orange font-semibold">FreoFigures.</span>
           </motion.p>
 
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.46 }}
-            className="flex flex-wrap gap-4 mt-1"
-          >
-            <button
-              onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }}
-              className="group relative flex items-center gap-3 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors overflow-hidden"
-            >
-              <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.46 }}
+            className="flex flex-wrap gap-4 mt-1">
+            <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }}
+              className="group relative flex items-center gap-3 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors overflow-hidden">
+              <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent"/>
               <span className="relative">Explorar Loja</span>
-              <ChevronRight className="relative w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="relative w-5 h-5 group-hover:translate-x-1 transition-transform"/>
             </button>
-
-            <a
-              href="https://wa.me/5511961789176?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20customizado!"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center border border-white/15 text-white font-display font-bold uppercase tracking-widest px-8 py-4 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all"
-            >
+            <a href="https://wa.me/5511961789176?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20customizado!" target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center border border-white/15 text-white font-display font-bold uppercase tracking-widest px-8 py-4 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all">
               Projetos Custom
             </a>
           </motion.div>
         </div>
 
-        {/* ── RIGHT: Figure + HUD ── */}
-        <motion.div
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.85, delay: 0.2 }}
-          className="relative flex items-center justify-center h-[480px] lg:h-[660px]"
-        >
-          {/* Rotating rings */}
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 32, repeat: Infinity, ease: 'linear' }}
-            className="absolute inset-10 rounded-full border border-dashed border-freo-orange/12"
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-            className="absolute inset-20 rounded-full border border-freo-orange/08"
-          />
-
-          {/* Platform glow */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-56 h-14 z-0" style={{
-            background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(221,175,52,0.28) 0%, transparent 70%)',
-            filter: 'blur(14px)'
-          }} />
-
-          {/* ── Action figure
-               SUBSTITUA a src abaixo pela URL da sua figure no Supabase Storage.
-               Use uma imagem PNG com fundo transparente para melhor resultado.
-               Ex: https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/figure.png
-          ── */}
-          <motion.div
-            animate={{ y: [-7, 7, -7] }}
-            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative z-10 h-[78%] flex items-end justify-center"
-          >
-            <img
-              src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
-              alt="FreoFigures Action Figure"
-              className="h-full w-auto object-contain rounded-full"
-              style={{
-                maxWidth: '320px',
-                filter: 'drop-shadow(0 0 40px rgba(221,175,52,0.3)) drop-shadow(0 20px 60px rgba(0,0,0,0.8))'
-              }}
-            />
-            {/* Scan line */}
-            <div
-              className="absolute inset-x-0 h-px pointer-events-none"
-              style={{
-                top: `${scanLine}%`,
-                background: 'linear-gradient(90deg, transparent, rgba(221,175,52,0.25), transparent)',
-                transition: 'top 0.08s linear'
-              }}
-            />
-          </motion.div>
-
-          {/* HUD: Resolução — top right */}
-          <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.75 }}
-            className="absolute top-6 right-2 lg:right-0 flex items-center gap-3 bg-[#0f0f0f]/92 border border-freo-orange/25 backdrop-blur-sm px-4 py-3 z-20"
-          >
-            <div className="text-freo-orange">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 3H3v3M18 3h3v3M6 21H3v-3M18 21h3v-3" />
-                <rect x="7" y="7" width="10" height="10" rx="0.5" />
-              </svg>
-            </div>
-            <div>
-              <div className="font-mono text-[9px] text-freo-orange/45 uppercase tracking-widest mb-0.5">Resolução</div>
-              <div className="font-display font-black text-xl text-white leading-none">0.05mm</div>
-            </div>
-            <div className="ml-1 flex flex-col gap-1">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: i < 4 ? '#DDAF34' : 'rgba(221,175,52,0.18)' }} />
-              ))}
-            </div>
-          </motion.div>
-
-          {/* HUD: Material — bottom left */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-            className="absolute bottom-24 left-2 lg:-left-2 flex items-center gap-3 bg-[#0f0f0f]/92 border border-freo-orange/25 backdrop-blur-sm px-4 py-3 z-20"
-          >
-            <div className="w-8 h-8 flex items-center justify-center text-freo-orange border border-freo-orange/30 flex-shrink-0">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
-              </svg>
-            </div>
-            <div>
-              <div className="font-mono text-[9px] text-freo-orange/45 uppercase tracking-widest mb-0.5">Material</div>
-              <div className="font-display font-bold text-base text-white leading-tight">PLA Silk Premium</div>
-            </div>
-          </motion.div>
-
-          {/* HUD: Edition — bottom right */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.88 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 1.05 }}
-            className="absolute bottom-8 right-2 lg:right-0 bg-[#0d0d0d]/95 border border-freo-orange/30 px-5 py-4 z-20 text-center min-w-[120px]"
-          >
-            <div className="font-display font-black text-xl text-freo-orange leading-none">FREO</div>
-            <div className="font-display font-black text-lg text-white leading-none mb-2">FIGURES</div>
-            <div className="w-full h-px bg-freo-orange/20 mb-2" />
-            <div className="font-mono text-[8px] text-freo-orange/40 uppercase tracking-widest">001/999</div>
-            <div className="font-mono text-[8px] text-freo-orange/28 uppercase tracking-widest">Edição Limitada</div>
-          </motion.div>
-
-          {/* Figure frame corners */}
-          <div className="absolute top-10 left-[15%] w-6 h-6 border-t border-l border-freo-orange/30 z-20" />
-          <div className="absolute top-10 right-[15%] w-6 h-6 border-t border-r border-freo-orange/30 z-20" />
+        {/* DIREITA — Figure SVG */}
+        <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.85, delay: 0.2 }}
+          className="relative h-[480px] lg:h-[660px] hidden lg:block">
+          <CyberpunkFigure />
         </motion.div>
       </div>
     </section>
   );
 };
 
+// --- Marquee ---
 const Marquee = () => (
   <div className="bg-freo-orange text-freo-black py-3 overflow-hidden flex whitespace-nowrap border-y border-freo-orange/50">
     <motion.div animate={{ x: [0, -1035] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="flex gap-8 font-display font-black text-xl uppercase tracking-widest">
       {[...Array(10)].map((_, i) => (
         <span key={i} className="flex items-center gap-8">
-          <span>Impressão 3D</span><Hexagon className="w-4 h-4" fill="currentColor" />
-          <span>Action Figures</span><Hexagon className="w-4 h-4" fill="currentColor" />
-          <span>Arte Religiosa</span><Hexagon className="w-4 h-4" fill="currentColor" />
-          <span>Utensílios</span><Hexagon className="w-4 h-4" fill="currentColor" />
+          <span>Impressão 3D</span><Hexagon className="w-4 h-4" fill="currentColor"/>
+          <span>Action Figures</span><Hexagon className="w-4 h-4" fill="currentColor"/>
+          <span>Arte Religiosa</span><Hexagon className="w-4 h-4" fill="currentColor"/>
+          <span>Utensílios</span><Hexagon className="w-4 h-4" fill="currentColor"/>
         </span>
       ))}
     </motion.div>
   </div>
 );
 
+// --- Categories ---
 const Categories = ({ setCurrentView }: any) => {
   const cats = [
     { name: "Action Figures", img: "https://images.unsplash.com/photo-1608889825103-eb5ed706fc64?q=80&w=800&auto=format&fit=crop", desc: "Heróis, vilões e cultura pop." },
@@ -412,7 +483,6 @@ const Categories = ({ setCurrentView }: any) => {
     { name: "Utensílios", img: "https://images.unsplash.com/photo-1584362917165-526a968579e8?q=80&w=800&auto=format&fit=crop", desc: "Design funcional para o dia a dia." },
     { name: "Decoração", img: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=800&auto=format&fit=crop", desc: "Geometria e arte para seu espaço." }
   ];
-
   return (
     <section id="categorias" className="py-24 px-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
@@ -424,16 +494,16 @@ const Categories = ({ setCurrentView }: any) => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cats.map((cat, i) => (
-          <div key={i} className="group relative h-[400px] overflow-hidden bg-freo-dark card-3d cursor-pointer border border-white/5">
-            <img src={cat.img} alt={cat.name} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 grayscale group-hover:grayscale-0" referrerPolicy="no-referrer" />
-            <div className="absolute inset-0 bg-gradient-to-t from-freo-black via-freo-black/50 to-transparent"></div>
+          <div key={i} className="group relative h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5">
+            <img src={cat.img} alt={cat.name} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 grayscale group-hover:grayscale-0" referrerPolicy="no-referrer"/>
+            <div className="absolute inset-0 bg-gradient-to-t from-freo-black via-freo-black/50 to-transparent"/>
             <div className="absolute bottom-0 left-0 p-6 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
               <div className="text-freo-orange font-mono text-xs mb-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100">// CATEGORIA_0{i+1}</div>
               <h3 className="text-2xl font-display font-bold uppercase tracking-wide mb-1">{cat.name}</h3>
               <p className="text-sm text-freo-light/70 font-body opacity-0 group-hover:opacity-100 transition-opacity delay-150">{cat.desc}</p>
             </div>
-            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-freo-orange opacity-0 group-hover:opacity-100 transition-opacity m-4"></div>
-            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-freo-orange opacity-0 group-hover:opacity-100 transition-opacity m-4"></div>
+            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-freo-orange opacity-0 group-hover:opacity-100 transition-opacity m-4"/>
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-freo-orange opacity-0 group-hover:opacity-100 transition-opacity m-4"/>
           </div>
         ))}
       </div>
@@ -441,55 +511,32 @@ const Categories = ({ setCurrentView }: any) => {
   );
 };
 
-const formatPrice = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+const formatPrice = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 const ProductCard = ({ product, onAddToCart, compact = false }: { product: Product; onAddToCart: (p: Product) => void; compact?: boolean }) => {
   const thumb = product.images && product.images.length > 0 ? product.images[0] : null;
   const hasPromo = product.promotional_price && product.promotional_price < product.price;
   const displayPrice = hasPromo ? product.promotional_price! : product.price;
   const tag = product.tags && product.tags.length > 0 ? product.tags[0] : null;
-
   const goToProduct = () => { window.location.href = '/produto?id=' + product.id; };
-
   return (
     <div className={`group flex flex-col ${compact ? '' : 'bg-freo-dark border border-white/5 hover:border-freo-orange/50 transition-colors'}`}>
-      <div
-        className={`relative ${compact ? 'aspect-square' : 'aspect-square bg-freo-black'} overflow-hidden ${compact ? 'border border-white/5 group-hover:border-freo-orange/50 transition-colors' : ''} mb-4 cursor-pointer`}
-        onClick={goToProduct}
-      >
-        {tag && (
-          <div className="absolute top-3 left-3 z-10 bg-freo-orange text-freo-black text-[10px] font-bold uppercase tracking-widest px-2 py-1">
-            {tag}
-          </div>
-        )}
-        {thumb ? (
-          <img src={thumb} alt={product.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-freo-dark">
-            <Box className="w-12 h-12 text-white/10" />
-          </div>
-        )}
-        {!compact && <div className="absolute inset-0 bg-freo-orange/20 opacity-0 group-hover:opacity-100 mix-blend-overlay transition-opacity duration-300"></div>}
+      <div className={`relative ${compact ? 'aspect-square' : 'aspect-square bg-freo-black'} overflow-hidden ${compact ? 'border border-white/5 group-hover:border-freo-orange/50 transition-colors' : ''} mb-4 cursor-pointer`} onClick={goToProduct}>
+        {tag && <div className="absolute top-3 left-3 z-10 bg-freo-orange text-freo-black text-[10px] font-bold uppercase tracking-widest px-2 py-1">{tag}</div>}
+        {thumb ? <img src={thumb} alt={product.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700"/> : <div className="w-full h-full flex items-center justify-center bg-freo-dark"><Box className="w-12 h-12 text-white/10"/></div>}
+        {!compact && <div className="absolute inset-0 bg-freo-orange/20 opacity-0 group-hover:opacity-100 mix-blend-overlay transition-opacity duration-300"/>}
       </div>
-
       <div className={`flex flex-col flex-grow ${compact ? '' : 'p-5'}`}>
         <span className="text-freo-orange text-[10px] font-mono uppercase mb-1 tracking-wider">{product.category || 'Geral'}</span>
-        <h3
-          className="font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors cursor-pointer text-lg"
-          onClick={goToProduct}
-        >{product.title}</h3>
+        <h3 className="font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors cursor-pointer text-lg" onClick={goToProduct}>{product.title}</h3>
         <div className="mt-auto flex flex-col gap-3">
           <div className="flex items-end gap-2">
             {hasPromo && <span className="font-mono text-sm text-white/30 line-through">{formatPrice(product.price)}</span>}
             <span className="font-mono text-xl font-bold text-freo-orange">{formatPrice(displayPrice)}</span>
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-            className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-wider py-3 hover:bg-white transition-colors flex items-center justify-center gap-2"
-          >
-            <ShoppingCart className="w-5 h-5" />
-            Adicionar ao carrinho
+          <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+            className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-wider py-3 hover:bg-white transition-colors flex items-center justify-center gap-2">
+            <ShoppingCart className="w-5 h-5"/> Adicionar ao carrinho
           </button>
         </div>
       </div>
@@ -500,59 +547,36 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
 const FeaturedProducts = ({ addToCart }: any) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    const fetchFeatured = async () => {
+    (async () => {
       try {
         // @ts-ignore
         const sb = window.supabaseClient || window.supabase;
         if (!sb) return;
-        const { data, error } = await sb
-          .from('products')
-          .select('*')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(4);
+        const { data, error } = await sb.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(4);
         if (!error && data) setProducts(data);
-      } catch (e) {
-        console.error('FeaturedProducts fetch error:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFeatured();
+      } catch(e) { console.error(e); } finally { setLoading(false); }
+    })();
   }, []);
-
   return (
     <section id="destaques" className="py-24 bg-freo-dark relative border-y border-white/5">
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-freo-orange/50 to-transparent"></div>
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-freo-orange/50 to-transparent"/>
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-display font-black uppercase tracking-tighter inline-block relative">
             Destaques da <span className="text-freo-orange">Forja</span>
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-24 h-1 bg-freo-orange"></div>
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-24 h-1 bg-freo-orange"/>
           </h2>
         </div>
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-square bg-freo-dark/80 mb-4"></div>
-                <div className="h-3 bg-freo-dark/80 rounded w-1/3 mb-2"></div>
-                <div className="h-5 bg-freo-dark/80 rounded w-3/4 mb-4"></div>
-                <div className="h-10 bg-freo-dark/80 rounded"></div>
-              </div>
-            ))}
+            {[...Array(4)].map((_, i) => <div key={i} className="animate-pulse"><div className="aspect-square bg-freo-dark/80 mb-4"/><div className="h-3 bg-freo-dark/80 rounded w-1/3 mb-2"/><div className="h-5 bg-freo-dark/80 rounded w-3/4 mb-4"/><div className="h-10 bg-freo-dark/80 rounded"/></div>)}
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="font-mono text-white/30 text-sm">Nenhum produto cadastrado ainda.</p>
-          </div>
+          <div className="text-center py-16"><p className="font-mono text-white/30 text-sm">Nenhum produto cadastrado ainda.</p></div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map(p => (
-              <ProductCard key={p.id} product={p} onAddToCart={addToCart} compact />
-            ))}
+            {products.map(p => <ProductCard key={p.id} product={p} onAddToCart={addToCart} compact/>)}
           </div>
         )}
       </div>
@@ -565,8 +589,8 @@ const ProcessSection = () => (
     <div className="grid lg:grid-cols-2 gap-16 items-center">
       <div className="order-2 lg:order-1 relative">
         <div className="aspect-[4/5] bg-freo-dark border border-white/10 relative overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1631541909061-71e34ddde0de?q=80&w=800&auto=format&fit=crop" alt="3D Printing Process" className="w-full h-full object-cover opacity-60 mix-blend-luminosity" referrerPolicy="no-referrer" />
-          <motion.div animate={{ top: ['0%', '100%', '0%'] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="absolute left-0 w-full h-1 bg-freo-orange shadow-[0_0_20px_rgba(255,77,0,0.8)] z-10"></motion.div>
+          <img src="https://images.unsplash.com/photo-1631541909061-71e34ddde0de?q=80&w=800&auto=format&fit=crop" alt="3D Printing Process" className="w-full h-full object-cover opacity-60 mix-blend-luminosity" referrerPolicy="no-referrer"/>
+          <motion.div animate={{ top: ['0%','100%','0%'] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="absolute left-0 w-full h-1 bg-freo-orange shadow-[0_0_20px_rgba(255,77,0,0.8)] z-10"/>
         </div>
         <div className="absolute -bottom-8 -right-8 bg-freo-black border border-freo-orange p-6 max-w-xs">
           <div className="font-mono text-freo-orange text-sm mb-2">// QUALIDADE_FREO</div>
@@ -585,10 +609,7 @@ const ProcessSection = () => (
           ].map((step, i) => (
             <div key={i} className="flex gap-6 group">
               <div className="font-display font-black text-4xl text-freo-gray group-hover:text-freo-orange transition-colors">{step.num}</div>
-              <div>
-                <h4 className="text-xl font-bold font-display uppercase tracking-wide mb-2">{step.title}</h4>
-                <p className="text-freo-light/60 font-body">{step.desc}</p>
-              </div>
+              <div><h4 className="text-xl font-bold font-display uppercase tracking-wide mb-2">{step.title}</h4><p className="text-freo-light/60 font-body">{step.desc}</p></div>
             </div>
           ))}
         </div>
@@ -599,17 +620,17 @@ const ProcessSection = () => (
 
 const AboutSection = () => (
   <section id="sobre-nos" className="py-32 px-6 bg-freo-black relative overflow-hidden border-t border-white/5">
-    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-freo-orange/5 rounded-full blur-[150px] pointer-events-none"></div>
-    <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-freo-cyan/5 rounded-full blur-[100px] pointer-events-none"></div>
+    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-freo-orange/5 rounded-full blur-[150px] pointer-events-none"/>
+    <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-freo-cyan/5 rounded-full blur-[100px] pointer-events-none"/>
     <div className="max-w-4xl mx-auto relative z-10">
       <div className="flex flex-col md:flex-row gap-16 items-start">
         <div className="md:w-1/3 md:sticky md:top-32">
           <div className="font-mono text-freo-orange text-sm mb-4 tracking-widest uppercase">// A ORIGEM</div>
           <h2 className="text-4xl md:text-5xl font-display font-black uppercase tracking-tighter leading-none mb-6">Sobre <br/><span className="text-freo-orange">Nós?</span></h2>
-          <div className="w-12 h-1 bg-freo-orange mb-8"></div>
+          <div className="w-12 h-1 bg-freo-orange mb-8"/>
           <div className="relative w-32 h-32 md:w-48 md:h-48 grayscale hover:grayscale-0 transition-all duration-500 border border-white/10">
-            <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Freo Figures Creator" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
-            <div className="absolute inset-0 border border-freo-orange/30 translate-x-2 translate-y-2 -z-10"></div>
+            <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Freo Figures Creator" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer"/>
+            <div className="absolute inset-0 border border-freo-orange/30 translate-x-2 translate-y-2 -z-10"/>
           </div>
         </div>
         <div className="md:w-2/3 space-y-8 font-body text-lg text-freo-light/80 leading-relaxed">
@@ -619,14 +640,11 @@ const AboutSection = () => (
           <div className="pl-6 border-l-2 border-freo-orange/50 py-2 space-y-1 font-mono text-sm uppercase tracking-wider text-freo-light/60">
             <p>Eu queria fazer.</p><p>Errar.</p><p>Aprender.</p><p>Melhorar.</p><p className="text-freo-orange">Fazer de novo.</p>
           </div>
-          <p>No começo deu errado várias vezes. Peça que não saía como eu queria. Ideia que na cabeça era incrível e na prática não funcionava. Gente dizendo que era melhor vender coisa pronta, mais fácil, mais seguro.</p>
+          <p>No começo deu errado várias vezes. Peça que não saía como eu queria. Ideia que na cabeça era incrível e na prática não funcionava.</p>
           <p className="font-bold text-white">Mas nunca foi sobre o mais fácil.</p>
           <p>Foi sobre olhar pra algo que não existe ainda e pensar: <br/><span className="text-freo-cyan font-medium italic">"Eu consigo criar isso."</span></p>
-          <p>A Freo Figures é pequena. E eu gosto disso.</p>
-          <p>Porque aqui nada é automático. Nada é feito no piloto automático. Cada produto que você vê aqui passou pela minha mão. Passou por dúvida. Passou por ajuste. Passou por insistência.</p>
-          <p>Eu poderia ter escolhido algo mais simples. Mas escolhi criar. E criar dá trabalho. Mas também dá orgulho.</p>
           <div className="bg-freo-dark p-8 border border-white/5 mt-12 relative">
-            <div className="absolute top-0 left-0 w-2 h-full bg-freo-orange"></div>
+            <div className="absolute top-0 left-0 w-2 h-full bg-freo-orange"/>
             <p className="mb-6">Se você está aqui, talvez você também seja do tipo que valoriza quem faz, não só quem vende.</p>
             <p className="font-display text-xl text-white">Então, mais do que comprar uma peça, você está apoiando alguém que decidiu construir algo do zero.<br/><span className="text-freo-orange">Camada por camada. Sem atalho.</span></p>
           </div>
@@ -639,6 +657,20 @@ const AboutSection = () => (
   </section>
 );
 
+const StoreCTA = ({ setCurrentView }: any) => (
+  <section className="py-24 px-6 bg-freo-orange text-freo-black relative overflow-hidden border-y border-freo-orange/50">
+    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}/>
+    <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center">
+      <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-24 h-24 rounded-full object-cover border-4 border-freo-black mb-6 shadow-2xl"/>
+      <h2 className="text-5xl md:text-7xl font-display font-black uppercase tracking-tighter mb-6 leading-none">Acesse o <br/> Catálogo Completo</h2>
+      <p className="font-body text-xl mb-10 font-medium max-w-2xl">Filtre por categorias, explore detalhes e encontre a peça perfeita para o seu setup, altar ou estante.</p>
+      <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="bg-freo-black text-freo-orange font-display font-bold uppercase tracking-widest px-10 py-5 text-lg hover:bg-white hover:text-freo-black transition-colors flex items-center gap-3 group">
+        Entrar na Loja <ChevronRight className="group-hover:translate-x-1 transition-transform"/>
+      </button>
+    </div>
+  </section>
+);
+
 const Footer = () => (
   <footer className="bg-freo-dark pt-20 pb-10 border-t border-white/10 relative overflow-hidden">
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15vw] font-display font-black text-white/[0.02] whitespace-nowrap pointer-events-none select-none">FREO FIGURES</div>
@@ -646,10 +678,10 @@ const Footer = () => (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
         <div className="col-span-1 md:col-span-2 lg:col-span-1">
           <div className="flex items-center gap-3 mb-6">
-            <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover border-2 border-freo-orange" />
+            <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover border-2 border-freo-orange"/>
             <span className="font-display font-black text-2xl tracking-tighter uppercase">Freo<span className="text-freo-orange font-light">Figures</span></span>
           </div>
-          <p className="text-freo-light/60 font-body text-sm mb-6">Transformando filamento em arte. Especialistas em impressão 3D de alta qualidade para colecionadores, devotos e amantes do design.</p>
+          <p className="text-freo-light/60 font-body text-sm mb-6">Transformando filamento em arte. Especialistas em impressão 3D de alta qualidade.</p>
           <div className="flex gap-4">
             <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer">IG</div>
             <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer">TT</div>
@@ -680,8 +712,8 @@ const Footer = () => (
           <h4 className="font-display font-bold uppercase tracking-widest mb-6 text-freo-orange">Newsletter</h4>
           <p className="text-sm text-freo-light/70 font-body mb-4">Receba novidades sobre novos modelos e descontos exclusivos.</p>
           <div className="flex">
-            <input type="email" placeholder="SEU E-MAIL" className="bg-freo-black border border-white/20 px-4 py-2 w-full text-sm font-mono focus:outline-none focus:border-freo-orange" />
-            <button className="bg-freo-orange text-freo-black px-4 font-bold hover:bg-white transition-colors"><ChevronRight className="w-5 h-5" /></button>
+            <input type="email" placeholder="SEU E-MAIL" className="bg-freo-black border border-white/20 px-4 py-2 w-full text-sm font-mono focus:outline-none focus:border-freo-orange"/>
+            <button className="bg-freo-orange text-freo-black px-4 font-bold hover:bg-white transition-colors"><ChevronRight className="w-5 h-5"/></button>
           </div>
         </div>
       </div>
@@ -693,55 +725,25 @@ const Footer = () => (
   </footer>
 );
 
-const StoreCTA = ({ setCurrentView }: any) => (
-  <section className="py-24 px-6 bg-freo-orange text-freo-black relative overflow-hidden border-y border-freo-orange/50">
-    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-    <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center">
-      <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-24 h-24 rounded-full object-cover border-4 border-freo-black mb-6 shadow-2xl" />
-      <h2 className="text-5xl md:text-7xl font-display font-black uppercase tracking-tighter mb-6 leading-none">Acesse o <br/> Catálogo Completo</h2>
-      <p className="font-body text-xl mb-10 font-medium max-w-2xl">Filtre por categorias, explore detalhes e encontre a peça perfeita para o seu setup, altar ou estante.</p>
-      <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="bg-freo-black text-freo-orange font-display font-bold uppercase tracking-widest px-10 py-5 text-lg hover:bg-white hover:text-freo-black transition-colors flex items-center gap-3 group">
-        Entrar na Loja <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-      </button>
-    </div>
-  </section>
-);
-
 const ShopView = ({ addToCart }: any) => {
   const [activeFilter, setActiveFilter] = useState('Todos');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const categories = ['Todos', 'games', 'religioso', 'keycaps', 'personalizado', 'lifestyle', 'outros'];
-  const categoryLabels: Record<string, string> = {
-    'Todos': 'Todos', 'games': 'Games & Geek', 'religioso': 'Religioso',
-    'keycaps': 'Keycaps', 'personalizado': 'Personalizado', 'lifestyle': 'Lifestyle', 'outros': 'Outros'
-  };
-
+  const categories = ['Todos','games','religioso','keycaps','personalizado','lifestyle','outros'];
+  const categoryLabels: Record<string,string> = { 'Todos':'Todos','games':'Games & Geek','religioso':'Religioso','keycaps':'Keycaps','personalizado':'Personalizado','lifestyle':'Lifestyle','outros':'Outros' };
   useEffect(() => {
-    const fetchProducts = async () => {
+    (async () => {
       setLoading(true);
       try {
         // @ts-ignore
         const sb = window.supabaseClient || window.supabase;
         if (!sb) return;
-        const { data, error } = await sb
-          .from('products')
-          .select('*')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+        const { data, error } = await sb.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false });
         if (!error && data) setProducts(data);
-      } catch (e) {
-        console.error('ShopView fetch error:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
+      } catch(e) { console.error(e); } finally { setLoading(false); }
+    })();
   }, []);
-
   const filtered = activeFilter === 'Todos' ? products : products.filter(p => p.category === activeFilter);
-
   return (
     <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto min-h-screen">
       <div className="flex flex-col md:flex-row gap-12">
@@ -751,8 +753,7 @@ const ShopView = ({ addToCart }: any) => {
             <div className="space-y-2">
               {categories.map(cat => (
                 <button key={cat} onClick={() => setActiveFilter(cat)} className={`block w-full text-left px-4 py-3 font-mono text-sm uppercase tracking-widest transition-all ${activeFilter === cat ? 'bg-freo-orange text-freo-black font-bold' : 'text-freo-light/60 hover:text-freo-orange hover:bg-white/5'}`}>
-                  {activeFilter === cat && <span className="mr-2">&gt;</span>}
-                  {categoryLabels[cat] || cat}
+                  {activeFilter === cat && <span className="mr-2">&gt;</span>}{categoryLabels[cat] || cat}
                 </button>
               ))}
             </div>
@@ -766,34 +767,20 @@ const ShopView = ({ addToCart }: any) => {
           </div>
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="animate-pulse bg-freo-dark border border-white/5">
-                  <div className="aspect-square bg-freo-black/80"></div>
-                  <div className="p-5 space-y-3">
-                    <div className="h-3 bg-white/5 rounded w-1/4"></div>
-                    <div className="h-5 bg-white/5 rounded w-3/4"></div>
-                    <div className="h-5 bg-white/5 rounded w-1/3"></div>
-                    <div className="h-10 bg-freo-orange/20 rounded"></div>
-                  </div>
-                </div>
-              ))}
+              {[...Array(6)].map((_,i) => <div key={i} className="animate-pulse bg-freo-dark border border-white/5"><div className="aspect-square bg-freo-black/80"/><div className="p-5 space-y-3"><div className="h-3 bg-white/5 rounded w-1/4"/><div className="h-5 bg-white/5 rounded w-3/4"/><div className="h-10 bg-freo-orange/20 rounded"/></div></div>)}
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-24">
               <div className="text-5xl mb-4">📦</div>
-              <p className="font-display font-bold text-xl text-white/20 uppercase mb-2">
-                {products.length === 0 ? 'Nenhum produto cadastrado ainda' : 'Nenhum produto nesta categoria'}
-              </p>
-              <p className="font-mono text-sm text-white/20">
-                {products.length === 0 ? 'Use o painel admin para importar seus produtos da Shopee.' : 'Tente outra categoria.'}
-              </p>
+              <p className="font-display font-bold text-xl text-white/20 uppercase mb-2">{products.length === 0 ? 'Nenhum produto cadastrado ainda' : 'Nenhum produto nesta categoria'}</p>
+              <p className="font-mono text-sm text-white/20">{products.length === 0 ? 'Use o painel admin para importar seus produtos.' : 'Tente outra categoria.'}</p>
             </div>
           ) : (
             <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <AnimatePresence>
                 {filtered.map(p => (
                   <motion.div key={p.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3 }}>
-                    <ProductCard product={p} onAddToCart={addToCart} />
+                    <ProductCard product={p} onAddToCart={addToCart}/>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -807,17 +794,17 @@ const ShopView = ({ addToCart }: any) => {
 
 const HomeView = ({ setCurrentView, addToCart }: any) => (
   <>
-    <Hero setCurrentView={setCurrentView} />
-    <Marquee />
-    <Categories setCurrentView={setCurrentView} />
-    <FeaturedProducts addToCart={addToCart} />
-    <StoreCTA setCurrentView={setCurrentView} />
-    <ProcessSection />
-    <AboutSection />
+    <Hero setCurrentView={setCurrentView}/>
+    <Marquee/>
+    <Categories setCurrentView={setCurrentView}/>
+    <FeaturedProducts addToCart={addToCart}/>
+    <StoreCTA setCurrentView={setCurrentView}/>
+    <ProcessSection/>
+    <AboutSection/>
   </>
 );
 
-const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -826,77 +813,55 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) { setName(''); setPhone(''); setEmail(''); setPassword(''); setError(''); setSuccess(false); }
-  }, [isOpen, isLogin]);
-
+  useEffect(() => { if (isOpen) { setName(''); setPhone(''); setEmail(''); setPassword(''); setError(''); setSuccess(false); } }, [isOpen, isLogin]);
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault(); setError('');
     if (!email.includes('@') || !email.includes('.')) { setError('Por favor, insira um e-mail válido.'); return; }
     if (!isLogin) {
       if (!name || !phone || !email || !password) { setError('Preencha todos os campos.'); return; }
       setLoading(true);
       try {
         // @ts-ignore
-        const { data, error } = await window.supabase.auth.signUp({ email, password, options: { data: { name, phone }, emailRedirectTo: "https://freofigures.com.br/auth/callback.html" } });
-        if (error) {
-          let msg = error.message;
-          if (msg.includes('rate limit')) msg = 'Limite de envios excedido. Tente mais tarde.';
-          else if (msg.includes('already registered')) msg = 'Este e-mail já está cadastrado.';
-          setError(msg);
-        } else {
-          setSuccess(true);
-          setTimeout(() => onClose(), 6000);
-          fetch('https://n8nwebhook.solviaoficial.com/webhook/26afb276-b7a5-4d0c-b733-03c47836bd14', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, phone, email, action: 'create_account' }) }).catch(console.error);
-        }
-      } catch { setError('Erro de conexão. Tente novamente.'); }
-      finally { setLoading(false); }
+        const { error } = await window.supabase.auth.signUp({ email, password, options: { data: { name, phone }, emailRedirectTo: "https://freofigures.com.br/auth/callback.html" } });
+        if (error) { let msg = error.message; if (msg.includes('rate limit')) msg = 'Limite de envios excedido. Tente mais tarde.'; else if (msg.includes('already registered')) msg = 'Este e-mail já está cadastrado.'; setError(msg); }
+        else { setSuccess(true); setTimeout(() => onClose(), 6000); fetch('https://n8nwebhook.solviaoficial.com/webhook/26afb276-b7a5-4d0c-b733-03c47836bd14', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, phone, email, action: 'create_account' }) }).catch(console.error); }
+      } catch { setError('Erro de conexão. Tente novamente.'); } finally { setLoading(false); }
     } else {
       if (!email || !password) { setError('Preencha todos os campos.'); return; }
       setLoading(true);
       try {
         // @ts-ignore
         const { error } = await window.supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          let msg = error.message;
-          if (msg === 'Invalid login credentials') msg = 'Email ou senha incorretos.';
-          else if (msg === 'Email not confirmed') msg = 'Confirme seu email antes de fazer login.';
-          setError(msg);
-        } else { setSuccess(true); setTimeout(() => { onClose(); window.location.href = '/dashboard.html'; }, 1500); }
-      } catch { setError('Erro de conexão. Tente novamente.'); }
-      finally { setLoading(false); }
+        if (error) { let msg = error.message; if (msg === 'Invalid login credentials') msg = 'Email ou senha incorretos.'; else if (msg === 'Email not confirmed') msg = 'Confirme seu email antes de fazer login.'; setError(msg); }
+        else { setSuccess(true); setTimeout(() => { onClose(); window.location.href = '/dashboard.html'; }, 1500); }
+      } catch { setError('Erro de conexão. Tente novamente.'); } finally { setLoading(false); }
     }
   };
-
   if (!isOpen) return null;
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-freo-black/80 backdrop-blur-sm"></motion.div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-freo-black/80 backdrop-blur-sm"/>
           <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-freo-dark border border-white/10 shadow-2xl overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-freo-cyan"></div>
-            <button onClick={onClose} className="absolute top-4 right-4 text-freo-light/50 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-freo-cyan"/>
+            <button onClick={onClose} className="absolute top-4 right-4 text-freo-light/50 hover:text-white transition-colors"><X className="w-6 h-6"/></button>
             <div className="p-8">
-              <div className="flex justify-center mb-8">
-                <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-16 h-16 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_15px_rgba(221,175,52,0.3)]" />
-              </div>
+              <div className="flex justify-center mb-8"><img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-16 h-16 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_15px_rgba(221,175,52,0.3)]"/></div>
               <h2 className="text-3xl font-display font-black uppercase text-center mb-2">{isLogin ? 'Acessar a Forja' : 'Criar Conta'}</h2>
               <p className="text-freo-light/60 text-center font-body text-sm mb-8">{isLogin ? 'Entre para acompanhar seus pedidos e projetos.' : 'Junte-se à revolução da manufatura aditiva.'}</p>
               {success ? (
                 <div className="bg-freo-cyan/10 border border-freo-cyan text-freo-cyan p-6 text-center font-mono text-sm mb-6 flex flex-col items-center gap-3">
-                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                   <span>{isLogin ? 'Login realizado com sucesso!' : '✅ Conta criada! Verifique seu email.'}</span>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {error && <div className="bg-freo-orange/10 border border-freo-orange text-freo-orange p-3 text-center font-mono text-xs">{error}</div>}
                   <form className="space-y-4" onSubmit={handleSubmit}>
-                    {!isLogin && (<><input type="text" placeholder="NOME COMPLETO" value={name} onChange={e => setName(e.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" /><input type="tel" placeholder="TELEFONE / WHATSAPP" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" /></>)}
-                    <input type="email" placeholder="E-MAIL" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
-                    <input type="password" placeholder="SENHA" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
+                    {!isLogin && (<><input type="text" placeholder="NOME COMPLETO" value={name} onChange={e => setName(e.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors"/><input type="tel" placeholder="TELEFONE / WHATSAPP" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors"/></>)}
+                    <input type="email" placeholder="E-MAIL" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors"/>
+                    <input type="password" placeholder="SENHA" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors"/>
                     <button type="submit" disabled={loading} className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-4 hover:bg-white transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed">{loading ? 'Processando...' : (isLogin ? 'Entrar' : 'Criar Conta')}</button>
                   </form>
                 </div>
@@ -913,43 +878,37 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }
 };
 
 const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: any) => {
-  const total = cartItems.reduce((acc: number, item: any) => {
-    const priceStr = item.price.replace('R$', '').replace(/\s/g, '').replace(',', '.');
-    return acc + (parseFloat(priceStr) * item.quantity);
-  }, 0);
-
+  const total = cartItems.reduce((acc: number, item: any) => { const p = item.price.replace('R$','').replace(/\s/g,'').replace(',','.'); return acc + (parseFloat(p) * item.quantity); }, 0);
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[100] bg-freo-black/80 backdrop-blur-sm" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[100] bg-freo-black/80 backdrop-blur-sm"/>
           <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'tween', duration: 0.3 }} className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-freo-dark border-l border-white/10 z-[101] shadow-2xl flex flex-col">
             <div className="p-6 border-b border-white/10 flex justify-between items-center">
-              <h2 className="text-2xl font-display font-black uppercase flex items-center gap-3"><ShoppingCart className="w-6 h-6 text-freo-orange" />Seu Carrinho</h2>
-              <button onClick={onClose} className="text-freo-light/50 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
+              <h2 className="text-2xl font-display font-black uppercase flex items-center gap-3"><ShoppingCart className="w-6 h-6 text-freo-orange"/>Seu Carrinho</h2>
+              <button onClick={onClose} className="text-freo-light/50 hover:text-white transition-colors"><X className="w-6 h-6"/></button>
             </div>
             <div className="flex-grow overflow-y-auto p-6 space-y-6">
               {cartItems.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-freo-light/50 font-body"><ShoppingCart className="w-16 h-16 mb-4 opacity-20" /><p>Seu carrinho está vazio.</p></div>
-              ) : (
-                cartItems.map((item: any, index: number) => (
-                  <div key={index} className="flex gap-4 bg-freo-black/50 p-3 border border-white/5 relative group">
-                    <img src={item.img} alt={item.name} className="w-20 h-20 object-cover" />
-                    <div className="flex flex-col flex-grow justify-between">
-                      <h4 className="font-display font-bold text-sm leading-tight pr-6">{item.name}</h4>
-                      <div className="flex justify-between items-end">
-                        <span className="font-mono text-freo-orange text-sm">{item.price}</span>
-                        <div className="flex items-center gap-3 bg-freo-dark border border-white/10 px-2 py-1">
-                          <button onClick={() => updateQuantity(item, -1)} className="hover:text-freo-orange transition-colors"><Minus className="w-3 h-3" /></button>
-                          <span className="font-mono text-xs">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item, 1)} className="hover:text-freo-orange transition-colors"><Plus className="w-3 h-3" /></button>
-                        </div>
+                <div className="h-full flex flex-col items-center justify-center text-freo-light/50 font-body"><ShoppingCart className="w-16 h-16 mb-4 opacity-20"/><p>Seu carrinho está vazio.</p></div>
+              ) : cartItems.map((item: any, index: number) => (
+                <div key={index} className="flex gap-4 bg-freo-black/50 p-3 border border-white/5 relative group">
+                  <img src={item.img} alt={item.name} className="w-20 h-20 object-cover"/>
+                  <div className="flex flex-col flex-grow justify-between">
+                    <h4 className="font-display font-bold text-sm leading-tight pr-6">{item.name}</h4>
+                    <div className="flex justify-between items-end">
+                      <span className="font-mono text-freo-orange text-sm">{item.price}</span>
+                      <div className="flex items-center gap-3 bg-freo-dark border border-white/10 px-2 py-1">
+                        <button onClick={() => updateQuantity(item, -1)} className="hover:text-freo-orange transition-colors"><Minus className="w-3 h-3"/></button>
+                        <span className="font-mono text-xs">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item, 1)} className="hover:text-freo-orange transition-colors"><Plus className="w-3 h-3"/></button>
                       </div>
                     </div>
-                    <button onClick={() => removeItem(item)} className="absolute top-3 right-3 text-freo-light/30 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
                   </div>
-                ))
-              )}
+                  <button onClick={() => removeItem(item)} className="absolute top-3 right-3 text-freo-light/30 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>
+                </div>
+              ))}
             </div>
             {cartItems.length > 0 && (
               <div className="p-6 border-t border-white/10 bg-freo-black">
@@ -977,28 +936,18 @@ export default function App() {
   useEffect(() => {
     const handleAuthData = (e: any) => {
       setUser(e.detail.user);
-      if (e.detail.cartItems) {
-        setCartItems(e.detail.cartItems.map((item: any) => ({
-          name: item.product_name,
-          price: formatPrice(item.price),
-          img: item.image_url,
-          quantity: item.quantity
-        })));
-      }
+      if (e.detail.cartItems) setCartItems(e.detail.cartItems.map((item: any) => ({ name: item.product_name, price: formatPrice(item.price), img: item.image_url, quantity: item.quantity })));
     };
-    const handleAuthNotLoggedIn = () => { setUser(null); setCartItems([]); };
+    const handleNotLoggedIn = () => { setUser(null); setCartItems([]); };
     window.addEventListener('auth-data-loaded', handleAuthData);
-    window.addEventListener('auth-not-logged-in', handleAuthNotLoggedIn);
+    window.addEventListener('auth-not-logged-in', handleNotLoggedIn);
     // @ts-ignore
     const sb = window.supabaseClient || window.supabase;
     if (sb) sb.auth.getSession().then(({ data: { session } }: any) => { if (session) setUser(session.user); });
-    return () => { window.removeEventListener('auth-data-loaded', handleAuthData); window.removeEventListener('auth-not-logged-in', handleAuthNotLoggedIn); };
+    return () => { window.removeEventListener('auth-data-loaded', handleAuthData); window.removeEventListener('auth-not-logged-in', handleNotLoggedIn); };
   }, []);
 
-  const handleOpenAuth = () => {
-    if (user) window.location.href = '/dashboard.html';
-    else window.location.href = '/login.html';
-  };
+  const handleOpenAuth = () => { if (user) window.location.href = '/dashboard.html'; else window.location.href = '/login.html'; };
 
   const addToCart = async (product: Product) => {
     // @ts-ignore
@@ -1006,50 +955,30 @@ export default function App() {
     if (!sb) return;
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { window.location.href = '/login.html'; return; }
-
     try {
       const thumb = product.images && product.images.length > 0 ? product.images[0] : '';
       const priceNum = product.promotional_price && product.promotional_price < product.price ? product.promotional_price : product.price;
-
-      const { error } = await sb.from('cart_items').insert({
-        user_id: session.user.id,
-        product_id: String(product.id),
-        product_name: product.title,
-        quantity: 1,
-        price: priceNum,
-        total_price: priceNum,
-        image_url: thumb
-      });
+      const { error } = await sb.from('cart_items').insert({ user_id: session.user.id, product_id: String(product.id), product_name: product.title, quantity: 1, price: priceNum, total_price: priceNum, image_url: thumb });
       if (error) throw error;
-
-      setCartItems(prev => {
-        const existing = prev.find(item => item.name === product.title);
-        if (existing) return prev.map(item => item.name === product.title ? { ...item, quantity: item.quantity + 1 } : item);
-        return [...prev, { name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1 }];
-      });
-
+      setCartItems(prev => { const ex = prev.find(i => i.name === product.title); if (ex) return prev.map(i => i.name === product.title ? { ...i, quantity: i.quantity + 1 } : i); return [...prev, { name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1 }]; });
       const toast = document.createElement('div');
       toast.className = 'fixed bottom-4 right-4 bg-freo-orange text-freo-black px-6 py-4 font-display font-bold uppercase z-[9999] shadow-lg flex items-center gap-2 text-lg';
       toast.innerHTML = '✅ Adicionado ao carrinho!';
       document.body.appendChild(toast);
       setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s ease'; setTimeout(() => toast.remove(), 500); }, 3000);
-    } catch (err) {
-      console.error('Erro ao adicionar ao carrinho:', err);
-    }
+    } catch(err) { console.error('Erro ao adicionar ao carrinho:', err); }
   };
 
-  const updateQuantity = (product: any, delta: number) => {
-    setCartItems(prev => prev.map(item => item.name === product.name ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
-  };
+  const updateQuantity = (product: any, delta: number) => setCartItems(prev => prev.map(item => item.name === product.name ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
   const removeItem = (product: any) => setCartItems(prev => prev.filter(item => item.name !== product.name));
 
   return (
     <div className="min-h-screen">
-      <Navbar currentView={currentView} setCurrentView={setCurrentView} onOpenAuth={handleOpenAuth} cartItems={cartItems} onOpenCart={() => setIsCartOpen(true)} user={user} />
-      {currentView === 'home' ? <HomeView setCurrentView={setCurrentView} addToCart={addToCart} /> : <ShopView addToCart={addToCart} />}
-      <Footer />
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem} />
+      <Navbar currentView={currentView} setCurrentView={setCurrentView} onOpenAuth={handleOpenAuth} cartItems={cartItems} onOpenCart={() => setIsCartOpen(true)} user={user}/>
+      {currentView === 'home' ? <HomeView setCurrentView={setCurrentView} addToCart={addToCart}/> : <ShopView addToCart={addToCart}/>}
+      <Footer/>
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)}/>
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem}/>
     </div>
   );
 }
