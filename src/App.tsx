@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingCart, Menu, X, ChevronRight, Box, Layers, Zap, Hexagon, Search, User, Trash2, Plus, Minus } from 'lucide-react';
+import { ShoppingCart, Menu, X, ChevronRight, Box, Hexagon, Search, User, Trash2, Plus, Minus, Layers, Zap } from 'lucide-react';
 
 // --- Types ---
 type CartItem = {
@@ -121,69 +121,271 @@ const Navbar = ({ currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart
   );
 };
 
+// ── HERO — novo design cyberpunk ───────────────────────────────────────────
 const Hero = ({ setCurrentView }: any) => {
-  return (
-    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
-      <div className="absolute inset-0 bg-printer-bed z-0"></div>
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-freo-orange/20 rounded-full blur-[120px] z-0"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-freo-cyan/10 rounded-full blur-[120px] z-0"></div>
+  const [scanLine, setScanLine] = useState(0);
 
-      <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center relative z-10 w-full">
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="flex flex-col items-start gap-6"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 border border-freo-orange/30 bg-freo-orange/10 rounded-full text-freo-orange text-xs font-bold tracking-widest uppercase">
-            <Zap className="w-3 h-3" /> Nova Coleção Cyberpunk
-          </div>
-          <h1 className="text-6xl md:text-8xl font-display font-black leading-[0.85] uppercase">
-            Materialize <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-freo-orange to-freo-cyan text-layered" data-text="Sua Visão">Sua Visão</span>
-          </h1>
-          <p className="text-freo-light/70 text-lg md:text-xl max-w-md font-body">
-            Arte, utilidade e cultura pop esculpidas camada por camada. Impressão 3D de alta precisão com design exclusivo FreoFigures.
-          </p>
-          <div className="flex gap-4 mt-4">
-            <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors flex items-center gap-2 group">
-              Explorar Loja <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+  useEffect(() => {
+    const t = setInterval(() => setScanLine(v => (v + 1) % 100), 80);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]">
+
+      {/* Grid background */}
+      <div className="absolute inset-0 z-0" style={{
+        backgroundImage: `
+          linear-gradient(rgba(221,175,52,0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(221,175,52,0.04) 1px, transparent 1px)
+        `,
+        backgroundSize: '60px 60px'
+      }} />
+
+      {/* Noise overlay */}
+      <div className="absolute inset-0 z-0 opacity-[0.12]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+      }} />
+
+      {/* Left ambient glow */}
+      <div className="absolute inset-0 z-0" style={{
+        background: 'radial-gradient(ellipse 55% 75% at 22% 55%, rgba(221,175,52,0.07) 0%, transparent 70%)'
+      }} />
+
+      {/* Right ambient glow behind figure */}
+      <div className="absolute right-0 top-0 h-full w-[55%] z-0" style={{
+        background: 'radial-gradient(ellipse 80% 100% at 65% 52%, rgba(221,175,52,0.13) 0%, transparent 65%)'
+      }} />
+
+      {/* Top border */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-freo-orange/40 to-transparent z-10" />
+
+      {/* Corner decorations */}
+      <div className="absolute top-24 left-5 w-7 h-7 border-t-2 border-l-2 border-freo-orange/45 z-20" />
+      <div className="absolute top-24 right-5 w-7 h-7 border-t-2 border-r-2 border-freo-orange/45 z-20" />
+      <div className="absolute bottom-5 left-5 w-7 h-7 border-b-2 border-l-2 border-freo-orange/25 z-20" />
+      <div className="absolute bottom-5 right-5 w-7 h-7 border-b-2 border-r-2 border-freo-orange/25 z-20" />
+
+      {/* Left vertical label */}
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 hidden xl:flex flex-col items-center gap-3">
+        <div className="w-px h-20 bg-gradient-to-b from-transparent to-freo-orange/25" />
+        <span className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-[0.45em]"
+          style={{ writingMode: 'vertical-rl' }}>FREOFIGURES</span>
+        <div className="w-px h-20 bg-gradient-to-t from-transparent to-freo-orange/25" />
+      </div>
+
+      {/* Right vertical label */}
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 hidden xl:flex flex-col items-center gap-3">
+        <div className="w-px h-20 bg-gradient-to-b from-transparent to-freo-orange/25" />
+        <span className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-[0.45em]"
+          style={{ writingMode: 'vertical-rl' }}>BRASIL</span>
+        <div className="w-px h-20 bg-gradient-to-t from-transparent to-freo-orange/25" />
+      </div>
+
+      {/* Main grid */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-6 items-center relative z-10 w-full pt-28 pb-12 min-h-screen">
+
+        {/* ── LEFT: Copy ── */}
+        <div className="flex flex-col gap-7">
+
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.55 }}
+            className="inline-flex items-center gap-2 self-start border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-freo-orange animate-pulse" />
+            <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">
+              Layer by Layer, Legend by Design.
+            </span>
+          </motion.div>
+
+          {/* Title */}
+          <motion.h1
+            initial={{ opacity: 0, y: 44 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="font-display font-black leading-[0.88] uppercase"
+          >
+            <span className="block text-white" style={{
+              fontSize: 'clamp(2.8rem, 6.2vw, 5.8rem)',
+              textShadow: '0 0 60px rgba(255,255,255,0.05)'
+            }}>
+              Tornando o
+            </span>
+            <span className="block" style={{
+              fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)',
+              color: '#DDAF34',
+              textShadow: '0 0 80px rgba(221,175,52,0.38)',
+            }}>
+              inimaginável
+            </span>
+            <span className="block" style={{
+              fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)',
+              color: '#DDAF34',
+              textShadow: '0 0 80px rgba(221,175,52,0.38)',
+            }}>
+              palpável
+            </span>
+          </motion.h1>
+
+          {/* Description */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.32 }}
+            className="text-freo-light/65 text-base md:text-lg max-w-[420px] font-body leading-relaxed"
+          >
+            Arte, utilidade e cultura pop esculpidas camada por camada. Impressão 3D de alta
+            precisão com design exclusivo{' '}
+            <span className="text-freo-orange font-semibold">FreoFigures.</span>
+          </motion.p>
+
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.46 }}
+            className="flex flex-wrap gap-4 mt-1"
+          >
+            <button
+              onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }}
+              className="group relative flex items-center gap-3 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors overflow-hidden"
+            >
+              <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <span className="relative">Explorar Loja</span>
+              <ChevronRight className="relative w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
+
             <a
               href="https://wa.me/5511961789176?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20customizado!"
               target="_blank"
               rel="noopener noreferrer"
-              className="border border-white/20 text-white font-bold font-display uppercase tracking-widest px-8 py-4 hover:bg-white/10 transition-colors flex items-center justify-center"
+              className="flex items-center justify-center border border-white/15 text-white font-display font-bold uppercase tracking-widest px-8 py-4 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all"
             >
               Projetos Custom
             </a>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
+        {/* ── RIGHT: Figure + HUD ── */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className="relative h-[600px] w-full hidden lg:block"
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.85, delay: 0.2 }}
+          className="relative flex items-center justify-center h-[480px] lg:h-[660px]"
         >
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative w-full max-w-md aspect-square">
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute inset-0 border border-freo-orange/30 rounded-full border-dashed"></motion.div>
-              <motion.div animate={{ rotate: -360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="absolute inset-4 border border-freo-cyan/20 rounded-full"></motion.div>
-              <img src="https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?q=80&w=800&auto=format&fit=crop" alt="3D Printed" className="absolute inset-8 object-cover rounded-full z-10 shadow-[0_0_50px_rgba(255,77,0,0.3)]" referrerPolicy="no-referrer" />
-              <motion.div animate={{ y: [-10, 10, -10] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="absolute top-10 -right-10 bg-freo-dark border border-white/10 p-4 rounded-xl z-20 backdrop-blur-md flex items-center gap-3 shadow-xl">
-                <Layers className="text-freo-orange w-6 h-6" />
-                <div><div className="text-xs text-freo-light/50 uppercase font-bold tracking-wider">Resolução</div><div className="font-display font-bold">0.05mm</div></div>
-              </motion.div>
-              <motion.div animate={{ y: [10, -10, 10] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }} className="absolute bottom-20 -left-10 bg-freo-dark border border-white/10 p-4 rounded-xl z-20 backdrop-blur-md flex items-center gap-3 shadow-xl">
-                <Box className="text-freo-cyan w-6 h-6" />
-                <div><div className="text-xs text-freo-light/50 uppercase font-bold tracking-wider">Material</div><div className="font-display font-bold">PLA Silk Premium</div></div>
-              </motion.div>
+          {/* Rotating rings */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 32, repeat: Infinity, ease: 'linear' }}
+            className="absolute inset-10 rounded-full border border-dashed border-freo-orange/12"
+          />
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
+            className="absolute inset-20 rounded-full border border-freo-orange/08"
+          />
+
+          {/* Platform glow */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-56 h-14 z-0" style={{
+            background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(221,175,52,0.28) 0%, transparent 70%)',
+            filter: 'blur(14px)'
+          }} />
+
+          {/* ── Action figure
+               SUBSTITUA a src abaixo pela URL da sua figure no Supabase Storage.
+               Use uma imagem PNG com fundo transparente para melhor resultado.
+               Ex: https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/figure.png
+          ── */}
+          <motion.div
+            animate={{ y: [-7, 7, -7] }}
+            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="relative z-10 h-[78%] flex items-end justify-center"
+          >
+            <img
+              src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
+              alt="FreoFigures Action Figure"
+              className="h-full w-auto object-contain rounded-full"
+              style={{
+                maxWidth: '320px',
+                filter: 'drop-shadow(0 0 40px rgba(221,175,52,0.3)) drop-shadow(0 20px 60px rgba(0,0,0,0.8))'
+              }}
+            />
+            {/* Scan line */}
+            <div
+              className="absolute inset-x-0 h-px pointer-events-none"
+              style={{
+                top: `${scanLine}%`,
+                background: 'linear-gradient(90deg, transparent, rgba(221,175,52,0.25), transparent)',
+                transition: 'top 0.08s linear'
+              }}
+            />
+          </motion.div>
+
+          {/* HUD: Resolução — top right */}
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.75 }}
+            className="absolute top-6 right-2 lg:right-0 flex items-center gap-3 bg-[#0f0f0f]/92 border border-freo-orange/25 backdrop-blur-sm px-4 py-3 z-20"
+          >
+            <div className="text-freo-orange">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 3H3v3M18 3h3v3M6 21H3v-3M18 21h3v-3" />
+                <rect x="7" y="7" width="10" height="10" rx="0.5" />
+              </svg>
             </div>
-          </div>
+            <div>
+              <div className="font-mono text-[9px] text-freo-orange/45 uppercase tracking-widest mb-0.5">Resolução</div>
+              <div className="font-display font-black text-xl text-white leading-none">0.05mm</div>
+            </div>
+            <div className="ml-1 flex flex-col gap-1">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: i < 4 ? '#DDAF34' : 'rgba(221,175,52,0.18)' }} />
+              ))}
+            </div>
+          </motion.div>
+
+          {/* HUD: Material — bottom left */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className="absolute bottom-24 left-2 lg:-left-2 flex items-center gap-3 bg-[#0f0f0f]/92 border border-freo-orange/25 backdrop-blur-sm px-4 py-3 z-20"
+          >
+            <div className="w-8 h-8 flex items-center justify-center text-freo-orange border border-freo-orange/30 flex-shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-mono text-[9px] text-freo-orange/45 uppercase tracking-widest mb-0.5">Material</div>
+              <div className="font-display font-bold text-base text-white leading-tight">PLA Silk Premium</div>
+            </div>
+          </motion.div>
+
+          {/* HUD: Edition — bottom right */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.88 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.05 }}
+            className="absolute bottom-8 right-2 lg:right-0 bg-[#0d0d0d]/95 border border-freo-orange/30 px-5 py-4 z-20 text-center min-w-[120px]"
+          >
+            <div className="font-display font-black text-xl text-freo-orange leading-none">FREO</div>
+            <div className="font-display font-black text-lg text-white leading-none mb-2">FIGURES</div>
+            <div className="w-full h-px bg-freo-orange/20 mb-2" />
+            <div className="font-mono text-[8px] text-freo-orange/40 uppercase tracking-widest">001/999</div>
+            <div className="font-mono text-[8px] text-freo-orange/28 uppercase tracking-widest">Edição Limitada</div>
+          </motion.div>
+
+          {/* Figure frame corners */}
+          <div className="absolute top-10 left-[15%] w-6 h-6 border-t border-l border-freo-orange/30 z-20" />
+          <div className="absolute top-10 right-[15%] w-6 h-6 border-t border-r border-freo-orange/30 z-20" />
         </motion.div>
       </div>
-      <div className="absolute bottom-0 left-0 w-full layer-line"></div>
     </section>
   );
 };
@@ -239,11 +441,9 @@ const Categories = ({ setCurrentView }: any) => {
   );
 };
 
-// ── Helper para formatar preço ─────────────────────────────────────────────
 const formatPrice = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-// ── Card de produto reutilizável ───────────────────────────────────────────
 const ProductCard = ({ product, onAddToCart, compact = false }: { product: Product; onAddToCart: (p: Product) => void; compact?: boolean }) => {
   const thumb = product.images && product.images.length > 0 ? product.images[0] : null;
   const hasPromo = product.promotional_price && product.promotional_price < product.price;
@@ -276,7 +476,7 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
       <div className={`flex flex-col flex-grow ${compact ? '' : 'p-5'}`}>
         <span className="text-freo-orange text-[10px] font-mono uppercase mb-1 tracking-wider">{product.category || 'Geral'}</span>
         <h3
-          className={`font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors cursor-pointer ${compact ? 'text-lg' : 'text-lg'}`}
+          className="font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors cursor-pointer text-lg"
           onClick={goToProduct}
         >{product.title}</h3>
         <div className="mt-auto flex flex-col gap-3">
@@ -297,7 +497,6 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
   );
 };
 
-// ── Seção de destaques — busca os 4 primeiros produtos ativos do Supabase ──
 const FeaturedProducts = ({ addToCart }: any) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -334,7 +533,6 @@ const FeaturedProducts = ({ addToCart }: any) => {
             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-24 h-1 bg-freo-orange"></div>
           </h2>
         </div>
-
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[...Array(4)].map((_, i) => (
@@ -349,7 +547,6 @@ const FeaturedProducts = ({ addToCart }: any) => {
         ) : products.length === 0 ? (
           <div className="text-center py-16">
             <p className="font-mono text-white/30 text-sm">Nenhum produto cadastrado ainda.</p>
-            <a href="/admin/produto.html" className="inline-block mt-4 text-freo-orange font-mono text-xs border border-freo-orange/30 px-4 py-2 hover:bg-freo-orange hover:text-freo-black transition-colors">Cadastrar produtos →</a>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -510,7 +707,6 @@ const StoreCTA = ({ setCurrentView }: any) => (
   </section>
 );
 
-// ── Catálogo completo — busca todos os produtos ativos do Supabase ─────────
 const ShopView = ({ addToCart }: any) => {
   const [activeFilter, setActiveFilter] = useState('Todos');
   const [products, setProducts] = useState<Product[]>([]);
@@ -549,7 +745,6 @@ const ShopView = ({ addToCart }: any) => {
   return (
     <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto min-h-screen">
       <div className="flex flex-col md:flex-row gap-12">
-        {/* Sidebar */}
         <div className="md:w-1/4">
           <div className="sticky top-32">
             <h2 className="font-display font-black text-3xl uppercase mb-8">Catálogo</h2>
@@ -563,15 +758,12 @@ const ShopView = ({ addToCart }: any) => {
             </div>
           </div>
         </div>
-
-        {/* Grid */}
         <div className="md:w-3/4">
           <div className="mb-8 flex justify-between items-end border-b border-white/10 pb-4">
             <div className="font-mono text-freo-light/50 text-sm">
               {loading ? 'Carregando...' : <>Mostrando {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} para <span className="text-freo-orange">[{categoryLabels[activeFilter] || activeFilter}]</span></>}
             </div>
           </div>
-
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
