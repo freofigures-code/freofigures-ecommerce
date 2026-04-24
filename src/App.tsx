@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingCart, Menu, X, ChevronRight, Box, Hexagon, Search, User, Trash2, Plus, Minus } from 'lucide-react';
 
 // --- Types ---
-type CartItem = { name: string; price: string; img: string; quantity: number; };
+type CartItem = { cartItemId?: number; name: string; price: string; img: string; quantity: number; };
 type Product = { id: number; title: string; price: number; promotional_price: number | null; category: string | null; images: string[]; tags: string[] | null; is_active: boolean; };
 
 // --- Navbar ---
@@ -82,29 +82,18 @@ const Navbar = ({ currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart
   );
 };
 
-// --- Figure SVG cyberpunk (lado direito do Hero) ---
 const CyberpunkFigure = () => {
   return (
     <div className="relative w-full h-full flex items-center justify-center select-none">
-
-      {/* Glow de fundo */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-72 h-72 rounded-full" style={{
           background: 'radial-gradient(circle, rgba(221,175,52,0.18) 0%, rgba(221,175,52,0.06) 50%, transparent 75%)',
           filter: 'blur(20px)'
         }} />
       </div>
-
-      {/* Frame hexagonal externo girando */}
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
-        className="absolute w-[420px] h-[420px] pointer-events-none"
-        style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-      >
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }} className="absolute w-[420px] h-[420px] pointer-events-none" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
         <svg viewBox="0 0 420 420" className="w-full h-full">
-          <polygon points="210,8 400,115 400,305 210,412 20,305 20,115"
-            fill="none" stroke="rgba(221,175,52,0.13)" strokeWidth="1" strokeDasharray="8 6" />
+          <polygon points="210,8 400,115 400,305 210,412 20,305 20,115" fill="none" stroke="rgba(221,175,52,0.13)" strokeWidth="1" strokeDasharray="8 6" />
           {[0,60,120,180,240,300].map((angle, i) => {
             const rad = (angle * Math.PI) / 180;
             const cx = 210 + 200 * Math.sin(rad);
@@ -113,21 +102,11 @@ const CyberpunkFigure = () => {
           })}
         </svg>
       </motion.div>
-
-      {/* Frame hexagonal interno girando inverso */}
-      <motion.div
-        animate={{ rotate: -360 }}
-        transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-        className="absolute w-[310px] h-[310px] pointer-events-none"
-        style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-      >
+      <motion.div animate={{ rotate: -360 }} transition={{ duration: 25, repeat: Infinity, ease: 'linear' }} className="absolute w-[310px] h-[310px] pointer-events-none" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
         <svg viewBox="0 0 310 310" className="w-full h-full">
-          <polygon points="155,6 295,82 295,228 155,304 15,228 15,82"
-            fill="none" stroke="rgba(221,175,52,0.07)" strokeWidth="1" />
+          <polygon points="155,6 295,82 295,228 155,304 15,228 15,82" fill="none" stroke="rgba(221,175,52,0.07)" strokeWidth="1" />
         </svg>
       </motion.div>
-
-      {/* Plataforma base */}
       <div className="absolute bottom-16 left-1/2 -translate-x-1/2 pointer-events-none">
         <svg viewBox="0 0 260 40" width="260" height="40">
           <ellipse cx="130" cy="22" rx="100" ry="12" fill="rgba(221,175,52,0.10)" style={{ filter: 'blur(6px)' }}/>
@@ -135,44 +114,16 @@ const CyberpunkFigure = () => {
           <ellipse cx="130" cy="18" rx="78" ry="8" fill="rgba(221,175,52,0.04)" stroke="rgba(221,175,52,0.14)" strokeWidth="1"/>
         </svg>
       </div>
-
-      {/* Linhas de energia conectando à página */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none z-[5]" viewBox="0 0 500 660" preserveAspectRatio="none">
         <line x1="80" y1="220" x2="160" y2="300" stroke="rgba(221,175,52,0.15)" strokeWidth="1" strokeDasharray="4 4"/>
         <line x1="420" y1="180" x2="340" y2="270" stroke="rgba(221,175,52,0.15)" strokeWidth="1" strokeDasharray="4 4"/>
         <line x1="250" y1="520" x2="250" y2="590" stroke="rgba(221,175,52,0.18)" strokeWidth="1" strokeDasharray="3 4"/>
       </svg>
-
-      {/* Scan line animada */}
-      <motion.div
-        animate={{ top: ['0%', '100%'] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-        className="absolute left-0 w-full h-0.5 pointer-events-none z-20"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(221,175,52,0.45), transparent)' }}
-      />
-
-      {/* Logo / imagem principal flutuando */}
-      <motion.div
-        animate={{ y: [-8, 8, -8] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-        className="relative z-10"
-        style={{ marginTop: '-20px' }}
-      >
-        <img
-          src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/LOGO_DEASHBOARD2.png"
-          alt="Freo Figures"
-          className="w-[500px] h-[500px] object-contain"   // <-- e aqui
-          style={{ filter: 'drop-shadow(0 0 28px rgba(221,175,52,0.40)) drop-shadow(0 0 8px rgba(221,175,52,0.2))' }}
-        />
+      <motion.div animate={{ top: ['0%', '100%'] }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} className="absolute left-0 w-full h-0.5 pointer-events-none z-20" style={{ background: 'linear-gradient(90deg, transparent, rgba(221,175,52,0.45), transparent)' }} />
+      <motion.div animate={{ y: [-8, 8, -8] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }} className="relative z-10" style={{ marginTop: '-20px' }}>
+        <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/LOGO_DEASHBOARD2.png" alt="Freo Figures" className="w-[500px] h-[500px] object-contain" style={{ filter: 'drop-shadow(0 0 28px rgba(221,175,52,0.40)) drop-shadow(0 0 8px rgba(221,175,52,0.2))' }} />
       </motion.div>
-
-      {/* HUD: Resolução — canto superior direito */}
-      <motion.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
-        className="absolute top-8 right-0 flex items-center gap-3 bg-black/90 border border-freo-orange/30 backdrop-blur-sm px-4 py-3 z-20"
-      >
+      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="absolute top-8 right-0 flex items-center gap-3 bg-black/90 border border-freo-orange/30 backdrop-blur-sm px-4 py-3 z-20">
         <div className="text-freo-orange">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 3H3v3M18 3h3v3M6 21H3v-3M18 21h3v-3"/>
@@ -189,14 +140,7 @@ const CyberpunkFigure = () => {
           ))}
         </div>
       </motion.div>
-
-      {/* HUD: Material — canto inferior esquerdo */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9 }}
-        className="absolute bottom-28 left-0 flex items-center gap-3 bg-black/90 border border-freo-orange/30 backdrop-blur-sm px-4 py-3 z-20"
-      >
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="absolute bottom-28 left-0 flex items-center gap-3 bg-black/90 border border-freo-orange/30 backdrop-blur-sm px-4 py-3 z-20">
         <div className="w-8 h-8 flex items-center justify-center text-freo-orange border border-freo-orange/30 flex-shrink-0">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
@@ -207,117 +151,73 @@ const CyberpunkFigure = () => {
           <div className="font-display font-bold text-base text-white leading-tight">PLA Silk Premium</div>
         </div>
       </motion.div>
-
-      {/* HUD: Edição — canto inferior direito */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1.05 }}
-        className="absolute bottom-10 right-0 bg-black/95 border border-freo-orange/30 px-5 py-4 z-20 text-center min-w-[120px]"
-      >
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1.05 }} className="absolute bottom-10 right-0 bg-black/95 border border-freo-orange/30 px-5 py-4 z-20 text-center min-w-[120px]">
         <div className="font-display font-black text-xl text-freo-orange leading-none">FREO</div>
         <div className="font-display font-black text-lg text-white leading-none mb-2">FIGURES</div>
         <div className="w-full h-px bg-freo-orange/20 mb-2"/>
         <div className="font-mono text-[8px] text-freo-orange/40 uppercase tracking-widest">001/999</div>
         <div className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-widest">Edição Limitada</div>
       </motion.div>
-
-      {/* Cantos do frame */}
       <div className="absolute top-10 left-[18%] w-6 h-6 border-t border-l border-freo-orange/30 z-20"/>
       <div className="absolute top-10 right-[18%] w-6 h-6 border-t border-r border-freo-orange/30 z-20"/>
     </div>
   );
 };
 
-// --- HERO ---
 const Hero = ({ setCurrentView }: any) => {
   const [scanLine, setScanLine] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setScanLine(v => (v + 1) % 100), 80);
     return () => clearInterval(t);
   }, []);
-
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]">
-      {/* Grid */}
-      <div className="absolute inset-0 z-0" style={{
-        backgroundImage: `linear-gradient(rgba(221,175,52,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(221,175,52,0.04) 1px, transparent 1px)`,
-        backgroundSize: '60px 60px'
-      }}/>
-      {/* Noise */}
-      <div className="absolute inset-0 z-0 opacity-[0.12]" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
-      }}/>
-      {/* Glows */}
+      <div className="absolute inset-0 z-0" style={{ backgroundImage: `linear-gradient(rgba(221,175,52,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(221,175,52,0.04) 1px, transparent 1px)`, backgroundSize: '60px 60px' }}/>
+      <div className="absolute inset-0 z-0 opacity-[0.12]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }}/>
       <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse 55% 75% at 22% 55%, rgba(221,175,52,0.07) 0%, transparent 70%)' }}/>
       <div className="absolute right-0 top-0 h-full w-[55%] z-0" style={{ background: 'radial-gradient(ellipse 80% 100% at 65% 52%, rgba(221,175,52,0.13) 0%, transparent 65%)' }}/>
-      {/* Borda topo */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-freo-orange/40 to-transparent z-10"/>
-      {/* Cantos */}
       <div className="absolute top-24 left-5 w-7 h-7 border-t-2 border-l-2 border-freo-orange/45 z-20"/>
       <div className="absolute top-24 right-5 w-7 h-7 border-t-2 border-r-2 border-freo-orange/45 z-20"/>
       <div className="absolute bottom-5 left-5 w-7 h-7 border-b-2 border-l-2 border-freo-orange/25 z-20"/>
       <div className="absolute bottom-5 right-5 w-7 h-7 border-b-2 border-r-2 border-freo-orange/25 z-20"/>
-      {/* Texto lateral esquerdo */}
       <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 hidden xl:flex flex-col items-center gap-3">
         <div className="w-px h-20 bg-gradient-to-b from-transparent to-freo-orange/25"/>
         <span className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-[0.45em]" style={{ writingMode: 'vertical-rl' }}>FREOFIGURES</span>
         <div className="w-px h-20 bg-gradient-to-t from-transparent to-freo-orange/25"/>
       </div>
-      {/* Texto lateral direito */}
       <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 hidden xl:flex flex-col items-center gap-3">
         <div className="w-px h-20 bg-gradient-to-b from-transparent to-freo-orange/25"/>
         <span className="font-mono text-[8px] text-freo-orange/30 uppercase tracking-[0.45em]" style={{ writingMode: 'vertical-rl' }}>BRASIL</span>
         <div className="w-px h-20 bg-gradient-to-t from-transparent to-freo-orange/25"/>
       </div>
-
       <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-6 items-center relative z-10 w-full pt-28 pb-12 min-h-screen">
-
-        {/* ESQUERDA */}
         <div className="flex flex-col gap-7">
-          <motion.div initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.55 }}
-            className="inline-flex items-center gap-2 self-start border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5">
+          <motion.div initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.55 }} className="inline-flex items-center gap-2 self-start border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-freo-orange animate-pulse"/>
             <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">Layer by Layer, Legend by Design.</span>
           </motion.div>
-
-          <motion.h1 initial={{ opacity: 0, y: 44 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
-            className="font-display font-black leading-[0.88] uppercase">
-            <span className="block text-white" style={{ fontSize: 'clamp(2.8rem, 6.2vw, 5.8rem)', textShadow: '0 0 60px rgba(255,255,255,0.05)' }}>
-              Tornando o
-            </span>
-            <span className="block" style={{ fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>
-              inimaginável
-            </span>
-            <span className="block" style={{ fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>
-              palpável
-            </span>
+          <motion.h1 initial={{ opacity: 0, y: 44 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="font-display font-black leading-[0.88] uppercase">
+            <span className="block text-white" style={{ fontSize: 'clamp(2.8rem, 6.2vw, 5.8rem)', textShadow: '0 0 60px rgba(255,255,255,0.05)' }}>Tornando o</span>
+            <span className="block" style={{ fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>inimaginável</span>
+            <span className="block" style={{ fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>palpável</span>
           </motion.h1>
-
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.32 }}
-            className="text-freo-light/65 text-base md:text-lg max-w-[420px] font-body leading-relaxed">
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.32 }} className="text-freo-light/65 text-base md:text-lg max-w-[420px] font-body leading-relaxed">
             Arte, utilidade e cultura pop esculpidas camada por camada. Impressão 3D de alta precisão com design exclusivo{' '}
             <span className="text-freo-orange font-semibold">FreoFigures.</span>
           </motion.p>
-
-          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.46 }}
-            className="flex flex-wrap gap-4 mt-1">
-            <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }}
-              className="group relative flex items-center gap-3 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors overflow-hidden">
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.46 }} className="flex flex-wrap gap-4 mt-1">
+            <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="group relative flex items-center gap-3 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors overflow-hidden">
               <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent"/>
               <span className="relative">Explorar Loja</span>
               <ChevronRight className="relative w-5 h-5 group-hover:translate-x-1 transition-transform"/>
             </button>
-            <a href="https://wa.me/5511961789176?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20customizado!" target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center border border-white/15 text-white font-display font-bold uppercase tracking-widest px-8 py-4 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all">
+            <a href="https://wa.me/5511961789176?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20customizado!" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center border border-white/15 text-white font-display font-bold uppercase tracking-widest px-8 py-4 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all">
               Projetos Custom
             </a>
           </motion.div>
         </div>
-
-        {/* DIREITA — Figure SVG */}
-        <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.85, delay: 0.2 }}
-          className="relative h-[480px] lg:h-[660px] hidden lg:block">
+        <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.85, delay: 0.2 }} className="relative h-[480px] lg:h-[660px] hidden lg:block">
           <CyberpunkFigure />
         </motion.div>
       </div>
@@ -325,7 +225,6 @@ const Hero = ({ setCurrentView }: any) => {
   );
 };
 
-// --- Marquee ---
 const Marquee = () => (
   <div className="bg-freo-orange text-freo-black py-3 overflow-hidden flex whitespace-nowrap border-y border-freo-orange/50">
     <motion.div animate={{ x: [0, -1035] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="flex gap-8 font-display font-black text-xl uppercase tracking-widest">
@@ -341,7 +240,6 @@ const Marquee = () => (
   </div>
 );
 
-// --- Categories ---
 const Categories = ({ setCurrentView }: any) => {
   const cats = [
     { name: "Action Figures", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/ACTION_FIGURES.png", desc: "Heróis, vilões e cultura pop." },
@@ -400,8 +298,7 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
             {hasPromo && <span className="font-mono text-sm text-white/30 line-through">{formatPrice(product.price)}</span>}
             <span className="font-mono text-xl font-bold text-freo-orange">{formatPrice(displayPrice)}</span>
           </div>
-          <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-            className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-wider py-3 hover:bg-white transition-colors flex items-center justify-center gap-2">
+          <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }} className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-wider py-3 hover:bg-white transition-colors flex items-center justify-center gap-2">
             <ShoppingCart className="w-5 h-5"/> Adicionar ao carrinho
           </button>
         </div>
@@ -455,15 +352,13 @@ const ProcessSection = () => (
     <div className="grid lg:grid-cols-2 gap-16 items-center">
       <div className="order-2 lg:order-1 relative">
         <div className="aspect-[4/5] bg-freo-dark border border-white/10 relative overflow-hidden">
-          <video 
+          <video
             src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/video_deashborad.mp4"
             className="w-full h-full object-cover opacity-80"
             autoPlay
             loop
             muted
             playsInline
-            onError={(e) => console.error('Erro no vídeo:', e)}
-            onLoadedData={() => console.log('Vídeo carregou!')}
           />
           <motion.div animate={{ top: ['0%','100%','0%'] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="absolute left-0 w-full h-1 bg-freo-orange shadow-[0_0_20px_rgba(255,77,0,0.8)] z-10"/>
         </div>
@@ -811,7 +706,13 @@ export default function App() {
   useEffect(() => {
     const handleAuthData = (e: any) => {
       setUser(e.detail.user);
-      if (e.detail.cartItems) setCartItems(e.detail.cartItems.map((item: any) => ({cartItemId: item.id, name: item.product_name, price: formatPrice(item.price), img: item.image_url, quantity: item.quantity })));
+      if (e.detail.cartItems) setCartItems(e.detail.cartItems.map((item: any) => ({
+        cartItemId: item.id,
+        name: item.product_name,
+        price: formatPrice(item.price),
+        img: item.image_url,
+        quantity: item.quantity
+      })));
     };
     const handleNotLoggedIn = () => { setUser(null); setCartItems([]); };
     window.addEventListener('auth-data-loaded', handleAuthData);
@@ -833,9 +734,21 @@ export default function App() {
     try {
       const thumb = product.images && product.images.length > 0 ? product.images[0] : '';
       const priceNum = product.promotional_price && product.promotional_price < product.price ? product.promotional_price : product.price;
-      const { data, error } = await sb.from('cart_items').insert({...}).select().single();
+      const { data, error } = await sb.from('cart_items').insert({
+        user_id: session.user.id,
+        product_id: String(product.id),
+        product_name: product.title,
+        quantity: 1,
+        price: priceNum,
+        total_price: priceNum,
+        image_url: thumb
+      }).select().single();
       if (error) throw error;
-      setCartItems(prev => { const ex = prev.find(i => i.name === product.title); if (ex) return prev.map(i => i.name === product.title ? { ...i, quantity: i.quantity + 1 } : i); return [...prev, { cartItemId: data.id, name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1 }];
+      setCartItems(prev => {
+        const ex = prev.find(i => i.name === product.title);
+        if (ex) return prev.map(i => i.name === product.title ? { ...i, quantity: i.quantity + 1 } : i);
+        return [...prev, { cartItemId: data.id, name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1 }];
+      });
       const toast = document.createElement('div');
       toast.className = 'fixed bottom-4 right-4 bg-freo-orange text-freo-black px-6 py-4 font-display font-bold uppercase z-[9999] shadow-lg flex items-center gap-2 text-lg';
       toast.innerHTML = '✅ Adicionado ao carrinho!';
@@ -845,6 +758,7 @@ export default function App() {
   };
 
   const updateQuantity = (product: any, delta: number) => setCartItems(prev => prev.map(item => item.name === product.name ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
+
   const removeItem = async (product: any) => {
     // @ts-ignore
     const sb = window.supabase;
