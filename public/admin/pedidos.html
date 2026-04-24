@@ -55,6 +55,23 @@
     .status-enviado     { color: #8B5CF6; border-color: rgba(139,92,246,0.3);  background: rgba(139,92,246,0.1); }
     .status-entregue    { color: #10B981; border-color: rgba(16,185,129,0.3);  background: rgba(16,185,129,0.1); }
     .status-cancelado   { color: #EF4444; border-color: rgba(239,68,68,0.3);   background: rgba(239,68,68,0.1); }
+
+    /* Badge de variante */
+    .variant-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 8px;
+      border-radius: 2px;
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      color: #D4AF37;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col selection:bg-freo-orange selection:text-white">
@@ -226,7 +243,6 @@
                 <span>Frete</span>
                 <span id="modal-frete" class="text-green-400">Grátis</span>
               </div>
-              <!-- Transportadora e prazo -->
               <div id="modal-frete-info-row" class="hidden pt-1">
                 <p class="text-[10px] font-mono text-freo-light/30 uppercase tracking-widest" id="modal-frete-info">—</p>
               </div>
@@ -302,7 +318,6 @@
       `;
 
       try {
-        // 1. Busca todos os pedidos
         const { data: orders, error: ordersError } = await window.supabaseClient
           .from('orders')
           .select('*')
@@ -310,7 +325,6 @@
 
         if (ordersError) throw ordersError;
 
-        // 2. Busca profiles dos user_ids únicos presentes nos pedidos
         const uniqueUserIds = [...new Set((orders || []).map(o => o.user_id).filter(Boolean))];
         let profilesMap = {};
 
@@ -323,7 +337,6 @@
           (profiles || []).forEach(p => { profilesMap[p.id] = p; });
         }
 
-        // 3. Anexa o profile a cada pedido
         allOrders = (orders || []).map(o => ({
           ...o,
           profiles: profilesMap[o.user_id] || null
@@ -388,7 +401,6 @@
         const itemsCount = items.reduce((acc, item) => acc + (item.quantity || 1), 0);
         const itemsSummary = items.length > 0 ? `${itemsCount} item(s)` : '-';
 
-        // ── CORREÇÃO: dados do cliente vêm de profiles ─────────────────────
         const customerName  = order.profiles?.name  || 'Cliente';
         const customerEmail = order.profiles?.email || 'Sem email';
 
@@ -435,7 +447,6 @@
       document.getElementById('modal-order-date').innerText = formatDate(currentOrder.created_at);
       document.getElementById('modal-status-select').value = (currentOrder.status || 'pendente').toLowerCase();
       
-      // ── CORREÇÃO: dados do cliente via profiles ────────────────────────────
       document.getElementById('modal-customer-name').innerText  = currentOrder.profiles?.name  || 'Não informado';
       document.getElementById('modal-customer-email').innerText = currentOrder.profiles?.email || 'Não informado';
       document.getElementById('modal-customer-phone').innerText = currentOrder.profiles?.phone || 'Não informado';
@@ -457,7 +468,7 @@
         addrContainer.innerHTML = `<p class="text-freo-light/40 italic">Endereço não fornecido ou formato inválido.</p>`;
       }
 
-      // Itens
+      // ── Itens com variante ────────────────────────────────────────────────
       const itemsContainer = document.getElementById('modal-order-items');
       let items = [];
       try {
@@ -465,32 +476,50 @@
       } catch(e) {}
 
       if (items.length > 0) {
-        itemsContainer.innerHTML = items.map(item => `
-          <div class="flex items-center gap-4 p-3 bg-freo-black border border-white/5 rounded-lg">
-            ${item.image_url || item.img
-              ? `<img src="${item.image_url || item.img}" class="w-12 h-12 object-cover rounded bg-white/5" onerror="this.style.display='none'">`
-              : '<div class="w-12 h-12 bg-white/5 rounded flex items-center justify-center"><svg class="w-6 h-6 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>'}
-            <div class="flex-1">
-              <p class="font-bold text-sm text-white">${item.product_name || item.name || 'Produto'}</p>
-              <p class="text-[10px] font-mono text-freo-light/50 uppercase">Qtd: ${item.quantity || 1}</p>
+        itemsContainer.innerHTML = items.map(item => {
+          // Variante pode vir como item.variant (string) ou item.variante
+          const variant = item.variant || item.variante || null;
+
+          // Quebra a string "Cor: Preto | Tamanho: G" em badges individuais
+          const variantBadgesHTML = variant
+            ? variant.split('|').map(v => `
+                <span class="variant-badge">
+                  <svg style="width:8px;height:8px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                  </svg>
+                  ${v.trim()}
+                </span>
+              `).join('')
+            : '';
+
+          return `
+            <div class="flex items-start gap-4 p-3 bg-freo-black border border-white/5 rounded-lg">
+              ${item.image_url || item.img
+                ? `<img src="${item.image_url || item.img}" class="w-14 h-14 object-cover rounded bg-white/5 flex-shrink-0" onerror="this.style.display='none'">`
+                : `<div class="w-14 h-14 bg-white/5 rounded flex items-center justify-center flex-shrink-0">
+                     <svg class="w-6 h-6 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                   </div>`}
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-sm text-white leading-tight">${item.product_name || item.name || 'Produto'}</p>
+                <p class="text-[10px] font-mono text-freo-light/50 uppercase mt-0.5">Qtd: ${item.quantity || 1}</p>
+                ${variantBadgesHTML ? `<div class="flex flex-wrap gap-1 mt-1.5">${variantBadgesHTML}</div>` : ''}
+              </div>
+              <p class="font-mono font-bold text-freo-orange text-sm flex-shrink-0">${formatCurrency(item.price || item.total_price || 0)}</p>
             </div>
-            <p class="font-mono font-bold text-freo-orange text-sm">${formatCurrency(item.price || item.total_price || 0)}</p>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       } else {
         itemsContainer.innerHTML = `<p class="text-freo-light/40 italic text-sm">Nenhum item detalhado.</p>`;
       }
 
-      // ── CORREÇÃO: frete usando os campos corretos da tabela ───────────────
+      // Frete
       const freteVal   = parseFloat(currentOrder.frete_valor) || 0;
       const freteNome  = currentOrder.frete_nome  || null;
       const fretePrazo = currentOrder.frete_prazo || null;
 
-      // Subtotal = total - frete
       const subtotal = parseFloat(currentOrder.total || 0) - freteVal;
       document.getElementById('modal-subtotal').innerText = formatCurrency(subtotal >= 0 ? subtotal : 0);
 
-      // Frete
       document.getElementById('modal-frete').innerText = freteVal > 0
         ? formatCurrency(freteVal)
         : 'Grátis';
@@ -498,7 +527,6 @@
         ? 'text-freo-orange font-bold'
         : 'text-green-400';
 
-      // Transportadora + prazo logo abaixo do frete
       const freteInfoRow = document.getElementById('modal-frete-info-row');
       const freteInfoEl  = document.getElementById('modal-frete-info');
       if (freteNome || fretePrazo) {
