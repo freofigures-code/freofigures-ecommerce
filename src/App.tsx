@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingCart, Menu, X, ChevronRight, Box, Hexagon, Search, User, Trash2, Plus, Minus } from 'lucide-react';
 
 // --- Types ---
-type CartItem = { cartItemId?: number; name: string; price: string; img: string; quantity: number; };
+type CartItem = { cartItemId?: number; name: string; price: string; img: string; quantity: number; variant?: string | null; };
 type Product = { id: number; title: string; price: number; promotional_price: number | null; category: string | null; images: string[]; tags: string[] | null; is_active: boolean; };
 
 // --- Navbar ---
@@ -653,46 +653,96 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
   );
 };
 
+// ─── CartDrawer com suporte a variantes ───────────────────────────────────────
 const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: any) => {
-  const total = cartItems.reduce((acc: number, item: any) => { const p = item.price.replace('R$','').replace(/\s/g,'').replace(',','.'); return acc + (parseFloat(p) * item.quantity); }, 0);
+  const total = cartItems.reduce((acc: number, item: any) => {
+    const p = item.price.replace('R$','').replace(/\s/g,'').replace(',','.');
+    return acc + (parseFloat(p) * item.quantity);
+  }, 0);
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[100] bg-freo-black/80 backdrop-blur-sm"/>
-          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'tween', duration: 0.3 }} className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-freo-dark border-l border-white/10 z-[101] shadow-2xl flex flex-col">
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-[100] bg-freo-black/80 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: 'tween', duration: 0.3 }}
+            className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-freo-dark border-l border-white/10 z-[101] shadow-2xl flex flex-col"
+          >
+            {/* Header */}
             <div className="p-6 border-b border-white/10 flex justify-between items-center">
-              <h2 className="text-2xl font-display font-black uppercase flex items-center gap-3"><ShoppingCart className="w-6 h-6 text-freo-orange"/>Seu Carrinho</h2>
-              <button onClick={onClose} className="text-freo-light/50 hover:text-white transition-colors"><X className="w-6 h-6"/></button>
+              <h2 className="text-2xl font-display font-black uppercase flex items-center gap-3">
+                <ShoppingCart className="w-6 h-6 text-freo-orange"/>
+                Seu Carrinho
+              </h2>
+              <button onClick={onClose} className="text-freo-light/50 hover:text-white transition-colors">
+                <X className="w-6 h-6"/>
+              </button>
             </div>
-            <div className="flex-grow overflow-y-auto p-6 space-y-6">
+
+            {/* Items */}
+            <div className="flex-grow overflow-y-auto p-6 space-y-4">
               {cartItems.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-freo-light/50 font-body"><ShoppingCart className="w-16 h-16 mb-4 opacity-20"/><p>Seu carrinho está vazio.</p></div>
-              ) : cartItems.map((item: any, index: number) => (
-                <div key={index} className="flex gap-4 bg-freo-black/50 p-3 border border-white/5 relative group">
-                  <img src={item.img} alt={item.name} className="w-20 h-20 object-cover"/>
-                  <div className="flex flex-col flex-grow justify-between">
-                    <h4 className="font-display font-bold text-sm leading-tight pr-6">{item.name}</h4>
-                    <div className="flex justify-between items-end">
-                      <span className="font-mono text-freo-orange text-sm">{item.price}</span>
-                      <div className="flex items-center gap-3 bg-freo-dark border border-white/10 px-2 py-1">
-                        <button onClick={() => updateQuantity(item, -1)} className="hover:text-freo-orange transition-colors"><Minus className="w-3 h-3"/></button>
-                        <span className="font-mono text-xs">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item, 1)} className="hover:text-freo-orange transition-colors"><Plus className="w-3 h-3"/></button>
+                <div className="h-full flex flex-col items-center justify-center text-freo-light/50 font-body">
+                  <ShoppingCart className="w-16 h-16 mb-4 opacity-20"/>
+                  <p>Seu carrinho está vazio.</p>
+                </div>
+              ) : cartItems.map((item: CartItem, index: number) => (
+                <div key={item.cartItemId ?? index} className="flex gap-4 bg-freo-black/50 p-3 border border-white/5 relative group">
+                  <img src={item.img} alt={item.name} className="w-20 h-20 object-cover flex-shrink-0"/>
+                  <div className="flex flex-col flex-grow justify-between min-w-0">
+                    <div className="pr-6">
+                      <h4 className="font-display font-bold text-sm leading-tight">{item.name}</h4>
+                      {/* ── Variante selecionada ── */}
+                      {item.variant && (
+                        <p className="font-mono text-[10px] text-freo-orange/70 mt-1 uppercase tracking-wider leading-relaxed">
+                          {item.variant}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="font-mono text-freo-orange text-sm font-bold">{item.price}</span>
+                      <div className="flex items-center gap-2 bg-freo-dark border border-white/10 px-2 py-1">
+                        <button onClick={() => updateQuantity(item, -1)} className="hover:text-freo-orange transition-colors">
+                          <Minus className="w-3 h-3"/>
+                        </button>
+                        <span className="font-mono text-xs w-4 text-center">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item, 1)} className="hover:text-freo-orange transition-colors">
+                          <Plus className="w-3 h-3"/>
+                        </button>
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => removeItem(item)} className="absolute top-3 right-3 text-freo-light/30 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>
+                  <button
+                    onClick={() => removeItem(item)}
+                    className="absolute top-3 right-3 text-freo-light/30 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-4 h-4"/>
+                  </button>
                 </div>
               ))}
             </div>
+
+            {/* Footer */}
             {cartItems.length > 0 && (
               <div className="p-6 border-t border-white/10 bg-freo-black">
                 <div className="flex justify-between items-center mb-6 font-mono">
                   <span className="text-freo-light/70 uppercase text-sm">Total</span>
-                  <span className="text-2xl font-bold text-freo-orange">R$ {total.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-2xl font-bold text-freo-orange">
+                    R$ {total.toFixed(2).replace('.', ',')}
+                  </span>
                 </div>
-                <button onClick={() => window.location.href = '/checkout.html'} className="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors">Finalizar Compra</button>
+                <button
+                  onClick={() => window.location.href = '/checkout.html'}
+                  className="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors"
+                >
+                  Finalizar Compra
+                </button>
               </div>
             )}
           </motion.div>
@@ -702,6 +752,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: 
   );
 };
 
+// ─── App principal ────────────────────────────────────────────────────────────
 export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'shop'>('home');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -713,13 +764,16 @@ export default function App() {
   useEffect(() => {
     const handleAuthData = (e: any) => {
       setUser(e.detail.user);
-      if (e.detail.cartItems) setCartItems(e.detail.cartItems.map((item: any) => ({
-        cartItemId: item.id,
-        name: item.product_name,
-        price: formatPrice(item.price),
-        img: item.image_url,
-        quantity: item.quantity
-      })));
+      if (e.detail.cartItems) {
+        setCartItems(e.detail.cartItems.map((item: any) => ({
+          cartItemId: item.id,
+          name: item.product_name,
+          price: formatPrice(item.price),
+          img: item.image_url,
+          quantity: item.quantity,
+          variant: item.variant ?? null,   // ← lê variante do Supabase
+        })));
+      }
     };
     const handleNotLoggedIn = () => { setUser(null); setCartItems([]); };
     window.addEventListener('auth-data-loaded', handleAuthData);
@@ -727,10 +781,16 @@ export default function App() {
     // @ts-ignore
     const sb = window.supabaseClient || window.supabase;
     if (sb) sb.auth.getSession().then(({ data: { session } }: any) => { if (session) setUser(session.user); });
-    return () => { window.removeEventListener('auth-data-loaded', handleAuthData); window.removeEventListener('auth-not-logged-in', handleNotLoggedIn); };
+    return () => {
+      window.removeEventListener('auth-data-loaded', handleAuthData);
+      window.removeEventListener('auth-not-logged-in', handleNotLoggedIn);
+    };
   }, []);
 
-  const handleOpenAuth = () => { if (user) window.location.href = '/dashboard.html'; else window.location.href = '/login.html'; };
+  const handleOpenAuth = () => {
+    if (user) window.location.href = '/dashboard.html';
+    else window.location.href = '/login.html';
+  };
 
   const addToCart = async (product: Product) => {
     // @ts-ignore
@@ -740,7 +800,9 @@ export default function App() {
     if (!session) { window.location.href = '/login.html'; return; }
     try {
       const thumb = product.images && product.images.length > 0 ? product.images[0] : '';
-      const priceNum = product.promotional_price && product.promotional_price < product.price ? product.promotional_price : product.price;
+      const priceNum = product.promotional_price && product.promotional_price < product.price
+        ? product.promotional_price
+        : product.price;
       const { data, error } = await sb.from('cart_items').insert({
         user_id: session.user.id,
         product_id: String(product.id),
@@ -748,43 +810,76 @@ export default function App() {
         quantity: 1,
         price: priceNum,
         total_price: priceNum,
-        image_url: thumb
+        image_url: thumb,
+        variant: null,   // produtos sem variante adicionados pelo card
       }).select().single();
       if (error) throw error;
       setCartItems(prev => {
-        const ex = prev.find(i => i.name === product.title);
-        if (ex) return prev.map(i => i.name === product.title ? { ...i, quantity: i.quantity + 1 } : i);
-        return [...prev, { cartItemId: data.id, name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1 }];
+        const ex = prev.find(i => i.cartItemId === data.id);
+        if (ex) return prev.map(i => i.cartItemId === data.id ? { ...i, quantity: i.quantity + 1 } : i);
+        return [...prev, {
+          cartItemId: data.id,
+          name: product.title,
+          price: formatPrice(priceNum),
+          img: thumb,
+          quantity: 1,
+          variant: null,
+        }];
       });
       const toast = document.createElement('div');
       toast.className = 'fixed bottom-4 right-4 bg-freo-orange text-freo-black px-6 py-4 font-display font-bold uppercase z-[9999] shadow-lg flex items-center gap-2 text-lg';
       toast.innerHTML = '✅ Adicionado ao carrinho!';
       document.body.appendChild(toast);
-      setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s ease'; setTimeout(() => toast.remove(), 500); }, 3000);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => toast.remove(), 500);
+      }, 3000);
     } catch(err) { console.error('Erro ao adicionar ao carrinho:', err); }
   };
 
-  const updateQuantity = (product: any, delta: number) => setCartItems(prev => prev.map(item => item.name === product.name ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
+  // ── Usa cartItemId como chave única (suporta mesmo produto com variantes diferentes) ──
+  const updateQuantity = (product: CartItem, delta: number) =>
+    setCartItems(prev =>
+      prev.map(item =>
+        item.cartItemId === product.cartItemId
+          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+          : item
+      )
+    );
 
-  const removeItem = async (product: any) => {
+  const removeItem = async (product: CartItem) => {
     // @ts-ignore
     const sb = window.supabase;
     if (sb && product.cartItemId) {
       await sb.from('cart_items').delete().eq('id', product.cartItemId);
     }
-    setCartItems(prev => prev.filter(item => item.name !== product.name));
+    setCartItems(prev => prev.filter(item => item.cartItemId !== product.cartItemId));
   };
 
   return (
     <div className="min-h-screen">
-      <Navbar currentView={currentView} setCurrentView={setCurrentView} onOpenAuth={handleOpenAuth} cartItems={cartItems} onOpenCart={() => setIsCartOpen(true)} user={user}/>
+      <Navbar
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        onOpenAuth={handleOpenAuth}
+        cartItems={cartItems}
+        onOpenCart={() => setIsCartOpen(true)}
+        user={user}
+      />
       {currentView === 'home'
         ? <HomeView setCurrentView={setCurrentView} addToCart={addToCart} setFilter={setActiveFilter}/>
         : <ShopView addToCart={addToCart} initialFilter={activeFilter}/>
       }
       <Footer/>
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)}/>
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem}/>
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cartItems}
+        updateQuantity={updateQuantity}
+        removeItem={removeItem}
+      />
     </div>
   );
 }
