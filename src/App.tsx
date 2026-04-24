@@ -811,7 +811,7 @@ export default function App() {
   useEffect(() => {
     const handleAuthData = (e: any) => {
       setUser(e.detail.user);
-      if (e.detail.cartItems) setCartItems(e.detail.cartItems.map((item: any) => ({ name: item.product_name, price: formatPrice(item.price), img: item.image_url, quantity: item.quantity })));
+      if (e.detail.cartItems) setCartItems(e.detail.cartItems.map((item: any) => ({cartItemId: item.id, name: item.product_name, price: formatPrice(item.price), img: item.image_url, quantity: item.quantity })));
     };
     const handleNotLoggedIn = () => { setUser(null); setCartItems([]); };
     window.addEventListener('auth-data-loaded', handleAuthData);
@@ -833,9 +833,9 @@ export default function App() {
     try {
       const thumb = product.images && product.images.length > 0 ? product.images[0] : '';
       const priceNum = product.promotional_price && product.promotional_price < product.price ? product.promotional_price : product.price;
-      const { error } = await sb.from('cart_items').insert({ user_id: session.user.id, product_id: String(product.id), product_name: product.title, quantity: 1, price: priceNum, total_price: priceNum, image_url: thumb });
+      const { data, error } = await sb.from('cart_items').insert({...}).select().single();
       if (error) throw error;
-      setCartItems(prev => { const ex = prev.find(i => i.name === product.title); if (ex) return prev.map(i => i.name === product.title ? { ...i, quantity: i.quantity + 1 } : i); return [...prev, { name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1 }]; });
+      setCartItems(prev => { const ex = prev.find(i => i.name === product.title); if (ex) return prev.map(i => i.name === product.title ? { ...i, quantity: i.quantity + 1 } : i); return [...prev, { cartItemId: data.id, name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1 }];
       const toast = document.createElement('div');
       toast.className = 'fixed bottom-4 right-4 bg-freo-orange text-freo-black px-6 py-4 font-display font-bold uppercase z-[9999] shadow-lg flex items-center gap-2 text-lg';
       toast.innerHTML = '✅ Adicionado ao carrinho!';
