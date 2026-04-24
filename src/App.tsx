@@ -344,10 +344,10 @@ const Marquee = () => (
 // --- Categories ---
 const Categories = ({ setCurrentView }: any) => {
   const cats = [
-    { name: "Action Figures", img: "https://images.unsplash.com/photo-1608889825103-eb5ed706fc64?q=80&w=800&auto=format&fit=crop", desc: "Heróis, vilões e cultura pop." },
-    { name: "Religioso", img: "https://images.unsplash.com/photo-1544383835-bca2bc6f5fc4?q=80&w=800&auto=format&fit=crop", desc: "Fé materializada com respeito." },
-    { name: "Utensílios", img: "https://images.unsplash.com/photo-1584362917165-526a968579e8?q=80&w=800&auto=format&fit=crop", desc: "Design funcional para o dia a dia." },
-    { name: "Decoração", img: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=800&auto=format&fit=crop", desc: "Geometria e arte para seu espaço." }
+    { name: "Action Figures", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/ACTION_FIGURES.png", desc: "Heróis, vilões e cultura pop." },
+    { name: "Religioso", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/RELIGIOSO.png", desc: "Fé materializada com respeito." },
+    { name: "Utensílios", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/UTENSILIOS.png", desc: "Design funcional para o dia a dia." },
+    { name: "Decoração", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/DECORACAO.png", desc: "Geometria e arte para seu espaço." }
   ];
   return (
     <section id="categorias" className="py-24 px-6 max-w-7xl mx-auto">
@@ -455,7 +455,7 @@ const ProcessSection = () => (
     <div className="grid lg:grid-cols-2 gap-16 items-center">
       <div className="order-2 lg:order-1 relative">
         <div className="aspect-[4/5] bg-freo-dark border border-white/10 relative overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1631541909061-71e34ddde0de?q=80&w=800&auto=format&fit=crop" alt="3D Printing Process" className="w-full h-full object-cover opacity-60 mix-blend-luminosity" referrerPolicy="no-referrer"/>
+          <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/video_deashborad.mp4" alt="3D Printing Process" className="w-full h-full object-cover opacity-60 mix-blend-luminosity" referrerPolicy="no-referrer"/>
           <motion.div animate={{ top: ['0%','100%','0%'] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="absolute left-0 w-full h-1 bg-freo-orange shadow-[0_0_20px_rgba(255,77,0,0.8)] z-10"/>
         </div>
         <div className="absolute -bottom-8 -right-8 bg-freo-black border border-freo-orange p-6 max-w-xs">
