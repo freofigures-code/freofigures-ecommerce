@@ -98,28 +98,84 @@
 </head>
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen selection:bg-freo-orange selection:text-white flex flex-col">
 
-  <!-- NAV -->
-  <nav class="bg-freo-dark border-b border-white/10 py-4 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
+  <!-- NAV (Cabeçalho idêntico à imagem) -->
+  <nav class="bg-[#050505] border-b border-freo-orange/20 py-5 sticky top-0 z-50 relative overflow-hidden">
+    <!-- Efeitos de iluminação linear sutis -->
+    <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-freo-orange/30 to-transparent"></div>
+    <div class="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-freo-orange/40 to-transparent shadow-[0_0_10px_rgba(221,175,52,0.3)]"></div>
+    
+    <div class="max-w-[1400px] mx-auto px-6 flex justify-between items-center relative">
+      
+      <!-- LOGO -->
       <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='/'">
-        <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" class="w-10 h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]" onerror="this.style.display='none'">
-        <span class="font-display font-black text-2xl tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
+        <div class="w-11 h-11 rounded-full flex items-center justify-center border border-freo-orange shadow-[0_0_15px_rgba(221,175,52,0.4)] bg-black overflow-hidden relative">
+          <!-- Brilho interno do logo -->
+          <div class="absolute inset-0 border border-white/10 rounded-full pointer-events-none"></div>
+          <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" class="w-full h-full object-cover rounded-full" onerror="this.style.display='none'">
+        </div>
+        <span class="font-display font-black text-2xl md:text-3xl tracking-widest uppercase text-white shadow-drop">
+          FREO<span class="text-freo-orange font-normal">FIGURES</span>
+        </span>
       </div>
-      <div class="flex items-center gap-3">
-        <!-- Botões apenas admin (escondidos por padrão) -->
-        <a href="/admin/produtos.html" id="nav-admin-produtos" class="hidden items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+
+      <!-- LINKS CENTRAIS -->
+      <div class="hidden xl:flex items-center gap-6 text-[12px] font-mono tracking-[0.15em] text-freo-light/60">
+        <a href="#" class="hover:text-white transition-colors uppercase">Categorias</a>
+        <span class="text-freo-light/20">|</span>
+        <a href="#" class="hover:text-white transition-colors uppercase">Destaques</a>
+        <span class="text-freo-light/20">|</span>
+        <a href="#" class="hover:text-white transition-colors uppercase">O Processo</a>
+        <span class="text-freo-light/20">|</span>
+        <a href="#" class="hover:text-white transition-colors uppercase">A Origem</a>
+        <span class="text-freo-light/20">|</span>
+        <div class="relative">
+          <a href="/catalogo.html" class="text-freo-orange font-bold transition-colors block" style="text-shadow: 0 0 10px rgba(221,175,52,0.6);">
+            Catálogo
+          </a>
+          <!-- Barra amarela inferior do menu ativo -->
+          <div class="absolute -bottom-[8px] left-1/2 transform -translate-x-1/2 w-8 h-[2px] bg-freo-orange shadow-[0_0_8px_rgba(221,175,52,1)] rounded-full"></div>
+        </div>
+      </div>
+
+      <!-- AÇÕES À DIREITA -->
+      <div class="flex items-center gap-4">
+        
+        <!-- ADMIN LINKS (Mantêm botões ocultos originais com design novo) -->
+        <a href="/admin/produtos.html" id="nav-admin-produtos" class="hidden items-center gap-2 text-[11px] uppercase tracking-widest font-mono text-freo-orange hover:bg-freo-orange/10 transition-colors border border-freo-orange/50 px-4 py-2 bg-freo-orange/5" style="clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);">
           Produtos
         </a>
-        <a href="/admin/pedidos.html" id="nav-admin-pedidos" class="hidden items-center gap-2 text-xs font-mono text-white/50 hover:text-white transition-colors border border-white/10 px-3 py-1.5 rounded">
+        <a href="/admin/pedidos.html" id="nav-admin-pedidos" class="hidden items-center gap-2 text-[11px] uppercase tracking-widest font-mono text-freo-light/60 hover:text-white transition-colors border border-white/20 px-4 py-2" style="clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);">
           Pedidos
         </a>
-        <!-- Botão apenas cliente -->
-        <a href="/meus-pedidos.html" id="my-orders-btn" class="hidden items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+
+        <!-- BOTÃO MEUS PEDIDOS -->
+        <a href="/meus-pedidos.html" id="my-orders-btn" class="hidden md:flex items-center gap-2 text-[11px] uppercase tracking-widest font-mono text-freo-orange hover:bg-freo-orange hover:text-black transition-all border border-freo-orange px-5 py-2.5 bg-freo-orange/5" style="clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); box-shadow: inset 0 0 15px rgba(221,175,52,0.15);">
+          <!-- Ícone Cubo/Pedido -->
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
           Meus Pedidos
         </a>
-        <button id="logout-btn" class="text-xs font-mono text-freo-light/50 hover:text-white transition-colors border border-white/10 px-3 py-1.5 rounded hidden">Sair</button>
+
+        <div class="flex items-center gap-5 ml-2 md:pl-6 md:border-l md:border-white/10">
+          <!-- SEARCH (Lupa) -->
+          <button class="text-white hover:text-freo-orange transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-5.197-5.197M15.803 15.803A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          </button>
+
+          <!-- USER (Perfil) -->
+          <button onclick="openModal('modal-profile')" class="text-white hover:text-freo-orange transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+          </button>
+
+          <!-- CARRINHO -->
+          <div class="relative cursor-pointer hover:text-freo-orange text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+            <!-- Badge 2 conforme imagem -->
+            <span class="absolute -top-[6px] -right-[8px] bg-freo-orange text-freo-black text-[10px] leading-none font-bold w-[16px] h-[16px] rounded-full justify-center items-center flex font-mono">2</span>
+          </div>
+        </div>
+
+        <!-- LOGOUT (Mantido estruturalmente para seu sistema de auth) -->
+        <button id="logout-btn" class="ml-3 text-[10px] uppercase font-mono text-freo-light/30 hover:text-white transition-colors hidden">Sair</button>
       </div>
     </div>
   </nav>
