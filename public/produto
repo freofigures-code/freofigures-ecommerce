@@ -40,9 +40,7 @@
     * { box-sizing: border-box; }
 
     /* ── Imagem principal ── */
-    #main-img {
-      transition: opacity 0.2s ease;
-    }
+    #main-img { transition: opacity 0.2s ease; }
     .thumb {
       cursor: pointer;
       border: 2px solid transparent;
@@ -92,9 +90,45 @@
       cursor: pointer;
       transition: all 0.15s;
       background: transparent;
+      position: relative;
     }
     .variant-btn:hover { border-color: rgba(221,175,52,0.5); color: #F5F5F5; }
     .variant-btn.active { border-color: #DDAF34; color: #DDAF34; background: rgba(221,175,52,0.08); }
+
+    /* Etiqueta de preço na variante */
+    .variant-price-tag {
+      display: block;
+      font-family: ui-monospace, monospace;
+      font-size: 0.6rem;
+      color: rgba(221,175,52,0.6);
+      margin-top: 2px;
+      transition: color 0.15s;
+    }
+    .variant-btn.active .variant-price-tag { color: #DDAF34; }
+    .variant-btn:hover .variant-price-tag  { color: rgba(221,175,52,0.9); }
+
+    /* ── Animação de troca de preço ── */
+    @keyframes priceFlash {
+      0%   { opacity: 0; transform: translateY(-4px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .price-flash { animation: priceFlash 0.2s ease forwards; }
+
+    /* ── Badge "preço varia por opção" ── */
+    .variant-price-notice {
+      font-family: ui-monospace, monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(221,175,52,0.5);
+      border: 1px solid rgba(221,175,52,0.15);
+      background: rgba(221,175,52,0.05);
+      padding: 3px 8px;
+      border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
 
     /* ── Quantidade ── */
     .qty-btn {
@@ -212,19 +246,15 @@
 
       <!-- GALERIA DE IMAGENS -->
       <div class="lg:sticky lg:top-24 space-y-3">
-        <!-- Imagem principal -->
         <div class="img-zoom-wrap aspect-square bg-freo-dark border border-white/[0.06] rounded-lg overflow-hidden">
           <img id="main-img" src="" alt="Produto" class="w-full h-full object-cover">
-          <!-- Placeholder quando sem imagem -->
           <div id="main-img-placeholder" class="hidden w-full h-full flex items-center justify-center">
             <svg class="w-20 h-20 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           </div>
         </div>
 
-        <!-- Thumbnails -->
         <div id="thumbs-grid" class="flex gap-2 flex-wrap"></div>
 
-        <!-- Vídeo (se houver) -->
         <div id="video-section" class="hidden">
           <p class="font-mono text-xs text-white/30 uppercase tracking-widest mb-2">Vídeo do produto</p>
           <div class="aspect-video bg-freo-dark border border-white/[0.06] rounded overflow-hidden">
@@ -245,14 +275,23 @@
         <!-- Título -->
         <h1 id="product-title" class="font-display font-black text-3xl md:text-4xl uppercase tracking-tighter leading-tight text-white"></h1>
 
-        <!-- Preços -->
-        <div class="flex items-end gap-4">
-          <div id="price-promo" class="hidden">
-            <span class="font-mono text-sm text-white/30 line-through" id="price-original"></span>
+        <!-- Bloco de preço -->
+        <div class="space-y-1">
+          <div class="flex items-end gap-4">
+            <div id="price-promo" class="hidden">
+              <span class="font-mono text-sm text-white/30 line-through" id="price-original"></span>
+            </div>
+            <span id="price-main" class="font-mono font-bold text-4xl text-freo-orange"></span>
+            <div id="price-discount-badge" class="hidden font-mono text-xs bg-green-500/15 text-green-400 border border-green-500/25 px-2 py-1">
+              — <span id="price-discount-pct"></span>% OFF
+            </div>
           </div>
-          <span id="price-main" class="font-mono font-bold text-4xl text-freo-orange"></span>
-          <div id="price-discount-badge" class="hidden font-mono text-xs bg-green-500/15 text-green-400 border border-green-500/25 px-2 py-1">
-            — <span id="price-discount-pct"></span>% OFF
+          <!-- Aviso de preço variável (aparece só quando necessário) -->
+          <div id="price-variant-notice" class="hidden">
+            <span class="variant-price-notice">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01"/></svg>
+              Preço varia conforme a opção selecionada
+            </span>
           </div>
         </div>
 
@@ -317,7 +356,7 @@
           <div id="product-description" class="font-body text-sm text-freo-light/70 leading-relaxed space-y-2"></div>
         </div>
 
-        <!-- Variantes detalhadas (se houver) -->
+        <!-- Variantes detalhadas -->
         <div id="variants-detail" class="hidden border-t border-white/[0.06] pt-6 space-y-3">
           <h3 class="font-mono text-xs text-white/40 uppercase tracking-widest">Opções disponíveis</h3>
           <div id="variants-detail-content" class="space-y-3"></div>
@@ -337,6 +376,9 @@
     var currentUser = null;
     var qty = 1;
     var maxStock = 99;
+
+    // Estado das variantes selecionadas: { variantIndex: { name, optionName, optionPrice } }
+    var selectedVariants = {};
 
     var formatCurrency = function(v) {
       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(v) || 0);
@@ -379,12 +421,73 @@
       }
     }
 
+    // ════════════════════════════════════════════════════════════
+    // ── LÓGICA DE PREÇO POR VARIANTE ─────────────────────────
+    // ════════════════════════════════════════════════════════════
+
+    // Retorna o preço base do produto (considerando promoção)
+    function getBasePrice() {
+      if (!product) return 0;
+      var hasPromo = product.promotional_price && parseFloat(product.promotional_price) < parseFloat(product.price);
+      return parseFloat(hasPromo ? product.promotional_price : product.price) || 0;
+    }
+
+    // Calcula o preço final considerando variante selecionada com preço próprio
+    function getEffectivePrice() {
+      // Procura se alguma variante selecionada tem preço próprio
+      var keys = Object.keys(selectedVariants);
+      for (var k = 0; k < keys.length; k++) {
+        var sel = selectedVariants[keys[k]];
+        if (sel && sel.optionPrice != null && !isNaN(sel.optionPrice)) {
+          return sel.optionPrice;
+        }
+      }
+      return getBasePrice();
+    }
+
+    // Atualiza o bloco de preço na tela com animação
+    function updatePriceDisplay() {
+      var effective = getEffectivePrice();
+      var base = getBasePrice();
+      var priceEl = document.getElementById('price-main');
+
+      // Flash de animação
+      priceEl.classList.remove('price-flash');
+      void priceEl.offsetWidth; // força reflow
+      priceEl.classList.add('price-flash');
+
+      priceEl.innerText = formatCurrency(effective);
+    }
+
+    // Verifica se alguma variante tem preço por opção (per_option_price: true)
+    function hasAnyPerOptionPricing() {
+      if (!product || !product.variants) return false;
+      return product.variants.some(function(v) { return v.per_option_price; });
+    }
+
+    // Ao clicar em botão de variante
+    function selectVariant(btn, variantIndex, optionName, optionPrice) {
+      var parent = btn.parentElement;
+      parent.querySelectorAll('.variant-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+
+      // Registra a seleção com preço (pode ser null se não tiver per_option_price)
+      selectedVariants[variantIndex] = {
+        variantName: btn.getAttribute('data-variant-name'),
+        optionName: optionName,
+        optionPrice: optionPrice
+      };
+
+      // Atualiza o preço exibido
+      updatePriceDisplay();
+    }
+
     // ── Renderiza produto ───────────────────────────────────────────────────
     function renderProduct(p) {
       product = p;
       maxStock = p.stock || 99;
+      selectedVariants = {};
 
-      // Meta title
       document.title = (p.title || 'Produto') + ' | FreoFigures';
 
       // Breadcrumb
@@ -408,7 +511,7 @@
       // Título
       document.getElementById('product-title').innerText = p.title || '';
 
-      // Preços
+      // Preços — exibição inicial
       var hasPromo = p.promotional_price && parseFloat(p.promotional_price) < parseFloat(p.price);
       var displayPrice = hasPromo ? p.promotional_price : p.price;
       document.getElementById('price-main').innerText = formatCurrency(displayPrice);
@@ -419,6 +522,11 @@
         var pct = Math.round((1 - parseFloat(p.promotional_price) / parseFloat(p.price)) * 100);
         document.getElementById('price-discount-badge').classList.remove('hidden');
         document.getElementById('price-discount-pct').innerText = pct;
+      }
+
+      // Aviso de preço variável
+      if (hasAnyPerOptionPricing()) {
+        document.getElementById('price-variant-notice').classList.remove('hidden');
       }
 
       // Estoque
@@ -470,36 +578,67 @@
         descEl.innerHTML = '<p class="text-white/30 italic">Sem descrição disponível.</p>';
       }
 
-      // Variantes
+      // ── Variantes com suporte a preço por opção ──────────────────────────
       var variants = Array.isArray(p.variants) ? p.variants : [];
-      if (variants.length > 0) {
-        var validVariants = variants.filter(function(v) { return v.name && v.options && v.options.length > 0; });
-        if (validVariants.length > 0) {
-          // Seção de seleção
-          var varSection = document.getElementById('variants-section');
-          varSection.classList.remove('hidden');
-          varSection.innerHTML = validVariants.map(function(v) {
-            return '<div>'
-              + '<label class="font-mono text-xs text-white/40 uppercase tracking-widest mb-2 block">' + v.name + '</label>'
-              + '<div class="flex gap-2 flex-wrap">'
-              + v.options.map(function(opt) {
-                  return '<button class="variant-btn" onclick="selectVariant(this)">' + opt + '</button>';
-                }).join('')
-              + '</div>'
-              + '</div>';
+      var validVariants = variants.filter(function(v) { return v.name && v.options && v.options.length > 0; });
+
+      if (validVariants.length > 0) {
+        var varSection = document.getElementById('variants-section');
+        varSection.classList.remove('hidden');
+
+        varSection.innerHTML = validVariants.map(function(v, vi) {
+          var isPriced = !!v.per_option_price;
+
+          var optionsHTML = v.options.map(function(opt) {
+            // Opção pode ser string (simples) ou objeto { name, price }
+            var optName  = typeof opt === 'object' ? (opt.name  || '') : String(opt || '');
+            var optPrice = (typeof opt === 'object' && opt.price != null && !isNaN(opt.price))
+                            ? parseFloat(opt.price)
+                            : null;
+
+            // data-attributes para recuperar os valores no click
+            var dataPrice = optPrice != null ? optPrice : '';
+            var priceLabel = '';
+            if (isPriced && optPrice != null) {
+              priceLabel = '<span class="variant-price-tag">' + formatCurrency(optPrice) + '</span>';
+            } else if (isPriced) {
+              priceLabel = '<span class="variant-price-tag" style="color:rgba(255,255,255,0.2)">preço padrão</span>';
+            }
+
+            return '<button class="variant-btn" '
+              + 'data-variant-index="' + vi + '" '
+              + 'data-variant-name="' + v.name.replace(/"/g, '&quot;') + '" '
+              + 'data-option-name="' + optName.replace(/"/g, '&quot;') + '" '
+              + 'data-option-price="' + dataPrice + '" '
+              + 'onclick="selectVariant(this, ' + vi + ', \'' + optName.replace(/'/g, "\\'") + '\', ' + (optPrice != null ? optPrice : 'null') + ')">'
+              + optName
+              + priceLabel
+              + '</button>';
           }).join('');
 
-          // Detalhe na descrição
-          var varDetail = document.getElementById('variants-detail');
-          var varDetailContent = document.getElementById('variants-detail-content');
-          varDetail.classList.remove('hidden');
-          varDetailContent.innerHTML = validVariants.map(function(v) {
-            return '<div class="flex gap-3">'
-              + '<span class="font-mono text-xs text-white/40 uppercase tracking-widest w-20 flex-shrink-0 pt-0.5">' + v.name + ':</span>'
-              + '<span class="font-body text-sm text-freo-light/60">' + v.options.join(', ') + '</span>'
-              + '</div>';
-          }).join('');
-        }
+          return '<div>'
+            + '<label class="font-mono text-xs text-white/40 uppercase tracking-widest mb-2 block">' + v.name + '</label>'
+            + '<div class="flex gap-2 flex-wrap">' + optionsHTML + '</div>'
+            + '</div>';
+        }).join('');
+
+        // Detalhe na descrição
+        var varDetail = document.getElementById('variants-detail');
+        var varDetailContent = document.getElementById('variants-detail-content');
+        varDetail.classList.remove('hidden');
+        varDetailContent.innerHTML = validVariants.map(function(v) {
+          var isPriced = !!v.per_option_price;
+          var optsText = v.options.map(function(opt) {
+            var name  = typeof opt === 'object' ? (opt.name || '') : String(opt || '');
+            var price = (typeof opt === 'object' && opt.price != null) ? ' (' + formatCurrency(opt.price) + ')' : '';
+            return name + (isPriced ? price : '');
+          }).join(', ');
+
+          return '<div class="flex gap-3">'
+            + '<span class="font-mono text-xs text-white/40 uppercase tracking-widest w-20 flex-shrink-0 pt-0.5">' + v.name + ':</span>'
+            + '<span class="font-body text-sm text-freo-light/60">' + optsText + '</span>'
+            + '</div>';
+        }).join('');
       }
 
       // Mostra conteúdo
@@ -513,12 +652,6 @@
       var img = document.getElementById('main-img');
       img.style.opacity = '0';
       setTimeout(function() { setMainImage(url); img.style.opacity = '1'; }, 150);
-    }
-
-    function selectVariant(btn) {
-      var parent = btn.parentElement;
-      parent.querySelectorAll('.variant-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
     }
 
     // ── Adicionar ao carrinho ───────────────────────────────────────────────
@@ -538,28 +671,46 @@
       btn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div> Adicionando...';
 
       try {
-        var priceNum = product.promotional_price && parseFloat(product.promotional_price) < parseFloat(product.price)
-          ? parseFloat(product.promotional_price)
-          : parseFloat(product.price);
+        // Preço efetivo (considera variante com preço próprio)
+        var priceNum = getEffectivePrice();
 
         var thumb = (product.images && product.images.length > 0) ? product.images[0] : null;
 
-        // Verifica se já existe no carrinho
-        var existing = await window.supabaseClient
+        // Monta string de variantes selecionadas para salvar no carrinho
+        var variantKeys = Object.keys(selectedVariants);
+        var variantStr = variantKeys.length > 0
+          ? variantKeys.map(function(k) {
+              var sel = selectedVariants[k];
+              return sel.variantName + ': ' + sel.optionName;
+            }).join(' | ')
+          : null;
+
+        // Verifica se já existe no carrinho (mesmo produto + mesma variante)
+        var query = window.supabaseClient
           .from('cart_items')
           .select('id, quantity')
           .eq('user_id', s.user.id)
-          .eq('product_id', String(product.id))
-          .single();
+          .eq('product_id', String(product.id));
+
+        // Se tiver variante, filtra pela variante também
+        if (variantStr) {
+          query = query.eq('variant', variantStr);
+        } else {
+          query = query.is('variant', null);
+        }
+
+        var existing = await query.single();
 
         if (existing.data) {
-          // Atualiza quantidade
           await window.supabaseClient
             .from('cart_items')
-            .update({ quantity: existing.data.quantity + qty })
+            .update({
+              quantity:    existing.data.quantity + qty,
+              price:       priceNum,
+              total_price: priceNum * (existing.data.quantity + qty)
+            })
             .eq('id', existing.data.id);
         } else {
-          // Insere novo
           var r = await window.supabaseClient.from('cart_items').insert({
             user_id:      s.user.id,
             product_id:   String(product.id),
@@ -567,14 +718,14 @@
             quantity:     qty,
             price:        priceNum,
             total_price:  priceNum * qty,
-            image_url:    thumb
+            image_url:    thumb,
+            variant:      variantStr   // campo com as variantes escolhidas
           });
           if (r.error) throw r.error;
         }
 
         showToast('Adicionado ao carrinho!', 'success');
 
-        // Botão temporário de ir ao carrinho
         btn.innerHTML = '✅ No carrinho — <span style="text-decoration:underline;cursor:pointer" onclick="window.location.href=\'/dashboard.html\'">Ver carrinho</span>';
         btn.disabled = false;
         btn.classList.remove('bg-freo-orange');
