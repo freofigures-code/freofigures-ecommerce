@@ -455,7 +455,16 @@ const ProcessSection = () => (
     <div className="grid lg:grid-cols-2 gap-16 items-center">
       <div className="order-2 lg:order-1 relative">
         <div className="aspect-[4/5] bg-freo-dark border border-white/10 relative overflow-hidden">
-          <video src="..." className="w-full h-full object-cover opacity-80" autoPlay loop muted playsInline referrerPolicy="no-referrer"/>
+          <video 
+            src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/video_deashborad.mp4"
+            className="w-full h-full object-cover opacity-80"
+            autoPlay
+            loop
+            muted
+            playsInline
+            onError={(e) => console.error('Erro no vídeo:', e)}
+            onLoadedData={() => console.log('Vídeo carregou!')}
+          />
           <motion.div animate={{ top: ['0%','100%','0%'] }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="absolute left-0 w-full h-1 bg-freo-orange shadow-[0_0_20px_rgba(255,77,0,0.8)] z-10"/>
         </div>
         <div className="absolute -bottom-8 -right-8 bg-freo-black border border-freo-orange p-6 max-w-xs">
