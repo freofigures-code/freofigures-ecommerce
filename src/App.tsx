@@ -845,7 +845,14 @@ export default function App() {
   };
 
   const updateQuantity = (product: any, delta: number) => setCartItems(prev => prev.map(item => item.name === product.name ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
-  const removeItem = (product: any) => setCartItems(prev => prev.filter(item => item.name !== product.name));
+  const removeItem = async (product: any) => {
+    // @ts-ignore
+    const sb = window.supabase;
+    if (sb && product.cartItemId) {
+      await sb.from('cart_items').delete().eq('id', product.cartItemId);
+    }
+    setCartItems(prev => prev.filter(item => item.name !== product.name));
+  };
 
   return (
     <div className="min-h-screen">
