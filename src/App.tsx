@@ -84,12 +84,6 @@ const Navbar = ({ currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart
 
 // --- Figure SVG cyberpunk (lado direito do Hero) ---
 const CyberpunkFigure = () => {
-  const [pulse, setPulse] = useState(false);
-  useEffect(() => {
-    const t = setInterval(() => setPulse(v => !v), 1200);
-    return () => clearInterval(t);
-  }, []);
-
   return (
     <div className="relative w-full h-full flex items-center justify-center select-none">
 
@@ -110,7 +104,7 @@ const CyberpunkFigure = () => {
       >
         <svg viewBox="0 0 420 420" className="w-full h-full">
           <polygon points="210,8 400,115 400,305 210,412 20,305 20,115"
-            fill="none" stroke="rgba(221,175,52,0.15)" strokeWidth="1" strokeDasharray="8 6" />
+            fill="none" stroke="rgba(221,175,52,0.13)" strokeWidth="1" strokeDasharray="8 6" />
           {[0,60,120,180,240,300].map((angle, i) => {
             const rad = (angle * Math.PI) / 180;
             const cx = 210 + 200 * Math.sin(rad);
@@ -129,175 +123,47 @@ const CyberpunkFigure = () => {
       >
         <svg viewBox="0 0 310 310" className="w-full h-full">
           <polygon points="155,6 295,82 295,228 155,304 15,228 15,82"
-            fill="none" stroke="rgba(221,175,52,0.08)" strokeWidth="1" />
+            fill="none" stroke="rgba(221,175,52,0.07)" strokeWidth="1" />
         </svg>
       </motion.div>
 
       {/* Plataforma base */}
       <div className="absolute bottom-16 left-1/2 -translate-x-1/2 pointer-events-none">
         <svg viewBox="0 0 260 40" width="260" height="40">
-          <ellipse cx="130" cy="20" rx="110" ry="14" fill="rgba(221,175,52,0.06)" stroke="rgba(221,175,52,0.2)" strokeWidth="1"/>
-          <ellipse cx="130" cy="18" rx="80" ry="9" fill="rgba(221,175,52,0.04)" stroke="rgba(221,175,52,0.15)" strokeWidth="1"/>
-          {/* Glow da plataforma */}
-          <ellipse cx="130" cy="22" rx="90" ry="8" fill="rgba(221,175,52,0.12)" style={{ filter: 'blur(6px)' }}/>
+          <ellipse cx="130" cy="22" rx="100" ry="12" fill="rgba(221,175,52,0.10)" style={{ filter: 'blur(6px)' }}/>
+          <ellipse cx="130" cy="20" rx="110" ry="13" fill="rgba(221,175,52,0.05)" stroke="rgba(221,175,52,0.2)" strokeWidth="1"/>
+          <ellipse cx="130" cy="18" rx="78" ry="8" fill="rgba(221,175,52,0.04)" stroke="rgba(221,175,52,0.14)" strokeWidth="1"/>
         </svg>
       </div>
 
-      {/* Figura principal — silhueta humanoide cyberpunk */}
+      {/* Linhas de energia conectando à página */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-[5]" viewBox="0 0 500 660" preserveAspectRatio="none">
+        <line x1="80" y1="220" x2="160" y2="300" stroke="rgba(221,175,52,0.15)" strokeWidth="1" strokeDasharray="4 4"/>
+        <line x1="420" y1="180" x2="340" y2="270" stroke="rgba(221,175,52,0.15)" strokeWidth="1" strokeDasharray="4 4"/>
+        <line x1="250" y1="520" x2="250" y2="590" stroke="rgba(221,175,52,0.18)" strokeWidth="1" strokeDasharray="3 4"/>
+      </svg>
+
+      {/* Scan line animada */}
+      <motion.div
+        animate={{ top: ['0%', '100%'] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+        className="absolute left-0 w-full h-0.5 pointer-events-none z-20"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(221,175,52,0.45), transparent)' }}
+      />
+
+      {/* Logo / imagem principal flutuando */}
       <motion.div
         animate={{ y: [-8, 8, -8] }}
         transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
         className="relative z-10"
         style={{ marginTop: '-20px' }}
       >
-        <svg viewBox="0 0 200 380" width="200" height="380">
-          <defs>
-            <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#DDAF34" stopOpacity="0.9"/>
-              <stop offset="50%" stopColor="#C9A227" stopOpacity="0.7"/>
-              <stop offset="100%" stopColor="#8B6914" stopOpacity="0.5"/>
-            </linearGradient>
-            <linearGradient id="bodyGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1a1a1a" stopOpacity="1"/>
-              <stop offset="100%" stopColor="#0a0a0a" stopOpacity="1"/>
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="glowStrong">
-              <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
-              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-
-          {/* === CABEÇA === */}
-          {/* Capacete base */}
-          <ellipse cx="100" cy="52" rx="34" ry="38" fill="url(#bodyGradDark)" stroke="url(#bodyGrad)" strokeWidth="1.5"/>
-          {/* Visor */}
-          <rect x="72" y="44" width="56" height="18" rx="4" fill="rgba(221,175,52,0.15)" stroke="rgba(221,175,52,0.6)" strokeWidth="1" filter="url(#glow)"/>
-          {/* Olhos */}
-          <rect x="78" y="49" width="16" height="6" rx="2" fill="#DDAF34" filter="url(#glowStrong)"/>
-          <rect x="106" y="49" width="16" height="6" rx="2" fill="#DDAF34" filter="url(#glowStrong)"/>
-          {/* Detalhe capacete topo */}
-          <path d="M80 20 Q100 10 120 20" fill="none" stroke="rgba(221,175,52,0.5)" strokeWidth="1.5"/>
-          <rect x="96" y="10" width="8" height="12" rx="1" fill="rgba(221,175,52,0.4)"/>
-          {/* Antena */}
-          <line x1="100" y1="10" x2="100" y2="0" stroke="rgba(221,175,52,0.6)" strokeWidth="1.5"/>
-          <circle cx="100" cy="0" r="2.5" fill="#DDAF34" filter="url(#glowStrong)"/>
-          {/* Detalhes laterais capacete */}
-          <rect x="64" y="50" width="6" height="10" rx="1" fill="rgba(221,175,52,0.3)" stroke="rgba(221,175,52,0.5)" strokeWidth="0.5"/>
-          <rect x="130" y="50" width="6" height="10" rx="1" fill="rgba(221,175,52,0.3)" stroke="rgba(221,175,52,0.5)" strokeWidth="0.5"/>
-
-          {/* === PESCOÇO === */}
-          <rect x="90" y="88" width="20" height="14" rx="2" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
-          <line x1="96" y1="88" x2="96" y2="102" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
-          <line x1="104" y1="88" x2="104" y2="102" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
-
-          {/* === TÓRAX === */}
-          {/* Peitoral */}
-          <path d="M58 102 Q100 95 142 102 L148 170 Q100 178 52 170 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1.5"/>
-          {/* Placa peitoral esquerda */}
-          <path d="M65 108 Q85 104 98 108 L100 148 Q82 152 66 148 Z" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.35)" strokeWidth="1"/>
-          {/* Placa peitoral direita */}
-          <path d="M102 108 Q115 104 135 108 L134 148 Q118 152 100 148 Z" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.35)" strokeWidth="1"/>
-          {/* Núcleo de energia central */}
-          <rect x="88" y="126" width="24" height="16" rx="3" fill="rgba(221,175,52,0.1)" stroke="rgba(221,175,52,0.6)" strokeWidth="1.5" filter="url(#glow)"/>
-          <rect x="92" y="129" width="16" height="10" rx="2" fill={pulse ? "rgba(221,175,52,0.5)" : "rgba(221,175,52,0.2)"} style={{ transition: 'fill 0.3s' }} filter="url(#glowStrong)"/>
-          {/* Logo FF no peito */}
-          <text x="100" y="122" textAnchor="middle" fontSize="8" fill="rgba(221,175,52,0.6)" fontFamily="monospace" fontWeight="bold">FF</text>
-          {/* Linhas de detalhe tórax */}
-          <line x1="70" y1="158" x2="130" y2="158" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
-          <line x1="68" y1="164" x2="132" y2="164" stroke="rgba(221,175,52,0.15)" strokeWidth="0.5"/>
-
-          {/* === OMBROS === */}
-          {/* Ombro esquerdo */}
-          <ellipse cx="48" cy="112" rx="16" ry="14" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.45)" strokeWidth="1.5"/>
-          <ellipse cx="48" cy="108" rx="10" ry="7" fill="rgba(221,175,52,0.1)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
-          {/* Ombro direito */}
-          <ellipse cx="152" cy="112" rx="16" ry="14" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.45)" strokeWidth="1.5"/>
-          <ellipse cx="152" cy="108" rx="10" ry="7" fill="rgba(221,175,52,0.1)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
-
-          {/* === BRAÇOS === */}
-          {/* Braço esquerdo */}
-          <path d="M38 122 Q28 148 32 180" fill="none" stroke="none"/>
-          <rect x="28" y="122" width="18" height="52" rx="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1" transform="rotate(-5 37 148)"/>
-          {/* Cotovelo esquerdo */}
-          <circle cx="35" cy="175" r="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1"/>
-          {/* Antebraço esquerdo */}
-          <rect x="26" y="180" width="16" height="44" rx="7" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1" transform="rotate(8 34 202)"/>
-          {/* Detalhe braço */}
-          <line x1="32" y1="140" x2="44" y2="140" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
-          <line x1="30" y1="148" x2="42" y2="148" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
-
-          {/* Braço direito */}
-          <rect x="154" y="122" width="18" height="52" rx="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1" transform="rotate(5 163 148)"/>
-          {/* Cotovelo direito */}
-          <circle cx="165" cy="175" r="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1"/>
-          {/* Antebraço direito */}
-          <rect x="158" y="180" width="16" height="44" rx="7" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1" transform="rotate(-8 166 202)"/>
-
-          {/* Mão esquerda */}
-          <ellipse cx="30" cy="228" rx="9" ry="12" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
-          {/* Mão direita */}
-          <ellipse cx="170" cy="228" rx="9" ry="12" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
-
-          {/* === CINTURA / ABDOMEM === */}
-          <path d="M58 168 Q100 175 142 168 L138 210 Q100 218 62 210 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
-          {/* Fivela */}
-          <rect x="85" y="198" width="30" height="10" rx="2" fill="rgba(221,175,52,0.15)" stroke="rgba(221,175,52,0.5)" strokeWidth="1"/>
-          <rect x="95" y="200" width="10" height="6" rx="1" fill="rgba(221,175,52,0.4)" filter="url(#glow)"/>
-          {/* Detalhes abdomen */}
-          {[0,1,2].map(i => (
-            <rect key={i} x={75 + i*18} y="178" width="12" height="8" rx="1" fill="rgba(221,175,52,0.06)" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
-          ))}
-
-          {/* === QUADRIL === */}
-          <path d="M62 208 Q100 215 138 208 L140 230 Q100 238 60 230 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.25)" strokeWidth="1"/>
-
-          {/* === PERNAS === */}
-          {/* Coxa esquerda */}
-          <rect x="64" y="228" width="30" height="62" rx="10" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1.5"/>
-          <rect x="68" y="238" width="22" height="8" rx="2" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
-          <rect x="68" y="252" width="22" height="8" rx="2" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
-          {/* Joelho esquerdo */}
-          <ellipse cx="79" cy="292" rx="15" ry="10" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1.5"/>
-          <ellipse cx="79" cy="290" rx="8" ry="5" fill="rgba(221,175,52,0.12)" filter="url(#glow)"/>
-          {/* Canela esquerda */}
-          <rect x="66" y="298" width="26" height="54" rx="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1.5"/>
-          <line x1="70" y1="316" x2="88" y2="316" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
-          <line x1="70" y1="328" x2="88" y2="328" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
-
-          {/* Coxa direita */}
-          <rect x="106" y="228" width="30" height="62" rx="10" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1.5"/>
-          <rect x="110" y="238" width="22" height="8" rx="2" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
-          <rect x="110" y="252" width="22" height="8" rx="2" fill="rgba(221,175,52,0.08)" stroke="rgba(221,175,52,0.25)" strokeWidth="0.5"/>
-          {/* Joelho direito */}
-          <ellipse cx="121" cy="292" rx="15" ry="10" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.4)" strokeWidth="1.5"/>
-          <ellipse cx="121" cy="290" rx="8" ry="5" fill="rgba(221,175,52,0.12)" filter="url(#glow)"/>
-          {/* Canela direita */}
-          <rect x="108" y="298" width="26" height="54" rx="8" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.3)" strokeWidth="1.5"/>
-          <line x1="112" y1="316" x2="130" y2="316" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
-          <line x1="112" y1="328" x2="130" y2="328" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5"/>
-
-          {/* === BOTAS === */}
-          {/* Bota esquerda */}
-          <path d="M62 350 Q64 366 58 374 L96 374 L94 350 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1.5"/>
-          <line x1="60" y1="368" x2="95" y2="368" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
-          {/* Bota direita */}
-          <path d="M106 350 Q108 366 104 374 L142 374 L138 350 Z" fill="url(#bodyGradDark)" stroke="rgba(221,175,52,0.35)" strokeWidth="1.5"/>
-          <line x1="106" y1="368" x2="141" y2="368" stroke="rgba(221,175,52,0.3)" strokeWidth="1"/>
-
-          {/* === LINHAS DE ENERGIA === */}
-          {/* Linha esquerda do tórax ao braço */}
-          <path d="M65 130 Q50 130 42 145" fill="none" stroke="rgba(221,175,52,0.3)" strokeWidth="1" strokeDasharray="3 2"/>
-          {/* Linha direita */}
-          <path d="M135 130 Q150 130 158 145" fill="none" stroke="rgba(221,175,52,0.3)" strokeWidth="1" strokeDasharray="3 2"/>
-          {/* Linha central tórax-perna esquerda */}
-          <path d="M85 175 Q79 210 79 228" fill="none" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5" strokeDasharray="2 3"/>
-          {/* Linha central tórax-perna direita */}
-          <path d="M115 175 Q121 210 121 228" fill="none" stroke="rgba(221,175,52,0.2)" strokeWidth="0.5" strokeDasharray="2 3"/>
-        </svg>
+        <img
+          src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/LOGO_DEASHBOARD.png"
+          alt="Freo Figures"
+          className="w-64 h-64 object-contain"
+          style={{ filter: 'drop-shadow(0 0 28px rgba(221,175,52,0.40)) drop-shadow(0 0 8px rgba(221,175,52,0.2))' }}
+        />
       </motion.div>
 
       {/* HUD: Resolução — canto superior direito */}
