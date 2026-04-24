@@ -161,7 +161,7 @@ const CyberpunkFigure = () => {
         <img
           src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/LOGO_DEASHBOARD2.png"
           alt="Freo Figures"
-          className="w-64 h-64 object-contain"
+          className="w-[500px] h-[500px] object-contain"   // <-- e aqui
           style={{ filter: 'drop-shadow(0 0 28px rgba(221,175,52,0.40)) drop-shadow(0 0 8px rgba(221,175,52,0.2))' }}
         />
       </motion.div>
