@@ -86,10 +86,7 @@ const CyberpunkFigure = () => {
   return (
     <div className="relative w-full h-full flex items-center justify-center select-none">
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-72 h-72 rounded-full" style={{
-          background: 'radial-gradient(circle, rgba(221,175,52,0.18) 0%, rgba(221,175,52,0.06) 50%, transparent 75%)',
-          filter: 'blur(20px)'
-        }} />
+        <div className="w-72 h-72 rounded-full" style={{ background: 'radial-gradient(circle, rgba(221,175,52,0.18) 0%, rgba(221,175,52,0.06) 50%, transparent 75%)', filter: 'blur(20px)' }} />
       </div>
       <motion.div animate={{ rotate: 360 }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }} className="absolute w-[420px] h-[420px] pointer-events-none" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
         <svg viewBox="0 0 420 420" className="w-full h-full">
@@ -240,13 +237,18 @@ const Marquee = () => (
   </div>
 );
 
-const Categories = ({ setCurrentView }: any) => {
+const Categories = ({ setCurrentView, setFilter }: any) => {
   const cats = [
-    { name: "Action Figures", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/ACTION_FIGURES.png", desc: "Heróis, vilões e cultura pop." },
-    { name: "Religioso", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/RELIGIOSO.png", desc: "Fé materializada com respeito." },
-    { name: "Utensílios", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/UTENSILIOS.png", desc: "Design funcional para o dia a dia." },
-    { name: "Decoração", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/DECORACAO.png", desc: "Geometria e arte para seu espaço." }
+    { name: "Action Figures", slug: "games", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/ACTION_FIGURES.png", desc: "Heróis, vilões e cultura pop." },
+    { name: "Religioso", slug: "religioso", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/RELIGIOSO.png", desc: "Fé materializada com respeito." },
+    { name: "Utensílios", slug: "lifestyle", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/UTENSILIOS.png", desc: "Design funcional para o dia a dia." },
+    { name: "Decoração", slug: "outros", img: "https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/DECORACAO.png", desc: "Geometria e arte para seu espaço." }
   ];
+  const handleCatClick = (slug: string) => {
+    setFilter(slug);
+    setCurrentView('shop');
+    window.scrollTo(0, 0);
+  };
   return (
     <section id="categorias" className="py-24 px-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
@@ -258,7 +260,7 @@ const Categories = ({ setCurrentView }: any) => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cats.map((cat, i) => (
-          <div key={i} className="group relative h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5">
+          <div key={i} onClick={() => handleCatClick(cat.slug)} className="group relative h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5">
             <img src={cat.img} alt={cat.name} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 grayscale group-hover:grayscale-0" referrerPolicy="no-referrer"/>
             <div className="absolute inset-0 bg-gradient-to-t from-freo-black via-freo-black/50 to-transparent"/>
             <div className="absolute bottom-0 left-0 p-6 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
@@ -495,12 +497,15 @@ const Footer = () => (
   </footer>
 );
 
-const ShopView = ({ addToCart }: any) => {
-  const [activeFilter, setActiveFilter] = useState('Todos');
+const ShopView = ({ addToCart, initialFilter }: any) => {
+  const [activeFilter, setActiveFilter] = useState(initialFilter || 'Todos');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const categories = ['Todos','games','religioso','keycaps','personalizado','lifestyle','outros'];
   const categoryLabels: Record<string,string> = { 'Todos':'Todos','games':'Games & Geek','religioso':'Religioso','keycaps':'Keycaps','personalizado':'Personalizado','lifestyle':'Lifestyle','outros':'Outros' };
+
+  useEffect(() => { setActiveFilter(initialFilter || 'Todos'); }, [initialFilter]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -513,6 +518,7 @@ const ShopView = ({ addToCart }: any) => {
       } catch(e) { console.error(e); } finally { setLoading(false); }
     })();
   }, []);
+
   const filtered = activeFilter === 'Todos' ? products : products.filter(p => p.category === activeFilter);
   return (
     <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto min-h-screen">
@@ -562,11 +568,11 @@ const ShopView = ({ addToCart }: any) => {
   );
 };
 
-const HomeView = ({ setCurrentView, addToCart }: any) => (
+const HomeView = ({ setCurrentView, addToCart, setFilter }: any) => (
   <>
     <Hero setCurrentView={setCurrentView}/>
     <Marquee/>
-    <Categories setCurrentView={setCurrentView}/>
+    <Categories setCurrentView={setCurrentView} setFilter={setFilter}/>
     <FeaturedProducts addToCart={addToCart}/>
     <StoreCTA setCurrentView={setCurrentView}/>
     <ProcessSection/>
@@ -702,6 +708,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [activeFilter, setActiveFilter] = useState('Todos');
 
   useEffect(() => {
     const handleAuthData = (e: any) => {
@@ -771,7 +778,10 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <Navbar currentView={currentView} setCurrentView={setCurrentView} onOpenAuth={handleOpenAuth} cartItems={cartItems} onOpenCart={() => setIsCartOpen(true)} user={user}/>
-      {currentView === 'home' ? <HomeView setCurrentView={setCurrentView} addToCart={addToCart}/> : <ShopView addToCart={addToCart}/>}
+      {currentView === 'home'
+        ? <HomeView setCurrentView={setCurrentView} addToCart={addToCart} setFilter={setActiveFilter}/>
+        : <ShopView addToCart={addToCart} initialFilter={activeFilter}/>
+      }
       <Footer/>
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)}/>
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem}/>
