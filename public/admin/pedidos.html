@@ -401,8 +401,8 @@
         const itemsCount = items.reduce((acc, item) => acc + (item.quantity || 1), 0);
         const itemsSummary = items.length > 0 ? `${itemsCount} item(s)` : '-';
 
-        const customerName  = order.profiles?.name  || 'Cliente';
-        const customerEmail = order.profiles?.email || 'Sem email';
+        const customerName  = order.customer_name  || order.profiles?.name  || order.profiles?.full_name || 'Cliente';
+        const customerEmail = order.customer_email || order.profiles?.email || 'Sem email';
 
         return `
           <tr class="hover:bg-white/5 transition-colors cursor-pointer group"
@@ -447,9 +447,14 @@
       document.getElementById('modal-order-date').innerText = formatDate(currentOrder.created_at);
       document.getElementById('modal-status-select').value = (currentOrder.status || 'pendente').toLowerCase();
       
-      document.getElementById('modal-customer-name').innerText  = currentOrder.profiles?.name  || 'Não informado';
-      document.getElementById('modal-customer-email').innerText = currentOrder.profiles?.email || 'Não informado';
-      document.getElementById('modal-customer-phone').innerText = currentOrder.profiles?.phone || 'Não informado';
+      // Lê do campo customer_* salvo direto na order (mais confiável)
+      // Cai no profiles como fallback para pedidos antigos
+      document.getElementById('modal-customer-name').innerText  =
+        currentOrder.customer_name  || currentOrder.profiles?.name  || currentOrder.profiles?.full_name || 'Não informado';
+      document.getElementById('modal-customer-email').innerText =
+        currentOrder.customer_email || currentOrder.profiles?.email || currentUser?.email || 'Não informado';
+      document.getElementById('modal-customer-phone').innerText =
+        currentOrder.customer_phone || currentOrder.profiles?.phone || currentOrder.profiles?.telefone || 'Não informado';
 
       // Endereço
       const addrContainer = document.getElementById('modal-shipping-address');
