@@ -452,7 +452,7 @@
       document.getElementById('modal-customer-name').innerText  =
         currentOrder.customer_name  || currentOrder.profiles?.name  || currentOrder.profiles?.full_name || 'Não informado';
       document.getElementById('modal-customer-email').innerText =
-        currentOrder.customer_email || currentOrder.profiles?.email || currentUser?.email || 'Não informado';
+        currentOrder.customer_email || currentOrder.profiles?.email || 'Não informado';
       document.getElementById('modal-customer-phone').innerText =
         currentOrder.customer_phone || currentOrder.profiles?.phone || currentOrder.profiles?.telefone || 'Não informado';
 
