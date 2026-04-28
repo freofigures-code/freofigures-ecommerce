@@ -58,22 +58,16 @@
     .img-drop:hover, .img-drop.dragover { border-color:#DDAF34; background:rgba(221,175,52,.04); }
 
     /* ── Preview de imagem ── */
-    .img-thumb { position:relative; width:80px; height:80px; border:1px solid rgba(255,255,255,.08); flex-shrink:0; overflow:hidden; }
+    .img-thumb { position:relative; width:80px; height:80px; border:1px solid rgba(255,255,255,.08); flex-shrink:0; overflow:hidden; cursor:grab; transition:opacity .15s, transform .15s, border-color .15s; }
+    .img-thumb:active { cursor:grabbing; }
+    .img-thumb.dragging { opacity:0.35; transform:scale(0.95); border-color:rgba(221,175,52,.5); }
+    .img-thumb.drag-over { border-color:#DDAF34; transform:scale(1.06); box-shadow:0 0 0 2px rgba(221,175,52,.3); }
     .img-thumb img { width:100%; height:100%; object-fit:cover; }
     .img-thumb .del-img { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.7); border:none; color:#ef4444; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; opacity:0; transition:opacity .15s; border-radius:2px; }
     .img-thumb:hover .del-img { opacity:1; }
 
     /* ── Variantes ── */
-    .variant-row { background:#0D0D0D; border:1px solid rgba(255,255,255,.06); padding:.75rem; margin-bottom:.5rem; border-radius:2px; }
-    .variant-option-row { display:flex; gap:8px; align-items:center; background:#0A0A0A; border:1px solid rgba(255,255,255,.04); padding:.4rem .6rem; margin-bottom:.3rem; border-radius:2px; }
-    .variant-option-price { width:110px; flex-shrink:0; }
-
-    /* ── Toggle switch personalizado ── */
-    .toggle-wrap { display:flex; align-items:center; gap:.5rem; cursor:pointer; }
-    .toggle-track { position:relative; width:36px; height:20px; background:rgba(255,255,255,.1); border-radius:10px; transition:background .2s; flex-shrink:0; }
-    .toggle-track.on { background:#DDAF34; }
-    .toggle-thumb { position:absolute; top:3px; left:3px; width:14px; height:14px; background:#fff; border-radius:50%; transition:transform .2s; }
-    .toggle-track.on .toggle-thumb { transform:translateX(16px); }
+    .variant-row { display:flex; gap:8px; align-items:center; background:#0D0D0D; border:1px solid rgba(255,255,255,.06); padding:.5rem .75rem; }
 
     /* ── Tags ── */
     .tag-pill { display:inline-flex; align-items:center; gap:4px; background:rgba(221,175,52,.1); border:1px solid rgba(221,175,52,.25); color:#DDAF34; font-family:ui-monospace,monospace; font-size:.7rem; padding:2px 8px; border-radius:2px; }
@@ -99,10 +93,6 @@
 
     /* ── Upload progress ── */
     .upload-bar { height:3px; background:#DDAF34; width:0%; transition:width .3s; }
-
-    /* ── Preço por variante ── */
-    .variant-price-section { border-top:1px solid rgba(255,255,255,.05); margin-top:.6rem; padding-top:.6rem; }
-    .option-price-label { font-family:ui-monospace,monospace; font-size:.6rem; color:rgba(245,245,245,.25); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.25rem; display:block; }
   </style>
 </head>
 <body class="text-freo-light font-body antialiased min-h-screen flex flex-col">
@@ -170,9 +160,9 @@
     </div>
   </main>
 
-  <!-- ══════════════════════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════════════
        PAINEL LATERAL — FORMULÁRIO DE PRODUTO
-  ══════════════════════════════════════════════════════════════ -->
+  ══════════════════════════════════════════════════════ -->
   <div id="form-overlay" class="fixed inset-0 z-50 hidden modal-overlay" onclick="handleOverlayClick(event)">
     <div id="form-panel" class="absolute right-0 top-0 h-full w-full max-w-2xl bg-freo-dark border-l border-white/[0.07] flex flex-col shadow-2xl" style="overflow:hidden">
 
@@ -303,10 +293,10 @@
         <div id="tab-variants" class="form-tab-content hidden p-6 space-y-5">
           <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
             <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <p class="font-mono text-xs text-white/40 leading-relaxed">Use variantes para opções como cor, tamanho ou material. Você pode definir um preço diferente para cada opção ou usar o preço padrão do produto.</p>
+            <p class="font-mono text-xs text-white/40 leading-relaxed">Use variantes para opções como cor, tamanho ou material. Ex: "Cor: Preto", "Tamanho: 30cm".</p>
           </div>
 
-          <div id="variants-list"></div>
+          <div id="variants-list" class="space-y-2"></div>
 
           <button onclick="addVariant()" class="w-full border border-dashed border-white/10 py-3 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors">
             + Adicionar variante
@@ -367,7 +357,7 @@
   var allProducts = [];
   var currentFilter = 'all';
   var editingProductId = null;
-  var currentImages = [];
+  var currentImages = [];   // array de URLs (Supabase Storage ou externas)
   var currentTags = [];
   var currentVariants = [];
 
@@ -466,6 +456,7 @@
     showTab('tab-basic');
 
     if (productId) {
+      // Modo edição
       var p = allProducts.find(function(x) { return String(x.id) === String(productId); });
       if (!p) return;
       document.getElementById('form-title').innerText = 'Editar Produto';
@@ -485,9 +476,9 @@
       updateSEOCount(document.getElementById('f-seo-desc'), 'seo-desc-count', 160);
       currentImages = Array.isArray(p.images) ? p.images.slice() : [];
       currentTags = Array.isArray(p.tags) ? p.tags.slice() : [];
-      // Garante que variantes salvas com preços por opção sejam carregadas corretamente
       currentVariants = Array.isArray(p.variants) ? JSON.parse(JSON.stringify(p.variants)) : [];
     } else {
+      // Modo novo
       document.getElementById('form-title').innerText = 'Novo Produto';
       document.getElementById('form-subtitle').innerText = 'Preencha as informações abaixo';
       document.getElementById('form-delete-btn').classList.add('hidden');
@@ -566,16 +557,55 @@
   }
 
   // ── Imagens ────────────────────────────────────────────────────────────────
+  // ── Drag-and-drop para reordenar imagens ──────────────────────────────────
+  var dragSrcIdx = null;
+
   function renderImagesUI() {
     var grid = document.getElementById('img-preview-grid');
     document.getElementById('img-count').innerText = '(' + currentImages.length + ')';
     grid.innerHTML = currentImages.map(function(url, i) {
-      return '<div class="img-thumb">'
-        + '<img src="' + url + '" alt="img' + i + '" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><rect fill=%22%23222%22 width=%2280%22 height=%2280%22/></svg>\'">'
-        + (i === 0 ? '<span style="position:absolute;bottom:2px;left:2px;background:rgba(221,175,52,.8);color:#000;font-size:8px;font-family:monospace;padding:1px 4px">CAPA</span>' : '')
-        + '<button class="del-img" onclick="removeImage(' + i + ')" title="Remover">×</button>'
-        + '</div>';
+      return '<div class="img-thumb" draggable="true"'        + ' ondragstart="onImgDragStart(event,' + i + ')"'        + ' ondragover="onImgDragOver(event,' + i + ')"'        + ' ondragleave="onImgDragLeave(event)"'        + ' ondrop="onImgDrop(event,' + i + ')"'        + ' ondragend="onImgDragEnd()">'        + '<img src="' + url + '" alt="img' + i + '" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><rect fill=%22%23222%22 width=%2280%22 height=%2280%22/></svg>\'">'        + (i === 0 ? '<span style="position:absolute;bottom:2px;left:2px;background:rgba(221,175,52,.8);color:#000;font-size:8px;font-family:monospace;padding:1px 4px;z-index:2">CAPA</span>' : '')        + '<button class="del-img" onclick="event.stopPropagation();removeImage(' + i + ')" title="Remover">×</button>'        + '</div>';
     }).join('');
+  }
+
+  function onImgDragStart(e, idx) {
+    dragSrcIdx = idx;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+    setTimeout(function() {
+      var thumbs = document.querySelectorAll('.img-thumb');
+      if (thumbs[idx]) thumbs[idx].classList.add('dragging');
+    }, 0);
+  }
+
+  function onImgDragOver(e, idx) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragSrcIdx === null || dragSrcIdx === idx) return;
+    document.querySelectorAll('.img-thumb').forEach(function(t) { t.classList.remove('drag-over'); });
+    var thumbs = document.querySelectorAll('.img-thumb');
+    if (thumbs[idx]) thumbs[idx].classList.add('drag-over');
+  }
+
+  function onImgDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+
+  function onImgDrop(e, targetIdx) {
+    e.preventDefault();
+    if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
+    var moved = currentImages.splice(dragSrcIdx, 1)[0];
+    currentImages.splice(targetIdx, 0, moved);
+    dragSrcIdx = null;
+    renderImagesUI();
+    showToast('Imagem reordenada! Salve para confirmar.', 'success');
+  }
+
+  function onImgDragEnd() {
+    dragSrcIdx = null;
+    document.querySelectorAll('.img-thumb').forEach(function(t) {
+      t.classList.remove('dragging', 'drag-over');
+    });
   }
 
   function removeImage(i) { currentImages.splice(i, 1); renderImagesUI(); }
@@ -588,6 +618,7 @@
     document.getElementById('img-url-input').value = '';
   }
 
+  // Upload para Supabase Storage
   function handleFileSelect(e) { uploadFiles(Array.from(e.target.files)); }
   function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
   function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('dragover'); }
@@ -624,177 +655,30 @@
     setTimeout(function() { wrap.classList.add('hidden'); bar.style.width = '0%'; }, 800);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ── VARIANTES COM PREÇO POR OPÇÃO ─────────────────────────────
-  // ══════════════════════════════════════════════════════════════
-
-  // Estrutura de cada variante:
-  // {
-  //   name: string,
-  //   options: string[] | { name: string, price: number|null }[],
-  //   per_option_price: boolean   ← chave que controla o modo
-  // }
-
+  // ── Variantes ──────────────────────────────────────────────────────────────
   function addVariant() {
-    currentVariants.push({ name: '', options: [''], per_option_price: false });
+    currentVariants.push({ name: '', options: '' });
     renderVariantsUI();
   }
 
   function removeVariant(i) { currentVariants.splice(i, 1); renderVariantsUI(); }
 
-  // Alterna preço por opção em uma variante
-  function toggleVariantPricing(i) {
-    var v = currentVariants[i];
-    v.per_option_price = !v.per_option_price;
-
-    // Converte opções entre formatos simples e objeto
-    if (v.per_option_price) {
-      // Converte string[] → { name, price }[]
-      v.options = v.options.map(function(opt) {
-        if (typeof opt === 'string') return { name: opt, price: null };
-        return opt;
-      });
-    } else {
-      // Converte { name, price }[] → string[]
-      v.options = v.options.map(function(opt) {
-        if (typeof opt === 'object' && opt !== null) return opt.name || '';
-        return opt || '';
-      });
-    }
-    renderVariantsUI();
-  }
-
-  // Adiciona uma nova opção numa variante
-  function addVariantOption(vi) {
-    var v = currentVariants[vi];
-    if (v.per_option_price) {
-      v.options.push({ name: '', price: null });
-    } else {
-      v.options.push('');
-    }
-    renderVariantsUI();
-  }
-
-  // Remove uma opção específica de uma variante
-  function removeVariantOption(vi, oi) {
-    currentVariants[vi].options.splice(oi, 1);
-    renderVariantsUI();
-  }
-
-  // Atualiza nome de uma opção
-  function updateOptionName(vi, oi, val) {
-    var v = currentVariants[vi];
-    if (v.per_option_price) {
-      if (typeof v.options[oi] !== 'object') v.options[oi] = { name: '', price: null };
-      v.options[oi].name = val;
-    } else {
-      v.options[oi] = val;
-    }
-  }
-
-  // Atualiza preço de uma opção
-  function updateOptionPrice(vi, oi, val) {
-    var v = currentVariants[vi];
-    if (typeof v.options[oi] !== 'object') v.options[oi] = { name: '', price: null };
-    v.options[oi].price = val === '' ? null : parseFloat(val);
-  }
-
-  // Atualiza nome da variante
-  function updateVariantName(i, val) { currentVariants[i].name = val; }
-
-  // Renderiza a aba de variantes
   function renderVariantsUI() {
     var list = document.getElementById('variants-list');
-
-    if (currentVariants.length === 0) {
-      list.innerHTML = '';
-      return;
-    }
-
-    list.innerHTML = currentVariants.map(function(v, vi) {
-      var isPriced = !!v.per_option_price;
-
-      // Garante que options seja sempre array
-      var opts = Array.isArray(v.options) ? v.options : [''];
-
-      // Constrói o HTML das opções
-      var optionsHTML = opts.map(function(opt, oi) {
-        var optName = typeof opt === 'object' ? (opt.name || '') : (opt || '');
-        var optPrice = typeof opt === 'object' ? (opt.price != null ? opt.price : '') : '';
-
-        var row = '<div class="variant-option-row">'
-          + '<span class="font-mono text-[10px] text-white/20 w-4 flex-shrink-0 text-right">' + (oi + 1) + '</span>'
-          + '<input type="text" value="' + escapeAttr(optName) + '" placeholder="Nome da opção (ex: Preto)" '
-          + 'class="fi py-1 text-xs flex-1" style="min-width:0" '
-          + 'oninput="updateOptionName(' + vi + ',' + oi + ',this.value)">';
-
-        if (isPriced) {
-          row += '<div class="flex items-center gap-1 variant-option-price">'
-            + '<span class="font-mono text-[10px] text-white/25 flex-shrink-0">R$</span>'
-            + '<input type="number" value="' + optPrice + '" placeholder="Preço" step="0.01" min="0" '
-            + 'class="fi py-1 text-xs" style="min-width:0;padding-left:.5rem;padding-right:.5rem" '
-            + 'oninput="updateOptionPrice(' + vi + ',' + oi + ',this.value)">'
-            + '</div>';
-        }
-
-        row += '<button onclick="removeVariantOption(' + vi + ',' + oi + ')" '
-          + 'class="text-red-500/30 hover:text-red-400 transition-colors flex-shrink-0 ml-1" title="Remover opção">'
-          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
-          + '</button>'
-          + '</div>';
-
-        return row;
-      }).join('');
-
-      // Toggle visual
-      var toggleHTML = '<div class="toggle-wrap" onclick="toggleVariantPricing(' + vi + ')">'
-        + '<div class="toggle-track' + (isPriced ? ' on' : '') + '">'
-        + '<div class="toggle-thumb"></div>'
-        + '</div>'
-        + '<span class="font-mono text-[10px] uppercase tracking-widest ' + (isPriced ? 'text-freo-orange' : 'text-white/30') + '">'
-        + (isPriced ? 'Preço por opção ativado' : 'Preço por opção')
-        + '</span>'
-        + '</div>';
-
+    list.innerHTML = currentVariants.map(function(v, i) {
       return '<div class="variant-row">'
-        // Cabeçalho da variante: nome + botão excluir
-        + '<div class="flex items-center gap-2 mb-3">'
-        + '<input type="text" value="' + escapeAttr(v.name || '') + '" placeholder="Tipo de variante (ex: Cor, Tamanho)" '
-        + 'class="fi py-1.5 text-xs flex-1" oninput="updateVariantName(' + vi + ',this.value)">'
-        + '<button onclick="removeVariant(' + vi + ')" class="text-red-500/40 hover:text-red-400 transition-colors flex-shrink-0 ml-1" title="Remover variante">'
+        + '<div class="flex-1">'
+        + '<input type="text" value="' + (v.name||'') + '" placeholder="Tipo (ex: Cor)" class="fi py-1.5 text-xs mb-1.5" oninput="updateVariant(' + i + ',\'name\',this.value)">'
+        + '<input type="text" value="' + (Array.isArray(v.options) ? v.options.join(', ') : (v.options||'')) + '" placeholder="Opções separadas por vírgula (ex: Preto, Branco, Dourado)" class="fi py-1.5 text-xs" oninput="updateVariant(' + i + ',\'options\',this.value)">'
+        + '</div>'
+        + '<button onclick="removeVariant(' + i + ')" class="text-red-500/40 hover:text-red-400 transition-colors ml-2 flex-shrink-0">'
         + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
         + '</button>'
-        + '</div>'
-
-        // Toggle de preço por opção
-        + '<div class="flex items-center justify-between mb-2.5">'
-        + '<span class="font-mono text-[10px] text-white/25 uppercase tracking-widest">Opções</span>'
-        + toggleHTML
-        + '</div>'
-
-        // Cabeçalho das colunas quando com preço
-        + (isPriced ? '<div class="flex gap-2 mb-1 px-6"><span class="font-mono text-[9px] text-white/20 flex-1">Nome</span><span class="font-mono text-[9px] text-white/20 w-28">Preço (R$)</span><span class="w-4"></span></div>' : '')
-
-        // Lista de opções
-        + optionsHTML
-
-        // Botão adicionar opção
-        + '<button onclick="addVariantOption(' + vi + ')" '
-        + 'class="w-full mt-2 border border-dashed border-white/[0.07] py-1.5 font-mono text-[10px] text-white/20 uppercase tracking-widest hover:border-freo-orange/30 hover:text-freo-orange/60 transition-colors">'
-        + '+ Adicionar opção'
-        + '</button>'
-
-        // Aviso quando preço por opção está ativo
-        + (isPriced ? '<p class="font-mono text-[10px] text-freo-orange/40 mt-2.5">Deixe o campo de preço vazio para usar o preço padrão do produto nessa opção.</p>' : '')
-
         + '</div>';
     }).join('');
   }
 
-  // Escapa aspas em atributos HTML
-  function escapeAttr(str) {
-    return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
+  function updateVariant(i, field, val) { currentVariants[i][field] = val; }
 
   // ── SEO preview ────────────────────────────────────────────────────────────
   function updateSEOCount(input, countId, max) {
@@ -820,6 +704,7 @@
     var price = parseFloat(priceRaw);
 
     if (!title) { showToast('Informe o título do produto.', 'error'); showTab('tab-basic'); return; }
+    // BUG FIX: permite price=0 vindo do banco, só bloqueia se o campo estiver vazio ou NaN
     if (priceRaw === '' || isNaN(price) || price < 0) { showToast('Informe um preço válido (pode ser 0).', 'error'); showTab('tab-basic'); return; }
 
     var btn = document.getElementById('form-save-btn');
@@ -827,27 +712,6 @@
 
     var promoPrice = parseFloat(document.getElementById('f-promo').value);
     promoPrice = isNaN(promoPrice) ? null : promoPrice;
-
-    // Serializa variantes normalizando opções
-    var serializedVariants = currentVariants.length > 0 ? currentVariants.map(function(v) {
-      var opts;
-      if (v.per_option_price) {
-        // Salva como array de objetos { name, price }
-        opts = (v.options || []).map(function(opt) {
-          if (typeof opt === 'object' && opt !== null) {
-            return { name: (opt.name || '').trim(), price: (opt.price != null && !isNaN(opt.price)) ? opt.price : null };
-          }
-          return { name: String(opt || '').trim(), price: null };
-        }).filter(function(o) { return o.name; });
-      } else {
-        // Salva como array de strings simples
-        opts = (v.options || []).map(function(opt) {
-          if (typeof opt === 'object' && opt !== null) return (opt.name || '').trim();
-          return String(opt || '').trim();
-        }).filter(Boolean);
-      }
-      return { name: v.name, options: opts, per_option_price: !!v.per_option_price };
-    }).filter(function(v) { return v.name; }) : [];
 
     var payload = {
       title: title,
@@ -859,7 +723,16 @@
       images: currentImages,
       tags: currentTags.length > 0 ? currentTags : null,
       video_url: document.getElementById('f-video').value.trim() || null,
-      variants: serializedVariants,
+      variants: currentVariants.length > 0 ? currentVariants.map(function(v) {
+        // BUG FIX: options pode ser array (vindo da Shopee) ou string (digitado pelo usuário)
+        var opts = v.options;
+        if (Array.isArray(opts)) {
+          // já é array, mantém como está
+        } else {
+          opts = (opts || '').split(',').map(function(o){ return o.trim(); }).filter(Boolean);
+        }
+        return { name: v.name, options: opts };
+      }) : [],
       seo_title: document.getElementById('f-seo-title').value.trim() || null,
       seo_description: document.getElementById('f-seo-desc').value.trim() || null,
       is_active: document.getElementById('f-active').checked
@@ -880,6 +753,7 @@
       console.error('saveProduct error:', e);
       showToast('Erro ao salvar: ' + (e.message || JSON.stringify(e)), 'error');
     } finally {
+      // BUG FIX: sempre reabilita o botão, mesmo se der erro
       btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar';
       btn.disabled = false;
     }
@@ -938,6 +812,7 @@
       <!-- Body -->
       <div class="flex-1 overflow-y-auto p-6 space-y-5">
 
+        <!-- Instrução -->
         <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
           <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <div class="font-mono text-xs text-white/50 leading-relaxed space-y-1">
@@ -947,6 +822,7 @@
           </div>
         </div>
 
+        <!-- Drop zone do arquivo -->
         <div id="import-drop" class="img-drop rounded p-10 text-center" onclick="document.getElementById('import-file').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleImportDrop(event)">
           <input type="file" id="import-file" accept=".xlsx,.xls" class="hidden" onchange="handleImportFile(event)">
           <svg class="w-12 h-12 text-white/20 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -954,6 +830,7 @@
           <p class="font-mono text-xs text-white/20 mt-1">Exportado do Shopee Seller Center</p>
         </div>
 
+        <!-- Preview dos produtos encontrados -->
         <div id="import-preview" class="hidden space-y-3">
           <div class="flex items-center justify-between">
             <label class="fl text-sm">Produtos encontrados na planilha</label>
@@ -962,6 +839,7 @@
           <div id="import-list" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
         </div>
 
+        <!-- Progresso de importação -->
         <div id="import-progress-wrap" class="hidden space-y-3">
           <div class="flex justify-between">
             <span class="font-mono text-xs text-white/50" id="import-progress-label">Importando...</span>
@@ -973,6 +851,7 @@
           <div id="import-log" class="bg-freo-black border border-white/[0.06] p-3 max-h-40 overflow-y-auto font-mono text-xs text-white/40 space-y-1"></div>
         </div>
 
+        <!-- Resultado final -->
         <div id="import-result" class="hidden p-4 border rounded text-center"></div>
 
       </div>
@@ -989,9 +868,13 @@
     </div>
   </div>
 
-  <!-- SheetJS -->
+
+  <!-- SheetJS para ler XLSX no browser -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
+  // ══════════════════════════════════════════════════════════════
+  // IMPORTAÇÃO SHOPEE
+  // ══════════════════════════════════════════════════════════════
   var importRows = [];
 
   function openImport() {
@@ -1042,6 +925,7 @@
         var ws = wb.Sheets[wb.SheetNames[0]];
         var raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
+        // Shopee: linhas 0-4 são cabeçalhos/instruções, dados começam na linha 5
         var dataRows = raw.filter(function(row, idx) {
           return idx >= 4 && row[0] && String(row[0]).match(/^\d+$/);
         });
@@ -1051,14 +935,19 @@
           return;
         }
 
+        // Mapeamento das colunas da Shopee:
+        // 0=ID, 1=SKU, 2=Nome, 3=Categoria, 4=Img capa, 5-12=Imgs adicionais
+        // 15=Nome variação 1, 16=Opção1, 17=ImgOp1, 18=Op2, 19=ImgOp2...
         importRows = dataRows.map(function(row) {
           var images = [];
+          // Coleta todas as imagens (capa + adicionais)
           for (var i = 4; i <= 12; i++) {
             if (row[i] && String(row[i]).trim().startsWith('http')) {
               images.push(String(row[i]).trim());
             }
           }
 
+          // Coleta variantes
           var variants = [];
           var variantName = row[15] ? String(row[15]).trim() : '';
           if (variantName) {
@@ -1070,10 +959,11 @@
               }
             }
             if (opts.length > 0) {
-              variants.push({ name: variantName, options: opts, per_option_price: false });
+              variants.push({ name: variantName, options: opts });
             }
           }
 
+          // Mapeia categoria da Shopee para categoria do sistema
           var catRaw = String(row[3] || '').toLowerCase();
           var category = 'outros';
           if (catRaw.includes('keyboard') || catRaw.includes('keycap')) category = 'keycaps';
@@ -1157,10 +1047,12 @@
       addLog('⟳ [' + (i+1) + '/' + importRows.length + '] ' + p.title.substring(0, 50));
 
       try {
+        // Re-upload das imagens pro Supabase Storage
         var uploadedImages = [];
         for (var j = 0; j < p.images.length; j++) {
           try {
             var imgUrl = p.images[j];
+            // Fetch a imagem da Shopee
             var resp = await fetch(imgUrl);
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             var blob = await resp.blob();
@@ -1173,11 +1065,13 @@
             var pub = window.supabaseClient.storage.from('imagens').getPublicUrl(path);
             uploadedImages.push(pub.data.publicUrl);
           } catch(imgErr) {
+            // Se falhar o upload, usa a URL original da Shopee como fallback
             uploadedImages.push(p.images[j]);
             addLog('  ⚠ Imagem ' + (j+1) + ' mantida na Shopee (upload falhou)', true);
           }
         }
 
+        // Salva o produto no Supabase
         var payload = {
           title: p.title,
           category: p.category,
@@ -1185,7 +1079,7 @@
           variants: p.variants,
           price: 0,
           stock: 0,
-          is_active: false
+          is_active: false  // começa inativo para você preencher preço antes de publicar
         };
 
         var r = await window.supabaseClient.from('products').insert(payload);
@@ -1204,6 +1098,7 @@
       pct.innerText = perc + '%';
     }
 
+    // Resultado final
     label.innerText = 'Importação concluída!';
     var resultEl = document.getElementById('import-result');
     resultEl.className = success > 0
@@ -1216,7 +1111,7 @@
     resultEl.classList.remove('hidden');
 
     document.getElementById('import-btn').classList.add('hidden');
-    loadProducts();
+    loadProducts(); // Recarrega a lista
   }
   </script>
 
