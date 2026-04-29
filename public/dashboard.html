@@ -277,7 +277,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
       <!-- Carrinho do cliente -->
-      <div class="lg:col-span-2">
+      <div id="cart-section" class="lg:col-span-2 scroll-mt-28">
         <div class="bg-freo-dark border border-white/10 p-6 md:p-8">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-display font-bold uppercase text-freo-orange flex items-center gap-2">
@@ -550,6 +550,28 @@
     if (window.renderCartUI) window.renderCartUI(cartItems || []);
     renderAddressesUI(addresses || []);
     renderPaymentsUI(paymentMethods || []);
+
+    // Quando vier da página de produto com /dashboard.html#cart-section,
+    // a dashboard desce direto para "Meu Carrinho" e destaca a área.
+    if (window.location.hash === '#cart-section') {
+      setTimeout(function() {
+        var cartSection = document.getElementById('cart-section');
+
+        if (cartSection) {
+          cartSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+
+          cartSection.style.boxShadow = '0 0 0 2px rgba(221,175,52,0.75), 0 0 35px rgba(221,175,52,0.25)';
+          cartSection.style.transition = 'box-shadow 0.3s ease';
+
+          setTimeout(function() {
+            cartSection.style.boxShadow = '';
+          }, 1800);
+        }
+      }, 400);
+    }
   }
 
   // ── Dados Admin: Pedidos a enviar ──────────────────────────────────────────
