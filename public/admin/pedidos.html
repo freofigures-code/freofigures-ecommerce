@@ -329,10 +329,14 @@
         let profilesMap = {};
 
         if (uniqueUserIds.length > 0) {
-          const { data: profiles } = await window.supabaseClient
+          const { data: profiles, error: profilesError } = await window.supabaseClient
             .from('profiles')
             .select('id, name, email, phone')
             .in('id', uniqueUserIds);
+
+          if (profilesError) {
+            console.warn('Erro ao buscar profiles:', profilesError.message);
+          }
 
           (profiles || []).forEach(p => { profilesMap[p.id] = p; });
         }
@@ -401,8 +405,15 @@
         const itemsCount = items.reduce((acc, item) => acc + (item.quantity || 1), 0);
         const itemsSummary = items.length > 0 ? `${itemsCount} item(s)` : '-';
 
-        const customerName  = order.customer_name  || order.profiles?.name  || order.profiles?.full_name || 'Cliente';
-        const customerEmail = order.customer_email || order.profiles?.email || 'Sem email';
+        const customerName =
+          order.customer_name ||
+          order.profiles?.name ||
+          'Não informado';
+
+        const customerEmail =
+          order.customer_email ||
+          order.profiles?.email ||
+          'Não informado';
 
         return `
           <tr class="hover:bg-white/5 transition-colors cursor-pointer group"
@@ -449,12 +460,20 @@
       
       // Lê do campo customer_* salvo direto na order (mais confiável)
       // Cai no profiles como fallback para pedidos antigos
-      document.getElementById('modal-customer-name').innerText  =
-        currentOrder.customer_name  || currentOrder.profiles?.name  || currentOrder.profiles?.full_name || 'Não informado';
+      document.getElementById('modal-customer-name').innerText =
+        currentOrder.customer_name ||
+        currentOrder.profiles?.name ||
+        'Não informado';
+
       document.getElementById('modal-customer-email').innerText =
-        currentOrder.customer_email || currentOrder.profiles?.email || 'Não informado';
+        currentOrder.customer_email ||
+        currentOrder.profiles?.email ||
+        'Não informado';
+
       document.getElementById('modal-customer-phone').innerText =
-        currentOrder.customer_phone || currentOrder.profiles?.phone || currentOrder.profiles?.telefone || 'Não informado';
+        currentOrder.customer_phone ||
+        currentOrder.profiles?.phone ||
+        'Não informado';
 
       // Endereço
       const addrContainer = document.getElementById('modal-shipping-address');
@@ -619,7 +638,10 @@
         return;
       }
 
-      const customerName = currentOrder.profiles?.name || '';
+      const customerName =
+        currentOrder.customer_name ||
+        currentOrder.profiles?.name ||
+        'Não informado';
       const textToCopy = `Nome: ${customerName}
 Logradouro: ${addr.street || addr.logradouro}, ${addr.number || addr.numero || 'S/N'}
 Complemento: ${addr.complement || addr.complemento || ''}
