@@ -485,7 +485,7 @@
             id: currentUser.id,
             email: currentUser.email || null,
             phone: phone,
-            name: currentProfile ? (currentProfile.name || currentProfile.full_name || null) : ((currentUser.user_metadata && (currentUser.user_metadata.full_name || currentUser.user_metadata.name)) || null)
+            name: getCustomerNameForOrder() || null
           });
 
         if (profileUpdate.error) {
@@ -494,7 +494,8 @@
 
         currentProfile = Object.assign({}, currentProfile || {}, {
           phone: phone,
-          email: currentUser.email
+          email: currentUser.email,
+          name: getCustomerNameForOrder()
         });
 
         closePhoneRequiredModal();
@@ -702,6 +703,39 @@
       }
     }
 
+    function getCustomerNameForOrder() {
+      var metadata = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
+
+      return String(
+        metadata.full_name ||
+        metadata.name ||
+        metadata.display_name ||
+        (currentProfile && currentProfile.name) ||
+        (currentProfile && currentProfile.email) ||
+        (currentUser && currentUser.email) ||
+        ''
+      ).trim();
+    }
+
+    function getCustomerEmailForOrder() {
+      return String(
+        (currentProfile && currentProfile.email) ||
+        (currentUser && currentUser.email) ||
+        ''
+      ).trim();
+    }
+
+    function getCustomerPhoneForOrder() {
+      var metadata = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
+
+      return String(
+        (currentProfile && currentProfile.phone) ||
+        metadata.phone ||
+        metadata.telefone ||
+        ''
+      ).trim();
+    }
+
     async function initPaymentBrick(preferenceId) {
       paymentBrickInitialized = true;
       var totalFinal = subtotalAmount + freteAmount;
@@ -755,9 +789,9 @@
             // ── FIX 2: salva dados do cliente diretamente na order ────────
             // Isso garante que o admin sempre veja nome/email/telefone
             // mesmo se a tabela profiles tiver problema de join
-            var customerName  = currentProfile ? (currentProfile.name  || currentProfile.full_name || '') : '';
-            var customerEmail = currentProfile ? (currentProfile.email || currentUser.email || '') : (currentUser.email || '');
-            var customerPhone = currentProfile ? (currentProfile.phone || currentProfile.telefone || '') : ((currentUser.user_metadata && currentUser.user_metadata.phone) || '');
+            var customerName  = getCustomerNameForOrder();
+            var customerEmail = getCustomerEmailForOrder();
+            var customerPhone = getCustomerPhoneForOrder();
 
             return window.supabaseClient
               .from('orders')
@@ -844,20 +878,34 @@
         // ── FIX 2: busca o profile completo do usuário ────────────────────
         var profileResult = await window.supabaseClient
           .from('profiles')
-          .select('name, full_name, email, phone, telefone')
+          .select('id, name, email, phone')
           .eq('id', currentUser.id)
           .single();
 
-        currentProfile = profileResult.data || null;
+        var metadata = currentUser.user_metadata || {};
 
-        if (!currentProfile) {
-          currentProfile = {
-            name: (currentUser.user_metadata && (currentUser.user_metadata.full_name || currentUser.user_metadata.name)) || '',
-            email: currentUser.email || '',
-            phone: (currentUser.user_metadata && currentUser.user_metadata.phone) || ''
-          };
-        } else if (!currentProfile.phone && currentUser.user_metadata && currentUser.user_metadata.phone) {
-          currentProfile.phone = currentUser.user_metadata.phone;
+        currentProfile = profileResult.data || {
+          id: currentUser.id,
+          name: metadata.full_name || metadata.name || metadata.display_name || '',
+          email: currentUser.email || '',
+          phone: metadata.phone || metadata.telefone || ''
+        };
+
+        if (!currentProfile.name) {
+          currentProfile.name =
+            metadata.full_name ||
+            metadata.name ||
+            metadata.display_name ||
+            currentUser.email ||
+            '';
+        }
+
+        if (!currentProfile.email) {
+          currentProfile.email = currentUser.email || '';
+        }
+
+        if (!currentProfile.phone) {
+          currentProfile.phone = metadata.phone || metadata.telefone || '';
         }
 
         var cartResult = await window.supabaseClient
