@@ -338,6 +338,43 @@
     </div>
   </main>
 
+
+
+  <!-- MODAL: TELEFONE OBRIGATÓRIO NO CHECKOUT -->
+  <div id="phone-required-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="bg-freo-dark border border-white/10 w-full max-w-md p-6 rounded-xl shadow-2xl relative">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-transparent"></div>
+
+      <h3 class="font-display font-black uppercase text-2xl text-white mb-2">
+        Falta seu telefone
+      </h3>
+
+      <p class="font-mono text-sm text-white/45 leading-relaxed mb-5">
+        Para finalizar a compra, informe seu WhatsApp. Usaremos apenas para atualizações do pedido e entrega.
+      </p>
+
+      <div id="phone-required-error" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono p-3 mb-4"></div>
+
+      <label class="fl">Telefone / WhatsApp *</label>
+      <input
+        type="tel"
+        id="checkout-phone"
+        class="fi"
+        maxlength="15"
+        placeholder="(11) 99999-9999"
+        oninput="maskCheckoutPhone(this)"
+      >
+
+      <button
+        onclick="saveCheckoutPhone()"
+        id="save-checkout-phone-btn"
+        class="w-full mt-5 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3.5 hover:bg-white transition-colors"
+      >
+        Salvar e continuar
+      </button>
+    </div>
+  </div>
+
   <script src="/auth-listener.js"></script>
 
   <script>
@@ -367,6 +404,114 @@
     var formatCurrency = function(v) {
       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(v) || 0);
     };
+
+    // ── Telefone obrigatório para checkout ─────────────────────────────────
+    function getCurrentPhone() {
+      if (!currentProfile) return '';
+
+      return String(
+        currentProfile.phone ||
+        currentProfile.telefone ||
+        (currentUser && currentUser.user_metadata ? currentUser.user_metadata.phone : '') ||
+        ''
+      ).replace(/\D/g, '');
+    }
+
+    function maskCheckoutPhone(input) {
+      var v = input.value.replace(/\D/g, '').substring(0, 11);
+
+      if (v.length > 6) {
+        v = '(' + v.substring(0, 2) + ') ' + v.substring(2, 7) + '-' + v.substring(7);
+      } else if (v.length > 2) {
+        v = '(' + v.substring(0, 2) + ') ' + v.substring(2);
+      }
+
+      input.value = v;
+    }
+
+    function openPhoneRequiredModal() {
+      var modal = document.getElementById('phone-required-modal');
+      if (!modal) return;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      setTimeout(function() {
+        var input = document.getElementById('checkout-phone');
+        if (input) input.focus();
+      }, 150);
+    }
+
+    function closePhoneRequiredModal() {
+      var modal = document.getElementById('phone-required-modal');
+      if (!modal) return;
+
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function saveCheckoutPhone() {
+      var input = document.getElementById('checkout-phone');
+      var err = document.getElementById('phone-required-error');
+      var btn = document.getElementById('save-checkout-phone-btn');
+
+      var phone = input.value.replace(/\D/g, '');
+
+      err.classList.add('hidden');
+
+      if (phone.length < 10 || phone.length > 11) {
+        err.innerText = 'Informe um telefone válido com DDD.';
+        err.classList.remove('hidden');
+        return;
+      }
+
+      btn.innerText = 'Salvando...';
+      btn.disabled = true;
+
+      try {
+        var currentMetadata = (currentUser && currentUser.user_metadata) ? currentUser.user_metadata : {};
+
+        var updateResult = await window.supabaseClient.auth.updateUser({
+          data: Object.assign({}, currentMetadata, {
+            phone: phone
+          })
+        });
+
+        if (updateResult.error) throw updateResult.error;
+
+        var profileUpdate = await window.supabaseClient
+          .from('profiles')
+          .upsert({
+            id: currentUser.id,
+            email: currentUser.email || null,
+            phone: phone,
+            name: currentProfile ? (currentProfile.name || currentProfile.full_name || null) : ((currentUser.user_metadata && (currentUser.user_metadata.full_name || currentUser.user_metadata.name)) || null)
+          });
+
+        if (profileUpdate.error) {
+          console.warn('Telefone salvo no Auth, mas erro ao atualizar profiles:', profileUpdate.error.message);
+        }
+
+        currentProfile = Object.assign({}, currentProfile || {}, {
+          phone: phone,
+          email: currentUser.email
+        });
+
+        closePhoneRequiredModal();
+
+        if (selectedShipping && !paymentBrickInitialized) {
+          liberarPagamento();
+        }
+
+      } catch (errUpdate) {
+        console.error('Erro ao salvar telefone:', errUpdate);
+        err.innerText = 'Erro ao salvar telefone. Tente novamente.';
+        err.classList.remove('hidden');
+      }
+
+      btn.innerText = 'Salvar e continuar';
+      btn.disabled = false;
+    }
 
     function showLoading()  { document.getElementById('page-loading').classList.remove('hidden'); document.getElementById('checkout-main').classList.add('hidden'); document.getElementById('cart-empty-state').classList.add('hidden'); }
     function showEmpty()    { document.getElementById('page-loading').classList.add('hidden'); document.getElementById('checkout-main').classList.add('hidden'); document.getElementById('cart-empty-state').classList.remove('hidden'); document.getElementById('cart-empty-state').classList.add('flex'); }
@@ -539,6 +684,11 @@
     }
 
     async function liberarPagamento() {
+      if (!getCurrentPhone()) {
+        openPhoneRequiredModal();
+        return;
+      }
+
       document.getElementById('payment-overlay').classList.add('hidden');
       if (paymentBrickInitialized) {
         if (window.paymentBrickController) {
@@ -607,7 +757,7 @@
             // mesmo se a tabela profiles tiver problema de join
             var customerName  = currentProfile ? (currentProfile.name  || currentProfile.full_name || '') : '';
             var customerEmail = currentProfile ? (currentProfile.email || currentUser.email || '') : (currentUser.email || '');
-            var customerPhone = currentProfile ? (currentProfile.phone || currentProfile.telefone || '') : '';
+            var customerPhone = currentProfile ? (currentProfile.phone || currentProfile.telefone || '') : ((currentUser.user_metadata && currentUser.user_metadata.phone) || '');
 
             return window.supabaseClient
               .from('orders')
@@ -700,6 +850,16 @@
 
         currentProfile = profileResult.data || null;
 
+        if (!currentProfile) {
+          currentProfile = {
+            name: (currentUser.user_metadata && (currentUser.user_metadata.full_name || currentUser.user_metadata.name)) || '',
+            email: currentUser.email || '',
+            phone: (currentUser.user_metadata && currentUser.user_metadata.phone) || ''
+          };
+        } else if (!currentProfile.phone && currentUser.user_metadata && currentUser.user_metadata.phone) {
+          currentProfile.phone = currentUser.user_metadata.phone;
+        }
+
         var cartResult = await window.supabaseClient
           .from('cart_items')
           .select('*')
@@ -712,6 +872,10 @@
         showCheckout();
         renderItems(cartItemsData);
         await carregarEnderecos();
+
+        if (!getCurrentPhone()) {
+          openPhoneRequiredModal();
+        }
 
       } catch(err) {
         console.error('Erro checkout:', err);
