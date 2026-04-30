@@ -1508,65 +1508,178 @@
     }
 
     function exibirPixNaPagina(qrCode, qrCodeBase64, ticketUrl) {
-      var old = document.getElementById("pix-modal-checkout");
-    
-      if (old) {
-        old.remove();
+      var oldModal = document.getElementById('pix-modal-checkout');
+
+      if (oldModal) {
+        oldModal.remove();
       }
-    
-      var modal = document.createElement("div");
-    
-      modal.id = "pix-modal-checkout";
-      modal.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(10,10,10,0.93);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto";
-    
-      var ticketHTML = "";
-    
+
+      var modal = document.createElement('div');
+      modal.id = 'pix-modal-checkout';
+      modal.style.position = 'fixed';
+      modal.style.inset = '0';
+      modal.style.zIndex = '9999';
+      modal.style.background = 'rgba(10,10,10,0.93)';
+      modal.style.backdropFilter = 'blur(10px)';
+      modal.style.display = 'flex';
+      modal.style.alignItems = 'center';
+      modal.style.justifyContent = 'center';
+      modal.style.padding = '16px';
+      modal.style.overflowY = 'auto';
+
+      var box = document.createElement('div');
+      box.style.background = '#111111';
+      box.style.border = '1px solid rgba(212,175,55,0.25)';
+      box.style.borderRadius = '20px';
+      box.style.padding = '36px 28px 28px';
+      box.style.maxWidth = '400px';
+      box.style.width = '100%';
+      box.style.textAlign = 'center';
+      box.style.fontFamily = 'Space Grotesk, sans-serif';
+      box.style.position = 'relative';
+
+      var closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.innerText = '✕';
+      closeBtn.style.position = 'absolute';
+      closeBtn.style.top = '14px';
+      closeBtn.style.right = '14px';
+      closeBtn.style.background = 'rgba(255,255,255,0.06)';
+      closeBtn.style.border = 'none';
+      closeBtn.style.borderRadius = '50%';
+      closeBtn.style.width = '30px';
+      closeBtn.style.height = '30px';
+      closeBtn.style.cursor = 'pointer';
+      closeBtn.style.color = 'rgba(245,245,245,0.4)';
+      closeBtn.style.fontSize = '16px';
+      closeBtn.addEventListener('click', function() {
+        modal.remove();
+      });
+
+      var title = document.createElement('p');
+      title.innerText = 'Pague via Pix';
+      title.style.fontFamily = 'Outfit, sans-serif';
+      title.style.fontWeight = '900';
+      title.style.fontSize = '22px';
+      title.style.color = '#F5F5F5';
+      title.style.margin = '0 0 4px';
+
+      var subtitle = document.createElement('p');
+      subtitle.innerText = 'Escaneie o QR Code com o app do seu banco';
+      subtitle.style.fontSize = '12px';
+      subtitle.style.color = 'rgba(245,245,245,0.35)';
+      subtitle.style.margin = '0 0 24px';
+      subtitle.style.fontFamily = 'ui-monospace, monospace';
+
+      var qrWrapper = document.createElement('div');
+      qrWrapper.style.background = '#ffffff';
+      qrWrapper.style.padding = '14px';
+      qrWrapper.style.borderRadius = '12px';
+      qrWrapper.style.display = 'inline-block';
+      qrWrapper.style.marginBottom = '24px';
+
+      var qrImg = document.createElement('img');
+      qrImg.src = 'data:image/png;base64,' + (qrCodeBase64 || '');
+      qrImg.alt = 'QR Code Pix';
+      qrImg.style.width = '180px';
+      qrImg.style.height = '180px';
+      qrImg.style.display = 'block';
+      qrWrapper.appendChild(qrImg);
+
+      var copyRow = document.createElement('div');
+      copyRow.style.display = 'flex';
+      copyRow.style.gap = '8px';
+      copyRow.style.marginBottom = '16px';
+
+      var input = document.createElement('input');
+      input.id = 'pix-copy-input';
+      input.readOnly = true;
+      input.value = qrCode || '';
+      input.style.flex = '1';
+      input.style.minWidth = '0';
+      input.style.background = '#0A0A0A';
+      input.style.border = '1px solid rgba(212,175,55,0.25)';
+      input.style.color = 'rgba(212,175,55,0.8)';
+      input.style.fontFamily = 'ui-monospace, monospace';
+      input.style.fontSize = '9px';
+      input.style.padding = '10px 12px';
+      input.style.borderRadius = '8px';
+      input.style.outline = 'none';
+      input.style.overflow = 'hidden';
+      input.style.textOverflow = 'ellipsis';
+      input.style.whiteSpace = 'nowrap';
+
+      var copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.innerText = 'Copiar';
+      copyBtn.style.flexShrink = '0';
+      copyBtn.style.background = '#D4AF37';
+      copyBtn.style.color = '#0A0A0A';
+      copyBtn.style.fontFamily = 'Outfit, sans-serif';
+      copyBtn.style.fontWeight = '800';
+      copyBtn.style.fontSize = '11px';
+      copyBtn.style.textTransform = 'uppercase';
+      copyBtn.style.padding = '10px 18px';
+      copyBtn.style.border = 'none';
+      copyBtn.style.borderRadius = '8px';
+      copyBtn.style.cursor = 'pointer';
+      copyBtn.style.whiteSpace = 'nowrap';
+      copyBtn.addEventListener('click', function() {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(input.value).then(function() {
+            copyBtn.innerText = 'Copiado!';
+          }).catch(function() {
+            input.select();
+            document.execCommand('copy');
+            copyBtn.innerText = 'Copiado!';
+          });
+        } else {
+          input.select();
+          document.execCommand('copy');
+          copyBtn.innerText = 'Copiado!';
+        }
+      });
+
+      copyRow.appendChild(input);
+      copyRow.appendChild(copyBtn);
+
+      var note = document.createElement('p');
+      note.innerText = 'Confirmação automática após pagamento.';
+      note.style.fontSize = '11px';
+      note.style.color = 'rgba(245,245,245,0.4)';
+      note.style.fontFamily = 'ui-monospace, monospace';
+      note.style.margin = '0';
+      note.style.lineHeight = '1.6';
+
+      box.appendChild(closeBtn);
+      box.appendChild(title);
+      box.appendChild(subtitle);
+      box.appendChild(qrWrapper);
+      box.appendChild(copyRow);
+      box.appendChild(note);
+
       if (ticketUrl) {
-        ticketHTML =
-          '<a href="' + ticketUrl + '" target="_blank" style="display:block;margin-top:12px;font-family:ui-monospace,monospace;font-size:11px;color:rgba(212,175,55,0.5);text-decoration:underline;">Ver no Mercado Pago →</a>';
+        var link = document.createElement('a');
+        link.href = ticketUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.innerText = 'Ver no Mercado Pago →';
+        link.style.display = 'block';
+        link.style.marginTop = '12px';
+        link.style.fontFamily = 'ui-monospace, monospace';
+        link.style.fontSize = '11px';
+        link.style.color = 'rgba(212,175,55,0.5)';
+        link.style.textDecoration = 'underline';
+        box.appendChild(link);
       }
-    
-      modal.innerHTML =
-        '<div style="background:#111111;border:1px solid rgba(212,175,55,0.25);border-radius:20px;padding:36px 28px 28px;max-width:400px;width:100%;text-align:center;font-family:Space Grotesk,sans-serif;position:relative;">'
-        + '<button id="pix-close-btn" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.06);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;color:rgba(245,245,245,0.4);font-size:16px;">✕</button>'
-        + '<p style="font-family:Outfit,sans-serif;font-weight:900;font-size:22px;color:#F5F5F5;margin:0 0 4px;">Pague via Pix</p>'
-        + '<p style="font-size:12px;color:rgba(245,245,245,0.35);margin:0 0 24px;font-family:ui-monospace,monospace;">Escaneie o QR Code com o app do seu banco</p>'
-        + '<div style="background:#fff;padding:14px;border-radius:12px;display:inline-block;margin-bottom:24px;">'
-        + '<img src="data:image/png;base64,' + qrCodeBase64 + '" style="width:180px;height:180px;display:block;" alt="QR Code Pix">'
-        + '</div>'
-        + '<div style="display:flex;gap:8px;margin-bottom:16px;">'
-        + '<input id="pix-copy-input" readonly value="' + qrCode + '" style="flex:1;min-width:0;background:#0A0A0A;border:1px solid rgba(212,175,55,0.25);color:rgba(212,175,55,0.8);font-family:ui-monospace,monospace;font-size:9px;padding:10px 12px;border-radius:8px;outline:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
-        + '<button id="pix-copy-btn" style="flex-shrink:0;background:#D4AF37;color:#0A0A0A;font-family:Outfit,sans-serif;font-weight:800;font-size:11px;text-transform:uppercase;padding:10px 18px;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Copiar</button>'
-        + '</div>'
-        + '<p style="font-size:11px;color:rgba(245,245,245,0.4);font-family:ui-monospace,monospace;margin:0;line-height:1.6;">Confirmação automática após pagamento.</p>'
-        + ticketHTML
-        + '</div>';
 
-  document.body.appendChild(modal);
-
-  document.getElementById("pix-close-btn").addEventListener("click", function() {
-    modal.remove();
-  });
-
-  document.getElementById("pix-copy-btn").addEventListener("click", function() {
-    var input = document.getElementById("pix-copy-input");
-
-    if (!input) return;
-
-    navigator.clipboard.writeText(input.value);
-    this.innerText = "Copiado!";
-  });
-
-  modal.addEventListener("click", function(e) {
-    if (e.target === modal) {
-      modal.remove();
-    }
-  });
-}
+      modal.appendChild(box);
       document.body.appendChild(modal);
 
       modal.addEventListener('click', function(e) {
-        if (e.target === modal) modal.remove();
+        if (e.target === modal) {
+          modal.remove();
+        }
       });
     }
 
