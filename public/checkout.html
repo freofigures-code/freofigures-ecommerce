@@ -1508,27 +1508,61 @@
     }
 
     function exibirPixNaPagina(qrCode, qrCodeBase64, ticketUrl) {
-      var old = document.getElementById('pix-modal-checkout');
-      if (old) old.remove();
-
-      var modal = document.createElement('div');
-
-      modal.id = 'pix-modal-checkout';
-      modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,10,10,0.93);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
-
-      modal.innerHTML = '<div style="background:#111111;border:1px solid rgba(212,175,55,0.25);border-radius:20px;padding:36px 28px 28px;max-width:400px;width:100%;text-align:center;font-family:Space Grotesk,sans-serif;position:relative;">'
-        + '<button onclick="document.getElementById(\\'pix-modal-checkout\\').remove()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.06);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;color:rgba(245,245,245,0.4);font-size:16px;">✕</button>'
+      var old = document.getElementById("pix-modal-checkout");
+    
+      if (old) {
+        old.remove();
+      }
+    
+      var modal = document.createElement("div");
+    
+      modal.id = "pix-modal-checkout";
+      modal.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(10,10,10,0.93);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto";
+    
+      var ticketHTML = "";
+    
+      if (ticketUrl) {
+        ticketHTML =
+          '<a href="' + ticketUrl + '" target="_blank" style="display:block;margin-top:12px;font-family:ui-monospace,monospace;font-size:11px;color:rgba(212,175,55,0.5);text-decoration:underline;">Ver no Mercado Pago →</a>';
+      }
+    
+      modal.innerHTML =
+        '<div style="background:#111111;border:1px solid rgba(212,175,55,0.25);border-radius:20px;padding:36px 28px 28px;max-width:400px;width:100%;text-align:center;font-family:Space Grotesk,sans-serif;position:relative;">'
+        + '<button id="pix-close-btn" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.06);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;color:rgba(245,245,245,0.4);font-size:16px;">✕</button>'
         + '<p style="font-family:Outfit,sans-serif;font-weight:900;font-size:22px;color:#F5F5F5;margin:0 0 4px;">Pague via Pix</p>'
         + '<p style="font-size:12px;color:rgba(245,245,245,0.35);margin:0 0 24px;font-family:ui-monospace,monospace;">Escaneie o QR Code com o app do seu banco</p>'
-        + '<div style="background:#fff;padding:14px;border-radius:12px;display:inline-block;margin-bottom:24px;"><img src="data:image/png;base64,' + qrCodeBase64 + '" style="width:180px;height:180px;display:block;" alt="QR Code Pix"></div>'
+        + '<div style="background:#fff;padding:14px;border-radius:12px;display:inline-block;margin-bottom:24px;">'
+        + '<img src="data:image/png;base64,' + qrCodeBase64 + '" style="width:180px;height:180px;display:block;" alt="QR Code Pix">'
+        + '</div>'
         + '<div style="display:flex;gap:8px;margin-bottom:16px;">'
         + '<input id="pix-copy-input" readonly value="' + qrCode + '" style="flex:1;min-width:0;background:#0A0A0A;border:1px solid rgba(212,175,55,0.25);color:rgba(212,175,55,0.8);font-family:ui-monospace,monospace;font-size:9px;padding:10px 12px;border-radius:8px;outline:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
-        + '<button onclick="var i=document.getElementById(\\'pix-copy-input\\');navigator.clipboard.writeText(i.value);this.innerText=\\'Copiado!\\';" style="flex-shrink:0;background:#D4AF37;color:#0A0A0A;font-family:Outfit,sans-serif;font-weight:800;font-size:11px;text-transform:uppercase;padding:10px 18px;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Copiar</button>'
+        + '<button id="pix-copy-btn" style="flex-shrink:0;background:#D4AF37;color:#0A0A0A;font-family:Outfit,sans-serif;font-weight:800;font-size:11px;text-transform:uppercase;padding:10px 18px;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Copiar</button>'
         + '</div>'
         + '<p style="font-size:11px;color:rgba(245,245,245,0.4);font-family:ui-monospace,monospace;margin:0;line-height:1.6;">Confirmação automática após pagamento.</p>'
-        + (ticketUrl ? '<a href="' + ticketUrl + '" target="_blank" style="display:block;margin-top:12px;font-family:ui-monospace,monospace;font-size:11px;color:rgba(212,175,55,0.5);text-decoration:underline;">Ver no Mercado Pago →</a>' : '')
+        + ticketHTML
         + '</div>';
 
+  document.body.appendChild(modal);
+
+  document.getElementById("pix-close-btn").addEventListener("click", function() {
+    modal.remove();
+  });
+
+  document.getElementById("pix-copy-btn").addEventListener("click", function() {
+    var input = document.getElementById("pix-copy-input");
+
+    if (!input) return;
+
+    navigator.clipboard.writeText(input.value);
+    this.innerText = "Copiado!";
+  });
+
+  modal.addEventListener("click", function(e) {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+}
       document.body.appendChild(modal);
 
       modal.addEventListener('click', function(e) {
