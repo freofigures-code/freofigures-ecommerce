@@ -12,6 +12,9 @@ import {
   Trash2,
   Plus,
   Minus,
+  Filter,
+  ChevronDown,
+  ArrowLeft,
 } from 'lucide-react';
 
 // --- Types ---
@@ -655,6 +658,17 @@ const getSearchScore = (product: Product, searchTerm: string) => {
   return score;
 };
 
+// --- useIsMobile hook ---
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return isMobile;
+};
+
 // --- Navbar ---
 const Navbar = ({
   currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart, user,
@@ -676,6 +690,16 @@ const Navbar = ({
     const timer = window.setTimeout(() => { searchInputRef.current?.focus(); }, 80);
     return () => window.clearTimeout(timer);
   }, [isSearchOpen]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
 
   const submitSearch = (event?: React.FormEvent) => {
     event?.preventDefault();
@@ -706,22 +730,26 @@ const Navbar = ({
     window.scrollTo(0, 0);
   };
 
+  const totalCartItems = cartItems.reduce((total: number, item: CartItem) => total + item.quantity, 0);
+
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-black/90 backdrop-blur-md border-b border-freo-orange/20 py-4' : 'bg-transparent py-6'
+      isScrolled ? 'bg-black/90 backdrop-blur-md border-b border-freo-orange/20 py-3 md:py-4' : 'bg-transparent py-4 md:py-6'
     }`}>
-      <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-        <div className="flex items-center gap-3 z-50 cursor-pointer" onClick={goHome}>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 flex justify-between items-center">
+        {/* Logo */}
+        <div className="flex items-center gap-2 md:gap-3 z-50 cursor-pointer" onClick={goHome}>
           <img
             src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
             alt="Logo"
-            className="w-10 h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]"
+            className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]"
           />
-          <span className="font-display font-black text-2xl tracking-tighter uppercase">
+          <span className="font-display font-black text-xl md:text-2xl tracking-tighter uppercase">
             Freo<span className="text-freo-orange font-light">Figures</span>
           </span>
         </div>
 
+        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8 font-body text-sm font-semibold tracking-widest uppercase text-freo-light">
           {currentView === 'home' ? (
             <>
@@ -739,6 +767,7 @@ const Navbar = ({
           )}
         </div>
 
+        {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-6">
           {user && (
             <a href="/meus-pedidos.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded">
@@ -754,59 +783,149 @@ const Navbar = ({
           </button>
           <button onClick={onOpenCart} className="text-freo-light hover:text-freo-orange transition-colors relative" aria-label="Abrir carrinho">
             <ShoppingCart className="w-5 h-5" />
-            {cartItems.length > 0 && (
+            {totalCartItems > 0 && (
               <span className="absolute -top-2 -right-2 bg-freo-orange text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {cartItems.reduce((total: number, item: CartItem) => total + item.quantity, 0)}
+                {totalCartItems}
               </span>
             )}
           </button>
         </div>
 
-        <button className="md:hidden z-50" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Abrir menu">
-          {mobileMenuOpen ? <X /> : <Menu />}
-        </button>
+        {/* Mobile Actions - sempre visíveis */}
+        <div className="flex md:hidden items-center gap-1 z-50">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="p-2.5 text-freo-light hover:text-freo-orange transition-colors"
+            aria-label="Buscar"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+          <button
+            onClick={onOpenCart}
+            className="p-2.5 text-freo-light hover:text-freo-orange transition-colors relative"
+            aria-label="Carrinho"
+          >
+            <ShoppingCart className="w-5 h-5" />
+            {totalCartItems > 0 && (
+              <span className="absolute top-1 right-1 bg-freo-orange text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {totalCartItems}
+              </span>
+            )}
+          </button>
+          <button
+            className="p-2.5"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Abrir menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
+      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-0 left-0 w-full h-screen bg-black flex flex-col items-center justify-center gap-8 text-2xl font-display font-bold uppercase"
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden fixed inset-0 top-0 bg-black z-40 flex flex-col"
           >
-            {currentView === 'home' ? (
-              <>
-                <a href="#categorias" onClick={() => setMobileMenuOpen(false)} className="hover:text-freo-orange">Categorias</a>
-                <a href="#destaques" onClick={() => setMobileMenuOpen(false)} className="hover:text-freo-orange">Destaques</a>
-                <a href="#sobre" onClick={() => setMobileMenuOpen(false)} className="hover:text-freo-orange">O Processo</a>
-                <a href="#sobre-nos" onClick={() => setMobileMenuOpen(false)} className="hover:text-freo-orange">A Origem</a>
-                <button onClick={goToCatalog} className="text-freo-orange">Catálogo</button>
-              </>
-            ) : (
-              <>
-                <button onClick={goHome} className="hover:text-freo-orange">Início</button>
-                <span className="text-freo-orange">Catálogo</span>
-              </>
-            )}
-            <button onClick={() => { setIsSearchOpen(true); setMobileMenuOpen(false); }} className="text-freo-light hover:text-freo-orange flex items-center gap-2 mt-2 text-lg">
-              <Search className="w-6 h-6" />
-              Buscar Produto
-            </button>
-            {user && (
-              <a href="/meus-pedidos.html" className="text-freo-orange flex items-center gap-2 mt-4 text-lg border border-freo-orange/30 px-6 py-2 rounded bg-freo-orange/10">
-                <Box className="w-6 h-6" />
-                Meus Pedidos
-              </a>
-            )}
-            <button onClick={() => { onOpenAuth(); setMobileMenuOpen(false); }} className="text-freo-light hover:text-freo-orange flex items-center gap-2 mt-4 text-lg">
-              <User className="w-6 h-6" />
-              {user ? 'Minha Conta' : 'Entrar / Criar Conta'}
-            </button>
+            {/* Header area */}
+            <div className="h-16 flex items-center px-4 border-b border-white/10">
+              <span className="font-display font-black text-xl tracking-tighter uppercase">
+                Freo<span className="text-freo-orange font-light">Figures</span>
+              </span>
+            </div>
+
+            {/* Menu items */}
+            <div className="flex-1 overflow-y-auto py-6 px-6 flex flex-col gap-1">
+              {currentView === 'home' ? (
+                <>
+                  <a
+                    href="#categorias"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between"
+                  >
+                    Categorias <ChevronRight className="w-4 h-4 opacity-40" />
+                  </a>
+                  <a
+                    href="#destaques"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between"
+                  >
+                    Destaques <ChevronRight className="w-4 h-4 opacity-40" />
+                  </a>
+                  <a
+                    href="#sobre"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between"
+                  >
+                    O Processo <ChevronRight className="w-4 h-4 opacity-40" />
+                  </a>
+                  <a
+                    href="#sobre-nos"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between"
+                  >
+                    A Origem <ChevronRight className="w-4 h-4 opacity-40" />
+                  </a>
+                  <button
+                    onClick={goToCatalog}
+                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 text-freo-orange text-left flex items-center justify-between"
+                  >
+                    Catálogo <ChevronRight className="w-4 h-4" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={goHome}
+                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors text-left flex items-center gap-3"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Início
+                  </button>
+                  <span className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 text-freo-orange flex items-center justify-between">
+                    Catálogo
+                  </span>
+                </>
+              )}
+
+              {/* Search button */}
+              <button
+                onClick={() => { setIsSearchOpen(true); setMobileMenuOpen(false); }}
+                className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 text-freo-light hover:text-freo-orange transition-colors text-left flex items-center gap-3"
+              >
+                <Search className="w-5 h-5" />
+                Buscar Produto
+              </button>
+            </div>
+
+            {/* Bottom actions */}
+            <div className="p-6 border-t border-white/10 space-y-3">
+              {user && (
+                <a
+                  href="/meus-pedidos.html"
+                  className="flex items-center gap-3 text-freo-orange border border-freo-orange/30 px-5 py-3.5 rounded bg-freo-orange/10 font-display font-bold uppercase tracking-wide text-sm"
+                >
+                  <Box className="w-5 h-5" />
+                  Meus Pedidos
+                </a>
+              )}
+              <button
+                onClick={() => { onOpenAuth(); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 text-freo-light border border-white/20 px-5 py-3.5 font-display font-bold uppercase tracking-wide text-sm hover:border-freo-orange hover:text-freo-orange transition-colors"
+              >
+                <User className="w-5 h-5" />
+                {user ? 'Minha Conta' : 'Entrar / Criar Conta'}
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Search Modal */}
       <AnimatePresence>
         {isSearchOpen && (
           <>
@@ -821,30 +940,33 @@ const Navbar = ({
               initial={{ opacity: 0, y: -20, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.98 }}
-              className="fixed top-24 left-1/2 -translate-x-1/2 z-[70] w-[calc(100%-32px)] max-w-3xl bg-freo-dark border border-freo-orange/30 shadow-[0_0_40px_rgba(221,175,52,0.15)]"
+              className="fixed top-16 md:top-24 left-2 right-2 md:left-1/2 md:-translate-x-1/2 z-[70] md:w-[calc(100%-32px)] md:max-w-3xl bg-freo-dark border border-freo-orange/30 shadow-[0_0_40px_rgba(221,175,52,0.15)]"
             >
-              <form onSubmit={submitSearch} className="p-4 md:p-5">
-                <div className="flex items-center gap-3 bg-freo-black border border-white/10 px-4 py-3 focus-within:border-freo-orange transition-colors">
+              <form onSubmit={submitSearch} className="p-3 md:p-5">
+                <div className="flex items-center gap-2 md:gap-3 bg-freo-black border border-white/10 px-3 md:px-4 py-3 focus-within:border-freo-orange transition-colors">
                   <Search className="w-5 h-5 text-freo-orange flex-shrink-0" />
                   <input
                     ref={searchInputRef}
                     value={searchTerm}
                     onChange={event => setSearchTerm(event.target.value)}
-                    placeholder="Busque como na Shopee: santo, coringa, joker, resdent evil, creeper, camiseta..."
-                    className="w-full bg-transparent outline-none text-white font-mono text-sm md:text-base placeholder:text-white/25"
+                    placeholder="Buscar produtos..."
+                    className="w-full bg-transparent outline-none text-white font-mono text-sm placeholder:text-white/25"
                   />
                   {searchTerm && (
-                    <button type="button" onClick={clearSearch} className="text-white/40 hover:text-white transition-colors" aria-label="Limpar busca">
+                    <button type="button" onClick={clearSearch} className="text-white/40 hover:text-white transition-colors flex-shrink-0" aria-label="Limpar busca">
                       <X className="w-5 h-5" />
                     </button>
                   )}
-                  <button type="submit" className="hidden sm:block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-5 py-2 hover:bg-white transition-colors">
+                  <button
+                    type="submit"
+                    className="bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-4 py-2 text-sm hover:bg-white transition-colors flex-shrink-0"
+                  >
                     Buscar
                   </button>
                 </div>
-                <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-[11px] font-mono text-white/35 uppercase tracking-wider">
-                  <span>Busca inteligente global: todas as categorias, sinônimos, variações e erros de digitação.</span>
-                  <button type="button" onClick={() => setIsSearchOpen(false)} className="text-freo-orange hover:text-white transition-colors self-start sm:self-auto">
+                <div className="mt-2 flex items-center justify-between text-[11px] font-mono text-white/35 uppercase tracking-wider">
+                  <span className="hidden sm:block">Busca inteligente: sinônimos, variações e erros de digitação.</span>
+                  <button type="button" onClick={() => setIsSearchOpen(false)} className="text-freo-orange hover:text-white transition-colors ml-auto">
                     Fechar
                   </button>
                 </div>
@@ -862,28 +984,36 @@ const Hero = ({ setCurrentView }: any) => (
   <section className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]">
     <div className="absolute inset-0 z-0" style={{ backgroundImage: 'linear-gradient(rgba(221,175,52,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(221,175,52,0.04) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
     <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse 55% 75% at 22% 55%, rgba(221,175,52,0.07) 0%, transparent 70%)' }} />
-    <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-10 items-center relative z-10 w-full pt-28 pb-12 min-h-screen">
-      <div className="flex flex-col gap-7">
+    <div className="max-w-7xl mx-auto px-5 md:px-6 lg:px-12 grid lg:grid-cols-2 gap-10 items-center relative z-10 w-full pt-24 md:pt-28 pb-12 min-h-screen">
+      <div className="flex flex-col gap-6 md:gap-7">
         <motion.div initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.55 }} className="inline-flex items-center gap-2 self-start border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-freo-orange animate-pulse" />
           <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">Layer by Layer, Legend by Design.</span>
         </motion.div>
         <motion.h1 initial={{ opacity: 0, y: 44 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="font-display font-black leading-[0.88] uppercase">
-          <span className="block text-white" style={{ fontSize: 'clamp(2.8rem, 6.2vw, 5.8rem)', textShadow: '0 0 60px rgba(255,255,255,0.05)' }}>Tornando o</span>
-          <span className="block" style={{ fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>inimaginável</span>
-          <span className="block" style={{ fontSize: 'clamp(2.4rem, 5.8vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>palpável</span>
+          <span className="block text-white" style={{ fontSize: 'clamp(2.4rem, 10vw, 5.8rem)', textShadow: '0 0 60px rgba(255,255,255,0.05)' }}>Tornando o</span>
+          <span className="block" style={{ fontSize: 'clamp(2.1rem, 9vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>inimaginável</span>
+          <span className="block" style={{ fontSize: 'clamp(2.1rem, 9vw, 5.4rem)', color: '#DDAF34', textShadow: '0 0 80px rgba(221,175,52,0.38)' }}>palpável</span>
         </motion.h1>
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.32 }} className="text-freo-light/65 text-base md:text-lg max-w-[420px] font-body leading-relaxed">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.32 }} className="text-freo-light/65 text-base max-w-[420px] font-body leading-relaxed">
           Arte, utilidade e cultura pop esculpidas camada por camada. Impressão 3D de alta precisão com design exclusivo{' '}
           <span className="text-freo-orange font-semibold">FreoFigures.</span>
         </motion.p>
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.46 }} className="flex flex-wrap gap-4 mt-1">
-          <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="group relative flex items-center gap-3 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors overflow-hidden">
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.46 }} className="flex flex-col sm:flex-row gap-3 md:gap-4 mt-1">
+          <button
+            onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }}
+            className="group relative flex items-center justify-center gap-3 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors overflow-hidden active:scale-95"
+          >
             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             <span className="relative">Explorar Loja</span>
             <ChevronRight className="relative w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
-          <a href="https://wa.me/5511961789176?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20customizado!" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center border border-white/15 text-white font-display font-bold uppercase tracking-widest px-8 py-4 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all">
+          <a
+            href="https://wa.me/5511961789176?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20customizado!"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center border border-white/15 text-white font-display font-bold uppercase tracking-widest px-8 py-4 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-95"
+          >
             Projetos Custom
           </a>
         </motion.div>
@@ -939,30 +1069,29 @@ const Categories = ({ setCurrentView, setFilter }: any) => {
   };
 
   return (
-    <section id="categorias" className="py-24 px-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+    <section id="categorias" className="py-16 md:py-24 px-5 md:px-6 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 md:mb-12 gap-4 md:gap-6">
         <div>
-          <h2 className="text-4xl md:text-6xl font-display font-black uppercase tracking-tighter">
+          <h2 className="text-3xl md:text-4xl lg:text-6xl font-display font-black uppercase tracking-tighter">
             Nossos <span className="text-freo-orange">Domínios</span>
           </h2>
-          <p className="text-freo-light/60 mt-2 font-body max-w-md">Explore nossas categorias de produtos criados com precisão milimétrica.</p>
+          <p className="text-freo-light/60 mt-2 font-body max-w-md text-sm md:text-base">Explore nossas categorias de produtos criados com precisão milimétrica.</p>
         </div>
-        <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="text-sm font-bold uppercase tracking-widest border-b border-freo-orange pb-1 hover:text-freo-orange transition-colors">
-          Ver todas as categorias
+        <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="text-sm font-bold uppercase tracking-widest border-b border-freo-orange pb-1 hover:text-freo-orange transition-colors whitespace-nowrap">
+          Ver todas
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Mobile: 2x2 grid. Desktop: 4 columns */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {cats.map((cat, index) => (
-          <div key={cat.slug} onClick={() => handleCatClick(cat.slug)} className="group relative h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5">
+          <div key={cat.slug} onClick={() => handleCatClick(cat.slug)} className="group relative aspect-[3/4] md:h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5 active:scale-98">
             <img src={cat.img} alt={cat.name} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 grayscale group-hover:grayscale-0" referrerPolicy="no-referrer" />
             <div className="absolute inset-0 bg-gradient-to-t from-freo-black via-freo-black/50 to-transparent" />
-            <div className="absolute bottom-0 left-0 p-6 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-              <div className="text-freo-orange font-mono text-xs mb-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100">// CATEGORIA_0{index + 1}</div>
-              <h3 className="text-2xl font-display font-bold uppercase tracking-wide mb-1">{cat.name}</h3>
-              <p className="text-sm text-freo-light/70 font-body opacity-0 group-hover:opacity-100 transition-opacity delay-150">{cat.desc}</p>
+            <div className="absolute bottom-0 left-0 p-4 md:p-6 w-full">
+              <div className="text-freo-orange font-mono text-[10px] mb-1 opacity-0 group-hover:opacity-100 transition-opacity delay-100">// 0{index + 1}</div>
+              <h3 className="text-base md:text-2xl font-display font-bold uppercase tracking-wide mb-1 leading-tight">{cat.name}</h3>
+              <p className="text-xs md:text-sm text-freo-light/70 font-body hidden md:block opacity-0 group-hover:opacity-100 transition-opacity delay-150">{cat.desc}</p>
             </div>
-            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-freo-orange opacity-0 group-hover:opacity-100 transition-opacity m-4" />
-            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-freo-orange opacity-0 group-hover:opacity-100 transition-opacity m-4" />
           </div>
         ))}
       </div>
@@ -982,9 +1111,12 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
 
   return (
     <div className={`group flex flex-col ${compact ? '' : 'bg-freo-dark border border-white/5 hover:border-freo-orange/50 transition-colors'}`}>
-      <div className={`relative ${compact ? 'aspect-square' : 'aspect-square bg-freo-black'} overflow-hidden ${compact ? 'border border-white/5 group-hover:border-freo-orange/50 transition-colors' : ''} mb-4 cursor-pointer`} onClick={goToProduct}>
+      <div
+        className={`relative ${compact ? 'aspect-square' : 'aspect-square bg-freo-black'} overflow-hidden ${compact ? 'border border-white/5 group-hover:border-freo-orange/50 transition-colors' : ''} mb-3 md:mb-4 cursor-pointer`}
+        onClick={goToProduct}
+      >
         {tag && (
-          <div className="absolute top-3 left-3 z-10 bg-freo-orange text-freo-black text-[10px] font-bold uppercase tracking-widest px-2 py-1">{tag}</div>
+          <div className="absolute top-2 left-2 md:top-3 md:left-3 z-10 bg-freo-orange text-freo-black text-[9px] md:text-[10px] font-bold uppercase tracking-widest px-1.5 md:px-2 py-0.5 md:py-1">{tag}</div>
         )}
         {thumb ? (
           <img src={thumb} alt={product.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" />
@@ -993,17 +1125,26 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
         )}
         {!compact && <div className="absolute inset-0 bg-freo-orange/20 opacity-0 group-hover:opacity-100 mix-blend-overlay transition-opacity duration-300" />}
       </div>
-      <div className={`flex flex-col flex-grow ${compact ? '' : 'p-5'}`}>
-        <span className="text-freo-orange text-[10px] font-mono uppercase mb-1 tracking-wider">{product.category || 'Geral'}</span>
-        <h3 className="font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors cursor-pointer text-lg" onClick={goToProduct}>{product.title}</h3>
-        <div className="mt-auto flex flex-col gap-3">
+      <div className={`flex flex-col flex-grow ${compact ? '' : 'p-3 md:p-5'}`}>
+        <span className="text-freo-orange text-[9px] md:text-[10px] font-mono uppercase mb-1 tracking-wider">{product.category || 'Geral'}</span>
+        <h3
+          className="font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors cursor-pointer text-sm md:text-lg line-clamp-2"
+          onClick={goToProduct}
+        >
+          {product.title}
+        </h3>
+        <div className="mt-auto flex flex-col gap-2 md:gap-3">
           <div className="flex items-end gap-2">
-            {hasPromo && <span className="font-mono text-sm text-white/30 line-through">{formatPrice(product.price)}</span>}
-            <span className="font-mono text-xl font-bold text-freo-orange">{formatPrice(displayPrice)}</span>
+            {hasPromo && <span className="font-mono text-xs md:text-sm text-white/30 line-through">{formatPrice(product.price)}</span>}
+            <span className="font-mono text-base md:text-xl font-bold text-freo-orange">{formatPrice(displayPrice)}</span>
           </div>
-          <button onClick={event => { event.stopPropagation(); onAddToCart(product); }} className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-wider py-3 hover:bg-white transition-colors flex items-center justify-center gap-2">
-            <ShoppingCart className="w-5 h-5" />
-            Adicionar ao carrinho
+          {/* Mobile: bigger touch target */}
+          <button
+            onClick={event => { event.stopPropagation(); onAddToCart(product); }}
+            className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-wider py-3 md:py-3 hover:bg-white transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-xs md:text-sm active:scale-98"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span className="hidden sm:inline">Adicionar ao</span> Carrinho
           </button>
         </div>
       </div>
@@ -1034,17 +1175,17 @@ const FeaturedProducts = ({ addToCart }: any) => {
   }, []);
 
   return (
-    <section id="destaques" className="py-24 bg-freo-dark relative border-y border-white/5">
+    <section id="destaques" className="py-16 md:py-24 bg-freo-dark relative border-y border-white/5">
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-freo-orange/50 to-transparent" />
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-display font-black uppercase tracking-tighter inline-block relative">
+      <div className="max-w-7xl mx-auto px-5 md:px-6">
+        <div className="text-center mb-10 md:mb-16">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-black uppercase tracking-tighter inline-block relative">
             Destaques da <span className="text-freo-orange">Forja</span>
             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-24 h-1 bg-freo-orange" />
           </h2>
         </div>
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             {[...Array(4)].map((_, index) => (
               <div key={index} className="animate-pulse">
                 <div className="aspect-square bg-freo-black/80 mb-4" />
@@ -1057,7 +1198,7 @@ const FeaturedProducts = ({ addToCart }: any) => {
         ) : products.length === 0 ? (
           <div className="text-center py-16"><p className="font-mono text-white/30 text-sm">Nenhum produto cadastrado ainda.</p></div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             {products.map(product => <ProductCard key={product.id} product={product} onAddToCart={addToCart} compact />)}
           </div>
         )}
@@ -1068,35 +1209,35 @@ const FeaturedProducts = ({ addToCart }: any) => {
 
 // --- ProcessSection ---
 const ProcessSection = () => (
-  <section id="sobre" className="py-24 px-6 max-w-7xl mx-auto">
-    <div className="grid lg:grid-cols-2 gap-16 items-center">
+  <section id="sobre" className="py-16 md:py-24 px-5 md:px-6 max-w-7xl mx-auto">
+    <div className="grid lg:grid-cols-2 gap-10 md:gap-16 items-center">
       <div className="order-2 lg:order-1 relative">
         <div className="aspect-[4/5] bg-freo-dark border border-white/10 relative overflow-hidden">
           <video src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/video_deashborad.mp4" className="w-full h-full object-cover opacity-80" autoPlay loop muted playsInline />
           <motion.div animate={{ top: ['0%', '100%', '0%'] }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} className="absolute left-0 w-full h-1 bg-freo-orange shadow-[0_0_20px_rgba(255,77,0,0.8)] z-10" />
         </div>
-        <div className="absolute -bottom-8 -right-8 bg-freo-black border border-freo-orange p-6 max-w-xs">
-          <div className="font-mono text-freo-orange text-sm mb-2">// QUALIDADE_FREO</div>
-          <div className="font-display font-black text-4xl mb-1">100%</div>
-          <div className="text-sm text-freo-light/70 font-body">Inspecionado manualmente antes do envio.</div>
+        <div className="absolute -bottom-6 -right-3 md:-bottom-8 md:-right-8 bg-freo-black border border-freo-orange p-4 md:p-6 max-w-[200px] md:max-w-xs">
+          <div className="font-mono text-freo-orange text-xs mb-1 md:mb-2">// QUALIDADE_FREO</div>
+          <div className="font-display font-black text-3xl md:text-4xl mb-1">100%</div>
+          <div className="text-xs md:text-sm text-freo-light/70 font-body">Inspecionado manualmente antes do envio.</div>
         </div>
       </div>
       <div className="order-1 lg:order-2">
-        <h2 className="text-4xl md:text-5xl font-display font-black uppercase tracking-tighter mb-8">
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-black uppercase tracking-tighter mb-6 md:mb-8">
           A Arte da <br /><span className="text-freo-orange">Manufatura Aditiva</span>
         </h2>
-        <div className="space-y-8">
+        <div className="space-y-6 md:space-y-8">
           {[
             { num: '01', title: 'Design & Modelagem', desc: 'Criamos ou curamos modelos 3D exclusivos, otimizados para a melhor resolução possível.' },
             { num: '02', title: 'Fatiamento de Precisão', desc: 'Configuramos cada camada no software para garantir resistência estrutural e acabamento impecável.' },
             { num: '03', title: 'Impressão Camada a Camada', desc: 'Nossas máquinas depositam o material com precisão para transformar ideia em peça real.' },
             { num: '04', title: 'Pós-Processamento', desc: 'Limpeza, ajustes e controle de qualidade antes do envio.' },
           ].map(step => (
-            <div key={step.num} className="flex gap-6 group">
-              <div className="font-display font-black text-4xl text-freo-gray group-hover:text-freo-orange transition-colors">{step.num}</div>
+            <div key={step.num} className="flex gap-5 md:gap-6 group">
+              <div className="font-display font-black text-3xl md:text-4xl text-freo-gray group-hover:text-freo-orange transition-colors flex-shrink-0">{step.num}</div>
               <div>
-                <h4 className="text-xl font-bold font-display uppercase tracking-wide mb-2">{step.title}</h4>
-                <p className="text-freo-light/60 font-body">{step.desc}</p>
+                <h4 className="text-lg md:text-xl font-bold font-display uppercase tracking-wide mb-1">{step.title}</h4>
+                <p className="text-sm md:text-base text-freo-light/60 font-body">{step.desc}</p>
               </div>
             </div>
           ))}
@@ -1108,38 +1249,38 @@ const ProcessSection = () => (
 
 // --- AboutSection ---
 const AboutSection = () => (
-  <section id="sobre-nos" className="py-32 px-6 bg-freo-black relative overflow-hidden border-t border-white/5">
+  <section id="sobre-nos" className="py-20 md:py-32 px-5 md:px-6 bg-freo-black relative overflow-hidden border-t border-white/5">
     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-freo-orange/5 rounded-full blur-[150px] pointer-events-none" />
     <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-freo-cyan/5 rounded-full blur-[100px] pointer-events-none" />
     <div className="max-w-4xl mx-auto relative z-10">
-      <div className="flex flex-col md:flex-row gap-16 items-start">
+      <div className="flex flex-col md:flex-row gap-10 md:gap-16 items-start">
         <div className="md:w-1/3 md:sticky md:top-32">
-          <div className="font-mono text-freo-orange text-sm mb-4 tracking-widest uppercase">// A ORIGEM</div>
-          <h2 className="text-4xl md:text-5xl font-display font-black uppercase tracking-tighter leading-none mb-6">
+          <div className="font-mono text-freo-orange text-sm mb-3 tracking-widest uppercase">// A ORIGEM</div>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-black uppercase tracking-tighter leading-none mb-4 md:mb-6">
             Sobre <br /><span className="text-freo-orange">Nós?</span>
           </h2>
-          <div className="w-12 h-1 bg-freo-orange mb-8" />
-          <div className="relative w-32 h-32 md:w-48 md:h-48 grayscale hover:grayscale-0 transition-all duration-500 border border-white/10">
+          <div className="w-12 h-1 bg-freo-orange mb-6 md:mb-8" />
+          <div className="relative w-24 h-24 md:w-48 md:h-48 grayscale hover:grayscale-0 transition-all duration-500 border border-white/10">
             <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Freo Figures Creator" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
             <div className="absolute inset-0 border border-freo-orange/30 translate-x-2 translate-y-2 -z-10" />
           </div>
         </div>
-        <div className="md:w-2/3 space-y-8 font-body text-lg text-freo-light/80 leading-relaxed">
-          <p className="text-2xl font-display font-medium text-white">É mais sobre por que eu comecei.</p>
+        <div className="md:w-2/3 space-y-6 md:space-y-8 font-body text-base md:text-lg text-freo-light/80 leading-relaxed">
+          <p className="text-xl md:text-2xl font-display font-medium text-white">É mais sobre por que eu comecei.</p>
           <p>A Freo Figures começou com uma máquina, um rolo de filamento e uma inquietação:<br /><span className="text-freo-orange font-medium italic">"E se eu puder criar exatamente o que eu imagino?"</span></p>
           <p>Eu não comecei isso pensando em abrir empresa.<br />Eu comecei porque não me conformava em só consumir o que já existia.</p>
-          <div className="pl-6 border-l-2 border-freo-orange/50 py-2 space-y-1 font-mono text-sm uppercase tracking-wider text-freo-light/60">
+          <div className="pl-5 md:pl-6 border-l-2 border-freo-orange/50 py-2 space-y-1 font-mono text-xs md:text-sm uppercase tracking-wider text-freo-light/60">
             <p>Eu queria fazer.</p><p>Errar.</p><p>Aprender.</p><p>Melhorar.</p><p className="text-freo-orange">Fazer de novo.</p>
           </div>
           <p>No começo deu errado várias vezes. Peça que não saía como eu queria. Ideia que na cabeça era incrível e na prática não funcionava.</p>
           <p className="font-bold text-white">Mas nunca foi sobre o mais fácil.</p>
           <p>Foi sobre olhar pra algo que não existe ainda e pensar:<br /><span className="text-freo-cyan font-medium italic">"Eu consigo criar isso."</span></p>
-          <div className="bg-freo-dark p-8 border border-white/5 mt-12 relative">
+          <div className="bg-freo-dark p-6 md:p-8 border border-white/5 mt-8 md:mt-12 relative">
             <div className="absolute top-0 left-0 w-2 h-full bg-freo-orange" />
-            <p className="mb-6">Se você está aqui, talvez você também seja do tipo que valoriza quem faz, não só quem vende.</p>
-            <p className="font-display text-xl text-white">Então, mais do que comprar uma peça, você está apoiando alguém que decidiu construir algo do zero.<br /><span className="text-freo-orange">Camada por camada. Sem atalho.</span></p>
+            <p className="mb-4 md:mb-6">Se você está aqui, talvez você também seja do tipo que valoriza quem faz, não só quem vende.</p>
+            <p className="font-display text-lg md:text-xl text-white">Então, mais do que comprar uma peça, você está apoiando alguém que decidiu construir algo do zero.<br /><span className="text-freo-orange">Camada por camada. Sem atalho.</span></p>
           </div>
-          <div className="pt-8">
+          <div className="pt-4 md:pt-8">
             <p className="font-display font-bold uppercase tracking-widest text-sm">Essa é a Freo Figures.<br /><span className="text-freo-light/50">E esse sou eu por trás dela.</span></p>
           </div>
         </div>
@@ -1150,13 +1291,13 @@ const AboutSection = () => (
 
 // --- StoreCTA ---
 const StoreCTA = ({ setCurrentView }: any) => (
-  <section className="py-24 px-6 bg-freo-orange text-freo-black relative overflow-hidden border-y border-freo-orange/50">
+  <section className="py-16 md:py-24 px-5 md:px-6 bg-freo-orange text-freo-black relative overflow-hidden border-y border-freo-orange/50">
     <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
     <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center">
-      <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-24 h-24 rounded-full object-cover border-4 border-freo-black mb-6 shadow-2xl" />
-      <h2 className="text-5xl md:text-7xl font-display font-black uppercase tracking-tighter mb-6 leading-none">Acesse o <br />Catálogo Completo</h2>
-      <p className="font-body text-xl mb-10 font-medium max-w-2xl">Filtre por categorias, explore detalhes e encontre a peça perfeita para seu setup, altar ou estante.</p>
-      <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="bg-freo-black text-freo-orange font-display font-bold uppercase tracking-widest px-10 py-5 text-lg hover:bg-white hover:text-freo-black transition-colors flex items-center gap-3 group">
+      <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-freo-black mb-5 md:mb-6 shadow-2xl" />
+      <h2 className="text-4xl md:text-5xl lg:text-7xl font-display font-black uppercase tracking-tighter mb-4 md:mb-6 leading-none">Acesse o <br />Catálogo Completo</h2>
+      <p className="font-body text-base md:text-xl mb-8 md:mb-10 font-medium max-w-2xl">Filtre por categorias, explore detalhes e encontre a peça perfeita para seu setup, altar ou estante.</p>
+      <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="bg-freo-black text-freo-orange font-display font-bold uppercase tracking-widest px-8 md:px-10 py-4 md:py-5 text-base md:text-lg hover:bg-white hover:text-freo-black transition-colors flex items-center gap-3 group active:scale-98">
         Entrar na Loja
         <ChevronRight className="group-hover:translate-x-1 transition-transform" />
       </button>
@@ -1166,25 +1307,26 @@ const StoreCTA = ({ setCurrentView }: any) => (
 
 // --- Footer ---
 const Footer = () => (
-  <footer className="bg-freo-dark pt-20 pb-10 border-t border-white/10 relative overflow-hidden">
+  <footer className="bg-freo-dark pt-16 md:pt-20 pb-10 border-t border-white/10 relative overflow-hidden">
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15vw] font-display font-black text-white/[0.02] whitespace-nowrap pointer-events-none select-none">FREO FIGURES</div>
-    <div className="max-w-7xl mx-auto px-6 relative z-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-        <div className="col-span-1 md:col-span-2 lg:col-span-1">
-          <div className="flex items-center gap-3 mb-6">
+    <div className="max-w-7xl mx-auto px-5 md:px-6 relative z-10">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-12 md:mb-16">
+        {/* Brand - full width on mobile */}
+        <div className="col-span-2 lg:col-span-1">
+          <div className="flex items-center gap-3 mb-4 md:mb-6">
             <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover border-2 border-freo-orange" />
             <span className="font-display font-black text-2xl tracking-tighter uppercase">Freo<span className="text-freo-orange font-light">Figures</span></span>
           </div>
-          <p className="text-freo-light/60 font-body text-sm mb-6">Transformando filamento em arte. Especialistas em impressão 3D de alta qualidade.</p>
-          <div className="flex gap-4">
-            <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer">IG</div>
-            <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer">TT</div>
-            <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer">YT</div>
+          <p className="text-freo-light/60 font-body text-sm mb-4 md:mb-6">Transformando filamento em arte. Especialistas em impressão 3D de alta qualidade.</p>
+          <div className="flex gap-3 md:gap-4">
+            <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer text-sm font-bold">IG</div>
+            <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer text-sm font-bold">TT</div>
+            <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer text-sm font-bold">YT</div>
           </div>
         </div>
         <div>
-          <h4 className="font-display font-bold uppercase tracking-widest mb-6 text-freo-orange">Loja</h4>
-          <ul className="space-y-3 text-sm text-freo-light/70 font-body">
+          <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Loja</h4>
+          <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
             <li><a href="#" className="hover:text-white transition-colors">Action Figures</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Artigos Religiosos</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Utensílios & Casa</a></li>
@@ -1193,8 +1335,8 @@ const Footer = () => (
           </ul>
         </div>
         <div>
-          <h4 className="font-display font-bold uppercase tracking-widest mb-6 text-freo-orange">Suporte</h4>
-          <ul className="space-y-3 text-sm text-freo-light/70 font-body">
+          <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Suporte</h4>
+          <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
             <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Envio e Prazos</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Trocas e Devoluções</a></li>
@@ -1202,17 +1344,18 @@ const Footer = () => (
             <li><a href="https://wa.me/5511961789176?text=Olá,%20vim%20pelo%20site%20da%20FreoFigures!" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Contato</a></li>
           </ul>
         </div>
-        <div>
-          <h4 className="font-display font-bold uppercase tracking-widest mb-6 text-freo-orange">Newsletter</h4>
+        {/* Newsletter - full width on mobile */}
+        <div className="col-span-2 lg:col-span-1">
+          <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Newsletter</h4>
           <p className="text-sm text-freo-light/70 font-body mb-4">Receba novidades sobre novos modelos e descontos exclusivos.</p>
           <div className="flex">
-            <input type="email" placeholder="SEU E-MAIL" className="bg-freo-black border border-white/20 px-4 py-2 w-full text-sm font-mono focus:outline-none focus:border-freo-orange" />
-            <button className="bg-freo-orange text-freo-black px-4 font-bold hover:bg-white transition-colors"><ChevronRight className="w-5 h-5" /></button>
+            <input type="email" placeholder="SEU E-MAIL" className="bg-freo-black border border-white/20 px-4 py-2.5 w-full text-sm font-mono focus:outline-none focus:border-freo-orange" />
+            <button className="bg-freo-orange text-freo-black px-4 font-bold hover:bg-white transition-colors flex-shrink-0"><ChevronRight className="w-5 h-5" /></button>
           </div>
         </div>
       </div>
-      <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-freo-light/40 font-mono">
-        <div>&copy; {new Date().getFullYear()} FREO FIGURES. TODOS OS DIREITOS RESERVADOS.</div>
+      <div className="border-t border-white/10 pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-freo-light/40 font-mono">
+        <div className="text-center md:text-left">&copy; {new Date().getFullYear()} FREO FIGURES. TODOS OS DIREITOS RESERVADOS.</div>
         <div className="flex gap-4">
           <a href="#" className="hover:text-white">TERMOS</a>
           <a href="#" className="hover:text-white">PRIVACIDADE</a>
@@ -1222,11 +1365,93 @@ const Footer = () => (
   </footer>
 );
 
+// --- Mobile Category Filter Drawer ---
+const MobileCategoryDrawer = ({
+  isOpen,
+  onClose,
+  categories,
+  activeFilter,
+  onSelect,
+  categoryLabels,
+  theme,
+  hasSearch,
+  searchTerm,
+  onClearSearch,
+}: any) => (
+  <AnimatePresence>
+    {isOpen && (
+      <>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm"
+        />
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'tween', duration: 0.28 }}
+          className="fixed bottom-0 left-0 right-0 z-[81] rounded-t-2xl overflow-hidden"
+          style={{ ...theme.sidebar, maxHeight: '80vh' }}
+        >
+          {/* Handle */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-12 h-1 rounded-full" style={{ background: `${theme.accent}40` }} />
+          </div>
+
+          <div className="px-5 pt-3 pb-4 flex items-center justify-between">
+            <div>
+              <p className="font-display font-black text-xl uppercase" style={theme.sidebarTitle}>Categorias</p>
+              <p className="text-xs mt-0.5" style={theme.headerSub}>{theme.tagline}</p>
+            </div>
+            <button onClick={onClose} style={{ color: `${theme.accent}80` }}>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div style={{ height: '1px', background: `${theme.accent}25`, margin: '0 20px 12px' }} />
+
+          {hasSearch && (
+            <div style={{ margin: '0 16px 12px', padding: '10px 12px', background: `${theme.accent}15`, border: `1px solid ${theme.accent}40`, borderRadius: '6px' }}>
+              <div className="font-mono text-[10px] uppercase tracking-widest mb-1" style={{ color: theme.accent }}>Busca ativa</div>
+              <div className="font-display font-bold text-sm break-words mb-2" style={theme.headerTitle}>{searchTerm}</div>
+              <button onClick={() => { onClearSearch(); onClose(); }} className="font-mono text-[11px] uppercase" style={{ color: `${theme.accent}80` }}>
+                Limpar busca
+              </button>
+            </div>
+          )}
+
+          <div className="overflow-y-auto px-4 pb-8" style={{ maxHeight: 'calc(80vh - 140px)' }}>
+            {categories.map((category: string) => {
+              const isActive = !hasSearch && activeFilter === category;
+              return (
+                <button
+                  key={category}
+                  onClick={() => { onSelect(category); onClose(); }}
+                  className="w-full text-left px-4 py-3.5 mb-2 rounded-sm font-bold tracking-wide transition-all active:scale-98"
+                  style={isActive ? { ...theme.btnActive, display: 'flex', alignItems: 'center', gap: '8px' } : { ...theme.btnInactive, display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  {isActive && <span>›</span>}
+                  {categoryLabels[category] || category}
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+      </>
+    )}
+  </AnimatePresence>
+);
+
 // --- ShopView com Temas por Categoria ---
 const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) => {
   const [activeFilter, setActiveFilter] = useState(initialFilter || 'Todos');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMobileCatOpen, setIsMobileCatOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const categories = ['Todos', 'games', 'religioso', 'keycaps', 'personalizado', 'lifestyle', 'outros'];
 
@@ -1241,12 +1466,9 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
   };
 
   const hasSearch = String(searchTerm || '').trim().length > 0;
-
-  // Tema ativo: se há busca, usa Todos; senão usa categoria selecionada
   const activeThemeKey = hasSearch ? 'Todos' : activeFilter;
   const theme = CATEGORY_THEMES[activeThemeKey] || CATEGORY_THEMES['Todos'];
 
-  // Injeta fonte da categoria no <head> dinamicamente
   useEffect(() => {
     if (!theme.fontImport) return;
     const existingLink = document.querySelector(`link[data-freo-font="${activeThemeKey}"]`);
@@ -1309,135 +1531,118 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
       transition={{ duration: 0.5 }}
       style={{ ...theme.wrapper, minHeight: '100vh', position: 'relative' }}
     >
-      {/* Fundo decorativo por categoria */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
         <ThemeBackground themeKey={activeThemeKey} />
       </div>
 
-      <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto relative z-10" style={{ minHeight: '100vh' }}>
-        <div className="flex flex-col md:flex-row gap-12">
+      <div className="pt-20 md:pt-32 pb-24 relative z-10" style={{ minHeight: '100vh' }}>
 
-          {/* Sidebar */}
-          <div className="md:w-1/4">
-            <div
-              className="sticky top-32 rounded-sm overflow-hidden"
-              style={{ ...theme.sidebar, padding: '24px 0', backdropFilter: 'blur(8px)' }}
-            >
-              {/* Título da sidebar com tagline temática */}
-              <div style={{ padding: '0 20px 20px' }}>
-                <h2
-                  className="font-display font-black text-3xl uppercase mb-1"
-                  style={theme.sidebarTitle}
-                >
-                  {theme.label}
-                </h2>
-                <p style={{ ...theme.headerSub, display: 'block', marginTop: '4px' }}>
-                  {theme.tagline}
-                </p>
-              </div>
-
-              {/* Linha divisória */}
-              <div style={{ height: '1px', background: `${theme.accent}30`, margin: '0 20px 16px' }} />
-
-              {hasSearch && (
-                <div style={{ margin: '0 12px 16px', padding: '12px', background: `${theme.accent}15`, border: `1px solid ${theme.accent}40`, borderRadius: '2px' }}>
-                  <div className="font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: theme.accent }}>Busca ativa</div>
-                  <div className="font-display font-bold leading-tight mb-3 break-words" style={{ ...theme.headerTitle, fontSize: '14px' }}>{searchTerm}</div>
-                  <button onClick={onClearSearch} className="font-mono text-[11px] uppercase transition-colors" style={{ color: `${theme.accent}80` }}>
-                    Limpar busca
-                  </button>
-                </div>
-              )}
-
-              <div style={{ padding: '0 8px' }}>
-                {categories.map(category => {
-                  const isActive = !hasSearch && activeFilter === category;
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => handleCategoryClick(category)}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '10px 14px',
-                        marginBottom: '2px',
-                        transition: 'all 0.25s ease',
-                        cursor: 'pointer',
-                        borderRadius: '2px',
-                        ...(isActive ? theme.btnActive : theme.btnInactive),
-                      }}
-                    >
-                      {isActive && <span style={{ marginRight: '6px' }}>&gt;</span>}
-                      {categoryLabels[category] || category}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Grid de produtos */}
-          <div className="md:w-3/4">
-            {/* Header dinâmico */}
-            <div className="mb-8 pb-4" style={{ borderBottom: `1px solid ${theme.accent}25` }}>
+        {/* ── MOBILE LAYOUT ── */}
+        {isMobile && (
+          <div className="px-4">
+            {/* Mobile Header */}
+            <div className="mb-4 pb-3" style={{ borderBottom: `1px solid ${theme.accent}25` }}>
               <motion.h1
-                key={activeThemeKey + '-title'}
+                key={activeThemeKey + '-title-m'}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="font-display font-black uppercase mb-2"
-                style={{ ...theme.headerTitle, fontSize: 'clamp(2rem, 4vw, 3.5rem)', lineHeight: 1 }}
+                className="font-display font-black uppercase mb-1"
+                style={{ ...theme.headerTitle, fontSize: 'clamp(1.8rem, 8vw, 2.5rem)', lineHeight: 1 }}
               >
                 {theme.label}
               </motion.h1>
-
-              <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-3">
-                <div className="font-mono text-sm" style={{ color: `${theme.accent}80` }}>
-                  {loading ? 'Carregando...' : hasSearch ? (
-                    <>Mostrando {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} para{' '}<span style={{ color: theme.accent }}>[{searchTerm}]</span></>
-                  ) : (
-                    <>Mostrando {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} em{' '}<span style={{ color: theme.accent }}>[{categoryLabels[activeFilter] || activeFilter}]</span></>
-                  )}
-                </div>
-
-                {hasSearch && (
-                  <button
-                    onClick={onClearSearch}
-                    className="self-start md:self-auto text-xs font-mono uppercase tracking-widest px-3 py-2 transition-colors"
-                    style={{ border: `1px solid ${theme.accent}50`, color: theme.accent }}
-                  >
-                    Ver catálogo completo
-                  </button>
-                )}
-              </div>
+              <p style={{ ...theme.headerSub, fontSize: '12px', display: 'block' }}>{theme.tagline}</p>
             </div>
 
+            {/* Mobile Controls Row */}
+            <div className="flex items-center gap-2 mb-4">
+              {/* Filter button */}
+              <button
+                onClick={() => setIsMobileCatOpen(true)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-sm font-mono text-xs font-bold uppercase tracking-wide transition-all flex-shrink-0"
+                style={{
+                  background: `${theme.accent}20`,
+                  border: `1px solid ${theme.accent}50`,
+                  color: theme.accent,
+                }}
+              >
+                <Filter className="w-4 h-4" />
+                {hasSearch ? 'Busca' : categoryLabels[activeFilter]}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+
+              {/* Result count */}
+              <div className="font-mono text-xs flex-1 truncate" style={{ color: `${theme.accent}70` }}>
+                {loading ? 'Carregando...' : (
+                  hasSearch
+                    ? `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''} · "${searchTerm}"`
+                    : `${filtered.length} produto${filtered.length !== 1 ? 's' : ''}`
+                )}
+              </div>
+
+              {/* Clear search */}
+              {hasSearch && (
+                <button
+                  onClick={onClearSearch}
+                  className="flex-shrink-0 font-mono text-[10px] uppercase px-2.5 py-2 rounded-sm"
+                  style={{ border: `1px solid ${theme.accent}50`, color: theme.accent }}
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+
+            {/* Active search badge */}
+            {hasSearch && (
+              <div
+                className="flex items-center gap-2 mb-4 px-3 py-2 rounded-sm"
+                style={{ background: `${theme.accent}12`, border: `1px solid ${theme.accent}30` }}
+              >
+                <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.accent }} />
+                <span className="font-mono text-xs flex-1 truncate" style={{ color: theme.accent }}>
+                  Buscando: <strong>{searchTerm}</strong>
+                </span>
+                <button onClick={onClearSearch} style={{ color: `${theme.accent}70` }}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Mobile Product Grid - 2 columns */}
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 gap-3">
                 {[...Array(6)].map((_, index) => (
-                  <div key={index} className="animate-pulse" style={{ background: `${theme.accent}08`, border: `1px solid ${theme.accent}15` }}>
+                  <div key={index} className="animate-pulse rounded-sm overflow-hidden" style={{ background: `${theme.accent}08`, border: `1px solid ${theme.accent}15` }}>
                     <div className="aspect-square" style={{ background: `${theme.accent}06` }} />
-                    <div className="p-5 space-y-3">
-                      <div className="h-3 rounded w-1/4" style={{ background: `${theme.accent}15` }} />
-                      <div className="h-5 rounded w-3/4" style={{ background: `${theme.accent}15` }} />
-                      <div className="h-10 rounded" style={{ background: `${theme.accent}20` }} />
+                    <div className="p-3 space-y-2">
+                      <div className="h-2.5 rounded w-1/4" style={{ background: `${theme.accent}15` }} />
+                      <div className="h-4 rounded w-3/4" style={{ background: `${theme.accent}15` }} />
+                      <div className="h-9 rounded" style={{ background: `${theme.accent}20` }} />
                     </div>
                   </div>
                 ))}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center py-24">
+              <div className="text-center py-20">
                 <div className="text-5xl mb-4">🔎</div>
-                <p className="font-display font-bold text-xl uppercase mb-2" style={{ color: `${theme.accent}40` }}>
-                  {products.length === 0 ? 'Nenhum produto cadastrado ainda' : hasSearch ? 'Nenhum produto encontrado' : 'Nenhum produto nesta categoria'}
+                <p className="font-display font-bold text-lg uppercase mb-2" style={{ color: `${theme.accent}50` }}>
+                  {products.length === 0 ? 'Nenhum produto ainda' : hasSearch ? 'Nada encontrado' : 'Categoria vazia'}
                 </p>
-                <p className="font-mono text-sm max-w-xl mx-auto" style={{ color: `${theme.accent}30` }}>
-                  {products.length === 0 ? 'Use o painel admin para importar seus produtos.' : hasSearch ? 'Tente buscar por outra palavra relacionada.' : 'Tente outra categoria.'}
+                <p className="font-mono text-sm max-w-xs mx-auto" style={{ color: `${theme.accent}35` }}>
+                  {hasSearch ? 'Tente outra palavra.' : 'Tente outra categoria.'}
                 </p>
+                {hasSearch && (
+                  <button
+                    onClick={onClearSearch}
+                    className="mt-6 font-mono text-sm uppercase px-5 py-3 rounded-sm"
+                    style={{ border: `1px solid ${theme.accent}60`, color: theme.accent }}
+                  >
+                    Ver catálogo completo
+                  </button>
+                )}
               </div>
             ) : (
-              <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <motion.div layout className="grid grid-cols-2 gap-3">
                 <AnimatePresence>
                   {filtered.map(product => (
                     <motion.div
@@ -1446,7 +1651,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: 0.25 }}
                     >
                       <ProductCard product={product} onAddToCart={addToCart} />
                     </motion.div>
@@ -1455,8 +1660,162 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
               </motion.div>
             )}
           </div>
-        </div>
+        )}
+
+        {/* ── DESKTOP LAYOUT (unchanged) ── */}
+        {!isMobile && (
+          <div className="px-6 max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row gap-12">
+              {/* Sidebar */}
+              <div className="md:w-1/4">
+                <div
+                  className="sticky top-32 rounded-sm overflow-hidden"
+                  style={{ ...theme.sidebar, padding: '24px 0', backdropFilter: 'blur(8px)' }}
+                >
+                  <div style={{ padding: '0 20px 20px' }}>
+                    <h2 className="font-display font-black text-3xl uppercase mb-1" style={theme.sidebarTitle}>
+                      {theme.label}
+                    </h2>
+                    <p style={{ ...theme.headerSub, display: 'block', marginTop: '4px' }}>
+                      {theme.tagline}
+                    </p>
+                  </div>
+
+                  <div style={{ height: '1px', background: `${theme.accent}30`, margin: '0 20px 16px' }} />
+
+                  {hasSearch && (
+                    <div style={{ margin: '0 12px 16px', padding: '12px', background: `${theme.accent}15`, border: `1px solid ${theme.accent}40`, borderRadius: '2px' }}>
+                      <div className="font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: theme.accent }}>Busca ativa</div>
+                      <div className="font-display font-bold leading-tight mb-3 break-words" style={{ ...theme.headerTitle, fontSize: '14px' }}>{searchTerm}</div>
+                      <button onClick={onClearSearch} className="font-mono text-[11px] uppercase transition-colors" style={{ color: `${theme.accent}80` }}>
+                        Limpar busca
+                      </button>
+                    </div>
+                  )}
+
+                  <div style={{ padding: '0 8px' }}>
+                    {categories.map(category => {
+                      const isActive = !hasSearch && activeFilter === category;
+                      return (
+                        <button
+                          key={category}
+                          onClick={() => handleCategoryClick(category)}
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '10px 14px',
+                            marginBottom: '2px',
+                            transition: 'all 0.25s ease',
+                            cursor: 'pointer',
+                            borderRadius: '2px',
+                            ...(isActive ? theme.btnActive : theme.btnInactive),
+                          }}
+                        >
+                          {isActive && <span style={{ marginRight: '6px' }}>&gt;</span>}
+                          {categoryLabels[category] || category}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid de produtos */}
+              <div className="md:w-3/4">
+                <div className="mb-8 pb-4" style={{ borderBottom: `1px solid ${theme.accent}25` }}>
+                  <motion.h1
+                    key={activeThemeKey + '-title'}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="font-display font-black uppercase mb-2"
+                    style={{ ...theme.headerTitle, fontSize: 'clamp(2rem, 4vw, 3.5rem)', lineHeight: 1 }}
+                  >
+                    {theme.label}
+                  </motion.h1>
+
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-3">
+                    <div className="font-mono text-sm" style={{ color: `${theme.accent}80` }}>
+                      {loading ? 'Carregando...' : hasSearch ? (
+                        <>Mostrando {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} para{' '}<span style={{ color: theme.accent }}>[{searchTerm}]</span></>
+                      ) : (
+                        <>Mostrando {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} em{' '}<span style={{ color: theme.accent }}>[{categoryLabels[activeFilter] || activeFilter}]</span></>
+                      )}
+                    </div>
+
+                    {hasSearch && (
+                      <button
+                        onClick={onClearSearch}
+                        className="self-start md:self-auto text-xs font-mono uppercase tracking-widest px-3 py-2 transition-colors"
+                        style={{ border: `1px solid ${theme.accent}50`, color: theme.accent }}
+                      >
+                        Ver catálogo completo
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {loading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, index) => (
+                      <div key={index} className="animate-pulse" style={{ background: `${theme.accent}08`, border: `1px solid ${theme.accent}15` }}>
+                        <div className="aspect-square" style={{ background: `${theme.accent}06` }} />
+                        <div className="p-5 space-y-3">
+                          <div className="h-3 rounded w-1/4" style={{ background: `${theme.accent}15` }} />
+                          <div className="h-5 rounded w-3/4" style={{ background: `${theme.accent}15` }} />
+                          <div className="h-10 rounded" style={{ background: `${theme.accent}20` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className="text-center py-24">
+                    <div className="text-5xl mb-4">🔎</div>
+                    <p className="font-display font-bold text-xl uppercase mb-2" style={{ color: `${theme.accent}40` }}>
+                      {products.length === 0 ? 'Nenhum produto cadastrado ainda' : hasSearch ? 'Nenhum produto encontrado' : 'Nenhum produto nesta categoria'}
+                    </p>
+                    <p className="font-mono text-sm max-w-xl mx-auto" style={{ color: `${theme.accent}30` }}>
+                      {products.length === 0 ? 'Use o painel admin para importar seus produtos.' : hasSearch ? 'Tente buscar por outra palavra relacionada.' : 'Tente outra categoria.'}
+                    </p>
+                  </div>
+                ) : (
+                  <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <AnimatePresence>
+                      {filtered.map(product => (
+                        <motion.div
+                          key={product.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <ProductCard product={product} onAddToCart={addToCart} />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Mobile Category Drawer */}
+      <MobileCategoryDrawer
+        isOpen={isMobileCatOpen}
+        onClose={() => setIsMobileCatOpen(false)}
+        categories={categories}
+        activeFilter={activeFilter}
+        onSelect={handleCategoryClick}
+        categoryLabels={categoryLabels}
+        theme={theme}
+        hasSearch={hasSearch}
+        searchTerm={searchTerm}
+        onClearSearch={onClearSearch}
+      />
     </motion.div>
   );
 };
@@ -1533,40 +1892,50 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center px-0 sm:px-4">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-freo-black/80 backdrop-blur-sm" />
-        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md bg-freo-dark border border-white/10 shadow-2xl overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: '100%' }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: '100%' }}
+          transition={{ type: 'tween', duration: 0.3 }}
+          className="relative w-full sm:max-w-md bg-freo-dark border-t sm:border border-white/10 shadow-2xl overflow-hidden rounded-t-2xl sm:rounded-none"
+        >
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-freo-cyan" />
+          {/* Mobile handle */}
+          <div className="sm:hidden flex justify-center pt-3 pb-1">
+            <div className="w-12 h-1 rounded-full bg-white/20" />
+          </div>
           <button onClick={onClose} className="absolute top-4 right-4 text-freo-light/50 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
-          <div className="p-8">
-            <div className="flex justify-center mb-8">
-              <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-16 h-16 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_15px_rgba(221,175,52,0.3)]" />
+          <div className="p-6 sm:p-8">
+            <div className="flex justify-center mb-6 sm:mb-8">
+              <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_15px_rgba(221,175,52,0.3)]" />
             </div>
-            <h2 className="text-3xl font-display font-black uppercase text-center mb-2">{isLogin ? 'Acessar a Forja' : 'Criar Conta'}</h2>
-            <p className="text-freo-light/60 text-center font-body text-sm mb-8">{isLogin ? 'Entre para acompanhar seus pedidos e projetos.' : 'Junte-se à revolução da manufatura aditiva.'}</p>
+            <h2 className="text-2xl sm:text-3xl font-display font-black uppercase text-center mb-2">{isLogin ? 'Acessar a Forja' : 'Criar Conta'}</h2>
+            <p className="text-freo-light/60 text-center font-body text-sm mb-6 sm:mb-8">{isLogin ? 'Entre para acompanhar seus pedidos.' : 'Junte-se à revolução da manufatura aditiva.'}</p>
             {success ? (
-              <div className="bg-freo-cyan/10 border border-freo-cyan text-freo-cyan p-6 text-center font-mono text-sm mb-6 flex flex-col items-center gap-3">
+              <div className="bg-freo-cyan/10 border border-freo-cyan text-freo-cyan p-5 text-center font-mono text-sm mb-6 flex flex-col items-center gap-3">
                 <span>{isLogin ? 'Login realizado com sucesso!' : '✅ Conta criada! Verifique seu email.'}</span>
               </div>
             ) : (
               <div className="space-y-4">
                 {error && <div className="bg-freo-orange/10 border border-freo-orange text-freo-orange p-3 text-center font-mono text-xs">{error}</div>}
-                <form className="space-y-4" onSubmit={handleSubmit}>
+                <form className="space-y-3" onSubmit={handleSubmit}>
                   {!isLogin && (
                     <>
-                      <input type="text" placeholder="NOME COMPLETO" value={name} onChange={event => setName(event.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
-                      <input type="tel" placeholder="TELEFONE / WHATSAPP" value={phone} onChange={event => setPhone(event.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
+                      <input type="text" placeholder="NOME COMPLETO" value={name} onChange={event => setName(event.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3.5 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
+                      <input type="tel" placeholder="TELEFONE / WHATSAPP" value={phone} onChange={event => setPhone(event.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3.5 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
                     </>
                   )}
-                  <input type="email" placeholder="E-MAIL" value={email} onChange={event => setEmail(event.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
-                  <input type="password" placeholder="SENHA" value={password} onChange={event => setPassword(event.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
-                  <button type="submit" disabled={loading} className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-4 hover:bg-white transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <input type="email" placeholder="E-MAIL" value={email} onChange={event => setEmail(event.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3.5 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
+                  <input type="password" placeholder="SENHA" value={password} onChange={event => setPassword(event.target.value)} className="w-full bg-freo-black border border-white/10 px-4 py-3.5 font-mono text-sm focus:outline-none focus:border-freo-orange transition-colors" />
+                  <button type="submit" disabled={loading} className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-4 hover:bg-white transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-98">
                     {loading ? 'Processando...' : isLogin ? 'Entrar' : 'Criar Conta'}
                   </button>
                 </form>
               </div>
             )}
-            <div className="mt-8 text-center">
+            <div className="mt-6 text-center">
               <button onClick={() => setIsLogin(!isLogin)} className="text-freo-light/60 hover:text-freo-orange text-sm font-body transition-colors">
                 {isLogin ? 'Não tem uma conta? Crie agora.' : 'Já tem uma conta? Faça login.'}
               </button>
@@ -1585,55 +1954,78 @@ const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: 
     return acc + parseFloat(price) * item.quantity;
   }, 0);
 
+  // Lock body scroll when open
+  useEffect(() => {
+    if (isOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[100] bg-freo-black/80 backdrop-blur-sm" />
-          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'tween', duration: 0.3 }} className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-freo-dark border-l border-white/10 z-[101] shadow-2xl flex flex-col">
-            <div className="p-6 border-b border-white/10 flex justify-between items-center">
-              <h2 className="text-2xl font-display font-black uppercase flex items-center gap-3">
-                <ShoppingCart className="w-6 h-6 text-freo-orange" />
-                Seu Carrinho
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'tween', duration: 0.3 }}
+            className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-freo-dark border-l border-white/10 z-[101] shadow-2xl flex flex-col"
+          >
+            <div className="p-4 md:p-6 border-b border-white/10 flex justify-between items-center">
+              <h2 className="text-xl md:text-2xl font-display font-black uppercase flex items-center gap-2 md:gap-3">
+                <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-freo-orange" />
+                Carrinho
+                {cartItems.length > 0 && (
+                  <span className="text-sm font-mono text-freo-orange/70">
+                    ({cartItems.reduce((t: number, i: CartItem) => t + i.quantity, 0)})
+                  </span>
+                )}
               </h2>
-              <button onClick={onClose} className="text-freo-light/50 hover:text-white transition-colors"><X className="w-6 h-6" /></button>
+              <button onClick={onClose} className="text-freo-light/50 hover:text-white transition-colors p-1"><X className="w-6 h-6" /></button>
             </div>
-            <div className="flex-grow overflow-y-auto p-6 space-y-4">
+            <div className="flex-grow overflow-y-auto p-4 md:p-6 space-y-3 md:space-y-4">
               {cartItems.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-freo-light/50 font-body">
                   <ShoppingCart className="w-16 h-16 mb-4 opacity-20" />
-                  <p>Seu carrinho está vazio.</p>
+                  <p className="text-sm">Seu carrinho está vazio.</p>
                 </div>
               ) : (
                 cartItems.map((item: CartItem, index: number) => (
-                  <div key={item.cartItemId ?? index} className="flex gap-4 bg-freo-black/50 p-3 border border-white/5 relative group">
-                    <img src={item.img} alt={item.name} className="w-20 h-20 object-cover flex-shrink-0" />
+                  <div key={item.cartItemId ?? index} className="flex gap-3 md:gap-4 bg-freo-black/50 p-3 border border-white/5 relative group">
+                    <img src={item.img} alt={item.name} className="w-16 h-16 md:w-20 md:h-20 object-cover flex-shrink-0" />
                     <div className="flex flex-col flex-grow justify-between min-w-0">
                       <div className="pr-6">
-                        <h4 className="font-display font-bold text-sm leading-tight">{item.name}</h4>
+                        <h4 className="font-display font-bold text-xs md:text-sm leading-tight line-clamp-2">{item.name}</h4>
                         {item.variant && <p className="font-mono text-[10px] text-freo-orange/70 mt-1 uppercase tracking-wider leading-relaxed">{item.variant}</p>}
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <span className="font-mono text-freo-orange text-sm font-bold">{item.price}</span>
-                        <div className="flex items-center gap-2 bg-freo-dark border border-white/10 px-2 py-1">
-                          <button onClick={() => updateQuantity(item, -1)} className="hover:text-freo-orange transition-colors"><Minus className="w-3 h-3" /></button>
+                        <div className="flex items-center gap-2 bg-freo-dark border border-white/10 px-2 py-1.5">
+                          <button onClick={() => updateQuantity(item, -1)} className="hover:text-freo-orange transition-colors p-0.5"><Minus className="w-3 h-3" /></button>
                           <span className="font-mono text-xs w-4 text-center">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item, 1)} className="hover:text-freo-orange transition-colors"><Plus className="w-3 h-3" /></button>
+                          <button onClick={() => updateQuantity(item, 1)} className="hover:text-freo-orange transition-colors p-0.5"><Plus className="w-3 h-3" /></button>
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => removeItem(item)} className="absolute top-3 right-3 text-freo-light/30 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => removeItem(item)} className="absolute top-2 right-2 md:top-3 md:right-3 text-freo-light/30 hover:text-red-500 transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))
               )}
             </div>
             {cartItems.length > 0 && (
-              <div className="p-6 border-t border-white/10 bg-freo-black">
-                <div className="flex justify-between items-center mb-6 font-mono">
+              <div className="p-4 md:p-6 border-t border-white/10 bg-freo-black">
+                <div className="flex justify-between items-center mb-4 md:mb-6 font-mono">
                   <span className="text-freo-light/70 uppercase text-sm">Total</span>
-                  <span className="text-2xl font-bold text-freo-orange">R$ {total.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-xl md:text-2xl font-bold text-freo-orange">R$ {total.toFixed(2).replace('.', ',')}</span>
                 </div>
-                <button onClick={() => { window.location.href = '/checkout.html'; }} className="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors">
+                <button
+                  onClick={() => { window.location.href = '/checkout.html'; }}
+                  className="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors text-sm md:text-base active:scale-98"
+                >
                   Finalizar Compra
                 </button>
               </div>
@@ -1709,7 +2101,7 @@ export default function App() {
       if (error) throw error;
       setCartItems(previous => [...previous, { cartItemId: data.id, name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1, variant: null }]);
       const toast = document.createElement('div');
-      toast.className = 'fixed bottom-4 right-4 bg-freo-orange text-freo-black px-6 py-4 font-display font-bold uppercase z-[9999] shadow-lg flex items-center gap-2 text-lg';
+      toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#DDAF34;color:#000;padding:12px 24px;font-weight:700;font-family:inherit;text-transform:uppercase;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap;border-radius:2px;font-size:14px;';
       toast.innerHTML = '✅ Adicionado ao carrinho!';
       document.body.appendChild(toast);
       setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s ease'; setTimeout(() => toast.remove(), 500); }, 3000);
