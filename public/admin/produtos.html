@@ -36,11 +36,9 @@
     window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
   <style>
-    /* ── Base ── */
     * { box-sizing: border-box; }
     body { background: #0A0A0A; }
 
-    /* ── Inputs ── */
     .fi { width:100%; background:#0D0D0D; border:1px solid rgba(255,255,255,0.08); color:#F5F5F5; padding:.7rem 1rem; font-family:'Space Grotesk',sans-serif; font-size:.875rem; outline:none; transition:border-color .15s; border-radius:2px; }
     .fi:focus { border-color:#DDAF34; }
     .fi::placeholder { color:rgba(245,245,245,.2); }
@@ -49,15 +47,12 @@
     select.fi option { background:#111; }
     .fl { display:block; font-family:ui-monospace,monospace; font-size:.65rem; color:rgba(245,245,245,.35); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
 
-    /* ── Cards de produto na listagem ── */
     .product-card { background:#141414; border:1px solid rgba(255,255,255,.06); transition:border-color .2s, transform .15s; cursor:pointer; }
     .product-card:hover { border-color:rgba(221,175,52,.3); transform:translateY(-1px); }
 
-    /* ── Upload de imagem ── */
     .img-drop { border:2px dashed rgba(255,255,255,.1); transition:border-color .2s,background .2s; cursor:pointer; }
     .img-drop:hover, .img-drop.dragover { border-color:#DDAF34; background:rgba(221,175,52,.04); }
 
-    /* ── Preview de imagem ── */
     .img-thumb { position:relative; width:80px; height:80px; border:1px solid rgba(255,255,255,.08); flex-shrink:0; overflow:hidden; cursor:grab; transition:opacity .15s, transform .15s, border-color .15s; }
     .img-thumb:active { cursor:grabbing; }
     .img-thumb.dragging { opacity:0.35; transform:scale(0.95); border-color:rgba(221,175,52,.5); }
@@ -66,37 +61,45 @@
     .img-thumb .del-img { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.7); border:none; color:#ef4444; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; opacity:0; transition:opacity .15s; border-radius:2px; }
     .img-thumb:hover .del-img { opacity:1; }
 
-    /* ── Variantes ── */
-    .variant-row { background:#0D0D0D; border:1px solid rgba(255,255,255,.06); padding:.75rem; display:flex; flex-direction:column; gap:8px; }
+    /* Variantes */
+    .variant-block { background:#0D0D0D; border:1px solid rgba(255,255,255,.06); border-radius:4px; overflow:hidden; }
+    .variant-block-header { display:flex; align-items:center; gap:8px; padding:.6rem .75rem; border-bottom:1px solid rgba(255,255,255,.05); background:#0A0A0A; }
+    .variant-name-input { flex:1; background:transparent; border:none; outline:none; color:#F5F5F5; font-family:'Space Grotesk',sans-serif; font-size:.85rem; font-weight:600; }
+    .variant-name-input::placeholder { color:rgba(245,245,245,.2); font-weight:400; }
 
-    /* ── Tags de opção de variante ── */
-    .variant-opt-tag { display:inline-flex; align-items:center; gap:4px; background:rgba(221,175,52,.1); border:1px solid rgba(221,175,52,.25); color:#DDAF34; font-family:ui-monospace,monospace; font-size:.7rem; padding:2px 8px; border-radius:2px; white-space:nowrap; }
-    .variant-opt-input { background:transparent; outline:none; border:none; color:#F5F5F5; font-family:'Space Grotesk',sans-serif; font-size:.8rem; min-width:140px; flex:1; padding:0; }
-    .variant-opt-input::placeholder { color:rgba(245,245,245,.2); }
+    .price-toggle-row { display:flex; align-items:center; gap:8px; padding:.45rem .75rem; border-bottom:1px solid rgba(255,255,255,.04); background:#090909; }
+    .toggle-track { position:relative; width:32px; height:17px; flex-shrink:0; cursor:pointer; }
+    .toggle-track-bg { position:absolute; inset:0; border-radius:100px; transition:background .2s; }
+    .toggle-thumb { position:absolute; top:2px; width:13px; height:13px; background:#fff; border-radius:50%; transition:left .2s; }
 
-    /* ── Tags de produto ── */
+    .variant-options-wrap { padding:.5rem .75rem; display:flex; flex-direction:column; gap:5px; }
+    .opt-row { display:flex; align-items:center; gap:6px; background:#111; border:1px solid rgba(255,255,255,.05); border-radius:2px; padding:.3rem .5rem; }
+    .opt-name-input { flex:1; background:transparent; border:none; outline:none; color:#F5F5F5; font-family:'Space Grotesk',sans-serif; font-size:.8rem; min-width:60px; }
+    .opt-name-input::placeholder { color:rgba(245,245,245,.2); }
+    .opt-price-wrap { display:flex; align-items:center; gap:3px; background:#0A0A0A; border:1px solid rgba(255,255,255,.07); border-radius:2px; padding:0 6px; flex-shrink:0; }
+    .opt-price-prefix { font-family:ui-monospace,monospace; font-size:.65rem; color:rgba(221,175,52,.45); white-space:nowrap; }
+    .opt-price-input { width:68px; background:transparent; border:none; outline:none; color:#DDAF34; font-family:ui-monospace,monospace; font-size:.75rem; text-align:right; padding:4px 0; }
+    .opt-price-input::placeholder { color:rgba(221,175,52,.2); }
+    .opt-del-btn { background:none; border:none; cursor:pointer; color:rgba(239,68,68,.3); transition:color .15s; flex-shrink:0; display:flex; align-items:center; padding:0; }
+    .opt-del-btn:hover { color:#ef4444; }
+
+    .variant-add-opt-btn { display:flex; align-items:center; gap:4px; font-family:ui-monospace,monospace; font-size:.65rem; color:rgba(245,245,245,.25); text-transform:uppercase; letter-spacing:.06em; cursor:pointer; background:none; border:none; padding:.45rem .75rem; border-top:1px solid rgba(255,255,255,.04); width:100%; transition:color .15s; }
+    .variant-add-opt-btn:hover { color:#DDAF34; }
+
     .tag-pill { display:inline-flex; align-items:center; gap:4px; background:rgba(221,175,52,.1); border:1px solid rgba(221,175,52,.25); color:#DDAF34; font-family:ui-monospace,monospace; font-size:.7rem; padding:2px 8px; border-radius:2px; }
-
-    /* ── Status badge ── */
     .badge-active { background:rgba(34,197,94,.1); color:#22c55e; border:1px solid rgba(34,197,94,.2); }
     .badge-inactive { background:rgba(239,68,68,.1); color:#ef4444; border:1px solid rgba(239,68,68,.2); }
-
-    /* ── Sidebar do modal ── */
     .modal-overlay { background:rgba(0,0,0,.85); backdrop-filter:blur(8px); }
 
-    /* ── Scrollbar ── */
     ::-webkit-scrollbar { width:5px; height:5px; }
     ::-webkit-scrollbar-track { background:#0A0A0A; }
     ::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
     ::-webkit-scrollbar-thumb:hover { background:#DDAF34; }
 
-    /* ── Toast ── */
     #toast { position:fixed; bottom:2rem; right:2rem; z-index:9999; font-family:'Space Grotesk',sans-serif; font-size:.875rem; padding:.75rem 1.25rem; border-radius:4px; transform:translateY(120%); transition:transform .25s; pointer-events:none; max-width:320px; }
     #toast.show { transform:translateY(0); }
     #toast.success { background:#1a2e1a; border:1px solid rgba(34,197,94,.4); color:#86efac; }
     #toast.error   { background:#2e1a1a; border:1px solid rgba(239,68,68,.4); color:#fca5a5; }
-
-    /* ── Upload progress ── */
     .upload-bar { height:3px; background:#DDAF34; width:0%; transition:width .3s; }
   </style>
 </head>
@@ -131,15 +134,11 @@
     </div>
   </nav>
 
-  <!-- LOADING -->
   <div id="page-loading" class="flex-1 flex items-center justify-center min-h-[60vh]">
     <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
   </div>
 
-  <!-- CONTEÚDO PRINCIPAL -->
   <main id="main-content" class="hidden max-w-7xl mx-auto px-6 py-8 w-full flex-1">
-
-    <!-- Filtros e busca -->
     <div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
       <div class="flex gap-2 flex-wrap">
         <button onclick="filterStatus('all')" id="filter-all" class="filter-btn active font-mono text-xs uppercase tracking-widest px-3 py-1.5 border border-freo-orange text-freo-orange">Todos</button>
@@ -154,8 +153,6 @@
         <span id="product-count" class="font-mono text-xs text-white/30">0 produtos</span>
       </div>
     </div>
-
-    <!-- Lista de produtos -->
     <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
     <div id="list-empty" class="hidden text-center py-20">
       <div class="text-6xl mb-4">📦</div>
@@ -165,13 +162,10 @@
     </div>
   </main>
 
-  <!-- ══════════════════════════════════════════════════════
-       PAINEL LATERAL — FORMULÁRIO DE PRODUTO
-  ══════════════════════════════════════════════════════ -->
+  <!-- PAINEL LATERAL -->
   <div id="form-overlay" class="fixed inset-0 z-50 hidden modal-overlay" onclick="handleOverlayClick(event)">
     <div id="form-panel" class="absolute right-0 top-0 h-full w-full max-w-2xl bg-freo-dark border-l border-white/[0.07] flex flex-col shadow-2xl" style="overflow:hidden">
 
-      <!-- Header do painel -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] flex-shrink-0">
         <div>
           <h2 id="form-title" class="font-display font-black uppercase text-xl text-white">Novo Produto</h2>
@@ -182,7 +176,6 @@
         </button>
       </div>
 
-      <!-- Abas de navegação dentro do form -->
       <div class="flex border-b border-white/[0.07] flex-shrink-0 px-6">
         <button onclick="showTab('tab-basic')" id="btn-tab-basic" class="form-tab active py-3 mr-6 font-mono text-xs uppercase tracking-widest text-freo-orange border-b-2 border-freo-orange">Básico</button>
         <button onclick="showTab('tab-images')" id="btn-tab-images" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Imagens</button>
@@ -190,19 +183,17 @@
         <button onclick="showTab('tab-seo')" id="btn-tab-seo" class="form-tab py-3 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">SEO</button>
       </div>
 
-      <!-- Corpo do form (scrollável) -->
       <div class="flex-1 overflow-y-auto">
 
-        <!-- ── ABA: BÁSICO ── -->
+        <!-- ABA BÁSICO -->
         <div id="tab-basic" class="form-tab-content p-6 space-y-5">
-
           <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
               <label class="fl">Título do produto *</label>
               <input type="text" id="f-title" class="fi" placeholder="Ex: Estátua Kratos God of War 1/4">
             </div>
             <div>
-              <label class="fl">Preço (R$) *</label>
+              <label class="fl">Preço base (R$) *</label>
               <input type="number" id="f-price" class="fi" placeholder="0.00" step="0.01" min="0">
             </div>
             <div>
@@ -228,24 +219,20 @@
               </select>
             </div>
           </div>
-
           <div>
             <label class="fl">Descrição</label>
             <textarea id="f-description" class="fi" placeholder="Descreva o produto, materiais, dimensões, acabamento..."></textarea>
           </div>
-
           <div>
             <label class="fl">Tags <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(Enter para adicionar)</span></label>
             <div class="fi flex flex-wrap gap-1.5 min-h-[42px] cursor-text" id="tags-container" onclick="document.getElementById('tag-input').focus()">
               <input type="text" id="tag-input" style="background:transparent;outline:none;border:none;color:#F5F5F5;font-family:'Space Grotesk',sans-serif;font-size:.875rem;min-width:80px;flex:1" placeholder="Ex: 3d impresso, resina, colecionável..." onkeydown="handleTagInput(event)">
             </div>
           </div>
-
           <div>
             <label class="fl">URL do vídeo <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(YouTube ou Vimeo)</span></label>
             <input type="url" id="f-video" class="fi" placeholder="https://youtube.com/watch?v=...">
           </div>
-
           <div class="flex items-center gap-3 pt-1">
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="f-active" class="sr-only peer" checked>
@@ -255,18 +242,14 @@
           </div>
         </div>
 
-        <!-- ── ABA: IMAGENS ── -->
+        <!-- ABA IMAGENS -->
         <div id="tab-images" class="form-tab-content hidden p-6 space-y-5">
-
-          <!-- Drop zone -->
           <div id="drop-zone" class="img-drop rounded p-8 text-center" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
             <input type="file" id="file-input" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
             <svg class="w-10 h-10 text-white/20 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             <p class="font-mono text-sm text-white/40">Clique ou arraste as fotos aqui</p>
             <p class="font-mono text-xs text-white/20 mt-1">JPG, PNG, WEBP · até 5MB por imagem · múltiplas</p>
           </div>
-
-          <!-- Barra de progresso do upload -->
           <div id="upload-progress-wrap" class="hidden">
             <div class="flex justify-between mb-1">
               <span class="font-mono text-xs text-white/40">Enviando imagens...</span>
@@ -276,15 +259,11 @@
               <div id="upload-progress-bar" class="upload-bar h-full"></div>
             </div>
           </div>
-
-          <!-- Previews das imagens -->
           <div>
             <label class="fl mb-2">Imagens do produto <span id="img-count" class="text-freo-orange">(0)</span></label>
             <div id="img-preview-grid" class="flex flex-wrap gap-2"></div>
             <p class="font-mono text-xs text-white/20 mt-2">A primeira imagem é a foto principal. Arraste para reordenar.</p>
           </div>
-
-          <!-- URL manual -->
           <div class="pt-2 border-t border-white/[0.06]">
             <label class="fl">Ou adicione por URL</label>
             <div class="flex gap-2">
@@ -294,21 +273,22 @@
           </div>
         </div>
 
-        <!-- ── ABA: VARIANTES ── -->
+        <!-- ABA VARIANTES -->
         <div id="tab-variants" class="form-tab-content hidden p-6 space-y-5">
           <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
             <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <p class="font-mono text-xs text-white/40 leading-relaxed">Use variantes para opções como cor, tamanho ou material. Digite cada opção e pressione <strong style="color:rgba(221,175,52,.7)">Enter</strong> para adicionar. Você pode adicionar quantas opções quiser.</p>
+            <div class="font-mono text-xs text-white/40 leading-relaxed space-y-1">
+              <p>Crie variantes como <strong style="color:rgba(221,175,52,.7)">Tamanho</strong> ou <strong style="color:rgba(221,175,52,.7)">Cor</strong> e adicione quantas opções quiser.</p>
+              <p style="color:rgba(245,245,245,.2)">Ative <strong style="color:rgba(221,175,52,.5)">Preço por opção</strong> para definir um preço diferente em cada tamanho/cor. Deixe em branco para usar o preço base.</p>
+            </div>
           </div>
-
-          <div id="variants-list" class="space-y-3"></div>
-
+          <div id="variants-list" class="space-y-4"></div>
           <button onclick="addVariant()" class="w-full border border-dashed border-white/10 py-3 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors">
             + Adicionar variante
           </button>
         </div>
 
-        <!-- ── ABA: SEO ── -->
+        <!-- ABA SEO -->
         <div id="tab-seo" class="form-tab-content hidden p-6 space-y-5">
           <div class="flex items-start gap-3 p-4 bg-white/[0.03] border border-white/[0.06]">
             <svg class="w-4 h-4 text-white/30 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
@@ -324,7 +304,6 @@
             <textarea id="f-seo-desc" class="fi" placeholder="Descrição para o Google..." maxlength="160" style="min-height:70px" oninput="updateSEOCount(this,'seo-desc-count',160)"></textarea>
             <span id="seo-desc-count" class="font-mono text-[10px] text-white/20 mt-1 block text-right">0/160</span>
           </div>
-          <!-- Preview Google -->
           <div class="border border-white/[0.06] p-4 rounded">
             <p class="font-mono text-[10px] text-white/25 uppercase tracking-widest mb-3">Preview no Google</p>
             <p class="text-blue-400 text-sm hover:underline cursor-pointer font-sans truncate" id="seo-preview-title">Título do produto</p>
@@ -332,17 +311,14 @@
             <p class="font-sans text-xs text-white/40 mt-1 leading-relaxed" id="seo-preview-desc">Descrição do produto aparecerá aqui...</p>
           </div>
         </div>
+
       </div>
 
-      <!-- Footer do painel — botões de ação -->
+      <!-- Footer -->
       <div class="border-t border-white/[0.07] px-6 py-4 flex items-center gap-3 flex-shrink-0 bg-freo-dark">
-        <button id="form-delete-btn" onclick="confirmDelete()" class="hidden text-xs font-mono text-red-500/50 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 transition-colors uppercase tracking-widest">
-          Excluir produto
-        </button>
+        <button id="form-delete-btn" onclick="confirmDelete()" class="hidden text-xs font-mono text-red-500/50 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 transition-colors uppercase tracking-widest">Excluir produto</button>
         <div class="flex-1"></div>
-        <button onclick="closeForm()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">
-          Cancelar
-        </button>
+        <button onclick="closeForm()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
         <button onclick="saveProduct()" id="form-save-btn" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-6 py-2.5 hover:bg-white transition-colors flex items-center gap-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
           Salvar
@@ -351,22 +327,40 @@
     </div>
   </div>
 
-  <!-- Toast de notificação -->
   <div id="toast"></div>
-
-  <!-- AUTH LISTENER -->
   <script src="/auth-listener.js"></script>
 
   <script>
-  // ── Estado global ──────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // ESTADO GLOBAL
+  // ─────────────────────────────────────────────────────────────────────────
   var allProducts = [];
   var currentFilter = 'all';
   var editingProductId = null;
   var currentImages = [];
   var currentTags = [];
+
+  /*
+    Formato interno de currentVariants:
+    [
+      {
+        name: "Tamanho",
+        per_option_price: true,
+        options: [
+          { name: "10cm", price: 50.00 },
+          { name: "15cm", price: 80.00 },
+          { name: "20cm", price: null }   // null = usa preço base
+        ]
+      }
+    ]
+
+    Salvo no banco (jsonb) exatamente com essa estrutura.
+  */
   var currentVariants = [];
 
-  // ── Auth guard ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUTH
+  // ─────────────────────────────────────────────────────────────────────────
   window.addEventListener('auth-data-loaded', function(e) {
     var profile = e.detail.profile;
     if (!profile || !profile.is_admin) {
@@ -378,7 +372,9 @@
     loadProducts();
   });
 
-  // ── Carregar produtos ──────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // PRODUTOS
+  // ─────────────────────────────────────────────────────────────────────────
   async function loadProducts() {
     try {
       var r = await window.supabaseClient.from('products').select('*').order('created_at', { ascending: false });
@@ -387,12 +383,9 @@
       document.getElementById('page-loading').classList.add('hidden');
       document.getElementById('main-content').classList.remove('hidden');
       renderList();
-    } catch(e) {
-      showToast('Erro ao carregar produtos: ' + e.message, 'error');
-    }
+    } catch(e) { showToast('Erro ao carregar produtos: ' + e.message, 'error'); }
   }
 
-  // ── Filtros ────────────────────────────────────────────────────────────────
   function filterStatus(status) {
     currentFilter = status;
     document.querySelectorAll('.filter-btn').forEach(function(btn) {
@@ -405,57 +398,69 @@
     renderList();
   }
 
-  // ── Renderizar lista ───────────────────────────────────────────────────────
   function renderList() {
     var search = (document.getElementById('search-input').value || '').toLowerCase();
     var filtered = allProducts.filter(function(p) {
-      if (currentFilter === 'active'   && !p.is_active) return false;
-      if (currentFilter === 'inactive' &&  p.is_active) return false;
+      if (currentFilter === 'active' && !p.is_active) return false;
+      if (currentFilter === 'inactive' && p.is_active) return false;
       if (search && !p.title.toLowerCase().includes(search) && !(p.category||'').toLowerCase().includes(search)) return false;
       return true;
     });
-
     var container = document.getElementById('product-list');
     var emptyEl = document.getElementById('list-empty');
     document.getElementById('product-count').innerText = filtered.length + ' produto' + (filtered.length !== 1 ? 's' : '');
-
-    if (filtered.length === 0) {
-      container.innerHTML = '';
-      emptyEl.classList.remove('hidden');
-      return;
-    }
+    if (filtered.length === 0) { container.innerHTML = ''; emptyEl.classList.remove('hidden'); return; }
     emptyEl.classList.add('hidden');
-
     container.innerHTML = filtered.map(function(p) {
       var imgs = p.images || [];
-      var thumb = (imgs.length > 0) ? imgs[0] : null;
+      var thumb = imgs.length > 0 ? imgs[0] : null;
       var hasPromo = p.promotional_price && p.promotional_price < p.price;
       return '<div class="product-card" onclick="openForm(\'' + p.id + '\')">'
         + '<div class="relative aspect-square bg-freo-black overflow-hidden">'
-        + (thumb ? '<img src="' + thumb + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">' : '<div class="w-full h-full flex items-center justify-center"><svg class="w-12 h-12 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>')
+        + (thumb ? '<img src="' + thumb + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">'
+                 : '<div class="w-full h-full flex items-center justify-center"><svg class="w-12 h-12 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>')
         + '<span class="absolute top-2 right-2 font-mono text-[9px] px-1.5 py-0.5 uppercase ' + (p.is_active ? 'badge-active' : 'badge-inactive') + '">' + (p.is_active ? 'Ativo' : 'Inativo') + '</span>'
         + (imgs.length > 1 ? '<span class="absolute bottom-2 left-2 font-mono text-[9px] bg-black/60 text-white/60 px-1.5 py-0.5">' + imgs.length + ' fotos</span>' : '')
-        + '</div>'
-        + '<div class="p-3">'
+        + '</div><div class="p-3">'
         + '<p class="font-display font-bold text-sm text-white leading-tight truncate mb-1">' + (p.title || 'Sem título') + '</p>'
         + (p.category ? '<p class="font-mono text-[10px] text-white/30 uppercase mb-2">' + p.category + '</p>' : '')
         + '<div class="flex items-end gap-2">'
-        + (hasPromo ? '<span class="font-mono text-xs text-white/30 line-through">R$ ' + Number(p.price).toFixed(2).replace('.',',') + '</span><span class="font-mono text-sm font-bold text-freo-orange">R$ ' + Number(p.promotional_price).toFixed(2).replace('.',',') + '</span>'
-                    : '<span class="font-mono text-sm font-bold text-freo-orange">R$ ' + Number(p.price).toFixed(2).replace('.',',') + '</span>')
-        + '</div>'
-        + '<p class="font-mono text-[10px] text-white/20 mt-1">Estoque: ' + (p.stock || 0) + '</p>'
-        + '</div>'
-        + '</div>';
+        + (hasPromo
+            ? '<span class="font-mono text-xs text-white/30 line-through">R$ ' + Number(p.price).toFixed(2).replace('.',',') + '</span><span class="font-mono text-sm font-bold text-freo-orange">R$ ' + Number(p.promotional_price).toFixed(2).replace('.',',') + '</span>'
+            : '<span class="font-mono text-sm font-bold text-freo-orange">R$ ' + Number(p.price).toFixed(2).replace('.',',') + '</span>')
+        + '</div><p class="font-mono text-[10px] text-white/20 mt-1">Estoque: ' + (p.stock || 0) + '</p>'
+        + '</div></div>';
     }).join('');
   }
 
-  // ── Abrir formulário ───────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // NORMALIZA VARIANTES DO BANCO → FORMATO INTERNO
+  // ─────────────────────────────────────────────────────────────────────────
+  function normalizeVariantsFromDB(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.map(function(v) {
+      var per = !!v.per_option_price;
+      var opts = [];
+      if (Array.isArray(v.options)) {
+        opts = v.options.map(function(o) {
+          if (typeof o === 'object' && o !== null) {
+            return { name: String(o.name || ''), price: (o.price != null && !isNaN(parseFloat(o.price))) ? parseFloat(o.price) : null };
+          }
+          return { name: String(o || ''), price: null };
+        });
+      } else if (typeof v.options === 'string') {
+        opts = v.options.split(',').map(function(s) { return { name: s.trim(), price: null }; }).filter(function(o){ return o.name; });
+      }
+      return { name: v.name || '', per_option_price: per, options: opts };
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FORMULÁRIO
+  // ─────────────────────────────────────────────────────────────────────────
   function openForm(productId) {
     editingProductId = productId;
-    currentImages = [];
-    currentTags = [];
-    currentVariants = [];
-
+    currentImages = []; currentTags = []; currentVariants = [];
     document.getElementById('form-overlay').classList.remove('hidden');
     document.getElementById('form-overlay').classList.add('flex');
     showTab('tab-basic');
@@ -480,39 +485,19 @@
       updateSEOCount(document.getElementById('f-seo-desc'), 'seo-desc-count', 160);
       currentImages = Array.isArray(p.images) ? p.images.slice() : [];
       currentTags = Array.isArray(p.tags) ? p.tags.slice() : [];
-      // Normaliza variantes: garante que options seja sempre array de strings
-      currentVariants = Array.isArray(p.variants) ? JSON.parse(JSON.stringify(p.variants)).map(function(v) {
-        var opts = v.options;
-        if (!Array.isArray(opts)) {
-          opts = (opts || '').split(',').map(function(o){ return o.trim(); }).filter(Boolean);
-        } else {
-          // Se options for array de objetos {name, price}, extrai apenas o nome
-          opts = opts.map(function(o) { return typeof o === 'object' ? (o.name || '') : String(o || ''); }).filter(Boolean);
-        }
-        return { name: v.name || '', options: opts };
-      }) : [];
+      currentVariants = normalizeVariantsFromDB(p.variants);
     } else {
       document.getElementById('form-title').innerText = 'Novo Produto';
       document.getElementById('form-subtitle').innerText = 'Preencha as informações abaixo';
       document.getElementById('form-delete-btn').classList.add('hidden');
-      document.getElementById('f-title').value = '';
-      document.getElementById('f-price').value = '';
-      document.getElementById('f-promo').value = '';
+      ['f-title','f-price','f-promo','f-video','f-seo-title','f-seo-desc','f-description'].forEach(function(id){ document.getElementById(id).value = ''; });
       document.getElementById('f-stock').value = 0;
       document.getElementById('f-category').value = '';
-      document.getElementById('f-description').value = '';
-      document.getElementById('f-video').value = '';
       document.getElementById('f-active').checked = true;
-      document.getElementById('f-seo-title').value = '';
-      document.getElementById('f-seo-desc').value = '';
       document.getElementById('seo-title-count').innerText = '0/60';
       document.getElementById('seo-desc-count').innerText = '0/160';
     }
-
-    renderTagsUI();
-    renderImagesUI();
-    renderVariantsUI();
-    updateSEOPreview();
+    renderTagsUI(); renderImagesUI(); renderVariantsUI(); updateSEOPreview();
   }
 
   function closeForm() {
@@ -520,249 +505,187 @@
     document.getElementById('form-overlay').classList.remove('flex');
     editingProductId = null;
   }
+  function handleOverlayClick(e) { if (e.target === document.getElementById('form-overlay')) closeForm(); }
 
-  function handleOverlayClick(e) {
-    if (e.target === document.getElementById('form-overlay')) closeForm();
-  }
-
-  // ── Abas do formulário ─────────────────────────────────────────────────────
   function showTab(tabId) {
     document.querySelectorAll('.form-tab-content').forEach(function(el) { el.classList.add('hidden'); });
-    document.querySelectorAll('.form-tab').forEach(function(btn) {
-      btn.classList.remove('text-freo-orange','border-freo-orange');
-      btn.classList.add('text-white/30','border-transparent');
-    });
+    document.querySelectorAll('.form-tab').forEach(function(btn) { btn.classList.remove('text-freo-orange','border-freo-orange'); btn.classList.add('text-white/30','border-transparent'); });
     document.getElementById(tabId).classList.remove('hidden');
     var btn = document.getElementById('btn-' + tabId);
     if (btn) { btn.classList.add('text-freo-orange','border-freo-orange'); btn.classList.remove('text-white/30','border-transparent'); }
   }
 
-  // ── Tags ───────────────────────────────────────────────────────────────────
+  // ─── TAGS ─────────────────────────────────────────────────────────────────
   function handleTagInput(e) {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       var val = e.target.value.trim().replace(/,/g,'');
-      if (val && !currentTags.includes(val)) {
-        currentTags.push(val);
-        renderTagsUI();
-      }
+      if (val && !currentTags.includes(val)) { currentTags.push(val); renderTagsUI(); }
       e.target.value = '';
-    } else if (e.key === 'Backspace' && !e.target.value && currentTags.length > 0) {
-      currentTags.pop();
-      renderTagsUI();
-    }
+    } else if (e.key === 'Backspace' && !e.target.value && currentTags.length > 0) { currentTags.pop(); renderTagsUI(); }
   }
-
-  function removeTag(i) { currentTags.splice(i, 1); renderTagsUI(); }
-
+  function removeTag(i) { currentTags.splice(i,1); renderTagsUI(); }
   function renderTagsUI() {
     var container = document.getElementById('tags-container');
     var input = document.getElementById('tag-input');
     container.innerHTML = '';
     currentTags.forEach(function(tag, i) {
-      var pill = document.createElement('span');
-      pill.className = 'tag-pill';
-      pill.innerHTML = tag + '<button onclick="removeTag(' + i + ')" style="background:none;border:none;cursor:pointer;color:#DDAF34;font-size:14px;line-height:1;padding:0 0 0 2px">×</button>';
+      var pill = document.createElement('span'); pill.className = 'tag-pill';
+      pill.innerHTML = tag + '<button onclick="removeTag('+i+')" style="background:none;border:none;cursor:pointer;color:#DDAF34;font-size:14px;line-height:1;padding:0 0 0 2px">×</button>';
       container.appendChild(pill);
     });
     container.appendChild(input);
     input.placeholder = currentTags.length ? '' : 'Ex: 3d impresso, resina, colecionável...';
   }
 
-  // ── Imagens ────────────────────────────────────────────────────────────────
+  // ─── IMAGENS ──────────────────────────────────────────────────────────────
   var dragSrcIdx = null;
-
   function renderImagesUI() {
     var grid = document.getElementById('img-preview-grid');
     document.getElementById('img-count').innerText = '(' + currentImages.length + ')';
     grid.innerHTML = currentImages.map(function(url, i) {
-      return '<div class="img-thumb" draggable="true"'
-        + ' ondragstart="onImgDragStart(event,' + i + ')"'
-        + ' ondragover="onImgDragOver(event,' + i + ')"'
-        + ' ondragleave="onImgDragLeave(event)"'
-        + ' ondrop="onImgDrop(event,' + i + ')"'
-        + ' ondragend="onImgDragEnd()">'
-        + '<img src="' + url + '" alt="img' + i + '" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><rect fill=%22%23222%22 width=%2280%22 height=%2280%22/></svg>\'">'
-        + (i === 0 ? '<span style="position:absolute;bottom:2px;left:2px;background:rgba(221,175,52,.8);color:#000;font-size:8px;font-family:monospace;padding:1px 4px;z-index:2">CAPA</span>' : '')
-        + '<button class="del-img" onclick="event.stopPropagation();removeImage(' + i + ')" title="Remover">×</button>'
-        + '</div>';
+      return '<div class="img-thumb" draggable="true" ondragstart="onImgDragStart(event,'+i+')" ondragover="onImgDragOver(event,'+i+')" ondragleave="onImgDragLeave(event)" ondrop="onImgDrop(event,'+i+')" ondragend="onImgDragEnd()">'
+        + '<img src="'+url+'" alt="" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><rect fill=%22%23222%22 width=%2280%22 height=%2280%22/></svg>\'">'
+        + (i===0?'<span style="position:absolute;bottom:2px;left:2px;background:rgba(221,175,52,.8);color:#000;font-size:8px;font-family:monospace;padding:1px 4px;z-index:2">CAPA</span>':'')
+        + '<button class="del-img" onclick="event.stopPropagation();removeImage('+i+')" title="Remover">×</button></div>';
     }).join('');
   }
-
-  function onImgDragStart(e, idx) {
-    dragSrcIdx = idx;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', String(idx));
-    setTimeout(function() {
-      var thumbs = document.querySelectorAll('.img-thumb');
-      if (thumbs[idx]) thumbs[idx].classList.add('dragging');
-    }, 0);
-  }
-
-  function onImgDragOver(e, idx) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (dragSrcIdx === null || dragSrcIdx === idx) return;
-    document.querySelectorAll('.img-thumb').forEach(function(t) { t.classList.remove('drag-over'); });
-    var thumbs = document.querySelectorAll('.img-thumb');
-    if (thumbs[idx]) thumbs[idx].classList.add('drag-over');
-  }
-
-  function onImgDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-
-  function onImgDrop(e, targetIdx) {
-    e.preventDefault();
-    if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
-    var moved = currentImages.splice(dragSrcIdx, 1)[0];
-    currentImages.splice(targetIdx, 0, moved);
-    dragSrcIdx = null;
-    renderImagesUI();
-    showToast('Imagem reordenada! Salve para confirmar.', 'success');
-  }
-
-  function onImgDragEnd() {
-    dragSrcIdx = null;
-    document.querySelectorAll('.img-thumb').forEach(function(t) { t.classList.remove('dragging', 'drag-over'); });
-  }
-
-  function removeImage(i) { currentImages.splice(i, 1); renderImagesUI(); }
-
-  function addImageByURL() {
-    var url = document.getElementById('img-url-input').value.trim();
-    if (!url) return;
-    currentImages.push(url);
-    renderImagesUI();
-    document.getElementById('img-url-input').value = '';
-  }
-
-  function handleFileSelect(e) { uploadFiles(Array.from(e.target.files)); }
-  function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
-  function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('dragover'); }
-  function handleDrop(e) {
-    e.preventDefault();
-    document.getElementById('drop-zone').classList.remove('dragover');
-    uploadFiles(Array.from(e.dataTransfer.files).filter(function(f){ return f.type.startsWith('image/'); }));
-  }
-
-  async function uploadFiles(files) {
-    if (!files.length) return;
-    var wrap = document.getElementById('upload-progress-wrap');
-    var bar = document.getElementById('upload-progress-bar');
-    var pct = document.getElementById('upload-pct');
-    wrap.classList.remove('hidden');
-    var done = 0;
-    for (var f of files) {
-      if (f.size > 5 * 1024 * 1024) { showToast(f.name + ' excede 5MB, pulando...', 'error'); done++; continue; }
-      var ext = f.name.split('.').pop();
-      var path = 'produtos/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
-      var r = await window.supabaseClient.storage.from('imagens').upload(path, f, { upsert: false, contentType: f.type });
-      if (!r.error) {
-        var pub = window.supabaseClient.storage.from('imagens').getPublicUrl(path);
-        currentImages.push(pub.data.publicUrl);
-        renderImagesUI();
-      } else {
-        showToast('Erro ao enviar ' + f.name + ': ' + r.error.message, 'error');
-      }
-      done++;
-      var p = Math.round((done / files.length) * 100);
-      bar.style.width = p + '%';
-      pct.innerText = p + '%';
+  function onImgDragStart(e,idx){ dragSrcIdx=idx; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',String(idx)); setTimeout(function(){ var t=document.querySelectorAll('.img-thumb'); if(t[idx]) t[idx].classList.add('dragging'); },0); }
+  function onImgDragOver(e,idx){ e.preventDefault(); e.dataTransfer.dropEffect='move'; if(dragSrcIdx===null||dragSrcIdx===idx) return; document.querySelectorAll('.img-thumb').forEach(function(t){ t.classList.remove('drag-over'); }); var t=document.querySelectorAll('.img-thumb'); if(t[idx]) t[idx].classList.add('drag-over'); }
+  function onImgDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+  function onImgDrop(e,targetIdx){ e.preventDefault(); if(dragSrcIdx===null||dragSrcIdx===targetIdx) return; var moved=currentImages.splice(dragSrcIdx,1)[0]; currentImages.splice(targetIdx,0,moved); dragSrcIdx=null; renderImagesUI(); showToast('Imagem reordenada!','success'); }
+  function onImgDragEnd(){ dragSrcIdx=null; document.querySelectorAll('.img-thumb').forEach(function(t){ t.classList.remove('dragging','drag-over'); }); }
+  function removeImage(i){ currentImages.splice(i,1); renderImagesUI(); }
+  function addImageByURL(){ var url=document.getElementById('img-url-input').value.trim(); if(!url) return; currentImages.push(url); renderImagesUI(); document.getElementById('img-url-input').value=''; }
+  function handleFileSelect(e){ uploadFiles(Array.from(e.target.files)); }
+  function handleDragOver(e){ e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
+  function handleDragLeave(e){ document.getElementById('drop-zone').classList.remove('dragover'); }
+  function handleDrop(e){ e.preventDefault(); document.getElementById('drop-zone').classList.remove('dragover'); uploadFiles(Array.from(e.dataTransfer.files).filter(function(f){ return f.type.startsWith('image/'); })); }
+  async function uploadFiles(files){
+    if(!files.length) return;
+    var wrap=document.getElementById('upload-progress-wrap'),bar=document.getElementById('upload-progress-bar'),pct=document.getElementById('upload-pct');
+    wrap.classList.remove('hidden'); var done=0;
+    for(var f of files){
+      if(f.size>5*1024*1024){ showToast(f.name+' excede 5MB, pulando...','error'); done++; continue; }
+      var ext=f.name.split('.').pop();
+      var path='produtos/'+Date.now()+'_'+Math.random().toString(36).slice(2)+'.'+ext;
+      var r=await window.supabaseClient.storage.from('imagens').upload(path,f,{upsert:false,contentType:f.type});
+      if(!r.error){ var pub=window.supabaseClient.storage.from('imagens').getPublicUrl(path); currentImages.push(pub.data.publicUrl); renderImagesUI(); }
+      else showToast('Erro ao enviar '+f.name+': '+r.error.message,'error');
+      done++; var p=Math.round((done/files.length)*100); bar.style.width=p+'%'; pct.innerText=p+'%';
     }
-    setTimeout(function() { wrap.classList.add('hidden'); bar.style.width = '0%'; }, 800);
+    setTimeout(function(){ wrap.classList.add('hidden'); bar.style.width='0%'; },800);
   }
 
-  // ── Variantes ──────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // VARIANTES COM PREÇO POR OPÇÃO
+  // ─────────────────────────────────────────────────────────────────────────
+
   function addVariant() {
-    currentVariants.push({ name: '', options: [] });
+    currentVariants.push({ name: '', per_option_price: false, options: [] });
     renderVariantsUI();
-    // Foca no campo nome da nova variante
     setTimeout(function() {
       var inputs = document.querySelectorAll('.variant-name-input');
       if (inputs.length) inputs[inputs.length - 1].focus();
     }, 50);
   }
 
-  function removeVariant(i) {
-    currentVariants.splice(i, 1);
+  function removeVariant(i) { currentVariants.splice(i, 1); renderVariantsUI(); }
+
+  function togglePerOptionPrice(i) {
+    currentVariants[i].per_option_price = !currentVariants[i].per_option_price;
     renderVariantsUI();
   }
 
-  function removeVariantOption(variantIdx, optIdx) {
-    currentVariants[variantIdx].options.splice(optIdx, 1);
+  function addOption(vi) {
+    if (!currentVariants[vi].options) currentVariants[vi].options = [];
+    currentVariants[vi].options.push({ name: '', price: null });
     renderVariantsUI();
+    setTimeout(function() {
+      var inputs = document.querySelectorAll('.opt-name-input[data-vi="' + vi + '"]');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }, 40);
   }
 
-  function handleVariantOptionInput(e, variantIdx) {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      var val = e.target.value.trim().replace(/,/g, '');
-      if (val) {
-        if (!currentVariants[variantIdx].options) currentVariants[variantIdx].options = [];
-        currentVariants[variantIdx].options.push(val);
-        renderVariantsUI();
-        // Re-foca o input da mesma variante após re-render
-        setTimeout(function() {
-          var inputs = document.querySelectorAll('.variant-opt-input[data-vidx="' + variantIdx + '"]');
-          if (inputs.length) inputs[0].focus();
-        }, 30);
-      }
-      e.target.value = '';
-    } else if (e.key === 'Backspace' && !e.target.value) {
-      if (currentVariants[variantIdx].options && currentVariants[variantIdx].options.length > 0) {
-        currentVariants[variantIdx].options.pop();
-        renderVariantsUI();
-        setTimeout(function() {
-          var inputs = document.querySelectorAll('.variant-opt-input[data-vidx="' + variantIdx + '"]');
-          if (inputs.length) inputs[0].focus();
-        }, 30);
-      }
-    }
-  }
+  function removeOption(vi, oi) { currentVariants[vi].options.splice(oi, 1); renderVariantsUI(); }
+  function updateOptName(vi, oi, val) { currentVariants[vi].options[oi].name = val; }
+  function updateOptPrice(vi, oi, val) { var p = parseFloat(val); currentVariants[vi].options[oi].price = isNaN(p) ? null : p; }
 
   function renderVariantsUI() {
     var list = document.getElementById('variants-list');
+
     list.innerHTML = currentVariants.map(function(v, i) {
+      var isPriced = !!v.per_option_price;
       var opts = Array.isArray(v.options) ? v.options : [];
 
-      var tagsHTML = opts.map(function(opt, oi) {
-        var safeOpt = String(opt || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        return '<span class="variant-opt-tag">'
-          + String(opt || '')
-          + '<button type="button" onclick="removeVariantOption(' + i + ',' + oi + ')" style="background:none;border:none;cursor:pointer;color:#DDAF34;font-size:14px;line-height:1;padding:0 0 0 2px;margin:0">×</button>'
-          + '</span>';
-      }).join('');
+      // Toggle HTML
+      var toggleBg = isPriced ? '#DDAF34' : 'rgba(255,255,255,.1)';
+      var thumbLeft = isPriced ? '17px' : '2px';
+      var toggleHTML = '<div class="price-toggle-row">'
+        + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;" onclick="togglePerOptionPrice(' + i + ')">'
+        + '<div class="toggle-track">'
+        + '<div class="toggle-track-bg" style="background:' + toggleBg + '"></div>'
+        + '<div class="toggle-thumb" style="left:' + thumbLeft + '"></div>'
+        + '</div>'
+        + '<span style="font-family:ui-monospace,monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:' + (isPriced ? 'rgba(221,175,52,.8)' : 'rgba(245,245,245,.3)') + ';">'
+        + (isPriced ? '✓ Preço por opção ativado' : 'Preço por opção')
+        + '</span>'
+        + '</label>'
+        + (isPriced ? '<span style="margin-left:auto;font-family:ui-monospace,monospace;font-size:.6rem;color:rgba(245,245,245,.2);">Deixe em branco = preço base</span>' : '')
+        + '</div>';
 
-      var placeholderText = opts.length === 0 ? 'Digite uma opção e pressione Enter  (ex: 10cm, 15cm, 20cm...)' : '';
+      // Linhas de opções
+      var optionsHTML = '';
+      if (opts.length > 0) {
+        optionsHTML = '<div class="variant-options-wrap">'
+          + opts.map(function(opt, oi) {
+              var priceInput = isPriced
+                ? '<div class="opt-price-wrap">'
+                  + '<span class="opt-price-prefix">R$</span>'
+                  + '<input type="number" class="opt-price-input" placeholder="0,00" step="0.01" min="0"'
+                  + ' value="' + (opt.price != null ? opt.price : '') + '"'
+                  + ' oninput="updateOptPrice(' + i + ',' + oi + ',this.value)">'
+                  + '</div>'
+                : '';
+              return '<div class="opt-row">'
+                + '<svg style="color:rgba(255,255,255,.12);flex-shrink:0;" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>'
+                + '<input type="text" class="opt-name-input" data-vi="' + i + '" placeholder="Nome da opção (ex: 10cm)" value="' + (opt.name || '').replace(/"/g,'&quot;') + '" oninput="updateOptName(' + i + ',' + oi + ',this.value)">'
+                + priceInput
+                + '<button type="button" class="opt-del-btn" onclick="removeOption(' + i + ',' + oi + ')">'
+                + '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+                + '</button></div>';
+            }).join('')
+          + '</div>';
+      } else {
+        optionsHTML = '<div style="padding:.4rem .75rem;">'
+          + '<p style="font-family:ui-monospace,monospace;font-size:.65rem;color:rgba(245,245,245,.18);">Nenhuma opção ainda. Clique em "+ Adicionar opção" abaixo.</p>'
+          + '</div>';
+      }
 
-      return '<div class="variant-row">'
-        // Linha do nome + botão remover
-        + '<div style="display:flex;align-items:center;gap:8px;">'
-        + '<input type="text" value="' + (v.name || '').replace(/"/g, '&quot;') + '" placeholder="Nome da variante (ex: Tamanho, Cor, Material)" class="fi variant-name-input py-1.5 text-xs" style="flex:1" oninput="currentVariants[' + i + '].name=this.value">'
-        + '<button type="button" onclick="removeVariant(' + i + ')" class="text-red-500/40 hover:text-red-400 transition-colors flex-shrink-0" title="Remover variante">'
-        + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+      return '<div class="variant-block">'
+        // Cabeçalho com nome + botão remover
+        + '<div class="variant-block-header">'
+        + '<svg width="14" height="14" style="color:rgba(221,175,52,.35);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>'
+        + '<input type="text" class="variant-name-input" placeholder="Nome da variante (ex: Tamanho, Cor, Material)" value="' + (v.name || '').replace(/"/g,'&quot;') + '" oninput="currentVariants[' + i + '].name=this.value">'
+        + '<button type="button" onclick="removeVariant(' + i + ')" style="background:none;border:none;cursor:pointer;color:rgba(239,68,68,.3);display:flex;align-items:center;flex-shrink:0;" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'rgba(239,68,68,.3)\'">'
+        + '<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
         + '</button>'
         + '</div>'
-        // Campo de opções com tags
-        + '<div class="fi flex flex-wrap gap-1.5 cursor-text" style="min-height:42px;padding:.5rem .75rem;align-items:center;" onclick="this.querySelector(\'.variant-opt-input\').focus()">'
-        + tagsHTML
-        + '<input type="text" class="variant-opt-input" data-vidx="' + i + '" placeholder="' + placeholderText + '" onkeydown="handleVariantOptionInput(event,' + i + ')">'
-        + '</div>'
-        // Dica
-        + '<p style="font-family:ui-monospace,monospace;font-size:.6rem;color:rgba(245,245,245,.2);margin:0;">'
-        + (opts.length > 0
-            ? '<span style="color:rgba(221,175,52,.5)">' + opts.length + ' opção' + (opts.length > 1 ? 'ões' : '') + ' adicionada' + (opts.length > 1 ? 's' : '') + '</span> · pressione Enter para adicionar mais'
-            : 'Pressione <kbd style="border:1px solid rgba(255,255,255,.15);padding:0 4px;border-radius:2px;font-size:.6rem">Enter</kbd> ou <kbd style="border:1px solid rgba(255,255,255,.15);padding:0 4px;border-radius:2px;font-size:.6rem">,</kbd> após cada opção')
-        + '</p>'
+        // Toggle preço por opção
+        + toggleHTML
+        // Lista de opções
+        + optionsHTML
+        // Botão adicionar opção
+        + '<button type="button" class="variant-add-opt-btn" onclick="addOption(' + i + ')">'
+        + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'
+        + '+ Adicionar opção'
+        + '</button>'
         + '</div>';
     }).join('');
   }
 
-  // ── SEO preview ────────────────────────────────────────────────────────────
-  function updateSEOCount(input, countId, max) {
-    document.getElementById(countId).innerText = input.value.length + '/' + max;
-    updateSEOPreview();
-  }
-
+  // ─── SEO ──────────────────────────────────────────────────────────────────
+  function updateSEOCount(input, countId, max) { document.getElementById(countId).innerText = input.value.length + '/' + max; updateSEOPreview(); }
   function updateSEOPreview() {
     var title = document.getElementById('f-seo-title').value || document.getElementById('f-title').value || 'Título do produto';
     var desc = document.getElementById('f-seo-desc').value || document.getElementById('f-description').value || 'Descrição do produto aparecerá aqui...';
@@ -774,20 +697,37 @@
   document.getElementById('f-seo-title').addEventListener('input', updateSEOPreview);
   document.getElementById('f-seo-desc').addEventListener('input', updateSEOPreview);
 
-  // ── Salvar produto ─────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // SALVAR
+  // ─────────────────────────────────────────────────────────────────────────
   async function saveProduct() {
     var title = document.getElementById('f-title').value.trim();
     var priceRaw = document.getElementById('f-price').value;
     var price = parseFloat(priceRaw);
 
     if (!title) { showToast('Informe o título do produto.', 'error'); showTab('tab-basic'); return; }
-    if (priceRaw === '' || isNaN(price) || price < 0) { showToast('Informe um preço válido (pode ser 0).', 'error'); showTab('tab-basic'); return; }
+    if (priceRaw === '' || isNaN(price) || price < 0) { showToast('Informe um preço válido.', 'error'); showTab('tab-basic'); return; }
 
     var btn = document.getElementById('form-save-btn');
     btn.innerText = 'Salvando...'; btn.disabled = true;
 
     var promoPrice = parseFloat(document.getElementById('f-promo').value);
     promoPrice = isNaN(promoPrice) ? null : promoPrice;
+
+    // Monta payload das variantes limpando entradas vazias
+    var variantsPayload = currentVariants
+      .filter(function(v) { return v.name || (v.options && v.options.length > 0); })
+      .map(function(v) {
+        var cleanOpts = (v.options || [])
+          .filter(function(o) { return o.name && o.name.trim(); })
+          .map(function(o) {
+            return {
+              name: o.name.trim(),
+              price: (v.per_option_price && o.price != null && !isNaN(o.price)) ? parseFloat(o.price) : null
+            };
+          });
+        return { name: v.name.trim(), per_option_price: !!v.per_option_price, options: cleanOpts };
+      });
 
     var payload = {
       title: title,
@@ -799,26 +739,19 @@
       images: currentImages,
       tags: currentTags.length > 0 ? currentTags : null,
       video_url: document.getElementById('f-video').value.trim() || null,
-      variants: currentVariants.length > 0 ? currentVariants.map(function(v) {
-        var opts = Array.isArray(v.options) ? v.options.filter(Boolean) : [];
-        return { name: v.name, options: opts };
-      }).filter(function(v) { return v.name || v.options.length > 0; }) : [],
+      variants: variantsPayload,
       seo_title: document.getElementById('f-seo-title').value.trim() || null,
       seo_description: document.getElementById('f-seo-desc').value.trim() || null,
       is_active: document.getElementById('f-active').checked
     };
 
     try {
-      var r;
-      if (editingProductId) {
-        r = await window.supabaseClient.from('products').update(payload).eq('id', editingProductId);
-      } else {
-        r = await window.supabaseClient.from('products').insert(payload);
-      }
+      var r = editingProductId
+        ? await window.supabaseClient.from('products').update(payload).eq('id', editingProductId)
+        : await window.supabaseClient.from('products').insert(payload);
       if (r.error) throw r.error;
       showToast(editingProductId ? 'Produto atualizado!' : 'Produto criado!', 'success');
-      closeForm();
-      loadProducts();
+      closeForm(); loadProducts();
     } catch(e) {
       console.error('saveProduct error:', e);
       showToast('Erro ao salvar: ' + (e.message || JSON.stringify(e)), 'error');
@@ -828,46 +761,39 @@
     }
   }
 
-  // ── Excluir produto ────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // EXCLUIR
+  // ─────────────────────────────────────────────────────────────────────────
   function confirmDelete() {
     if (!editingProductId) return;
     var p = allProducts.find(function(x) { return String(x.id) === String(editingProductId); });
     if (!confirm('Excluir "' + (p ? p.title : 'este produto') + '"?\n\nEsta ação não pode ser desfeita.')) return;
     deleteProduct();
   }
-
   async function deleteProduct() {
     if (!editingProductId) return;
     try {
       var r = await window.supabaseClient.from('products').delete().eq('id', editingProductId);
       if (r.error) throw r.error;
       showToast('Produto excluído.', 'success');
-      closeForm();
-      loadProducts();
-    } catch(e) {
-      showToast('Erro ao excluir: ' + e.message, 'error');
-    }
+      closeForm(); loadProducts();
+    } catch(e) { showToast('Erro ao excluir: ' + e.message, 'error'); }
   }
 
-  // ── Toast ──────────────────────────────────────────────────────────────────
+  // ─── TOAST ────────────────────────────────────────────────────────────────
   var toastTimer;
   function showToast(msg, type) {
     var el = document.getElementById('toast');
-    el.innerText = msg;
-    el.className = 'show ' + (type || 'success');
+    el.innerText = msg; el.className = 'show ' + (type || 'success');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function() { el.className = type || 'success'; }, 3200);
   }
   </script>
 
-  <!-- ═══════════════════════════════════════════════════════
-       MODAL: IMPORTAR PLANILHA SHOPEE
-  ══════════════════════════════════════════════════════════ -->
+  <!-- MODAL IMPORTAR SHOPEE -->
   <div id="import-overlay" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
     <div class="bg-freo-dark border border-white/[0.07] w-full max-w-2xl relative shadow-2xl flex flex-col" style="max-height:90vh">
       <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-freo-orange to-transparent"></div>
-
-      <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] flex-shrink-0">
         <div>
           <h2 class="font-display font-black uppercase text-xl text-white">Importar da Shopee</h2>
@@ -877,10 +803,7 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
-
-      <!-- Body -->
       <div class="flex-1 overflow-y-auto p-6 space-y-5">
-
         <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
           <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <div class="font-mono text-xs text-white/50 leading-relaxed space-y-1">
@@ -889,14 +812,12 @@
             <p class="text-white/30">Preço e estoque precisam ser preenchidos depois, pois não constam nessa planilha.</p>
           </div>
         </div>
-
         <div id="import-drop" class="img-drop rounded p-10 text-center" onclick="document.getElementById('import-file').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleImportDrop(event)">
           <input type="file" id="import-file" accept=".xlsx,.xls" class="hidden" onchange="handleImportFile(event)">
           <svg class="w-12 h-12 text-white/20 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           <p class="font-mono text-sm text-white/40">Clique ou arraste o arquivo .xlsx aqui</p>
           <p class="font-mono text-xs text-white/20 mt-1">Exportado do Shopee Seller Center</p>
         </div>
-
         <div id="import-preview" class="hidden space-y-3">
           <div class="flex items-center justify-between">
             <label class="fl text-sm">Produtos encontrados na planilha</label>
@@ -904,7 +825,6 @@
           </div>
           <div id="import-list" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
         </div>
-
         <div id="import-progress-wrap" class="hidden space-y-3">
           <div class="flex justify-between">
             <span class="font-mono text-xs text-white/50" id="import-progress-label">Importando...</span>
@@ -915,12 +835,8 @@
           </div>
           <div id="import-log" class="bg-freo-black border border-white/[0.06] p-3 max-h-40 overflow-y-auto font-mono text-xs text-white/40 space-y-1"></div>
         </div>
-
         <div id="import-result" class="hidden p-4 border rounded text-center"></div>
-
       </div>
-
-      <!-- Footer -->
       <div class="border-t border-white/[0.07] px-6 py-4 flex items-center gap-3 flex-shrink-0">
         <button onclick="closeImport()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
         <div class="flex-1"></div>
@@ -935,232 +851,78 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
   var importRows = [];
-
-  function openImport() {
-    document.getElementById('import-overlay').classList.remove('hidden');
-    document.getElementById('import-overlay').classList.add('flex');
-    resetImport();
-  }
-
-  function closeImport() {
-    document.getElementById('import-overlay').classList.add('hidden');
-    document.getElementById('import-overlay').classList.remove('flex');
-    resetImport();
-  }
-
-  function resetImport() {
-    importRows = [];
-    document.getElementById('import-preview').classList.add('hidden');
-    document.getElementById('import-progress-wrap').classList.add('hidden');
-    document.getElementById('import-result').classList.add('hidden');
-    document.getElementById('import-btn').classList.add('hidden');
-    document.getElementById('import-drop').classList.remove('hidden');
-    document.getElementById('import-file').value = '';
-    document.getElementById('import-log').innerHTML = '';
-    document.getElementById('import-progress-bar').style.width = '0%';
-  }
-
-  function handleImportDrop(e) {
-    e.preventDefault();
-    document.getElementById('import-drop').classList.remove('dragover');
-    var files = e.dataTransfer.files;
-    if (files.length > 0) processImportFile(files[0]);
-  }
-
-  function handleImportFile(e) {
-    if (e.target.files.length > 0) processImportFile(e.target.files[0]);
-  }
-
-  function processImportFile(file) {
-    if (!file.name.match(/\.xlsx?$/i)) {
-      alert('Por favor envie um arquivo .xlsx exportado da Shopee.');
-      return;
-    }
-
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        var wb = XLSX.read(e.target.result, { type: 'array' });
-        var ws = wb.Sheets[wb.SheetNames[0]];
-        var raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
-        var dataRows = raw.filter(function(row, idx) {
-          return idx >= 4 && row[0] && String(row[0]).match(/^\d+$/);
+  function openImport(){ document.getElementById('import-overlay').classList.remove('hidden'); document.getElementById('import-overlay').classList.add('flex'); resetImport(); }
+  function closeImport(){ document.getElementById('import-overlay').classList.add('hidden'); document.getElementById('import-overlay').classList.remove('flex'); resetImport(); }
+  function resetImport(){ importRows=[]; ['import-preview','import-progress-wrap','import-result','import-btn'].forEach(function(id){ document.getElementById(id).classList.add('hidden'); }); document.getElementById('import-drop').classList.remove('hidden'); document.getElementById('import-file').value=''; document.getElementById('import-log').innerHTML=''; document.getElementById('import-progress-bar').style.width='0%'; }
+  function handleImportDrop(e){ e.preventDefault(); document.getElementById('import-drop').classList.remove('dragover'); var files=e.dataTransfer.files; if(files.length>0) processImportFile(files[0]); }
+  function handleImportFile(e){ if(e.target.files.length>0) processImportFile(e.target.files[0]); }
+  function processImportFile(file){
+    if(!file.name.match(/\.xlsx?$/i)){ alert('Por favor envie um arquivo .xlsx exportado da Shopee.'); return; }
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var wb=XLSX.read(e.target.result,{type:'array'}); var ws=wb.Sheets[wb.SheetNames[0]];
+        var raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        var dataRows=raw.filter(function(row,idx){ return idx>=4&&row[0]&&String(row[0]).match(/^\d+$/); });
+        if(dataRows.length===0){ alert('Nenhum produto encontrado. Verifique se é a planilha correta da Shopee.'); return; }
+        importRows=dataRows.map(function(row){
+          var images=[]; for(var i=4;i<=12;i++){ if(row[i]&&String(row[i]).trim().startsWith('http')) images.push(String(row[i]).trim()); }
+          var variants=[]; var variantName=row[15]?String(row[15]).trim():'';
+          if(variantName){ var opts=[]; for(var j=0;j<5;j++){ var optName=row[16+j*2]; if(optName&&String(optName).trim()) opts.push({name:String(optName).trim(),price:null}); } if(opts.length>0) variants.push({name:variantName,per_option_price:false,options:opts}); }
+          var catRaw=String(row[3]||'').toLowerCase(); var category='outros';
+          if(catRaw.includes('keyboard')||catRaw.includes('keycap')) category='keycaps';
+          else if(catRaw.includes('gaming')||catRaw.includes('game')) category='games';
+          else if(catRaw.includes('religious')||catRaw.includes('fengshui')) category='religioso';
+          else if(catRaw.includes('toy')||catRaw.includes('figure')) category='games';
+          else if(catRaw.includes('home')||catRaw.includes('decoration')) category='lifestyle';
+          return { shopee_id:String(row[0]), title:String(row[2]||'').trim(), category:category, images:images, variants:variants, price:0, stock:0, is_active:true };
         });
-
-        if (dataRows.length === 0) {
-          alert('Nenhum produto encontrado. Verifique se é a planilha correta da Shopee.');
-          return;
-        }
-
-        importRows = dataRows.map(function(row) {
-          var images = [];
-          for (var i = 4; i <= 12; i++) {
-            if (row[i] && String(row[i]).trim().startsWith('http')) {
-              images.push(String(row[i]).trim());
-            }
-          }
-
-          var variants = [];
-          var variantName = row[15] ? String(row[15]).trim() : '';
-          if (variantName) {
-            var opts = [];
-            for (var j = 0; j < 5; j++) {
-              var optName = row[16 + j*2];
-              if (optName && String(optName).trim()) {
-                opts.push(String(optName).trim());
-              }
-            }
-            if (opts.length > 0) {
-              variants.push({ name: variantName, options: opts });
-            }
-          }
-
-          var catRaw = String(row[3] || '').toLowerCase();
-          var category = 'outros';
-          if (catRaw.includes('keyboard') || catRaw.includes('keycap')) category = 'keycaps';
-          else if (catRaw.includes('gaming') || catRaw.includes('game') || catRaw.includes('console')) category = 'games';
-          else if (catRaw.includes('religious') || catRaw.includes('fengshui')) category = 'religioso';
-          else if (catRaw.includes('toy') || catRaw.includes('collectible') || catRaw.includes('statue') || catRaw.includes('figure')) category = 'games';
-          else if (catRaw.includes('home') || catRaw.includes('decoration')) category = 'lifestyle';
-
-          return {
-            shopee_id: String(row[0]),
-            title: String(row[2] || '').trim(),
-            category: category,
-            images: images,
-            variants: variants,
-            price: 0,
-            stock: 0,
-            is_active: true
-          };
-        });
-
         renderImportPreview();
-      } catch(err) {
-        alert('Erro ao ler planilha: ' + err.message);
-      }
+      }catch(err){ alert('Erro ao ler planilha: '+err.message); }
     };
     reader.readAsArrayBuffer(file);
   }
-
-  function renderImportPreview() {
-    var list = document.getElementById('import-list');
-    document.getElementById('import-count').innerText = importRows.length + ' produto(s)';
-    list.innerHTML = importRows.map(function(p, i) {
-      var thumb = p.images.length > 0 ? p.images[0] : null;
+  function renderImportPreview(){
+    var list=document.getElementById('import-list');
+    document.getElementById('import-count').innerText=importRows.length+' produto(s)';
+    list.innerHTML=importRows.map(function(p,i){
+      var thumb=p.images.length>0?p.images[0]:null;
       return '<div class="flex items-center gap-3 p-3 bg-freo-black border border-white/[0.06]">'
-        + '<span class="font-mono text-[10px] text-white/20 w-5 flex-shrink-0">' + (i+1) + '</span>'
-        + (thumb ? '<img src="' + thumb + '" class="w-12 h-12 object-cover flex-shrink-0 bg-freo-dark" onerror="this.style.opacity=0.2">' : '<div class="w-12 h-12 bg-freo-dark flex-shrink-0"></div>')
-        + '<div class="flex-1 min-w-0">'
-        + '<p class="font-body text-sm font-bold text-white truncate">' + p.title + '</p>'
-        + '<p class="font-mono text-[10px] text-white/30">'
-        + p.category
-        + (p.variants.length > 0 ? ' · ' + p.variants[0].name + ': ' + p.variants[0].options.slice(0,3).join(', ') + (p.variants[0].options.length > 3 ? '...' : '') : '')
-        + ' · ' + p.images.length + ' foto(s)'
-        + '</p>'
-        + '</div>'
-        + '<span class="font-mono text-[9px] text-freo-orange/60 border border-freo-orange/20 px-1.5 py-0.5 flex-shrink-0">A importar</span>'
-        + '</div>';
+        +'<span class="font-mono text-[10px] text-white/20 w-5 flex-shrink-0">'+(i+1)+'</span>'
+        +(thumb?'<img src="'+thumb+'" class="w-12 h-12 object-cover flex-shrink-0 bg-freo-dark" onerror="this.style.opacity=0.2">':'<div class="w-12 h-12 bg-freo-dark flex-shrink-0"></div>')
+        +'<div class="flex-1 min-w-0"><p class="font-body text-sm font-bold text-white truncate">'+p.title+'</p>'
+        +'<p class="font-mono text-[10px] text-white/30">'+p.category+(p.variants.length>0?' · '+p.variants[0].name+': '+p.variants[0].options.slice(0,3).map(function(o){return o.name;}).join(', ')+(p.variants[0].options.length>3?'...':''):'')+'</p></div>'
+        +'<span class="font-mono text-[9px] text-freo-orange/60 border border-freo-orange/20 px-1.5 py-0.5 flex-shrink-0">A importar</span></div>';
     }).join('');
-
     document.getElementById('import-preview').classList.remove('hidden');
     document.getElementById('import-btn').classList.remove('hidden');
   }
-
-  async function startImport() {
-    if (importRows.length === 0) return;
-
-    document.getElementById('import-btn').disabled = true;
-    document.getElementById('import-btn').innerText = 'Importando...';
-    document.getElementById('import-progress-wrap').classList.remove('hidden');
-    document.getElementById('import-preview').classList.add('hidden');
-
-    var log = document.getElementById('import-log');
-    var bar = document.getElementById('import-progress-bar');
-    var pct = document.getElementById('import-progress-pct');
-    var label = document.getElementById('import-progress-label');
-
-    var done = 0;
-    var success = 0;
-    var errors = 0;
-
-    function addLog(msg, isError) {
-      var line = document.createElement('div');
-      line.className = isError ? 'text-red-400/70' : 'text-white/40';
-      line.innerText = msg;
-      log.appendChild(line);
-      log.scrollTop = log.scrollHeight;
-    }
-
-    for (var i = 0; i < importRows.length; i++) {
-      var p = importRows[i];
-      label.innerText = 'Importando: ' + p.title.substring(0, 40) + '...';
-      addLog('⟳ [' + (i+1) + '/' + importRows.length + '] ' + p.title.substring(0, 50));
-
-      try {
-        var uploadedImages = [];
-        for (var j = 0; j < p.images.length; j++) {
-          try {
-            var imgUrl = p.images[j];
-            var resp = await fetch(imgUrl);
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            var blob = await resp.blob();
-            var ext = 'jpg';
-            if (blob.type.includes('png')) ext = 'png';
-            else if (blob.type.includes('webp')) ext = 'webp';
-            var path = 'produtos/' + p.shopee_id + '_' + j + '_' + Date.now() + '.' + ext;
-            var up = await window.supabaseClient.storage.from('imagens').upload(path, blob, { upsert: true, contentType: blob.type });
-            if (up.error) throw up.error;
-            var pub = window.supabaseClient.storage.from('imagens').getPublicUrl(path);
-            uploadedImages.push(pub.data.publicUrl);
-          } catch(imgErr) {
-            uploadedImages.push(p.images[j]);
-            addLog('  ⚠ Imagem ' + (j+1) + ' mantida na Shopee (upload falhou)', true);
-          }
+  async function startImport(){
+    if(!importRows.length) return;
+    document.getElementById('import-btn').disabled=true; document.getElementById('import-btn').innerText='Importando...';
+    document.getElementById('import-progress-wrap').classList.remove('hidden'); document.getElementById('import-preview').classList.add('hidden');
+    var log=document.getElementById('import-log'),bar=document.getElementById('import-progress-bar'),pct=document.getElementById('import-progress-pct'),label=document.getElementById('import-progress-label');
+    var done=0,success=0,errors=0;
+    function addLog(msg,isError){ var line=document.createElement('div'); line.className=isError?'text-red-400/70':'text-white/40'; line.innerText=msg; log.appendChild(line); log.scrollTop=log.scrollHeight; }
+    for(var i=0;i<importRows.length;i++){
+      var p=importRows[i]; label.innerText='Importando: '+p.title.substring(0,40)+'...'; addLog('⟳ ['+(i+1)+'/'+importRows.length+'] '+p.title.substring(0,50));
+      try{
+        var uploadedImages=[];
+        for(var j=0;j<p.images.length;j++){
+          try{ var imgUrl=p.images[j]; var resp=await fetch(imgUrl); if(!resp.ok) throw new Error('HTTP '+resp.status); var blob=await resp.blob(); var ext='jpg'; if(blob.type.includes('png')) ext='png'; else if(blob.type.includes('webp')) ext='webp'; var path='produtos/'+p.shopee_id+'_'+j+'_'+Date.now()+'.'+ext; var up=await window.supabaseClient.storage.from('imagens').upload(path,blob,{upsert:true,contentType:blob.type}); if(up.error) throw up.error; var pub=window.supabaseClient.storage.from('imagens').getPublicUrl(path); uploadedImages.push(pub.data.publicUrl); }
+          catch(imgErr){ uploadedImages.push(p.images[j]); addLog('  ⚠ Imagem '+(j+1)+' mantida na Shopee',true); }
         }
-
-        var payload = {
-          title: p.title,
-          category: p.category,
-          images: uploadedImages,
-          variants: p.variants,
-          price: 0,
-          stock: 0,
-          is_active: false
-        };
-
-        var r = await window.supabaseClient.from('products').insert(payload);
-        if (r.error) throw r.error;
-
-        success++;
-        addLog('  ✓ Salvo com ' + uploadedImages.length + ' imagem(ns)');
-      } catch(err) {
-        errors++;
-        addLog('  ✗ Erro: ' + err.message, true);
-      }
-
-      done++;
-      var perc = Math.round((done / importRows.length) * 100);
-      bar.style.width = perc + '%';
-      pct.innerText = perc + '%';
+        var r=await window.supabaseClient.from('products').insert({title:p.title,category:p.category,images:uploadedImages,variants:p.variants,price:0,stock:0,is_active:false});
+        if(r.error) throw r.error; success++; addLog('  ✓ Salvo com '+uploadedImages.length+' imagem(ns)');
+      }catch(err){ errors++; addLog('  ✗ Erro: '+err.message,true); }
+      done++; var perc=Math.round((done/importRows.length)*100); bar.style.width=perc+'%'; pct.innerText=perc+'%';
     }
-
-    label.innerText = 'Importação concluída!';
-    var resultEl = document.getElementById('import-result');
-    resultEl.className = success > 0
-      ? 'p-4 border border-green-500/30 bg-green-500/5 rounded text-center'
-      : 'p-4 border border-red-500/30 bg-red-500/5 rounded text-center';
-    resultEl.innerHTML = '<p class="font-display font-bold text-xl ' + (success > 0 ? 'text-green-400' : 'text-red-400') + '">'
-      + success + ' produto(s) importado(s)!</p>'
-      + (errors > 0 ? '<p class="font-mono text-xs text-red-400/60 mt-1">' + errors + ' com erro</p>' : '')
-      + '<p class="font-mono text-xs text-white/30 mt-2">Produtos criados como <strong>inativos</strong> — adicione preço e ative na listagem.</p>';
-    resultEl.classList.remove('hidden');
-
-    document.getElementById('import-btn').classList.add('hidden');
-    loadProducts();
+    label.innerText='Importação concluída!';
+    var resultEl=document.getElementById('import-result');
+    resultEl.className=success>0?'p-4 border border-green-500/30 bg-green-500/5 rounded text-center':'p-4 border border-red-500/30 bg-red-500/5 rounded text-center';
+    resultEl.innerHTML='<p class="font-display font-bold text-xl '+(success>0?'text-green-400':'text-red-400')+'">'+success+' produto(s) importado(s)!</p>'+(errors>0?'<p class="font-mono text-xs text-red-400/60 mt-1">'+errors+' com erro</p>':'')+'<p class="font-mono text-xs text-white/30 mt-2">Produtos criados como <strong>inativos</strong> — adicione preço e ative na listagem.</p>';
+    resultEl.classList.remove('hidden'); document.getElementById('import-btn').classList.add('hidden'); loadProducts();
   }
   </script>
-
 </body>
 </html>
