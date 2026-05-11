@@ -434,6 +434,7 @@
 
   init();
 
+  // Erro estava aqui: o bloco do onAuthStateChange não estava sendo fechado. Adicionado o "});"
   db.auth.onAuthStateChange(function(event, session) {
     if (event === 'SIGNED_OUT') {
       if (isProtected()) {
@@ -442,15 +443,16 @@
     }
 
     if (event === 'SIGNED_IN' && isLogin()) {
-  var pending = sessionStorage.getItem('pendingCart');
-  if (pending) {
-    // Redireciona de volta ao produto pra adicionar com o usuário logado
-    var data = JSON.parse(pending);
-    window.location.href = '/produto?id=' + data.productId + '&autoAddToCart=1';
-  } else {
-    window.location.href = '/dashboard.html';
-  }
-}
+      var pending = sessionStorage.getItem('pendingCart');
+      if (pending) {
+        // Redireciona de volta ao produto pra adicionar com o usuário logado
+        var data = JSON.parse(pending);
+        window.location.href = '/produto?id=' + data.productId + '&autoAddToCart=1';
+      } else {
+        window.location.href = '/dashboard.html';
+      }
+    }
+  });
 
   // ── Remover item do carrinho ───────────────────────────────────────────────
   window.removeFromCart = async function(itemId) {
