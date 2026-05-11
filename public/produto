@@ -803,10 +803,15 @@
             document.getElementById('qty-display').innerText = qty;
             selectedVariants = pending.variants || {};
             
-            // Espera o produto renderizar e adiciona
-            setTimeout(function() {
-              addToCart();
-            }, 500);
+            // Oculta o conteúdo e mantem o loading para evitar piscar a tela
+            document.getElementById('page-loading').classList.remove('hidden');
+            document.getElementById('page-content').classList.add('hidden');
+
+            // Adiciona ao carrinho imediatamente e depois redireciona
+            addToCart().then(function() {
+              window.location.href = '/dashboard.html#cart-section';
+            });
+            return;
           }
         }
 
