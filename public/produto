@@ -662,6 +662,12 @@
       var s = session.data && session.data.session;
 
       if (!s) {
+        // Salva o produto e variantes antes de ir pro login
+        sessionStorage.setItem('pendingCart', JSON.stringify({
+          productId: product.id,
+          quantity: qty,
+          variants: selectedVariants
+        }));
         window.location.href = '/login.html';
         return;
       }
@@ -783,6 +789,26 @@
         }
 
         renderProduct(result.data);
+
+        // Verifica se veio de um redirecionamento pós-login
+        var autoAdd = params.get('autoAddToCart');
+        if (autoAdd === '1') {
+          var pendingRaw = sessionStorage.getItem('pendingCart');
+          if (pendingRaw) {
+            var pending = JSON.parse(pendingRaw);
+            sessionStorage.removeItem('pendingCart'); // limpa antes de adicionar
+            
+            // Restaura quantidade e variantes
+            qty = pending.quantity || 1;
+            document.getElementById('qty-display').innerText = qty;
+            selectedVariants = pending.variants || {};
+            
+            // Espera o produto renderizar e adiciona
+            setTimeout(function() {
+              addToCart();
+            }, 500);
+          }
+        }
 
       } catch(err) {
         console.error('Erro ao carregar produto:', err);
