@@ -442,9 +442,15 @@
     }
 
     if (event === 'SIGNED_IN' && isLogin()) {
-      window.location.href = '/dashboard.html';
-    }
-  });
+  var pending = sessionStorage.getItem('pendingCart');
+  if (pending) {
+    // Redireciona de volta ao produto pra adicionar com o usuário logado
+    var data = JSON.parse(pending);
+    window.location.href = '/produto?id=' + data.productId + '&autoAddToCart=1';
+  } else {
+    window.location.href = '/dashboard.html';
+  }
+}
 
   // ── Remover item do carrinho ───────────────────────────────────────────────
   window.removeFromCart = async function(itemId) {
