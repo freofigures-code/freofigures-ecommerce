@@ -2064,10 +2064,57 @@ export default function App() {
     const handleNotLoggedIn = () => { setUser(null); setCartItems([]); };
     window.addEventListener('auth-data-loaded', handleAuthData);
     window.addEventListener('auth-not-logged-in', handleNotLoggedIn);
+
+    // ── ATUALIZADO: verifica sessão e processa carrinho pendente ──
     // @ts-ignore
     const supabase = window.supabaseClient || window.supabase;
-    if (supabase) { supabase.auth.getSession().then(({ data: { session } }: any) => { if (session) setUser(session.user); }); }
-    return () => { window.removeEventListener('auth-data-loaded', handleAuthData); window.removeEventListener('auth-not-logged-in', handleNotLoggedIn); };
+    if (supabase) {
+      supabase.auth.getSession().then(async ({ data: { session } }: any) => {
+        if (session) {
+          setUser(session.user);
+          const pending = localStorage.getItem('freo_pending_cart');
+          if (pending) {
+            localStorage.removeItem('freo_pending_cart');
+            try {
+              const item = JSON.parse(pending);
+              const { data, error } = await supabase
+                .from('cart_items')
+                .insert({
+                  user_id: session.user.id,
+                  product_id: String(item.id),
+                  product_name: item.title,
+                  quantity: 1,
+                  price: item.price,
+                  total_price: item.price,
+                  image_url: item.image,
+                  variant: null,
+                })
+                .select()
+                .single();
+              if (!error && data) {
+                setCartItems(prev => [...prev, {
+                  cartItemId: data.id,
+                  name: item.title,
+                  price: formatPrice(item.price),
+                  img: item.image,
+                  quantity: 1,
+                  variant: null,
+                }]);
+                // Abre o carrinho automaticamente
+                setIsCartOpen(true);
+              }
+            } catch (e) {
+              console.error('Erro ao processar carrinho pendente:', e);
+            }
+          }
+        }
+      });
+    }
+
+    return () => {
+      window.removeEventListener('auth-data-loaded', handleAuthData);
+      window.removeEventListener('auth-not-logged-in', handleNotLoggedIn);
+    };
   }, []);
 
   const handleOpenAuth = () => {
@@ -2093,7 +2140,21 @@ export default function App() {
     const supabase = window.supabaseClient || window.supabase;
     if (!supabase) return;
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { window.location.href = '/login.html'; return; }
+
+    // ── ATUALIZADO: salva produto pendente antes de redirecionar ──
+    if (!session) {
+      localStorage.setItem('freo_pending_cart', JSON.stringify({
+        id: product.id,
+        title: product.title,
+        price: product.promotional_price !== null && product.promotional_price < product.price
+          ? product.promotional_price
+          : product.price,
+        image: product.images && product.images.length > 0 ? product.images[0] : '',
+      }));
+      window.location.href = '/login.html';
+      return;
+    }
+
     try {
       const thumb = product.images && product.images.length > 0 ? product.images[0] : '';
       const priceNum = product.promotional_price !== null && product.promotional_price < product.price ? product.promotional_price : product.price;
