@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
     preview: {
       host: '0.0.0.0',
       port: 3000,
-      allowedHosts: ['freofigures-freo-figures.7t6kue.easypanel.host'],
+      allowedHosts: ['freofigures.com.br'],
     },
   };
 });
