@@ -16,12 +16,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      hmr: process.env.DISABLE_HMR !== 'true',
+      allowedHosts: ['freofigures.com.br', 'www.freofigures.com.br'],
     },
     preview: {
       host: '0.0.0.0',
       port: 3000,
-      allowedHosts: ['all'],
+      allowedHosts: ['freofigures.com.br', 'www.freofigures.com.br'],
     },
   };
 });
