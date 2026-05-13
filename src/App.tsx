@@ -2064,53 +2064,23 @@ export default function App() {
     const handleNotLoggedIn = () => { setUser(null); setCartItems([]); };
     window.addEventListener('auth-data-loaded', handleAuthData);
     window.addEventListener('auth-not-logged-in', handleNotLoggedIn);
-
-    // ── ATUALIZADO: verifica sessão e processa carrinho pendente ──
+    // Verifica sessão existente
     // @ts-ignore
     const supabase = window.supabaseClient || window.supabase;
     if (supabase) {
       supabase.auth.getSession().then(async ({ data: { session } }: any) => {
         if (session) {
           setUser(session.user);
-          const pending = localStorage.getItem('freo_pending_cart');
-          if (pending) {
-            localStorage.removeItem('freo_pending_cart');
-            try {
-              const item = JSON.parse(pending);
-              const { data, error } = await supabase
-                .from('cart_items')
-                .insert({
-                  user_id: session.user.id,
-                  product_id: String(item.id),
-                  product_name: item.title,
-                  quantity: 1,
-                  price: item.price,
-                  total_price: item.price,
-                  image_url: item.image,
-                  variant: null,
-                })
-                .select()
-                .single();
-              if (!error && data) {
-                setCartItems(prev => [...prev, {
-                  cartItemId: data.id,
-                  name: item.title,
-                  price: formatPrice(item.price),
-                  img: item.image,
-                  quantity: 1,
-                  variant: null,
-                }]);
-                // Abre o carrinho automaticamente
-                setIsCartOpen(true);
-              }
-            } catch (e) {
-              console.error('Erro ao processar carrinho pendente:', e);
-            }
+          // ── Abre carrinho se o login.html ou callback.html sinalizou ──
+          const deveAbrirCarrinho = localStorage.getItem('freo_open_cart');
+          if (deveAbrirCarrinho) {
+            localStorage.removeItem('freo_open_cart');
+            // Pequeno delay para o estado do carrinho carregar primeiro
+            setTimeout(() => setIsCartOpen(true), 800);
           }
         }
       });
     }
-
     return () => {
       window.removeEventListener('auth-data-loaded', handleAuthData);
       window.removeEventListener('auth-not-logged-in', handleNotLoggedIn);
