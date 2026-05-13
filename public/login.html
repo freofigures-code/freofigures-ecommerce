@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -31,7 +30,6 @@
     }
   </script>
 
-  <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
@@ -42,7 +40,6 @@
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex items-center justify-center selection:bg-freo-orange selection:text-white">
   
   <div class="relative w-full max-w-md bg-freo-dark border border-white/10 shadow-2xl overflow-hidden">
-    <!-- Top accent line -->
     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-freo-cyan"></div>
     
     <div class="p-8">
@@ -50,6 +47,15 @@
         <a href="/">
           <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Freo Figures Logo" class="w-16 h-16 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_15px_rgba(221,175,52,0.3)]" onerror="this.style.display='none'">
         </a>
+      </div>
+
+      <!-- Badge: item aguardando no carrinho -->
+      <div id="pending-cart-badge" class="hidden mb-6 bg-freo-orange/10 border border-freo-orange/40 p-4 flex items-center gap-3">
+        <span class="text-freo-orange text-xl">🛒</span>
+        <div>
+          <p class="text-freo-orange font-display font-bold text-sm uppercase tracking-wide">Item aguardando!</p>
+          <p id="pending-cart-name" class="text-freo-light/70 font-mono text-xs mt-0.5"></p>
+        </div>
       </div>
       
       <h2 class="text-3xl font-display font-black uppercase text-center mb-2 text-white">
@@ -59,8 +65,7 @@
         Entre para acompanhar seus pedidos e projetos.
       </p>
 
-      <div id="error-message" class="hidden bg-red-500/10 border border-red-500 text-red-500 p-4 text-center font-mono text-sm mb-6">
-      </div>
+      <div id="error-message" class="hidden bg-red-500/10 border border-red-500 text-red-500 p-4 text-center font-mono text-sm mb-6"></div>
 
       <form id="login-form" class="space-y-4">
         <div>
@@ -93,90 +98,150 @@
       </button>
 
       <div class="mt-8 text-center">
-  <a href="/cadastro.html" class="text-freo-light/60 hover:text-freo-orange text-sm font-body transition-colors">
-    Não tem uma conta? Crie agora.
-  </a>
-</div>
+        <a href="/cadastro.html" class="text-freo-light/60 hover:text-freo-orange text-sm font-body transition-colors">
+          Não tem uma conta? Crie agora.
+        </a>
+      </div>
+    </div>
+  </div>
 
-  <!-- Auth Listener -->
   <script src="/auth-listener.js"></script>
-  
+
   <script>
-  async function loginComGoogle() {
-    console.log("🚀 Botão Google clicado - Iniciando OAuth...");
-    try {
-      const { error } = await window.supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: 'https://freofigures.com.br/auth/callback.html',
-          queryParams: { prompt: 'select_account' }
+    // ── Mostra badge se tiver item pendente no carrinho ──
+    (function() {
+      try {
+        const pending = localStorage.getItem('freo_pending_cart');
+        if (pending) {
+          const item = JSON.parse(pending);
+          const badge = document.getElementById('pending-cart-badge');
+          const nameEl = document.getElementById('pending-cart-name');
+          if (badge && nameEl && item.title) {
+            nameEl.textContent = item.title;
+            badge.classList.remove('hidden');
+          }
         }
-      });
+      } catch (e) {}
+    })();
 
-      if (error) throw error;
-    } catch (err) {
-      console.error("❌ Erro no Google login:", err);
-      alert("Erro ao conectar com Google: " + err.message);
-    }
-  }
+    // ── Função central: salvar item pendente no banco após login ──
+    async function processarCarrinhoPendente(userId) {
+      const pending = localStorage.getItem('freo_pending_cart');
+      if (!pending) return false;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const botaoGoogle = document.getElementById("google-login-btn");
+      try {
+        const item = JSON.parse(pending);
+        const { error } = await window.supabaseClient
+          .from('cart_items')
+          .insert({
+            user_id: userId,
+            product_id: String(item.id),
+            product_name: item.title,
+            quantity: 1,
+            price: item.price,
+            total_price: item.price,
+            image_url: item.image,
+            variant: null,
+          });
 
-    if (botaoGoogle) {
-      botaoGoogle.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        loginComGoogle();
-      });
-    } else {
-      console.error("❌ Botão google-login-btn não encontrado.");
-    }
-  });
+        // Remove do localStorage independente do resultado
+        // (evita ficar tentando reinserir)
+        localStorage.removeItem('freo_pending_cart');
 
-  document.getElementById('login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+        if (error) {
+          console.error('Erro ao salvar carrinho pendente:', error);
+          return false;
+        }
 
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const errorDiv = document.getElementById('error-message');
-    const submitBtn = document.getElementById('submit-btn');
+        // Sinaliza para a loja que deve abrir o carrinho
+        localStorage.setItem('freo_open_cart', '1');
+        return true;
 
-    errorDiv.classList.add('hidden');
-    submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
-    submitBtn.disabled = true;
-
-    try {
-      const { error } = await window.supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        errorDiv.innerText =
-          error.message === 'Invalid login credentials'
-            ? 'Email ou senha incorretos.'
-            : error.message === 'Email not confirmed'
-              ? 'Por favor, confirme seu email antes de fazer login.'
-              : error.message;
-
-        errorDiv.classList.remove('hidden');
-      } else {
-        window.location.href = '/dashboard.html';
+      } catch (e) {
+        console.error('Erro ao processar carrinho pendente:', e);
+        localStorage.removeItem('freo_pending_cart');
+        return false;
       }
-    } catch (err) {
-      console.error("❌ Erro no login com email:", err);
-      errorDiv.innerText = 'Erro de conexão. Tente novamente.';
-      errorDiv.classList.remove('hidden');
-    } finally {
-      if (errorDiv.classList.contains('hidden')) {
-        submitBtn.innerHTML = 'Redirecionando...';
-      } else {
+    }
+
+    // ── Login com Google ──
+    async function loginComGoogle() {
+      try {
+        const { error } = await window.supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            // Callback processa o item e redireciona para a loja
+            redirectTo: 'https://freofigures.com.br/auth/callback.html',
+            queryParams: { prompt: 'select_account' }
+          }
+        });
+        if (error) throw error;
+      } catch (err) {
+        console.error('Erro no Google login:', err);
+        alert('Erro ao conectar com Google: ' + err.message);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const botaoGoogle = document.getElementById('google-login-btn');
+      if (botaoGoogle) {
+        botaoGoogle.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          loginComGoogle();
+        });
+      }
+    });
+
+    // ── Login com e-mail/senha ──
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email    = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('error-message');
+      const submitBtn = document.getElementById('submit-btn');
+
+      errorDiv.classList.add('hidden');
+      submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
+      submitBtn.disabled = true;
+
+      try {
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          const msg =
+            error.message === 'Invalid login credentials' ? 'Email ou senha incorretos.' :
+            error.message === 'Email not confirmed'       ? 'Por favor, confirme seu email antes de fazer login.' :
+            error.message;
+
+          errorDiv.innerText = msg;
+          errorDiv.classList.remove('hidden');
+          submitBtn.innerHTML = 'Entrar';
+          submitBtn.disabled = false;
+          return;
+        }
+
+        // Login OK → processa carrinho pendente antes de redirecionar
+        submitBtn.innerHTML = 'Salvando carrinho...';
+        const temPendente = localStorage.getItem('freo_pending_cart');
+
+        if (temPendente) {
+          await processarCarrinhoPendente(data.user.id);
+          // Volta para a loja com o carrinho aberto
+          window.location.href = '/?carrinho=1';
+        } else {
+          window.location.href = '/dashboard.html';
+        }
+
+      } catch (err) {
+        console.error('Erro no login:', err);
+        errorDiv.innerText = 'Erro de conexão. Tente novamente.';
+        errorDiv.classList.remove('hidden');
         submitBtn.innerHTML = 'Entrar';
         submitBtn.disabled = false;
       }
-    }
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
