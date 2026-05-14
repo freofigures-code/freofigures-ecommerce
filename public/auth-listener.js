@@ -125,15 +125,10 @@
 
   // ── Atualiza DOM dashboard/cliente ────────────────────────────
   function showPageContent(user, profile) {
-    if (el('loading-state')) {
-      el('loading-state').classList.add('hidden');
-    }
-    if (el('dashboard-content')) {
-      el('dashboard-content').classList.remove('hidden');
-    }
-    if (el('logout-btn')) {
-      el('logout-btn').classList.remove('hidden');
-    }
+    if (el('loading-state'))     el('loading-state').classList.add('hidden');
+    if (el('dashboard-content')) el('dashboard-content').classList.remove('hidden');
+    if (el('logout-btn'))        el('logout-btn').classList.remove('hidden');
+
     if (el('my-orders-btn')) {
       el('my-orders-btn').classList.remove('hidden');
       el('my-orders-btn').classList.add('flex');
@@ -153,9 +148,7 @@
     if (avatarUrl && el('user-avatar')) {
       el('user-avatar').src = avatarUrl;
       el('user-avatar').classList.remove('hidden');
-      if (el('user-avatar-placeholder')) {
-        el('user-avatar-placeholder').classList.add('hidden');
-      }
+      if (el('user-avatar-placeholder')) el('user-avatar-placeholder').classList.add('hidden');
     } else if (el('user-avatar-placeholder')) {
       var name2 = (profile && (profile.full_name || profile.name))
         || (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name))
@@ -308,8 +301,14 @@
       var user = session.user;
       console.log('✅ Sessão:', user.email);
 
+      // ✅ Na página de login com sessão ativa:
+      // só redireciona automaticamente se NÃO houver item pendente.
+      // Se houver item pendente, o submit do login.html assume o controle.
       if (isLogin()) {
-        window.location.href = '/dashboard.html';
+        var pendingOnInit = localStorage.getItem('freo_pending_cart');
+        if (!pendingOnInit) {
+          window.location.href = '/dashboard.html';
+        }
         return;
       }
 
@@ -358,14 +357,17 @@
 
     } catch(e) {
       console.error('❌ Erro no auth-listener:', e);
-      if (el('loading-state'))    el('loading-state').classList.add('hidden');
+      if (el('loading-state'))     el('loading-state').classList.add('hidden');
       if (el('dashboard-content')) el('dashboard-content').classList.remove('hidden');
     }
   }
 
   init();
 
-  // ── onAuthStateChange — CORRIGIDO ─────────────────────────────
+  // ── onAuthStateChange ─────────────────────────────────────────
+  // ✅ CORRIGIDO: na página de login nunca redirecionamos daqui.
+  // O submit do login.html chama processarCarrinhoPendente() e
+  // redireciona para /?carrinho=1 — não interferimos.
   db.auth.onAuthStateChange(function(event, session) {
     if (event === 'SIGNED_OUT') {
       if (isProtected()) {
@@ -375,16 +377,8 @@
     }
 
     if (event === 'SIGNED_IN' && isLogin()) {
-      // ✅ CORREÇÃO: usa localStorage com a chave correta
-      // Se houver item pendente, o login.html já cuida do redirect
-      // com processarCarrinhoPendente() → não interferir aqui
-      var pending = localStorage.getItem('freo_pending_cart');
-      if (pending) {
-        // Deixa o submit do login.html assumir o controle
-        return;
-      }
-      // Sem item pendente → fluxo normal
-      window.location.href = '/dashboard.html';
+      // login.html cuida de tudo — não fazer nada aqui
+      return;
     }
   });
 
