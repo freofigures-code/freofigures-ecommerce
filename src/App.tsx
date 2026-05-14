@@ -2060,24 +2060,21 @@ export default function App() {
           variant: item.variant ?? null,
         })));
       }
+      const deveAbrir = localStorage.getItem('freo_open_cart');
+      if (deveAbrir) {
+        localStorage.removeItem('freo_open_cart');
+        setTimeout(() => setIsCartOpen(true), 150);
+      }
     };
     const handleNotLoggedIn = () => { setUser(null); setCartItems([]); };
     window.addEventListener('auth-data-loaded', handleAuthData);
     window.addEventListener('auth-not-logged-in', handleNotLoggedIn);
-    // Verifica sessão existente
     // @ts-ignore
     const supabase = window.supabaseClient || window.supabase;
     if (supabase) {
       supabase.auth.getSession().then(async ({ data: { session } }: any) => {
         if (session) {
           setUser(session.user);
-          // ── Abre carrinho se o login.html ou callback.html sinalizou ──
-          const deveAbrirCarrinho = localStorage.getItem('freo_open_cart');
-          if (deveAbrirCarrinho) {
-            localStorage.removeItem('freo_open_cart');
-            // Pequeno delay para o estado do carrinho carregar primeiro
-            setTimeout(() => setIsCartOpen(true), 800);
-          }
         }
       });
     }
@@ -2111,7 +2108,6 @@ export default function App() {
     if (!supabase) return;
     const { data: { session } } = await supabase.auth.getSession();
 
-    // ── ATUALIZADO: salva produto pendente antes de redirecionar ──
     if (!session) {
       localStorage.setItem('freo_pending_cart', JSON.stringify({
         id: product.id,
