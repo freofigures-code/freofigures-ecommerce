@@ -1369,7 +1369,7 @@ const Footer = () => (
           <div>
             <p className="font-mono text-[9px] text-white/30 uppercase tracking-widest mb-1">Endereço</p>
             <p className="font-mono text-xs text-white/70">R. Júlio de Mesquita, 460 · Apto 161B</p>
-            <p className="font-mono text-xs text-white/50">São Paulo – SP</p>
+            <p className="font-mono text-xs text-white/50">São Bernardo do Campo – SP</p>
           </div>
           <div>
             <p className="font-mono text-[9px] text-white/30 uppercase tracking-widest mb-1">Contato</p>
