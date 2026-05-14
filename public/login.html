@@ -126,15 +126,12 @@
 
     // ── Função central: salvar item pendente no banco após login ──
     async function processarCarrinhoPendente(userId) {
-      console.log('🔍 processarCarrinhoPendente chamado, userId:', userId);
       const pending = localStorage.getItem('freo_pending_cart');
-      console.log('🔍 pending_cart:', pending);
       if (!pending) return false;
+
       try {
         const item = JSON.parse(pending);
-        console.log('🔍 item parseado:', item);
-
-        const { data, error } = await window.supabaseClient
+        const { error } = await window.supabaseClient
           .from('cart_items')
           .insert({
             user_id: userId,
@@ -146,17 +143,23 @@
             image_url: item.image,
             variant: null,
           });
-        console.log('🔍 resultado insert:', { data, error });
+
+        // Remove do localStorage independente do resultado
+        // (evita ficar tentando reinserir)
         localStorage.removeItem('freo_pending_cart');
+
         if (error) {
-          console.error('❌ Erro insert:', error);
+          console.error('Erro ao salvar carrinho pendente:', error);
           return false;
         }
+
+        // Sinaliza para a loja que deve abrir o carrinho
         localStorage.setItem('freo_open_cart', '1');
-        console.log('✅ carrinho salvo, redirecionando...');
         return true;
+
       } catch (e) {
-        console.error('❌ catch:', e);
+        console.error('Erro ao processar carrinho pendente:', e);
+        localStorage.removeItem('freo_pending_cart');
         return false;
       }
     }
@@ -193,8 +196,6 @@
     // ── Login com e-mail/senha ──
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      console.log('🔍 SUBMIT iniciado');
-      console.log('🔍 pending_cart:', localStorage.getItem('freo_pending_cart'));
 
       const email    = document.getElementById('email').value;
       const password = document.getElementById('password').value;
