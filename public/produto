@@ -631,9 +631,12 @@
       var s = session.data && session.data.session;
 
       if (!s) {
-        // ✅ NOVO: salva a intenção antes de redirecionar para o login
-        sessionStorage.setItem('pendingCart', JSON.stringify({
-          productId: product.id,
+        // Salva a intenção no localStorage antes de redirecionar para o login
+        localStorage.setItem('freo_pending_cart', JSON.stringify({
+          id: product.id,
+          title: product.title,
+          price: getEffectivePrice(),
+          image: (product.images && product.images.length > 0) ? product.images[0] : '',
           quantity: qty,
           variants: selectedVariants
         }));
@@ -751,7 +754,7 @@
 
         renderProduct(result.data);
 
-        // ✅ NOVO: detecta se veio de um redirecionamento pós-login
+        // Detecta se veio de um redirecionamento pós-login
         var autoAdd = params.get('autoAddToCart');
         if (autoAdd === '1') {
           var pendingRaw = sessionStorage.getItem('pendingCart');
