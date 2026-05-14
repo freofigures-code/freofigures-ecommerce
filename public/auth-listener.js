@@ -17,15 +17,12 @@
 
   if (!db) {
     console.error("❌ Supabase SDK não encontrado.");
-
     var p = window.location.pathname;
-
     if (['dashboard', 'meus-pedidos', 'checkout', 'admin'].some(function(x) {
       return p.includes(x);
     })) {
       window.location.href = '/login.html';
     }
-
     return;
   }
 
@@ -68,62 +65,76 @@
     }).format(num);
   };
 
-  // ── Queries individuais — falham silenciosamente ───────────────
+  // ── Processa carrinho pendente ────────────────────────────────
+  // Chamado quando usuário já está logado ao chegar na página de login
+  async function processarCarrinhoPendente(userId) {
+    var raw = localStorage.getItem('freo_pending_cart');
+    if (!raw) return false;
+
+    try {
+      var item = JSON.parse(raw);
+      console.log('🛒 Processando carrinho pendente:', item);
+
+      var result = await db.from('cart_items').insert({
+        user_id: userId,
+        product_id: String(item.id),
+        product_name: item.title,
+        quantity: 1,
+        price: item.price,
+        total_price: item.price,
+        image_url: item.image,
+        variant: null,
+      });
+
+      localStorage.removeItem('freo_pending_cart');
+
+      if (result.error) {
+        console.error('❌ Erro ao salvar carrinho pendente:', result.error);
+        return false;
+      }
+
+      console.log('✅ Carrinho pendente salvo com sucesso!');
+      localStorage.setItem('freo_open_cart', '1');
+      return true;
+
+    } catch(e) {
+      console.error('❌ Erro ao processar carrinho pendente:', e);
+      localStorage.removeItem('freo_pending_cart');
+      return false;
+    }
+  }
+
+  // ── Queries individuais ───────────────────────────────────────
   async function fetchProfile(userId) {
     try {
-      var r = await db
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      if (r.error) {
-        console.warn('⚠️ profiles:', r.error.message, r.error.code);
-        return null;
-      }
+      var r = await db.from('profiles').select('*').eq('id', userId).single();
+      if (r.error) { console.warn('⚠️ profiles:', r.error.message); return null; }
       return r.data;
-    } catch(e) {
-      console.warn('⚠️ fetchProfile:', e.message);
-      return null;
-    }
+    } catch(e) { console.warn('⚠️ fetchProfile:', e.message); return null; }
   }
 
   async function fetchCartItems(userId) {
     try {
-      var r = await db
-        .from('cart_items')
-        .select('*')
-        .eq('user_id', userId);
+      var r = await db.from('cart_items').select('*').eq('user_id', userId);
       return r.data || [];
-    } catch(e) {
-      return [];
-    }
+    } catch(e) { return []; }
   }
 
   async function fetchAddresses(userId) {
     try {
-      var r = await db
-        .from('addresses')
-        .select('*')
-        .eq('user_id', userId);
+      var r = await db.from('addresses').select('*').eq('user_id', userId);
       return r.data || [];
-    } catch(e) {
-      return [];
-    }
+    } catch(e) { return []; }
   }
 
   async function fetchPaymentMethods(userId) {
     try {
-      var r = await db
-        .from('payment_methods')
-        .select('*')
-        .eq('user_id', userId);
+      var r = await db.from('payment_methods').select('*').eq('user_id', userId);
       return r.data || [];
-    } catch(e) {
-      return [];
-    }
+    } catch(e) { return []; }
   }
 
-  // ── Atualiza DOM dashboard/cliente ────────────────────────────
+  // ── Atualiza DOM ──────────────────────────────────────────────
   function showPageContent(user, profile) {
     if (el('loading-state'))     el('loading-state').classList.add('hidden');
     if (el('dashboard-content')) el('dashboard-content').classList.remove('hidden');
@@ -169,13 +180,10 @@
             ? '<span class="absolute top-0 right-0 bg-freo-orange text-freo-black text-[10px] font-bold px-2 py-1 uppercase">Principal</span>'
             : '')
           + '<p class="font-body text-sm font-bold mb-1">'
-          + escapeHTML(addr.street || '') + ', ' + escapeHTML(addr.number || 'S/N')
-          + '</p>'
+          + escapeHTML(addr.street || '') + ', ' + escapeHTML(addr.number || 'S/N') + '</p>'
           + '<p class="font-mono text-xs text-freo-light/50">'
-          + escapeHTML(addr.city || '') + ' - ' + escapeHTML(addr.state || '')
-          + '</p>'
-          + '<p class="font-mono text-xs text-freo-light/50 mt-1">CEP: '
-          + escapeHTML(addr.zip_code || '') + '</p>'
+          + escapeHTML(addr.city || '') + ' - ' + escapeHTML(addr.state || '') + '</p>'
+          + '<p class="font-mono text-xs text-freo-light/50 mt-1">CEP: ' + escapeHTML(addr.zip_code || '') + '</p>'
           + '</div>';
       }).join('');
     } else {
@@ -206,12 +214,10 @@
     }
   }
 
-  // ── Ir para checkout ──────────────────────────────────────────
   window.goToCheckout = function() {
     window.location.href = '/checkout.html';
   };
 
-  // ── Renderiza carrinho na dashboard ───────────────────────────
   window.renderCartUI = function(items) {
     var cartContainer  = el('cart-items');
     var cartEmpty      = el('cart-empty');
@@ -226,7 +232,6 @@
       cartEmpty.classList.add('hidden');
 
       var total = 0;
-
       var itemsHTML = items.map(function(item) {
         var price    = parseFloat(item.price) || 0;
         var qty      = parseInt(item.quantity, 10) || 1;
@@ -240,34 +245,25 @@
 
         return '<div class="flex items-center gap-4 p-4 border border-white/5 bg-freo-black hover:border-freo-orange/50 transition-colors">'
           + '<div class="w-16 h-16 bg-white/5 flex-shrink-0 flex items-center justify-center overflow-hidden">'
-          + (item.image_url
-            ? '<img src="' + escapeHTML(item.image_url) + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">'
-            : '')
+          + (item.image_url ? '<img src="' + escapeHTML(item.image_url) + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">' : '')
           + '</div>'
           + '<div class="flex-1 min-w-0">'
-          + '<h3 class="font-display font-bold text-lg truncate">'
-          + escapeHTML(item.product_name || item.name || 'Figura 3D') + '</h3>'
+          + '<h3 class="font-display font-bold text-lg truncate">' + escapeHTML(item.product_name || item.name || 'Figura 3D') + '</h3>'
           + variantHTML
-          + '<p class="font-mono text-xs text-freo-light/50 mt-1">Qtd: '
-          + qty + ' × ' + window.formatCurrency(price) + '</p>'
+          + '<p class="font-mono text-xs text-freo-light/50 mt-1">Qtd: ' + qty + ' × ' + window.formatCurrency(price) + '</p>'
           + '</div>'
           + '<div class="text-right flex flex-col items-end gap-2">'
-          + '<p class="font-mono font-bold text-freo-orange">'
-          + window.formatCurrency(subtotal) + '</p>'
-          + '<button onclick="window.removeFromCart(\'' + escapeHTML(item.id) + '\')" '
-          + 'class="text-xs font-mono text-red-500 hover:text-red-400 uppercase tracking-wider">Remover</button>'
+          + '<p class="font-mono font-bold text-freo-orange">' + window.formatCurrency(subtotal) + '</p>'
+          + '<button onclick="window.removeFromCart(\'' + escapeHTML(item.id) + '\')" class="text-xs font-mono text-red-500 hover:text-red-400 uppercase tracking-wider">Remover</button>'
           + '</div>'
           + '</div>';
       }).join('');
 
-      var checkoutHTML = ''
-        + '<div class="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">'
+      var checkoutHTML = '<div class="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">'
         + '<p class="font-mono text-xs text-freo-light/35 uppercase tracking-widest">Pronto para finalizar?</p>'
         + '<button onclick="window.goToCheckout()" class="w-full md:w-auto bg-freo-orange text-freo-black font-display font-black uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors flex items-center justify-center gap-3">'
-        + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
-        + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
-        + '</svg>Comprar agora</button>'
-        + '</div>';
+        + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+        + 'Comprar agora</button></div>';
 
       cartContainer.innerHTML = itemsHTML + checkoutHTML;
 
@@ -291,9 +287,7 @@
 
       if (!session) {
         console.log('⚪ Sem sessão.');
-        if (isProtected()) {
-          window.location.href = '/login.html';
-        }
+        if (isProtected()) window.location.href = '/login.html';
         window.dispatchEvent(new CustomEvent('auth-not-logged-in'));
         return;
       }
@@ -301,12 +295,16 @@
       var user = session.user;
       console.log('✅ Sessão:', user.email);
 
-      // ✅ Na página de login com sessão ativa:
-      // só redireciona automaticamente se NÃO houver item pendente.
-      // Se houver item pendente, o submit do login.html assume o controle.
+      // ✅ CORREÇÃO PRINCIPAL:
+      // Usuário já logado chegou na página de login com item pendente.
+      // Processamos o carrinho aqui mesmo e redirecionamos.
       if (isLogin()) {
-        var pendingOnInit = localStorage.getItem('freo_pending_cart');
-        if (!pendingOnInit) {
+        var pending = localStorage.getItem('freo_pending_cart');
+        if (pending) {
+          console.log('🛒 Usuário logado com item pendente — processando...');
+          await processarCarrinhoPendente(user.id);
+          window.location.href = '/dashboard.html#cart-section';
+        } else {
           window.location.href = '/dashboard.html';
         }
         return;
@@ -365,19 +363,13 @@
   init();
 
   // ── onAuthStateChange ─────────────────────────────────────────
-  // ✅ CORRIGIDO: na página de login nunca redirecionamos daqui.
-  // O submit do login.html chama processarCarrinhoPendente() e
-  // redireciona para /?carrinho=1 — não interferimos.
   db.auth.onAuthStateChange(function(event, session) {
     if (event === 'SIGNED_OUT') {
-      if (isProtected()) {
-        window.location.href = '/login.html';
-      }
+      if (isProtected()) window.location.href = '/login.html';
       return;
     }
-
+    // Na página de login o init() já cuida de tudo — não interferir
     if (event === 'SIGNED_IN' && isLogin()) {
-      // login.html cuida de tudo — não fazer nada aqui
       return;
     }
   });
@@ -385,19 +377,13 @@
   // ── Remover item do carrinho ──────────────────────────────────
   window.removeFromCart = async function(itemId) {
     try {
-      var r = await db
-        .from('cart_items')
-        .delete()
-        .eq('id', itemId);
+      var r = await db.from('cart_items').delete().eq('id', itemId);
       if (r.error) throw r.error;
 
       var s = await db.auth.getSession();
       var session = s.data && s.data.session;
       if (session) {
-        var cartR = await db
-          .from('cart_items')
-          .select('*')
-          .eq('user_id', session.user.id);
+        var cartR = await db.from('cart_items').select('*').eq('user_id', session.user.id);
         window.renderCartUI(cartR.data || []);
       }
     } catch(e) {
