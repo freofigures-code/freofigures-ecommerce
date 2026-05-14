@@ -691,7 +691,6 @@ const Navbar = ({
     return () => window.clearTimeout(timer);
   }, [isSearchOpen]);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -791,7 +790,7 @@ const Navbar = ({
           </button>
         </div>
 
-        {/* Mobile Actions - sempre visíveis */}
+        {/* Mobile Actions */}
         <div className="flex md:hidden items-center gap-1 z-50">
           <button
             onClick={() => setIsSearchOpen(true)}
@@ -832,14 +831,12 @@ const Navbar = ({
             transition={{ duration: 0.2 }}
             className="md:hidden fixed inset-0 top-0 bg-black z-40 flex flex-col"
           >
-            {/* Header area */}
             <div className="h-16 flex items-center px-4 border-b border-white/10">
               <span className="font-display font-black text-xl tracking-tighter uppercase">
                 Freo<span className="text-freo-orange font-light">Figures</span>
               </span>
             </div>
 
-            {/* Menu items */}
             <div className="flex-1 overflow-y-auto py-6 px-6 flex flex-col gap-1">
               {currentView === 'home' ? (
                 <>
@@ -892,7 +889,6 @@ const Navbar = ({
                 </>
               )}
 
-              {/* Search button */}
               <button
                 onClick={() => { setIsSearchOpen(true); setMobileMenuOpen(false); }}
                 className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 text-freo-light hover:text-freo-orange transition-colors text-left flex items-center gap-3"
@@ -902,7 +898,6 @@ const Navbar = ({
               </button>
             </div>
 
-            {/* Bottom actions */}
             <div className="p-6 border-t border-white/10 space-y-3">
               {user && (
                 <a
@@ -1009,7 +1004,7 @@ const Hero = ({ setCurrentView }: any) => (
             <ChevronRight className="relative w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
           <a
-            href="https://wa.me/5511961789176?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20customizado!"
+            href="https://wa.me/5511946454111?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20customizado!"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center border border-white/15 text-white font-display font-bold uppercase tracking-widest px-8 py-4 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-95"
@@ -1081,7 +1076,6 @@ const Categories = ({ setCurrentView, setFilter }: any) => {
           Ver todas
         </button>
       </div>
-      {/* Mobile: 2x2 grid. Desktop: 4 columns */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {cats.map((cat, index) => (
           <div key={cat.slug} onClick={() => handleCatClick(cat.slug)} className="group relative aspect-[3/4] md:h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5 active:scale-98">
@@ -1138,7 +1132,6 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
             {hasPromo && <span className="font-mono text-xs md:text-sm text-white/30 line-through">{formatPrice(product.price)}</span>}
             <span className="font-mono text-base md:text-xl font-bold text-freo-orange">{formatPrice(displayPrice)}</span>
           </div>
-          {/* Mobile: bigger touch target */}
           <button
             onClick={event => { event.stopPropagation(); onAddToCart(product); }}
             className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-wider py-3 md:py-3 hover:bg-white transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-xs md:text-sm active:scale-98"
@@ -1311,7 +1304,8 @@ const Footer = () => (
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15vw] font-display font-black text-white/[0.02] whitespace-nowrap pointer-events-none select-none">FREO FIGURES</div>
     <div className="max-w-7xl mx-auto px-5 md:px-6 relative z-10">
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-12 md:mb-16">
-        {/* Brand - full width on mobile */}
+
+        {/* Brand */}
         <div className="col-span-2 lg:col-span-1">
           <div className="flex items-center gap-3 mb-4 md:mb-6">
             <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-10 h-10 rounded-full object-cover border-2 border-freo-orange" />
@@ -1324,6 +1318,8 @@ const Footer = () => (
             <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer text-sm font-bold">YT</div>
           </div>
         </div>
+
+        {/* Loja */}
         <div>
           <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Loja</h4>
           <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
@@ -1331,20 +1327,23 @@ const Footer = () => (
             <li><a href="#" className="hover:text-white transition-colors">Artigos Religiosos</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Utensílios & Casa</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Decoração</a></li>
-            <li><a href="https://wa.me/5511961789176?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20sob%20medida!" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Projetos Sob Medida</a></li>
+            <li><a href="https://wa.me/5511946454111?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20sob%20medida!" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Projetos Sob Medida</a></li>
           </ul>
         </div>
+
+        {/* Suporte */}
         <div>
           <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Suporte</h4>
           <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
             <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Envio e Prazos</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Trocas e Devoluções</a></li>
+            <li><a href="/trocas-e-devolucoes.html" className="hover:text-white transition-colors">Trocas e Devoluções</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Cuidados com a Peça</a></li>
-            <li><a href="https://wa.me/5511961789176?text=Olá,%20vim%20pelo%20site%20da%20FreoFigures!" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Contato</a></li>
+            <li><a href="https://wa.me/5511946454111?text=Olá,%20vim%20pelo%20site%20da%20FreoFigures!" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Contato</a></li>
           </ul>
         </div>
-        {/* Newsletter - full width on mobile */}
+
+        {/* Newsletter */}
         <div className="col-span-2 lg:col-span-1">
           <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Newsletter</h4>
           <p className="text-sm text-freo-light/70 font-body mb-4">Receba novidades sobre novos modelos e descontos exclusivos.</p>
@@ -1354,13 +1353,42 @@ const Footer = () => (
           </div>
         </div>
       </div>
-      <div className="border-t border-white/10 pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-freo-light/40 font-mono">
-        <div className="text-center md:text-left">&copy; {new Date().getFullYear()} FREO FIGURES. TODOS OS DIREITOS RESERVADOS.</div>
-        <div className="flex gap-4">
-          <a href="#" className="hover:text-white">TERMOS</a>
-          <a href="#" className="hover:text-white">PRIVACIDADE</a>
+
+      {/* Dados legais da empresa */}
+      <div className="border border-white/[0.07] bg-white/[0.02] p-5 mb-8">
+        <p className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.15em] mb-4">Dados da Empresa</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p className="font-mono text-[9px] text-white/30 uppercase tracking-widest mb-1">Responsável</p>
+            <p className="font-mono text-xs text-white/70">Kevyn Aparecido Freo</p>
+          </div>
+          <div>
+            <p className="font-mono text-[9px] text-white/30 uppercase tracking-widest mb-1">CNPJ</p>
+            <p className="font-mono text-xs text-white/70">65.475.701/0001-22</p>
+          </div>
+          <div>
+            <p className="font-mono text-[9px] text-white/30 uppercase tracking-widest mb-1">Endereço</p>
+            <p className="font-mono text-xs text-white/70">R. Júlio de Mesquita, 460 · Apto 161B</p>
+            <p className="font-mono text-xs text-white/50">São Paulo – SP</p>
+          </div>
+          <div>
+            <p className="font-mono text-[9px] text-white/30 uppercase tracking-widest mb-1">Contato</p>
+            <p className="font-mono text-xs text-white/70">contato@freofigures.com.br</p>
+            <p className="font-mono text-xs text-white/70">(11) 94645-4111</p>
+          </div>
         </div>
       </div>
+
+      {/* Rodapé inferior */}
+      <div className="border-t border-white/10 pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-freo-light/40 font-mono">
+        <div className="text-center md:text-left">&copy; {new Date().getFullYear()} FREO FIGURES. TODOS OS DIREITOS RESERVADOS.</div>
+        <div className="flex flex-wrap justify-center gap-4">
+          <a href="/termos-de-uso.html" className="hover:text-white transition-colors">TERMOS DE USO</a>
+          <a href="/politica-de-privacidade.html" className="hover:text-white transition-colors">PRIVACIDADE</a>
+          <a href="/trocas-e-devolucoes.html" className="hover:text-white transition-colors">TROCAS E DEVOLUÇÕES</a>
+        </div>
+      </div>
+
     </div>
   </footer>
 );
@@ -1396,7 +1424,6 @@ const MobileCategoryDrawer = ({
           className="fixed bottom-0 left-0 right-0 z-[81] rounded-t-2xl overflow-hidden"
           style={{ ...theme.sidebar, maxHeight: '80vh' }}
         >
-          {/* Handle */}
           <div className="flex justify-center pt-3 pb-1">
             <div className="w-12 h-1 rounded-full" style={{ background: `${theme.accent}40` }} />
           </div>
@@ -1445,7 +1472,7 @@ const MobileCategoryDrawer = ({
   </AnimatePresence>
 );
 
-// --- ShopView com Temas por Categoria ---
+// --- ShopView ---
 const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) => {
   const [activeFilter, setActiveFilter] = useState(initialFilter || 'Todos');
   const [products, setProducts] = useState<Product[]>([]);
@@ -1537,10 +1564,9 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
 
       <div className="pt-20 md:pt-32 pb-24 relative z-10" style={{ minHeight: '100vh' }}>
 
-        {/* ── MOBILE LAYOUT ── */}
+        {/* MOBILE LAYOUT */}
         {isMobile && (
           <div className="px-4">
-            {/* Mobile Header */}
             <div className="mb-4 pb-3" style={{ borderBottom: `1px solid ${theme.accent}25` }}>
               <motion.h1
                 key={activeThemeKey + '-title-m'}
@@ -1554,9 +1580,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
               <p style={{ ...theme.headerSub, fontSize: '12px', display: 'block' }}>{theme.tagline}</p>
             </div>
 
-            {/* Mobile Controls Row */}
             <div className="flex items-center gap-2 mb-4">
-              {/* Filter button */}
               <button
                 onClick={() => setIsMobileCatOpen(true)}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-sm font-mono text-xs font-bold uppercase tracking-wide transition-all flex-shrink-0"
@@ -1571,7 +1595,6 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                 <ChevronDown className="w-3 h-3" />
               </button>
 
-              {/* Result count */}
               <div className="font-mono text-xs flex-1 truncate" style={{ color: `${theme.accent}70` }}>
                 {loading ? 'Carregando...' : (
                   hasSearch
@@ -1580,7 +1603,6 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                 )}
               </div>
 
-              {/* Clear search */}
               {hasSearch && (
                 <button
                   onClick={onClearSearch}
@@ -1592,7 +1614,6 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
               )}
             </div>
 
-            {/* Active search badge */}
             {hasSearch && (
               <div
                 className="flex items-center gap-2 mb-4 px-3 py-2 rounded-sm"
@@ -1608,7 +1629,6 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
               </div>
             )}
 
-            {/* Mobile Product Grid - 2 columns */}
             {loading ? (
               <div className="grid grid-cols-2 gap-3">
                 {[...Array(6)].map((_, index) => (
@@ -1662,7 +1682,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
           </div>
         )}
 
-        {/* ── DESKTOP LAYOUT (unchanged) ── */}
+        {/* DESKTOP LAYOUT */}
         {!isMobile && (
           <div className="px-6 max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row gap-12">
@@ -1803,7 +1823,6 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
         )}
       </div>
 
-      {/* Mobile Category Drawer */}
       <MobileCategoryDrawer
         isOpen={isMobileCatOpen}
         onClose={() => setIsMobileCatOpen(false)}
@@ -1902,7 +1921,6 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
           className="relative w-full sm:max-w-md bg-freo-dark border-t sm:border border-white/10 shadow-2xl overflow-hidden rounded-t-2xl sm:rounded-none"
         >
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-freo-cyan" />
-          {/* Mobile handle */}
           <div className="sm:hidden flex justify-center pt-3 pb-1">
             <div className="w-12 h-1 rounded-full bg-white/20" />
           </div>
@@ -1954,7 +1972,6 @@ const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: 
     return acc + parseFloat(price) * item.quantity;
   }, 0);
 
-  // Lock body scroll when open
   useEffect(() => {
     if (isOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = '';
