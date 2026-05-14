@@ -2048,6 +2048,11 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const temCarrinhoPendente = params.get('carrinho') === '1';
+    if (temCarrinhoPendente) {
+      window.history.replaceState({}, '', '/');
+    }
     const handleAuthData = (event: any) => {
       setUser(event.detail.user);
       if (event.detail.cartItems) {
@@ -2060,7 +2065,7 @@ export default function App() {
           variant: item.variant ?? null,
         })));
       }
-      const deveAbrir = localStorage.getItem('freo_open_cart');
+      const deveAbrir = localStorage.getItem('freo_open_cart') || temCarrinhoPendente;
       if (deveAbrir) {
         localStorage.removeItem('freo_open_cart');
         setTimeout(() => setIsCartOpen(true), 150);
