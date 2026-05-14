@@ -126,12 +126,15 @@
 
     // ── Função central: salvar item pendente no banco após login ──
     async function processarCarrinhoPendente(userId) {
+      console.log('🔍 processarCarrinhoPendente chamado, userId:', userId);
       const pending = localStorage.getItem('freo_pending_cart');
+      console.log('🔍 pending_cart:', pending);
       if (!pending) return false;
-
       try {
         const item = JSON.parse(pending);
-        const { error } = await window.supabaseClient
+        console.log('🔍 item parseado:', item);
+
+        const { data, error } = await window.supabaseClient
           .from('cart_items')
           .insert({
             user_id: userId,
@@ -143,23 +146,17 @@
             image_url: item.image,
             variant: null,
           });
-
-        // Remove do localStorage independente do resultado
-        // (evita ficar tentando reinserir)
+        console.log('🔍 resultado insert:', { data, error });
         localStorage.removeItem('freo_pending_cart');
-
         if (error) {
-          console.error('Erro ao salvar carrinho pendente:', error);
+          console.error('❌ Erro insert:', error);
           return false;
         }
-
-        // Sinaliza para a loja que deve abrir o carrinho
         localStorage.setItem('freo_open_cart', '1');
+        console.log('✅ carrinho salvo, redirecionando...');
         return true;
-
       } catch (e) {
-        console.error('Erro ao processar carrinho pendente:', e);
-        localStorage.removeItem('freo_pending_cart');
+        console.error('❌ catch:', e);
         return false;
       }
     }
