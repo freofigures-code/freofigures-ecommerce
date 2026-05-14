@@ -196,6 +196,8 @@
     // ── Login com e-mail/senha ──
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      console.log('🔍 SUBMIT iniciado');
+      console.log('🔍 pending_cart:', localStorage.getItem('freo_pending_cart'));
 
       const email    = document.getElementById('email').value;
       const password = document.getElementById('password').value;
