@@ -1030,7 +1030,26 @@
 
       var settings = {
         initialization: {
-          amount: totalFinal
+          amount: totalFinal,
+
+          // OBRIGATÓRIO para nota de segurança: pré-preenche os dados do pagador
+          payer: {
+            firstName: getCustomerNameForOrder().split(' ')[0] || '',
+            lastName:  getCustomerNameForOrder().split(' ').slice(1).join(' ') || '',
+            email:     getCustomerEmailForOrder(),
+            identification: {
+              type:   'CPF',
+              number: ''   // deixe vazio; o usuário preenche no brick
+            },
+            address: {
+              zipCode:      (selectedAddress ? selectedAddress.zip_code  : '').replace(/\D/g,''),
+              streetName:    selectedAddress ? selectedAddress.street       : '',
+              streetNumber:  selectedAddress ? selectedAddress.number       : '',
+              neighborhood:  selectedAddress ? selectedAddress.neighborhood : '',
+              city:          selectedAddress ? selectedAddress.city         : '',
+              federalUnit:   selectedAddress ? selectedAddress.state        : ''
+            }
+          }
         },
         customization: {
           paymentMethods: {
@@ -1038,7 +1057,8 @@
             bankTransfer: "all",
             creditCard: "all",
             debitCard: "all",
-            mercadoPago: "all"
+            mercadoPago: "all",
+            maxInstallments: 12
           },
           visual: {
             style: {
@@ -1064,33 +1084,49 @@
           },
 
           onSubmit: function(params) {
-            var deviceId = window.MP_DEVICE_SESSION_ID
-              || (window.MercadoPago && window.MercadoPago.deviceSessionId)
-              || '';
+            var deviceId = window.MP_DEVICE_SESSION_ID || '';
             
             var payload = Object.assign({}, params.formData, {
-              action: 'process_payment',
-              user_id: currentUser.id,
-              frete: selectedShipping,
+              action:          'process_payment',
+              user_id:         currentUser.id,
+              frete:           selectedShipping,
               total_com_frete: subtotalAmount + freteAmount,
               backUrls: backUrls,
-              device_id: deviceId,
-              items: cartItemsData,
-              shipping_address: selectedAddress,
-              customer_name: getCustomerNameForOrder(),
-              customer_email: getCustomerEmailForOrder(),
-              customer_phone: getCustomerPhoneForOrder()
-            });
 
-            var itensPedido = cartItemsData.map(function(item) {
-              return {
-                product_id: item.product_id,
-                product_name: item.product_name,
-                quantity: item.quantity || 1,
-                price: item.price,
-                image_url: item.image_url,
-                variant: item.variant || null
-              };
+              // Segurança / antifraude
+              device_id:          deviceId,          // ← fingerprint do dispositivo
+              binary_mode:        true,              // ← sem binary_mode o MP fica em "pending" indefinido
+              three_d_secure_mode: 'optional',       // ← ativa 3DS quando o banco exigir
+
+              // Dados do pagador (melhora score antifraude)
+              payer: {
+                first_name: getCustomerNameForOrder().split(' ')[0] || '',
+                last_name:  getCustomerNameForOrder().split(' ').slice(1).join(' ') || '',
+                email:      getCustomerEmailForOrder(),
+                phone: {
+                  area_code: getCustomerPhoneForOrder().replace(/\D/g,'').substring(0,2),
+                  number:    getCustomerPhoneForOrder().replace(/\D/g,'').substring(2)
+                },
+                address: {
+                  zip_code:      (selectedAddress ? selectedAddress.zip_code  : '').replace(/\D/g,''),
+                  street_name:    selectedAddress ? selectedAddress.street       : '',
+                  street_number:  selectedAddress ? selectedAddress.number       : '',
+                  neighborhood:   selectedAddress ? selectedAddress.neighborhood : '',
+                  city:           selectedAddress ? selectedAddress.city         : '',
+                  federal_unit:   selectedAddress ? selectedAddress.state        : ''
+                }
+              },
+
+              items: cartItemsData.map(function(item) {
+                return {
+                  product_id:   item.product_id,
+                  product_name: item.product_name,
+                  quantity:     item.quantity || 1,
+                  price:        item.price,
+                  image_url:    item.image_url,
+                  variant:      item.variant || null
+                };
+              })
             });
 
             var totalFinalOrder = subtotalAmount + freteAmount;
@@ -1115,7 +1151,16 @@
                 user_id: userId,
                 status: 'pendente',
                 total: totalFinalOrder,
-                items: itensPedido,
+                items: cartItemsData.map(function(item) {
+                  return {
+                    product_id:   item.product_id,
+                    product_name: item.product_name,
+                    quantity:     item.quantity || 1,
+                    price:        item.price,
+                    image_url:    item.image_url,
+                    variant:      item.variant || null
+                  };
+                }),
 
                 frete_valor: selectedShipping ? selectedShipping.price : 0,
                 frete_nome: freteNomeCompleto,
