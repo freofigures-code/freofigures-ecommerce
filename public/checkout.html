@@ -534,6 +534,44 @@
     </div>
   </div>
 
+  <div id="dados-pessoais-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="bg-freo-dark border border-white/10 w-full max-w-md p-6 rounded-xl shadow-2xl relative">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-transparent rounded-t-xl"></div>
+  
+      <h3 class="font-display font-black uppercase text-2xl text-white mb-1">Dados pessoais</h3>
+      <p class="font-mono text-sm text-white/40 leading-relaxed mb-5">Necessários para processar seu pedido.</p>
+  
+      <div id="dados-pessoais-error" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono p-3 mb-4 rounded"></div>
+  
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="fl">Nome *</label>
+          <input type="text" id="dp-firstname" class="fi" placeholder="Kevyn">
+        </div>
+        <div>
+          <label class="fl">Sobrenome *</label>
+          <input type="text" id="dp-lastname" class="fi" placeholder="Freo">
+        </div>
+      </div>
+  
+      <div class="mb-4">
+        <label class="fl">CPF *</label>
+        <input type="text" id="dp-cpf" class="fi" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)">
+      </div>
+  
+      <div class="mb-5">
+        <label class="fl">Telefone / WhatsApp *</label>
+        <input type="tel" id="dp-phone" class="fi" maxlength="15" placeholder="(11) 99999-9999" oninput="maskCheckoutPhone(this)">
+      </div>
+  
+      <button onclick="salvarDadosPessoais()" id="btn-salvar-dados"
+        class="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3.5 hover:bg-white transition-colors rounded">
+        Salvar e continuar
+      </button>
+    </div>
+  </div>
+  <!-- FIM MODAL DADOS PESSOAIS -->
+
   <script src="/auth-listener.js"></script>
 
   <script>
@@ -566,6 +604,101 @@
     var paymentBrickInitialized = false;
     var savedAddresses = [];
     var selectedAddress = null;
+
+    // ─── DADOS PESSOAIS ────────────────────────────────────────────────────────
+
+function maskCPF(input) {
+  var v = input.value.replace(/\D/g, '').substring(0, 11);
+  if (v.length > 9)      v = v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6,9)+'-'+v.substring(9);
+  else if (v.length > 6) v = v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6);
+  else if (v.length > 3) v = v.substring(0,3)+'.'+v.substring(3);
+  input.value = v;
+}
+
+function abrirDadosPessoais() {
+  var meta      = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
+  var nomeCompleto = (currentProfile && currentProfile.name) || meta.full_name || meta.name || '';
+  var partes    = nomeCompleto.trim().split(' ');
+
+  document.getElementById('dp-firstname').value = partes[0] || '';
+  document.getElementById('dp-lastname').value  = partes.slice(1).join(' ') || '';
+  document.getElementById('dp-phone').value     = getCurrentPhone() ? getCurrentPhone().replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') : '';
+  document.getElementById('dp-cpf').value       = (currentProfile && currentProfile.cpf)
+    ? currentProfile.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
+    : '';
+
+  var modal = document.getElementById('dados-pessoais-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('dp-firstname').focus();
+}
+
+async function salvarDadosPessoais() {
+  var firstName = document.getElementById('dp-firstname').value.trim();
+  var lastName  = document.getElementById('dp-lastname').value.trim();
+  var cpf       = document.getElementById('dp-cpf').value.replace(/\D/g, '');
+  var phone     = document.getElementById('dp-phone').value.replace(/\D/g, '');
+  var errEl     = document.getElementById('dados-pessoais-error');
+  var btn       = document.getElementById('btn-salvar-dados');
+
+  errEl.classList.add('hidden');
+
+  if (!firstName || !lastName) {
+    errEl.innerText = 'Informe seu nome e sobrenome.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (cpf.length !== 11) {
+    errEl.innerText = 'CPF inválido. Digite os 11 dígitos.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (phone.length < 10 || phone.length > 11) {
+    errEl.innerText = 'Telefone inválido. Inclua o DDD.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.innerText = 'Salvando...';
+  btn.disabled  = true;
+
+  try {
+    var fullName = firstName + ' ' + lastName;
+    var meta     = currentUser.user_metadata || {};
+
+    await window.supabaseClient.auth.updateUser({
+      data: Object.assign({}, meta, { full_name: fullName, phone: phone })
+    });
+
+    await window.supabaseClient.from('profiles').upsert({
+      id:    currentUser.id,
+      email: currentUser.email || null,
+      name:  fullName,
+      phone: phone,
+      cpf:   cpf
+    });
+
+    currentProfile = Object.assign({}, currentProfile || {}, {
+      name:  fullName,
+      phone: phone,
+      cpf:   cpf,
+      email: currentUser.email
+    });
+
+    document.getElementById('dados-pessoais-modal').classList.add('hidden');
+    document.getElementById('dados-pessoais-modal').classList.remove('flex');
+
+  } catch (e) {
+    console.error('Erro ao salvar dados pessoais:', e);
+    errEl.innerText = 'Erro ao salvar. Tente novamente.';
+    errEl.classList.remove('hidden');
+  }
+
+  btn.innerText = 'Salvar e continuar';
+  btn.disabled  = false;
+}
+
+// ─── FIM DADOS PESSOAIS ────────────────────────────────────────────────────
 
     function formatCurrency(v) {
       return new Intl.NumberFormat('pt-BR', {
@@ -1647,8 +1780,12 @@
         renderItems(cartItemsData);
         await carregarEnderecos();
 
-        if (!getCurrentPhone()) {
-          openPhoneRequiredModal();
+        var temDadosCompletos = getCurrentPhone() &&
+                                getCustomerNameForOrder() &&
+                                (currentProfile && currentProfile.cpf);
+
+        if (!temDadosCompletos) {
+          abrirDadosPessoais();
         }
       } catch (err) {
         console.error('Erro checkout:', err);
