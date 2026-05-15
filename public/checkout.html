@@ -422,21 +422,60 @@
 
         <div id="section-payment" class="glass rounded-xl p-6 relative">
           <h2 class="text-lg font-display font-bold uppercase text-white mb-5 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
             Pagamento
           </h2>
-
+        
           <div id="payment-overlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-freo-dark/90 backdrop-blur-sm rounded-xl">
             <p class="font-mono text-sm text-white/40 uppercase tracking-widest text-center px-8">Calcule o frete primeiro para liberar o pagamento</p>
           </div>
-
+        
           <div id="brick-loading" class="hidden absolute inset-0 z-10 flex flex-col items-center justify-center bg-freo-dark/80 backdrop-blur-sm rounded-xl">
             <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin mb-3"></div>
             <p class="font-mono text-xs text-freo-orange uppercase tracking-widest animate-pulse">Preparando pagamento...</p>
           </div>
-
+        
+          <!-- Cartões salvos -->
+          <div id="saved-cards-section" class="hidden space-y-3 mb-5">
+            <p class="font-mono text-xs text-white/40 uppercase tracking-widest mb-3">Escolha um cartão salvo:</p>
+            <div id="saved-cards-list" class="space-y-2"></div>
+        
+            <div id="cvv-section" class="hidden mt-4 p-4 bg-white/5 border border-freo-orange/30 rounded-xl space-y-3">
+              <div class="flex items-center gap-3">
+                <div id="cvv-card-icon" class="w-10 h-7 bg-white/10 border border-white/10 rounded flex items-center justify-center font-mono text-[10px] text-white/50 font-bold uppercase flex-shrink-0"></div>
+                <div>
+                  <p id="cvv-card-label" class="font-mono text-sm font-bold text-white"></p>
+                  <p class="font-mono text-[10px] text-white/30">Digite o CVV para confirmar</p>
+                </div>
+              </div>
+              <div>
+                <label class="fl">CVV *</label>
+                <input type="text" id="saved-card-cvv" class="fi" placeholder="123" maxlength="4" inputmode="numeric"
+                  oninput="this.value=this.value.replace(/\D/g,'')" style="max-width:120px">
+              </div>
+              <div id="cvv-error" class="hidden p-2 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xs rounded"></div>
+              <button onclick="pagarComCartaoSalvo()" id="btn-pagar-salvo"
+                class="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3 hover:bg-white transition-colors flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                Confirmar pagamento
+              </button>
+            </div>
+        
+            <button onclick="usarOutroCartao()"
+              class="w-full border border-dashed border-white/15 py-3 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors rounded-lg flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Usar outro cartão ou Pix
+            </button>
+          </div>
+        
           <div id="paymentBrick_container"></div>
         </div>
-      </div>
 
       <div class="lg:col-span-5">
         <div class="glass rounded-xl p-6 sticky top-24">
@@ -963,26 +1002,256 @@
       document.getElementById('step3-line').className = 'step-line done';
       document.getElementById('step4-dot').className = 'step-dot active';
     }
-
-    async function liberarPagamento() {
+    var savedCards = [];
+    var selectedCard = null;
+    
+    async function carregarCartoesSalvos() {
+      if (!currentUser) return;
+      try {
+        var r = await window.supabaseClient
+          .from('user_cards')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+        savedCards = r.data || [];
+      } catch(e) {
+        savedCards = [];
+      }
+    }
+    
+    function renderizarCartoesSalvos() {
+      var section = document.getElementById('saved-cards-section');
+      var list    = document.getElementById('saved-cards-list');
+    
+      if (!savedCards.length) {
+        section.classList.add('hidden');
+        return;
+      }
+    
+      section.classList.remove('hidden');
+    
+      list.innerHTML = savedCards.map(function(card, i) {
+        var brand = (card.payment_method || 'card').toUpperCase().substring(0, 4);
+        var label = card.card_label || ('•••• ' + (card.last_four || '****'));
+        var type  = card.payment_type === 'credit_card' ? 'Crédito' : 'Débito';
+        var exp   = (card.expiration_month || '**') + '/' + String(card.expiration_year || '****').slice(-2);
+    
+        return '<div class="addr-card" id="saved-card-' + i + '" onclick="selecionarCartao(' + i + ')">'
+          + '<div class="flex items-center gap-3">'
+          + '<input type="radio" name="saved-card" class="flex-shrink-0 accent-freo-orange">'
+          + '<div class="w-10 h-7 bg-white/10 border border-white/10 rounded flex items-center justify-center font-mono text-[10px] text-white/50 font-bold flex-shrink-0">' + brand + '</div>'
+          + '<div class="flex-1 min-w-0">'
+          + '<p class="font-mono text-sm font-bold text-white">' + label + '</p>'
+          + '<p class="font-mono text-[10px] text-white/40 mt-0.5">' + type + ' · Validade ' + exp + '</p>'
+          + '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    
+      selecionarCartao(0);
+    }
+    
+    function selecionarCartao(idx) {
+      selectedCard = savedCards[idx];
+    
+      document.querySelectorAll('#saved-cards-list .addr-card').forEach(function(el, i) {
+        el.classList.toggle('selected', i === idx);
+        var radio = el.querySelector('input[type=radio]');
+        if (radio) radio.checked = i === idx;
+      });
+    
+      var brand = (selectedCard.payment_method || 'card').toUpperCase().substring(0, 4);
+      var label = selectedCard.card_label || ('•••• ' + (selectedCard.last_four || '****'));
+    
+      document.getElementById('cvv-card-icon').innerText  = brand;
+      document.getElementById('cvv-card-label').innerText = label;
+      document.getElementById('saved-card-cvv').value     = '';
+      document.getElementById('cvv-error').classList.add('hidden');
+      document.getElementById('cvv-section').classList.remove('hidden');
+      document.getElementById('saved-card-cvv').focus();
+    }
+    
+    async function usarOutroCartao() {
+      selectedCard = null;
+      document.getElementById('saved-cards-section').classList.add('hidden');
+      document.getElementById('cvv-section').classList.add('hidden');
+    
+      if (!paymentBrickInitialized) {
+        document.getElementById('brick-loading').classList.remove('hidden');
+        await initPaymentBrick();
+      }
+    }
+    
+    async function pagarComCartaoSalvo() {
+      if (!selectedCard) return;
+    
+      var cvv   = document.getElementById('saved-card-cvv').value.trim();
+      var errEl = document.getElementById('cvv-error');
+      var btn   = document.getElementById('btn-pagar-salvo');
+    
+      errEl.classList.add('hidden');
+    
+      if (!cvv || cvv.length < 3) {
+        errEl.innerText = 'Informe o CVV do cartão.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+    
+      btn.innerText = 'Processando...';
+      btn.disabled  = true;
+    
+      try {
+        var mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
+    
+        var tokenResult = await mp.createCardToken({
+          cardId:       selectedCard.mp_card_id,
+          securityCode: cvv
+        });
+    
+        if (!tokenResult || !tokenResult.id) {
+          errEl.innerText = 'CVV inválido ou cartão recusado. Tente novamente.';
+          errEl.classList.remove('hidden');
+          btn.innerText = 'Confirmar pagamento';
+          btn.disabled  = false;
+          return;
+        }
+    
+        var totalFinal = subtotalAmount + freteAmount;
+        var userId     = currentUser.id;
+        var freteNomeCompleto = selectedShipping
+          ? (selectedShipping.company ? selectedShipping.company + ' - ' : '') + (selectedShipping.service_name || 'Entrega')
+          : null;
+    
+        var payload = {
+          token:               tokenResult.id,
+          payment_method_id:   selectedCard.payment_method,
+          installments:        1,
+          action:              'process_payment',
+          user_id:             userId,
+          frete:               selectedShipping,
+          total_com_frete:     totalFinal,
+          backUrls:            backUrls,
+          device_id:           window.MP_DEVICE_SESSION_ID || '',
+          binary_mode:         true,
+          three_d_secure_mode: 'optional',
+          payer: {
+            type:       'customer',
+            id:         selectedCard.mp_customer_id,
+            first_name: getCustomerNameForOrder().split(' ')[0] || '',
+            last_name:  getCustomerNameForOrder().split(' ').slice(1).join(' ') || '',
+            email:      getCustomerEmailForOrder(),
+            phone: {
+              area_code: getCustomerPhoneForOrder().replace(/\D/g,'').substring(0,2),
+              number:    getCustomerPhoneForOrder().replace(/\D/g,'').substring(2)
+            },
+            address: {
+              zip_code:      (selectedAddress ? selectedAddress.zip_code : '').replace(/\D/g,''),
+              street_name:    selectedAddress ? selectedAddress.street       : '',
+              street_number:  selectedAddress ? selectedAddress.number       : '',
+              neighborhood:   selectedAddress ? selectedAddress.neighborhood : '',
+              city:           selectedAddress ? selectedAddress.city         : '',
+              federal_unit:   selectedAddress ? selectedAddress.state        : ''
+            }
+          },
+          items: cartItemsData.map(function(item) {
+            return {
+              product_id:   item.product_id,
+              product_name: item.product_name,
+              quantity:     item.quantity || 1,
+              price:        item.price,
+              image_url:    item.image_url,
+              variant:      item.variant || null
+            };
+          })
+        };
+    
+        var orderResult = await window.supabaseClient
+          .from('orders')
+          .insert({
+            user_id:            userId,
+            status:             'pendente',
+            total:              totalFinal,
+            items:              payload.items,
+            frete_valor:        selectedShipping ? selectedShipping.price        : 0,
+            frete_nome:         freteNomeCompleto,
+            frete_prazo:        selectedShipping ? String(selectedShipping.days)  : null,
+            frete_company:      selectedShipping ? selectedShipping.company       : null,
+            frete_service_id:   selectedShipping ? selectedShipping.service_id    : null,
+            frete_service_name: selectedShipping ? selectedShipping.service_name  : null,
+            frete_service_code: selectedShipping ? selectedShipping.service_code  : null,
+            shipping_address:   selectedAddress  ? JSON.stringify(selectedAddress) : null,
+            customer_name:      getCustomerNameForOrder(),
+            customer_email:     getCustomerEmailForOrder(),
+            customer_phone:     getCustomerPhoneForOrder()
+          })
+          .select('id')
+          .single();
+    
+        if (orderResult.error) throw orderResult.error;
+        var orderId = orderResult.data.id;
+    
+        var r    = await fetch(N8N_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        var resp = await r.json();
+        var data = Array.isArray(resp) ? resp[0] : resp;
+    
+        var updateData = {};
+        if (data.id)            updateData.payment_id    = String(data.id);
+        if (data.preference_id) updateData.preference_id = String(data.preference_id);
+        if (data.status === 'approved') updateData.status = 'pago';
+    
+        await window.supabaseClient.from('orders').update(updateData).eq('id', orderId).eq('user_id', userId);
+        await window.supabaseClient.from('cart_items').delete().eq('user_id', userId);
+    
+        cartItemsData.forEach(function(item) {
+          var productId = parseInt(item.product_id, 10);
+          if (!isNaN(productId)) {
+            window.supabaseClient.rpc('decrementar_estoque', { p_product_id: productId, p_quantidade: item.quantity || 1 });
+          }
+        });
+    
+        if (data.status === 'approved') {
+          setTimeout(function() { window.location.href = backUrls.success; }, 1500);
+        } else if (data.status === 'rejected') {
+          errEl.innerText = 'Pagamento recusado. Tente outro cartão.';
+          errEl.classList.remove('hidden');
+          btn.innerText = 'Confirmar pagamento';
+          btn.disabled  = false;
+        } else {
+          setTimeout(function() { window.location.href = backUrls.pending; }, 1500);
+        }
+    
+      } catch(e) {
+        console.error('Erro pagarComCartaoSalvo:', e);
+        errEl.innerText = 'Erro inesperado. Tente novamente.';
+        errEl.classList.remove('hidden');
+        btn.innerText = 'Confirmar pagamento';
+        btn.disabled  = false;
+      }
+    }
+     async function liberarPagamento() {
       if (!getCurrentPhone()) {
         openPhoneRequiredModal();
         return;
       }
-
+    
       if (!selectedShipping) {
         alert('Escolha uma opção de frete primeiro.');
         return;
       }
-
+    
       document.getElementById('payment-overlay').classList.add('hidden');
-
+    
       if (paymentBrickInitialized && window.paymentBrickController) {
         await window.paymentBrickController.unmount();
         paymentBrickInitialized = false;
       }
-
-      if (!paymentBrickInitialized) {
+    
+      // Carrega cartões salvos
+      await carregarCartoesSalvos();
+      renderizarCartoesSalvos();
+    
+      // Se não tem cartão salvo, abre o Brick direto
+      if (!savedCards.length && !paymentBrickInitialized) {
         document.getElementById('brick-loading').classList.remove('hidden');
         await initPaymentBrick();
       }
