@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark':  '#121212',
+            'freo-dark2': '#1a1a1a',
+            'freo-light': '#F5F5F5',
+            'freo-orange':'#DDAF34',
+            'freo-cyan':  '#2C3E50',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body:    ['Space Grotesk', 'sans-serif'],
+            mono:    ['ui-monospace','SFMono-Regular','Menlo','Monaco','Consolas','monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ── Accordion ── */
+    .faq-item { border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .faq-item:last-child { border-bottom: none; }
+
+    .faq-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      color: #F5F5F5;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.5;
+      transition: color 0.2s;
+    }
+    .faq-btn:hover { color: #DDAF34; }
+    .faq-btn:hover .faq-icon { border-color: rgba(221,175,52,0.4); color: #DDAF34; }
+
+    .faq-icon {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border: 1px solid rgba(255,255,255,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 300;
+      color: rgba(245,245,245,0.4);
+      transition: transform 0.3s ease, border-color 0.2s, color 0.2s;
+      line-height: 1;
+    }
+    .faq-item.open .faq-icon {
+      transform: rotate(45deg);
+      border-color: rgba(221,175,52,0.5);
+      color: #DDAF34;
+    }
+    .faq-item.open .faq-btn { color: #DDAF34; }
+
+    .faq-answer {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.3s ease;
+    }
+    .faq-item.open .faq-answer {
+      grid-template-rows: 1fr;
+    }
+    .faq-answer-inner {
+      overflow: hidden;
+    }
+    .faq-answer-content {
+      padding-bottom: 20px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      color: rgba(245,245,245,0.55);
+      line-height: 1.75;
+    }
+    .faq-answer-content a {
+      color: #DDAF34;
+      text-decoration: none;
+    }
+    .faq-answer-content a:hover { text-decoration: underline; }
+    .faq-answer-content strong { color: rgba(245,245,245,0.85); font-weight: 500; }
+
+    /* ── Category tabs ── */
+    .cat-btn {
+      font-family: 'ui-monospace', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 7px 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: rgba(245,245,245,0.4);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .cat-btn:hover { color: #F5F5F5; border-color: rgba(255,255,255,0.25); }
+    .cat-btn.active {
+      background: rgba(221,175,52,0.08);
+      border-color: rgba(221,175,52,0.35);
+      color: #DDAF34;
+    }
+
+    /* ── Search ── */
+    .search-input {
+      width: 100%;
+      background: #0A0A0A;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #F5F5F5;
+      font-family: 'ui-monospace', monospace;
+      font-size: 13px;
+      padding: 12px 16px 12px 44px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input::placeholder { color: rgba(245,245,245,0.25); }
+    .search-input:focus { border-color: rgba(221,175,52,0.5); }
+
+    /* ── Highlight ── */
+    mark {
+      background: rgba(221,175,52,0.25);
+      color: #DDAF34;
+      padding: 0 2px;
+    }
+
+    /* ── No results ── */
+    #no-results { display: none; }
+
+    /* ── Section hidden ── */
+    .faq-section { }
+    .faq-section.hidden-section { display: none; }
+  </style>
+</head>
+
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen">
+
+  <!-- TOP BAR -->
+  <div class="w-full h-1 bg-gradient-to-r from-freo-orange to-freo-cyan"></div>
+
+  <div class="max-w-2xl mx-auto px-5 py-14">
+
+    <!-- HEADER -->
+    <div class="flex justify-center mb-10">
+      <a href="/">
+        <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
+             alt="Freo Figures"
+             class="w-14 h-14 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_15px_rgba(221,175,52,0.3)]"
+             onerror="this.style.display='none'">
+      </a>
+    </div>
+
+    <div class="mb-1">
+      <span class="font-mono text-freo-orange text-xs tracking-widest uppercase">Freo Figures · Suporte</span>
+    </div>
+    <h1 class="font-display font-black text-4xl uppercase text-white mb-3">
+      Perguntas<br>Frequentes
+    </h1>
+    <p class="text-freo-light/50 text-sm font-body mb-10">
+      Tudo que você precisa saber antes de forjar seu pedido.
+    </p>
+
+    <!-- SEARCH -->
+    <div class="relative mb-8">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-freo-light/30 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" id="search" class="search-input" placeholder="Buscar pergunta...">
+    </div>
+
+    <!-- CATEGORY TABS -->
+    <div class="flex gap-2 flex-wrap mb-10" id="cat-tabs">
+      <button class="cat-btn active" data-cat="all">Todas</button>
+      <button class="cat-btn" data-cat="pedidos">Pedidos</button>
+      <button class="cat-btn" data-cat="envio">Envio</button>
+      <button class="cat-btn" data-cat="trocas">Trocas</button>
+      <button class="cat-btn" data-cat="pagamento">Pagamento</button>
+      <button class="cat-btn" data-cat="produtos">Produtos</button>
+    </div>
+
+    <!-- NO RESULTS -->
+    <div id="no-results" class="text-center py-16">
+      <p class="font-mono text-freo-light/25 text-sm uppercase tracking-widest">Nenhum resultado encontrado</p>
+      <p class="text-freo-light/40 text-sm mt-2">Tente outra busca ou <a href="https://wa.me/5511946454111" class="text-freo-orange hover:underline">fale com a gente</a>.</p>
+    </div>
+
+    <!-- ── PEDIDOS ── -->
+    <section class="faq-section mb-2" data-cat="pedidos">
+      <div class="flex items-center gap-3 mb-1 mt-2">
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-orange/70">01</span>
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-light/25">Pedidos e Produção</span>
+      </div>
+      <div class="bg-freo-dark border border-white/7 px-5">
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Quanto tempo leva para meu pedido ficar pronto?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Cada produto tem seu prazo de produção indicado na página. A contagem começa após a <strong>confirmação do pagamento</strong>. Some o prazo de produção ao prazo de entrega da modalidade de frete escolhida para ter o tempo total de espera.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Posso personalizar um produto?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Sim! Alguns produtos aceitam personalização de cor, tamanho ou detalhes. Quando disponível, essa opção aparece na página do produto. Para pedidos muito específicos, entre em contato pelo <a href="https://wa.me/5511946454111">WhatsApp</a> antes de comprar.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Posso cancelar meu pedido depois de feito?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                <strong>Produtos padrão:</strong> cancelamento gratuito em até 24h após a confirmação do pagamento.<br><br>
+                <strong>Produtos personalizados:</strong> não podem ser cancelados após o início da produção, pois são fabricados sob medida. A exceção é em caso de defeito de fabricação, conforme o CDC.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Como acompanho o status do meu pedido?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Após o login, acesse seu <a href="/dashboard.html">painel</a> para ver o status em tempo real. Você também recebe atualizações por e-mail a cada etapa — confirmação, produção e envio.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Pedidos com vários itens são enviados juntos?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Por padrão, o envio ocorre quando todos os itens do pedido estão prontos. Se preferir receber em remessas separadas, entre em contato pelo <a href="https://wa.me/5511946454111">WhatsApp</a> logo após a compra.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── ENVIO ── -->
+    <section class="faq-section mb-2" data-cat="envio">
+      <div class="flex items-center gap-3 mb-1 mt-6">
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-orange/70">02</span>
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-light/25">Envio e Rastreamento</span>
+      </div>
+      <div class="bg-freo-dark border border-white/7 px-5">
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Quais são as opções de frete disponíveis?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Enviamos para todo o Brasil via <strong>Correios PAC</strong> (econômico) e <strong>Correios SEDEX</strong> (expresso). Dependendo da sua região e do tamanho do produto, transportadoras parceiras também podem aparecer como opção. Há ainda a retirada em mãos em São Bernardo do Campo, SP, mediante agendamento.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Como rastreio minha entrega?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Assim que seu pedido é postado, o código de rastreamento é enviado para o seu e-mail. Você pode acompanhar pelo site dos <a href="https://rastreamento.correios.com.br" target="_blank">Correios</a> ou pelo site da transportadora parceira.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>O rastreamento está parado há dias. O que faço?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Se o rastreamento ficar sem atualização por mais de <strong>7 dias úteis</strong>, entre em contato pelo <a href="https://wa.me/5511946454111">WhatsApp</a> ou <a href="mailto:contato@freofigures.com.br">e-mail</a>. Abrimos uma investigação junto à transportadora e te mantemos informado.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Meu produto foi extraviado. O que acontece?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Nos contate em até <strong>30 dias</strong> após a data prevista de entrega. Confirmado o extravio junto à transportadora, realizamos o reenvio do produto ou o reembolso integral — você escolhe.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Posso alterar o endereço de entrega após o pedido?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Sim, mas apenas <strong>antes da postagem</strong>. Entre em contato pelo <a href="https://wa.me/5511946454111">WhatsApp</a> assim que possível. Após o envio, não conseguimos redirecionar o pacote. Pedidos devolvidos por endereço incorreto são reenviados mediante novo pagamento de frete.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── TROCAS ── -->
+    <section class="faq-section mb-2" data-cat="trocas">
+      <div class="flex items-center gap-3 mb-1 mt-6">
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-orange/70">03</span>
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-light/25">Trocas e Devoluções</span>
+      </div>
+      <div class="bg-freo-dark border border-white/7 px-5">
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Posso me arrepender da compra e devolver?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Sim. Para produtos <strong>não personalizados</strong>, você tem até <strong>7 dias corridos</strong> após o recebimento para solicitar a devolução sem precisar se justificar (direito de arrependimento — Art. 49 do CDC). O reembolso é integral, incluindo o frete pago na compra.<br><br>
+                Produtos personalizados com especificações exclusivas suas (cores, gravações, dimensões únicas) não entram nessa regra.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Recebi um produto com defeito. O que fazer?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Entre em contato em até <strong>30 dias</strong> (produtos não duráveis) ou <strong>90 dias</strong> (produtos duráveis) após o recebimento, conforme o CDC. Envie fotos nítidas do produto e da embalagem pelo <a href="https://wa.me/5511946454111">WhatsApp</a> ou <a href="mailto:contato@freofigures.com.br">e-mail</a>. Após análise, você pode escolher entre reembolso, troca ou crédito para nova compra.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>A cor ficou diferente da foto. Isso é defeito?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Pequenas variações de cor, textura e acabamento são <strong>características naturais</strong> da impressão 3D artesanal — cada peça é única. As imagens do site são representativas. Diferenças sutis não configuram defeito. Já divergências significativas (cor completamente diferente, peça errada) são cobertas pela nossa política de troca.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Quem paga o frete da devolução?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Nos casos cobertos pela nossa política (defeito de fabricação, produto errado, dano no transporte), nós enviamos a etiqueta de postagem pré-paga — o frete é por nossa conta. Em casos de arrependimento, o frete de retorno pode ser de responsabilidade do cliente, conforme a situação.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── PAGAMENTO ── -->
+    <section class="faq-section mb-2" data-cat="pagamento">
+      <div class="flex items-center gap-3 mb-1 mt-6">
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-orange/70">04</span>
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-light/25">Pagamento</span>
+      </div>
+      <div class="bg-freo-dark border border-white/7 px-5">
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Quais formas de pagamento são aceitas?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Aceitamos <strong>cartão de crédito</strong>, <strong>débito</strong>, <strong>Pix</strong> e <strong>boleto bancário</strong>. Os preços já incluem todos os tributos aplicáveis. O frete é calculado e exibido no checkout antes de você finalizar.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Paguei via boleto. Quando meu pedido começa a ser produzido?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                O boleto leva até <strong>3 dias úteis</strong> para compensar. A produção começa somente após a confirmação do pagamento pelo banco. Se o boleto não for pago dentro desse prazo, o pedido é cancelado automaticamente.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Meus dados de cartão ficam salvos?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Não. Todos os dados de pagamento são processados exclusivamente pelo gateway certificado (PCI-DSS). A Freo Figures <strong>não armazena</strong> nenhum dado de cartão em seus servidores.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Recebo nota fiscal?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Sim. Emitimos <strong>NF-e (Nota Fiscal Eletrônica)</strong> para todas as compras. Ela é enviada ao e-mail cadastrado após a confirmação do pagamento. Caso não receba em até 48h, entre em contato pelo <a href="mailto:contato@freofigures.com.br">e-mail</a>.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── PRODUTOS ── -->
+    <section class="faq-section mb-2" data-cat="produtos">
+      <div class="flex items-center gap-3 mb-1 mt-6">
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-orange/70">05</span>
+        <span class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-light/25">Produtos e Materiais</span>
+      </div>
+      <div class="bg-freo-dark border border-white/7 px-5">
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Quais materiais são usados nas peças?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Usamos principalmente <strong>PLA</strong>, <strong>PETG</strong> e <strong>resina fotopolimerizável</strong> (SLA/MSLA), conforme especificado em cada produto. O material é escolhido de acordo com as características necessárias — resistência, detalhamento ou flexibilidade.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Os produtos são resistentes? Qual a durabilidade?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                São resistentes para uso decorativo e cotidiano. Evite exposição a <strong>calor excessivo</strong> (acima de 60°C para PLA), umidade prolongada ou impactos fortes. Os produtos não são indicados para uso estrutural ou contato direto com alimentos, salvo indicação contrária na descrição.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Os produtos são adequados para crianças?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Peças com partes pequenas <strong>não são indicadas para crianças menores de 3 anos</strong>. A faixa etária recomendada está indicada na página de cada produto. Em caso de dúvida, consulte pelo <a href="https://wa.me/5511946454111">WhatsApp</a>.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Como devo limpar e conservar as peças?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Limpeza com pano macio levemente úmido. Evite produtos químicos abrasivos, imersão em água e exposição direta ao sol por longos períodos, pois podem alterar a cor e a forma da peça ao longo do tempo.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" aria-expanded="false">
+            <span>Posso pedir um design que não está no site?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <div class="faq-answer-inner">
+              <div class="faq-answer-content">
+                Entre em contato pelo <a href="https://wa.me/5511946454111">WhatsApp</a> ou <a href="mailto:contato@freofigures.com.br">e-mail</a> e explica o que você tem em mente. Avaliamos a viabilidade técnica e de prazo — projetos sob encomenda são bem-vindos!
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- CONTATO FINAL -->
+    <div class="mt-12 border border-white/7 bg-freo-dark p-6">
+      <p class="font-mono text-[10px] tracking-[0.14em] uppercase text-freo-orange/70 mb-3">Ainda tem dúvidas?</p>
+      <p class="text-freo-light/50 text-sm mb-5">Não encontrou o que procurava? Nossa equipe responde rápido.</p>
+      <div class="flex flex-wrap gap-3">
+        <a href="https://wa.me/5511946454111"
+           class="font-mono text-xs uppercase tracking-widest px-5 py-3 bg-freo-orange text-freo-black font-bold hover:bg-white transition-colors">
+          WhatsApp
+        </a>
+        <a href="mailto:contato@freofigures.com.br"
+           class="font-mono text-xs uppercase tracking-widest px-5 py-3 border border-white/15 text-freo-light/60 hover:text-white hover:border-white/30 transition-colors">
+          E-mail
+        </a>
+        <a href="https://instagram.com/freofigures" target="_blank"
+           class="font-mono text-xs uppercase tracking-widest px-5 py-3 border border-white/15 text-freo-light/60 hover:text-white hover:border-white/30 transition-colors">
+          Instagram
+        </a>
+      </div>
+    </div>
+
+    <p class="text-freo-light/20 font-mono text-[10px] text-center mt-10 uppercase tracking-widest">
+      © 2025 Freo Figures · CNPJ 65.475.701/0001-22
+    </p>
+
+  </div>
+
+  <script>
+    // ── Accordion ──
+    document.querySelectorAll('.faq-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+        // Fecha todos
+        document.querySelectorAll('.faq-item.open').forEach(el => {
+          el.classList.remove('open');
+          el.querySelector('.faq-btn').setAttribute('aria-expanded', 'false');
+        });
+        // Abre o clicado (se estava fechado)
+        if (!isOpen) {
+          item.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+
+    // ── Filtro por categoria ──
+    const catBtns = document.querySelectorAll('.cat-btn');
+    const sections = document.querySelectorAll('.faq-section');
+
+    catBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        catBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const cat = btn.dataset.cat;
+        sections.forEach(sec => {
+          if (cat === 'all' || sec.dataset.cat === cat) {
+            sec.classList.remove('hidden-section');
+          } else {
+            sec.classList.add('hidden-section');
+          }
+        });
+
+        // Limpa busca ao trocar categoria
+        document.getElementById('search').value = '';
+        document.querySelectorAll('.faq-item').forEach(item => {
+          item.style.display = '';
+        });
+        checkNoResults();
+      });
+    });
+
+    // ── Busca ──
+    const searchInput = document.getElementById('search');
+
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.trim().toLowerCase();
+
+      // Reseta categoria para "all" visualmente
+      catBtns.forEach(b => b.classList.remove('active'));
+      document.querySelector('[data-cat="all"]').classList.add('active');
+      sections.forEach(sec => sec.classList.remove('hidden-section'));
+
+      document.querySelectorAll('.faq-item').forEach(item => {
+        const questionEl = item.querySelector('.faq-btn span:first-child');
+        const answerEl   = item.querySelector('.faq-answer-content');
+        const questionText = questionEl.textContent.toLowerCase();
+        const answerText   = answerEl.textContent.toLowerCase();
+
+        if (!query || questionText.includes(query) || answerText.includes(query)) {
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+          // Fecha se estava aberto
+          item.classList.remove('open');
+          item.querySelector('.faq-btn').setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      checkNoResults();
+    });
+
+    function checkNoResults() {
+      const anyVisible = [...document.querySelectorAll('.faq-item')]
+        .some(item => item.style.display !== 'none');
+      document.getElementById('no-results').style.display = anyVisible ? 'none' : 'block';
+    }
+  </script>
+</body>
+</html>
