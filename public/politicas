@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Políticas — Freo Figures</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0e0f;
+      --surface: #161618;
+      --surface2: #1e1e21;
+      --border: rgba(255,255,255,0.07);
+      --accent: #c8ff3e;
+      --accent-dim: rgba(200,255,62,0.07);
+      --text: #f0efeb;
+      --muted: #888885;
+      --muted2: #444441;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    /* ── SIDEBAR NAV ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem 0;
+    }
+    .sidebar-brand {
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+    .sidebar-brand .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+    .sidebar-brand .tagline {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .nav-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      padding: 0 1.5rem;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 1.5rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 2px solid transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 400;
+      user-select: none;
+    }
+    .nav-item:hover { color: var(--text); background: var(--surface2); }
+    .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+    .nav-item .nav-icon { font-size: 16px; opacity: 0.7; }
+    .nav-item.active .nav-icon { opacity: 1; }
+    .nav-num {
+      font-size: 10px;
+      color: var(--muted2);
+      margin-left: auto;
+      font-weight: 500;
+    }
+    .nav-item.active .nav-num { color: var(--accent); opacity: 0.6; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 1.25rem 1.5rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .sidebar-footer p { font-size: 11px; color: var(--muted2); line-height: 1.5; }
+    .sidebar-footer strong { color: var(--muted); }
+
+    /* ── MAIN CONTENT ── */
+    .content { flex: 1; min-width: 0; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-header {
+      border-bottom: 1px solid var(--border);
+      padding: 3rem 3.5rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-header::after {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(200,255,62,0.05) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .page-tag {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .page-tag::before { content: ''; display: inline-block; width: 18px; height: 1px; background: var(--accent); }
+    .page-header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 400;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+    .page-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+    .meta-item { font-size: 12px; color: var(--muted); }
+    .meta-item strong { color: var(--text); font-weight: 500; display: block; margin-bottom: 2px; }
+
+    .page-body { padding: 2.5rem 3.5rem; max-width: 820px; }
+
+    /* ── SECTIONS ── */
+    .section { padding: 2rem 0; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; padding-bottom: 0; }
+    .sec-num { font-size: 11px; color: var(--accent); letter-spacing: 0.1em; font-weight: 500; margin-bottom: 6px; }
+    h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 1.5rem 0 0.6rem;
+    }
+    p { margin-bottom: 0.85rem; color: #b8b7b3; }
+    ul, ol { padding-left: 1.3rem; margin-bottom: 0.9rem; color: #b8b7b3; }
+    li { margin-bottom: 6px; }
+    strong { color: var(--text); font-weight: 500; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── COMPONENTS ── */
+    .box {
+      background: var(--accent-dim);
+      border: 1px solid rgba(200,255,62,0.13);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 14px;
+      color: #c8c7c3;
+      line-height: 1.65;
+    }
+    .box strong { color: var(--accent); }
+    .box.warn {
+      background: rgba(239,159,39,0.07);
+      border-color: rgba(239,159,39,0.15);
+    }
+    .box.warn strong { color: #ef9f27; }
+    .box.danger {
+      background: rgba(226,75,74,0.07);
+      border-color: rgba(226,75,74,0.15);
+    }
+    .box.danger strong { color: #e24b4a; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+    .info-cell { background: var(--surface); padding: 1rem 1.25rem; }
+    .info-cell .lbl { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+    .info-cell .val { font-size: 13px; color: var(--text); word-break: break-word; }
+
+    .data-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 13px; }
+    .data-table th {
+      text-align: left; padding: 8px 12px;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500;
+    }
+    .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: #b8b7b3; vertical-align: top; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table td:first-child { color: var(--text); }
+    .pill {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 9px;
+      font-size: 11px;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .rights-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 1rem 0; }
+    .right-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .right-card .ricon { font-size: 18px; margin-bottom: 8px; }
+    .right-card .rtitle { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+    .right-card .rdesc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    .steps { counter-reset: step; list-style: none; padding: 0; margin: 1rem 0; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      color: #b8b7b3;
+      font-size: 14px;
+      align-items: flex-start;
+    }
+    .steps li:last-child { border-bottom: none; }
+    .steps li::before {
+      content: counter(step, decimal-leading-zero);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      min-width: 26px;
+      padding-top: 3px;
+    }
+
+    .contact-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .contact-row { display: flex; align-items: flex-start; gap: 12px; font-size: 13px; }
+    .contact-row .clabel { color: var(--muted); min-width: 130px; font-size: 12px; padding-top: 1px; }
+    .contact-row .cval { color: var(--text); word-break: break-word; }
+
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 0 0 2rem;
+    }
+    .toc-title { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 500; }
+    .toc ol { list-style: none; counter-reset: toc; padding: 0; }
+    .toc li { counter-increment: toc; display: flex; align-items: baseline; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+    .toc li:last-child { border-bottom: none; }
+    .toc li::before { content: counter(toc, decimal-leading-zero); font-size: 10px; color: var(--accent); font-weight: 500; min-width: 22px; }
+    .toc a { color: var(--muted); font-size: 13px; text-decoration: none; transition: color 0.15s; }
+    .toc a:hover { color: var(--text); }
+
+    /* ── MOBILE ── */
+    .mobile-nav {
+      display: none;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem;
+      gap: 6px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .mobile-nav-btn {
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+    }
+    .mobile-nav-btn.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(200,255,62,0.2); }
+    .mobile-brand { display: none; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
+    .mobile-brand .logo { font-family: 'DM Serif Display', serif; font-size: 18px; }
+    .mobile-brand .tagline { font-size: 11px; color: var(--muted); }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .mobile-nav { display: flex; }
+      .mobile-brand { display: block; }
+      .page-header { padding: 2rem 1.25rem 1.5rem; }
+      .page-body { padding: 1.5rem 1.25rem; }
+      .rights-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .rights-grid { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="mobile-brand">
+  <div class="logo">Freo Figures</div>
+  <div class="tagline">Políticas e Termos</div>
+</div>
+<div class="mobile-nav" id="mobileNav">
+  <button class="mobile-nav-btn active" onclick="showPage('privacidade', this)">🔒 Privacidade</button>
+  <button class="mobile-nav-btn" onclick="showPage('termos', this)">📄 Termos de Uso</button>
+  <button class="mobile-nav-btn" onclick="showPage('trocas', this)">🔄 Trocas</button>
+  <button class="mobile-nav-btn" onclick="showPage('envio', this)">📦 Envio</button>
+  <button class="mobile-nav-btn" onclick="showPage('juridico', this)">⚖️ Jurídico</button>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo">Freo Figures</div>
+      <div class="tagline">Políticas e Termos Legais</div>
+    </div>
+    <div class="nav-label">Documentos</div>
+    <div class="nav-item active" onclick="showPage('privacidade', this)">
+      <span class="nav-icon">🔒</span> Política de Privacidade <span class="nav-num">01</span>
+    </div>
+    <div class="nav-item" onclick="showPage('termos', this)">
+      <span class="nav-icon">📄</span> Termos de Uso <span class="nav-num">02</span>
+    </div>
+    <div class="nav-item" onclick="showPage('trocas', this)">
+      <span class="nav-icon">🔄</span> Trocas e Devoluções <span class="nav-num">03</span>
+    </div>
+    <div class="nav-item" onclick="showPage('envio', this)">
+      <span class="nav-icon">📦</span> Política de Envio <span class="nav-num">04</span>
+    </div>
+    <div class="nav-item" onclick="showPage('juridico', this)">
+      <span class="nav-icon">⚖️</span> Avisos Jurídicos <span class="nav-num">05</span>
+    </div>
+    <div class="sidebar-footer">
+      <p>CNPJ <strong>65.475.701/0001-22</strong><br>São Bernardo do Campo, SP<br>Versão 1.0 — Maio 2025</p>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ══════════════════════════════════════
+         01 — POLÍTICA DE PRIVACIDADE
+    ══════════════════════════════════════ -->
+    <div class="page active" id="page-privacidade">
+      <div class="page-header">
+        <div class="page-tag">Freo Figures · 01</div>
+        <h1>Política de<br>Privacidade</h1>
+        <div class="page-meta">
+          <div class="meta-item"><strong>Vigência</strong>Maio de 2025</div>
+          <div class="meta-item"><strong>Lei</strong>LGPD — 13.709/2018</div>
+          <div class="meta-item"><strong>Versão</strong>1.0</div>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <div class="toc">
+          <div class="toc-title">Índice desta política</div>
+          <ol>
+            <li><a href="#p1">Quem somos — o controlador dos dados</a></li>
+            <li><a href="#p2">Quais dados coletamos</a></li>
+            <li><a href="#p3">Para que usamos seus dados</a></li>
+            <li><a href="#p4">Bases legais de tratamento</a></li>
+            <li><a href="#p5">Compartilhamento com terceiros</a></li>
+            <li><a href="#p6">Retenção e exclusão dos dados</a></li>
+            <li><a href="#p7">Cookies e rastreamento</a></li>
+            <li><a href="#p8">Segurança dos dados</a></li>
+            <li><a href="#p9">Seus direitos como titular</a></li>
+            <li><a href="#p10">Transferência internacional</a></li>
+            <li><a href="#p11">Alterações nesta política</a></li>
+            <li><a href="#p12">Contato e canal de privacidade</a></li>
+          </ol>
+        </div>
+
+        <div class="section" id="p1">
+          <div class="sec-num">01</div>
+          <h2>Quem somos — o controlador dos dados</h2>
+          <p>A <strong>Freo Figures</strong> é uma loja especializada em produtos artesanais fabricados por impressão 3D, que atua como <strong>controladora dos dados pessoais</strong> tratados neste site — responsável pelas decisões sobre como e por que seus dados são coletados e utilizados, conforme a LGPD (Lei 13.709/2018).</p>
+          <div class="info-grid">
+            <div class="info-cell"><div class="lbl">Nome / Loja</div><div class="val">Freo Figures</div></div>
+            <div class="info-cell"><div class="lbl">CNPJ</div><div class="val">65.475.701/0001-22</div></div>
+            <div class="info-cell"><div class="lbl">Sede</div><div class="val">São Bernardo do Campo, SP</div></div>
+            <div class="info-cell"><div class="lbl">Canal de Privacidade</div><div class="val"><a href="mailto:privacidade@freofigures.com.br">privacidade@freofigures.com.br</a></div></div>
+          </div>
+        </div>
+
+        <div class="section" id="p2">
+          <div class="sec-num">02</div>
+          <h2>Quais dados coletamos</h2>
+          <h3>Fornecidos por você</h3>
+          <ul>
+            <li>Nome completo e CPF (para emissão de nota fiscal)</li>
+            <li>Endereço completo de entrega e cobrança</li>
+            <li>E-mail, telefone e/ou WhatsApp</li>
+            <li>Dados de pagamento (processados exclusivamente pelo gateway — não armazenamos dados de cartão)</li>
+            <li>Mensagens enviadas via atendimento</li>
+          </ul>
+          <h3>Coletados automaticamente</h3>
+          <ul>
+            <li>Endereço IP e dados de navegação</li>
+            <li>Tipo de dispositivo, navegador e sistema operacional</li>
+            <li>Páginas visitadas, tempo de sessão e cliques</li>
+            <li>Dados de cookies (ver seção 7)</li>
+          </ul>
+          <div class="box">
+            <p><strong>Não coletamos</strong> dados sensíveis (origem racial, saúde, biometria, religião etc.) e não realizamos decisões automatizadas que produzam efeitos jurídicos sobre você.</p>
+          </div>
+        </div>
+
+        <div class="section" id="p3">
+          <div class="sec-num">03</div>
+          <h2>Para que usamos seus dados</h2>
+          <ul>
+            <li><strong>Processar e produzir seus pedidos</strong> — fabricação artesanal por impressão 3D conforme especificações</li>
+            <li><strong>Gestão de entrega</strong> — comunicação com Correios e transportadoras</li>
+            <li><strong>Emissão de nota fiscal</strong> — cumprimento de obrigações fiscais (NF-e)</li>
+            <li><strong>Atendimento ao cliente</strong> — dúvidas, trocas e reclamações via e-mail, WhatsApp ou Instagram</li>
+            <li><strong>Comunicações sobre o pedido</strong> — confirmação, rastreamento e status</li>
+            <li><strong>Marketing</strong> — novidades e promoções (somente com seu consentimento expresso)</li>
+            <li><strong>Melhoria do site</strong> — análise de dados agregados de navegação</li>
+            <li><strong>Prevenção a fraudes</strong> — verificação de inconsistências em pedidos</li>
+            <li><strong>Cumprimento legal</strong> — resposta a autoridades e requisições judiciais</li>
+          </ul>
+        </div>
+
+        <div class="section" id="p4">
+          <div class="sec-num">04</div>
+          <h2>Bases legais de tratamento</h2>
+          <table class="data-table">
+            <thead><tr><th>Finalidade</th><th>Base legal (LGPD)</th></tr></thead>
+            <tbody>
+              <tr><td>Execução do pedido e entrega</td><td>Execução de contrato — Art. 7º, V</td></tr>
+              <tr><td>Emissão de nota fiscal</td><td>Obrigação legal — Art. 7º, II</td></tr>
+              <tr><td>Atendimento ao cliente</td><td>Contrato / Legítimo interesse — Art. 7º, V e IX</td></tr>
+              <tr><td>Marketing e comunicações</td><td>Consentimento — Art. 7º, I</td></tr>
+              <tr><td>Análise de navegação</td><td>Legítimo interesse — Art. 7º, IX</td></tr>
+              <tr><td>Prevenção a fraudes</td><td>Legítimo interesse — Art. 7º, IX</td></tr>
+              <tr><td>Requisições legais/judiciais</td><td>Cumprimento de obrigação legal — Art. 7º, II</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section" id="p5">
+          <div class="sec-num">05</div>
+          <h2>Compartilhamento com terceiros</h2>
+          <ul>
+            <li><strong>Correios e transportadoras</strong> — nome e endereço de entrega para postagem</li>
+            <li><strong>Gateway de pagamento</strong> — dados de pagamento processados com certificação PCI-DSS</li>
+            <li><strong>Plataforma de e-commerce</strong> — armazenamento de pedidos e dados cadastrais</li>
+            <li><strong>Google Analytics</strong> — dados anonimizados de navegação</li>
+            <li><strong>Instagram / Meta</strong> — interações em @freofigures, sujeitas à política da Meta</li>
+            <li><strong>Autoridades públicas</strong> — quando exigido por lei, decisão judicial ou órgão regulatório</li>
+          </ul>
+          <div class="box">
+            <p><strong>Não vendemos, alugamos ou cedemos</strong> seus dados pessoais a terceiros para fins comerciais próprios desses terceiros.</p>
+          </div>
+        </div>
+
+        <div class="section" id="p6">
+          <div class="sec-num">06</div>
+          <h2>Retenção e exclusão dos dados</h2>
+          <table class="data-table">
+            <thead><tr><th>Tipo de dado</th><th>Prazo</th><th>Fundamento</th></tr></thead>
+            <tbody>
+              <tr><td>Dados fiscais e de pedido</td><td><span class="pill">5 anos</span></td><td>Código Tributário Nacional</td></tr>
+              <tr><td>Dados de conta ativa</td><td><span class="pill">Durante a vigência</span></td><td>Execução do contrato</td></tr>
+              <tr><td>Dados de marketing</td><td><span class="pill">Até revogação</span></td><td>LGPD Art. 7º, I</td></tr>
+              <tr><td>Logs de navegação</td><td><span class="pill">Até 12 meses</span></td><td>Marco Civil — Lei 12.965/2014</td></tr>
+              <tr><td>Registros de atendimento</td><td><span class="pill">2 anos</span></td><td>Legítimo interesse / CDC</td></tr>
+            </tbody>
+          </table>
+          <p>Findo o prazo, os dados são eliminados ou anonimizados de forma segura.</p>
+        </div>
+
+        <div class="section" id="p7">
+          <div class="sec-num">07</div>
+          <h2>Cookies e tecnologias de rastreamento</h2>
+          <h3>Cookies essenciais</h3>
+          <p>Necessários para o funcionamento básico do site (carrinho, sessão, segurança). Não podem ser desativados sem comprometer a experiência.</p>
+          <h3>Cookies analíticos</h3>
+          <p>Google Analytics — dados anonimizados para melhoria do site. Ativados por padrão; podem ser recusados no banner de cookies.</p>
+          <h3>Cookies de marketing</h3>
+          <p>Personalizações e retargeting. Ativados apenas com seu consentimento expresso no banner.</p>
+        </div>
+
+        <div class="section" id="p8">
+          <div class="sec-num">08</div>
+          <h2>Segurança dos dados</h2>
+          <ul>
+            <li>Comunicação via protocolo HTTPS/TLS</li>
+            <li>Dados de pagamento processados por gateway certificado PCI-DSS</li>
+            <li>Acesso restrito por necessidade operacional</li>
+            <li>Monitoramento de acessos e incidentes</li>
+          </ul>
+          <p>Em caso de incidente relevante, notificaremos a ANPD e os afetados nos prazos previstos pela LGPD.</p>
+        </div>
+
+        <div class="section" id="p9">
+          <div class="sec-num">09</div>
+          <h2>Seus direitos como titular</h2>
+          <div class="rights-grid">
+            <div class="right-card"><div class="ricon">🔍</div><div class="rtitle">Acesso</div><div class="rdesc">Confirmar e obter cópia dos seus dados</div></div>
+            <div class="right-card"><div class="ricon">✏️</div><div class="rtitle">Correção</div><div class="rdesc">Atualizar dados incompletos ou inexatos</div></div>
+            <div class="right-card"><div class="ricon">🗑️</div><div class="rtitle">Eliminação</div><div class="rdesc">Excluir dados tratados por consentimento</div></div>
+            <div class="right-card"><div class="ricon">🔒</div><div class="rtitle">Anonimização</div><div class="rdesc">Bloquear dados desnecessários</div></div>
+            <div class="right-card"><div class="ricon">📦</div><div class="rtitle">Portabilidade</div><div class="rdesc">Receber seus dados em formato estruturado</div></div>
+            <div class="right-card"><div class="ricon">↩️</div><div class="rtitle">Revogação</div><div class="rdesc">Retirar consentimento a qualquer momento</div></div>
+            <div class="right-card"><div class="ricon">ℹ️</div><div class="rtitle">Informação</div><div class="rdesc">Saber com quem seus dados são compartilhados</div></div>
+            <div class="right-card"><div class="ricon">🏛️</div><div class="rtitle">ANPD</div><div class="rdesc">Peticionar à Autoridade Nacional de Proteção de Dados</div></div>
+          </div>
+          <p>Solicitações pelo e-mail <a href="mailto:privacidade@freofigures.com.br">privacidade@freofigures.com.br</a>. Resposta em até <strong>15 dias úteis</strong>.</p>
+        </div>
+
+        <div class="section" id="p10">
+          <div class="sec-num">10</div>
+          <h2>Transferência internacional de dados</h2>
+          <p>Alguns fornecedores de tecnologia (Google Analytics, plataformas de e-commerce) podem processar dados fora do Brasil. Nesses casos, exigimos nível de proteção equivalente ao da LGPD por meio de cláusulas contratuais ou por estarem em países com nível adequado reconhecido pela ANPD.</p>
+        </div>
+
+        <div class="section" id="p11">
+          <div class="sec-num">11</div>
+          <h2>Alterações nesta política</h2>
+          <p>Esta política pode ser atualizada periodicamente. Alterações relevantes serão comunicadas por e-mail ou por aviso no site com antecedência mínima de 10 dias. A data de vigência no topo indica a versão atual.</p>
+        </div>
+
+        <div class="section" id="p12">
+          <div class="sec-num">12</div>
+          <h2>Contato e canal de privacidade</h2>
+          <div class="contact-block">
+            <div class="contact-row"><span class="clabel">Canal de Privacidade</span><span class="cval"><a href="mailto:privacidade@freofigures.com.br">privacidade@freofigures.com.br</a></span></div>
+            <div class="contact-row"><span class="clabel">Atendimento Geral</span><span class="cval"><a href="mailto:contato@freofigures.com.br">contato@freofigures.com.br</a></span></div>
+            <div class="contact-row"><span class="clabel">WhatsApp</span><span class="cval"><a href="https://wa.me/5511946454111">+55 (11) 94645-4111</a></span></div>
+            <div class="contact-row"><span class="clabel">Instagram</span><span class="cval"><a href="https://instagram.com/freofigures">@freofigures</a></span></div>
+            <div class="contact-row"><span class="clabel">Sede</span><span class="cval">São Bernardo do Campo, SP — Brasil</span></div>
+            <div class="contact-row"><span class="clabel">CNPJ</span><span class="cval">65.475.701/0001-22</span></div>
+          </div>
+          <div class="box" style="margin-top:1rem">
+            <p>Caso não obtenha resposta satisfatória, você pode peticionar à <strong>ANPD</strong> pelo portal <strong>gov.br/anpd</strong>.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         02 — TERMOS DE USO
+    ══════════════════════════════════════ -->
+    <div class="page" id="page-termos">
+      <div class="page-header">
+        <div class="page-tag">Freo Figures · 02</div>
+        <h1>Termos de Uso e<br>Condições de Venda</h1>
+        <div class="page-meta">
+          <div class="meta-item"><strong>Vigência</strong>Maio de 2025</div>
+          <div class="meta-item"><strong>Lei</strong>CDC — 8.078/1990</div>
+          <div class="meta-item"><strong>Versão</strong>1.0</div>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <div class="section">
+          <div class="sec-num">01</div>
+          <h2>Aceitação dos termos</h2>
+          <p>Ao acessar o site ou realizar uma compra na <strong>Freo Figures</strong> (CNPJ 65.475.701/0001-22), você declara ter lido, compreendido e concordado com estes Termos de Uso e Condições de Venda, bem como com nossas demais políticas disponíveis nesta página.</p>
+          <p>Se você não concordar com algum item, pedimos que não realize compras em nosso site.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">02</div>
+          <h2>Sobre os produtos</h2>
+          <p>Todos os produtos da Freo Figures são <strong>fabricados artesanalmente por impressão 3D</strong> (FDM ou SLA), sob demanda, após a confirmação do pagamento. Por serem peças artesanais, cada unidade pode apresentar variações sutis de textura, acabamento superficial e tonalidade de cor — características inerentes ao processo de impressão 3D e parte da identidade de cada peça.</p>
+          <div class="box warn">
+            <p><strong>Atenção:</strong> as imagens do site são representativas. Pequenas diferenças de acabamento em relação às fotos são normais e não configuram defeito de produto.</p>
+          </div>
+          <ul>
+            <li>Material principal: filamento PLA, PETG ou resina fotopolimerizável (especificado em cada produto)</li>
+            <li>Os produtos não são indicados para contato direto com alimentos, calor excessivo ou uso estrutural</li>
+            <li>Faixas etárias e limitações de uso, quando aplicáveis, estão descritas na página de cada produto</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">03</div>
+          <h2>Prazo de produção</h2>
+          <p>O prazo de produção de cada produto está indicado na respectiva página. A contagem inicia-se após a <strong>confirmação do pagamento</strong>. O prazo total de espera é a soma do prazo de produção com o prazo de entrega do frete escolhido.</p>
+          <div class="box">
+            <p>Pedidos com múltiplos itens podem ter prazos distintos. Caso prefira receber tudo junto, o envio ocorre após a conclusão de todos os itens.</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">04</div>
+          <h2>Pagamento e confirmação do pedido</h2>
+          <ul>
+            <li>Aceitamos cartão de crédito, débito, Pix e boleto bancário</li>
+            <li>O pedido é confirmado apenas após a aprovação do pagamento pelo gateway</li>
+            <li>Boletos têm prazo de 3 dias úteis para compensação; após esse prazo, o pedido é cancelado automaticamente</li>
+            <li>Pagamentos via Pix têm confirmação imediata</li>
+            <li>Os preços exibidos no site já incluem todos os tributos aplicáveis</li>
+            <li>O frete é calculado e exibido no checkout antes da finalização</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">05</div>
+          <h2>Nota fiscal</h2>
+          <p>A Freo Figures emite <strong>NF-e (Nota Fiscal Eletrônica)</strong> para todas as compras, conforme a legislação fiscal brasileira. A NF-e é enviada ao e-mail cadastrado após a confirmação do pedido.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">06</div>
+          <h2>Cancelamento antes do envio</h2>
+          <p><strong>Produtos padrão (sem personalização):</strong> podem ser cancelados em até 24 horas após a confirmação do pagamento, sem cobrança de taxa.</p>
+          <p><strong>Produtos personalizados</strong> (com nome, cor, tamanho ou especificação exclusiva definida pelo cliente): não podem ser cancelados após o início da produção, uma vez que são fabricados sob medida. A exceção se aplica nos casos de defeito ou vício do produto, conforme o CDC.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">07</div>
+          <h2>Direito de arrependimento — compras online</h2>
+          <div class="box">
+            <p><strong>Art. 49 do CDC:</strong> em compras realizadas fora do estabelecimento comercial (internet), o consumidor tem direito de desistir da compra em até <strong>7 dias corridos</strong> após o recebimento do produto, sem necessidade de justificativa, com direito a reembolso integral — incluindo o frete pago.</p>
+          </div>
+          <p><strong>Exceção:</strong> produtos personalizados com especificações exclusivas do consumidor (cores, gravações, dimensões customizadas) não estão sujeitos ao direito de arrependimento, conforme entendimento do CDC e do Procon.</p>
+          <p>Para exercer esse direito, entre em contato pelo e-mail <a href="mailto:contato@freofigures.com.br">contato@freofigures.com.br</a> ou WhatsApp <a href="https://wa.me/5511946454111">+55 (11) 94645-4111</a> dentro do prazo.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">08</div>
+          <h2>Propriedade intelectual</h2>
+          <p>Todo o conteúdo do site (textos, imagens, designs de produtos, logotipo) é de propriedade da Freo Figures ou de seus licenciantes, protegido pela Lei 9.610/1998 (Direitos Autorais) e pela Lei 9.279/1996 (Propriedade Industrial). É proibida a reprodução, venda ou distribuição sem autorização prévia por escrito.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">09</div>
+          <h2>Responsabilidade</h2>
+          <p>A Freo Figures não se responsabiliza por danos decorrentes de uso inadequado dos produtos, informações incorretas de endereço fornecidas pelo cliente, ou atrasos causados por transportadoras e Correios em situações de força maior.</p>
+          <p>Nossa responsabilidade limita-se ao valor do produto adquirido, nos termos do CDC.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">10</div>
+          <h2>Foro e legislação aplicável</h2>
+          <p>Estes termos são regidos pelas leis brasileiras, em especial pelo Código de Defesa do Consumidor (Lei 8.078/1990) e pelo Código Civil (Lei 10.406/2002). Fica eleito o foro da comarca de <strong>São Bernardo do Campo, SP</strong>, para dirimir eventuais litígios, salvo disposição legal em contrário.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         03 — TROCAS E DEVOLUÇÕES
+    ══════════════════════════════════════ -->
+    <div class="page" id="page-trocas">
+      <div class="page-header">
+        <div class="page-tag">Freo Figures · 03</div>
+        <h1>Política de Trocas<br>e Devoluções</h1>
+        <div class="page-meta">
+          <div class="meta-item"><strong>Vigência</strong>Maio de 2025</div>
+          <div class="meta-item"><strong>Lei</strong>CDC — Arts. 18, 26 e 49</div>
+          <div class="meta-item"><strong>Versão</strong>1.0</div>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <div class="section">
+          <div class="sec-num">01</div>
+          <h2>Prazos legais para reclamação</h2>
+          <div class="box">
+            <p><strong>Arrependimento</strong> (compras online, sem defeito): <strong>7 dias corridos</strong> após o recebimento — Art. 49 do CDC.</p>
+          </div>
+          <div class="box warn">
+            <p><strong>Vícios aparentes</strong> (defeitos visíveis, erro de impressão, peça quebrada): <strong>30 dias</strong> após o recebimento para produtos não duráveis / <strong>90 dias</strong> para produtos duráveis — Art. 26 do CDC.</p>
+          </div>
+          <p>Após esses prazos, a reclamação não poderá ser aceita, salvo vícios ocultos constatados posteriormente.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">02</div>
+          <h2>O que cobre nossa política</h2>
+          <ul>
+            <li>Produto com defeito de fabricação ou falha de impressão</li>
+            <li>Produto diferente do descrito ou da imagem no site</li>
+            <li>Produto danificado durante o transporte (com registro fotográfico)</li>
+            <li>Produto com dimensões ou cores significativamente divergentes do especificado</li>
+            <li>Arrependimento da compra dentro do prazo legal (produtos não personalizados)</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">03</div>
+          <h2>O que não cobre</h2>
+          <ul>
+            <li>Danos causados por uso inadequado, queda, exposição a calor excessivo ou umidade</li>
+            <li>Variações sutis de cor, textura e acabamento inerentes à impressão 3D artesanal</li>
+            <li>Produtos personalizados (exceto em caso de defeito de fabricação)</li>
+            <li>Solicitações realizadas fora dos prazos legais</li>
+            <li>Arrependimento de produtos digitais ou arquivos STL, caso comercializados</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">04</div>
+          <h2>Como solicitar troca ou devolução</h2>
+          <ol class="steps">
+            <li>Entre em contato pelo e-mail <a href="mailto:contato@freofigures.com.br">contato@freofigures.com.br</a> ou WhatsApp <a href="https://wa.me/5511946454111">+55 (11) 94645-4111</a> informando o número do pedido e o motivo da solicitação.</li>
+            <li>Envie fotos nítidas do produto e da embalagem (obrigatório em casos de dano ou defeito).</li>
+            <li>Aguarde nossa análise em até <strong>2 dias úteis</strong>.</li>
+            <li>Caso aprovado, enviaremos a etiqueta de postagem pré-paga (frete por nossa conta em casos cobertos pela política).</li>
+            <li>Após recebimento e conferência do produto, processamos o reembolso ou o envio do novo produto em até <strong>10 dias úteis</strong>.</li>
+          </ol>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">05</div>
+          <h2>Condições para devolução do produto</h2>
+          <ul>
+            <li>Produto deve ser devolvido na embalagem original ou em embalagem que garanta proteção adequada</li>
+            <li>O produto não deve ter sido utilizado de forma que impeça a avaliação do defeito</li>
+            <li>Incluir na embalagem o número do pedido e uma breve descrição do problema</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">06</div>
+          <h2>Reembolso</h2>
+          <p>O reembolso é realizado pelo mesmo meio de pagamento utilizado na compra:</p>
+          <ul>
+            <li><strong>Cartão de crédito:</strong> estorno em até 2 faturas, conforme operadora</li>
+            <li><strong>Pix e boleto:</strong> transferência em até 5 dias úteis</li>
+            <li><strong>Casos de arrependimento:</strong> reembolso integral, incluindo o valor do frete pago na compra</li>
+          </ul>
+          <div class="box">
+            <p><strong>Em casos de defeito confirmado</strong>, o cliente pode optar entre reembolso integral, troca pelo mesmo produto ou crédito para nova compra.</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">07</div>
+          <h2>Canais de atendimento</h2>
+          <div class="contact-block">
+            <div class="contact-row"><span class="clabel">E-mail</span><span class="cval"><a href="mailto:contato@freofigures.com.br">contato@freofigures.com.br</a></span></div>
+            <div class="contact-row"><span class="clabel">WhatsApp</span><span class="cval"><a href="https://wa.me/5511946454111">+55 (11) 94645-4111</a></span></div>
+            <div class="contact-row"><span class="clabel">Instagram</span><span class="cval"><a href="https://instagram.com/freofigures">@freofigures</a></span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         04 — POLÍTICA DE ENVIO
+    ══════════════════════════════════════ -->
+    <div class="page" id="page-envio">
+      <div class="page-header">
+        <div class="page-tag">Freo Figures · 04</div>
+        <h1>Política<br>de Envio</h1>
+        <div class="page-meta">
+          <div class="meta-item"><strong>Vigência</strong>Maio de 2025</div>
+          <div class="meta-item"><strong>Cobertura</strong>Todo o Brasil</div>
+          <div class="meta-item"><strong>Versão</strong>1.0</div>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <div class="section">
+          <div class="sec-num">01</div>
+          <h2>Prazo de produção + envio</h2>
+          <div class="box">
+            <p>Os produtos da Freo Figures são <strong>fabricados após a confirmação do pagamento</strong>. O prazo total de espera é a soma do <strong>prazo de produção</strong> (indicado em cada produto) + o <strong>prazo de entrega</strong> da modalidade de frete escolhida. Os prazos da transportadora iniciam somente após a postagem.</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">02</div>
+          <h2>Modalidades e abrangência</h2>
+          <ul>
+            <li><strong>Correios PAC</strong> — entregas econômicas para todo o Brasil</li>
+            <li><strong>Correios SEDEX</strong> — entregas expressas para todo o Brasil</li>
+            <li><strong>Transportadoras parceiras</strong> — disponíveis conforme região e tamanho do produto</li>
+            <li><strong>Retirada em mãos</strong> — disponível mediante agendamento prévio (São Bernardo do Campo, SP)</li>
+          </ul>
+          <p>O valor e o prazo de cada modalidade são calculados e exibidos no checkout antes da finalização da compra.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">03</div>
+          <h2>Rastreamento do pedido</h2>
+          <p>O código de rastreamento é enviado por e-mail assim que o pedido é postado. Você pode acompanhar pelo site dos Correios (<a href="https://rastreamento.correios.com.br" target="_blank">rastreamento.correios.com.br</a>) ou da transportadora parceira.</p>
+          <div class="box warn">
+            <p>Caso o rastreamento fique sem atualização por mais de <strong>7 dias úteis</strong>, entre em contato conosco pelo WhatsApp ou e-mail para abertura de investigação junto à transportadora.</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">04</div>
+          <h2>Extravios e danos no transporte</h2>
+          <h3>Produto extraviado</h3>
+          <p>Caso o produto não seja entregue dentro do prazo máximo estimado, entre em contato conosco em até <strong>30 dias</strong> após a data prevista de entrega. Investigaremos junto à transportadora e, confirmado o extravio, realizaremos o reenvio ou reembolso integral.</p>
+          <h3>Produto danificado</h3>
+          <p>Fotografe a embalagem e o produto <strong>antes de abrir completamente</strong> e nos contate em até <strong>48 horas</strong> após o recebimento. Nesses casos, nos responsabilizamos pelo reenvio ou reembolso integral.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">05</div>
+          <h2>Endereço incorreto</h2>
+          <p>Confira cuidadosamente seu endereço antes de finalizar o pedido. Pedidos devolvidos pelos Correios por endereço incorreto informado pelo cliente serão reenviados mediante novo pagamento do frete. Alterações de endereço podem ser solicitadas <strong>antes da postagem</strong> pelo WhatsApp ou e-mail.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">06</div>
+          <h2>Embalagem</h2>
+          <p>Cada produto é embalado individualmente com proteção adequada ao transporte. Toda peça passa por conferência de qualidade antes do envio. Utilizamos materiais de proteção (plástico bolha, espuma ou papelão estruturado) conforme o tamanho e fragilidade de cada item.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">07</div>
+          <h2>Frete grátis</h2>
+          <p>Quando disponível, o frete grátis é concedido automaticamente no checkout conforme condições vigentes na promoção. As condições (valor mínimo, regiões atendidas e modalidade de envio) são informadas na página da promoção ou no banner do site.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">08</div>
+          <h2>Contato para dúvidas sobre envio</h2>
+          <div class="contact-block">
+            <div class="contact-row"><span class="clabel">WhatsApp</span><span class="cval"><a href="https://wa.me/5511946454111">+55 (11) 94645-4111</a></span></div>
+            <div class="contact-row"><span class="clabel">E-mail</span><span class="cval"><a href="mailto:contato@freofigures.com.br">contato@freofigures.com.br</a></span></div>
+            <div class="contact-row"><span class="clabel">Instagram</span><span class="cval"><a href="https://instagram.com/freofigures">@freofigures</a></span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         05 — AVISOS JURÍDICOS
+    ══════════════════════════════════════ -->
+    <div class="page" id="page-juridico">
+      <div class="page-header">
+        <div class="page-tag">Freo Figures · 05</div>
+        <h1>Avisos Jurídicos<br>e Compliance</h1>
+        <div class="page-meta">
+          <div class="meta-item"><strong>Vigência</strong>Maio de 2025</div>
+          <div class="meta-item"><strong>Sede</strong>São Bernardo do Campo, SP</div>
+          <div class="meta-item"><strong>Versão</strong>1.0</div>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <div class="section">
+          <div class="sec-num">01</div>
+          <h2>Legislação aplicável</h2>
+          <ul>
+            <li><strong>CDC — Lei 8.078/1990:</strong> Código de Defesa do Consumidor — direitos do consumidor, trocas, prazos, responsabilidade do fornecedor</li>
+            <li><strong>LGPD — Lei 13.709/2018:</strong> Lei Geral de Proteção de Dados Pessoais</li>
+            <li><strong>Marco Civil — Lei 12.965/2014:</strong> Uso da internet no Brasil, retenção de logs</li>
+            <li><strong>Decreto 7.962/2013:</strong> Regulamenta o comércio eletrônico — informações obrigatórias e direito de arrependimento</li>
+            <li><strong>CC — Lei 10.406/2002:</strong> Código Civil — contratos, responsabilidade civil</li>
+            <li><strong>Lei 9.610/1998:</strong> Direitos Autorais</li>
+            <li><strong>Lei 9.279/1996:</strong> Propriedade Industrial</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">02</div>
+          <h2>Informações obrigatórias no site</h2>
+          <p>Conforme o Decreto 7.962/2013, as seguintes informações devem estar visíveis no site da Freo Figures:</p>
+          <table class="data-table">
+            <thead><tr><th>Informação exigida</th><th>Dado da Freo Figures</th></tr></thead>
+            <tbody>
+              <tr><td>Razão Social / Nome</td><td>Freo Figures</td></tr>
+              <tr><td>CNPJ</td><td>65.475.701/0001-22</td></tr>
+              <tr><td>Endereço físico</td><td>São Bernardo do Campo, SP — Brasil</td></tr>
+              <tr><td>E-mail de contato</td><td>contato@freofigures.com.br</td></tr>
+              <tr><td>Telefone / WhatsApp</td><td>+55 (11) 94645-4111</td></tr>
+              <tr><td>Características do produto</td><td>Descritas em cada página de produto</td></tr>
+              <tr><td>Preço com tributos e frete</td><td>Exibido no checkout</td></tr>
+              <tr><td>Direito de arrependimento</td><td>Informado nesta página e no checkout</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">03</div>
+          <h2>Obrigações fiscais — Nota Fiscal</h2>
+          <p>A Freo Figures é registrada como <strong>MEI (Microempreendedor Individual)</strong> e emite <strong>NF-e (Nota Fiscal Eletrônica)</strong> para todas as vendas, conforme exigência da Receita Federal. A nota é enviada ao e-mail do comprador após confirmação do pagamento.</p>
+          <div class="box danger">
+            <p><strong>Atenção ao consumidor:</strong> a ausência de nota fiscal é irregular. Caso não receba a NF-e em até 48h após a confirmação do pedido, entre em contato pelo e-mail <a href="mailto:contato@freofigures.com.br">contato@freofigures.com.br</a>.</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">04</div>
+          <h2>Propriedade intelectual dos designs</h2>
+          <p>Os designs dos produtos da Freo Figures são de autoria própria, salvo indicação expressa de licenciamento de terceiros. A reprodução, venda ou distribuição não autorizada pode configurar:</p>
+          <ul>
+            <li>Violação de direitos autorais — Lei 9.610/1998</li>
+            <li>Violação de propriedade industrial (desenho industrial, marca) — Lei 9.279/1996</li>
+            <li>Concorrência desleal</li>
+          </ul>
+          <div class="box warn">
+            <p><strong>Atenção:</strong> a fabricação e venda de produtos com personagens, marcas ou designs protegidos por terceiros (licenças de estúdios, jogos, quadrinhos etc.) sem autorização configura infração. A Freo Figures compromete-se a verificar os direitos de propriedade intelectual de todos os designs comercializados.</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">05</div>
+          <h2>Responsabilidade do fabricante</h2>
+          <p>Como fabricante artesanal, a Freo Figures responde pelos vícios e defeitos dos produtos conforme os Arts. 12 e 18 do CDC. Recomendamos observar as instruções de uso incluídas na embalagem ou na página do produto, especialmente:</p>
+          <ul>
+            <li>Material utilizado (PLA, PETG, resina) e suas limitações</li>
+            <li>Temperatura máxima de exposição</li>
+            <li>Capacidade de carga (quando aplicável)</li>
+            <li>Não indicado para contato com alimentos (salvo indicação contrária)</li>
+            <li>Faixa etária recomendada (produtos com peças pequenas não são indicados para crianças menores de 3 anos)</li>
+          </ul>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">06</div>
+          <h2>Canais de denúncia e órgãos de defesa</h2>
+          <p>O consumidor pode recorrer aos seguintes canais em caso de conflito não resolvido diretamente com a Freo Figures:</p>
+          <ul>
+            <li><strong>Procon-SP:</strong> procon.sp.gov.br — 151</li>
+            <li><strong>consumidor.gov.br:</strong> plataforma federal de resolução de conflitos</li>
+            <li><strong>ANPD</strong> (questões de dados pessoais): gov.br/anpd</li>
+            <li><strong>Reclame Aqui:</strong> reclameaqui.com.br</li>
+          </ul>
+          <p>Nosso compromisso é resolver qualquer questão diretamente com o cliente. Em caso de dúvidas, entre em contato conosco antes de acionar órgãos de defesa.</p>
+        </div>
+
+        <div class="section">
+          <div class="sec-num">07</div>
+          <h2>Contato jurídico e geral</h2>
+          <div class="contact-block">
+            <div class="contact-row"><span class="clabel">E-mail Geral</span><span class="cval"><a href="mailto:contato@freofigures.com.br">contato@freofigures.com.br</a></span></div>
+            <div class="contact-row"><span class="clabel">Canal LGPD</span><span class="cval"><a href="mailto:privacidade@freofigures.com.br">privacidade@freofigures.com.br</a></span></div>
+            <div class="contact-row"><span class="clabel">WhatsApp</span><span class="cval"><a href="https://wa.me/5511946454111">+55 (11) 94645-4111</a></span></div>
+            <div class="contact-row"><span class="clabel">Instagram</span><span class="cval"><a href="https://instagram.com/freofigures">@freofigures</a></span></div>
+            <div class="contact-row"><span class="clabel">CNPJ</span><span class="cval">65.475.701/0001-22</span></div>
+            <div class="contact-row"><span class="clabel">Sede</span><span class="cval">São Bernardo do Campo, SP — Brasil</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer style="border-top: 1px solid var(--border); padding: 2rem 3.5rem; margin-top: 2rem;">
+      <p style="font-size: 12px; color: var(--muted2);">© 2025 <strong style="color:var(--muted)">Freo Figures</strong> — CNPJ 65.475.701/0001-22 — São Bernardo do Campo, SP. Todos os direitos reservados.</p>
+      <p style="font-size: 12px; color: var(--muted2); margin-top: 4px;">Políticas v1.0 — Maio de 2025 — Conforme CDC, LGPD e legislação brasileira vigente.</p>
+    </footer>
+
+  </div><!-- /content -->
+</div><!-- /layout -->
+
+<script>
+  function showPage(id, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    if (el) el.classList.add('active');
+    if (el && el.classList.contains('nav-item')) {
+      document.querySelectorAll('.mobile-nav-btn').forEach(b => {
+        if (b.getAttribute('onclick').includes(id)) b.classList.add('active');
+      });
+    }
+    if (el && el.classList.contains('mobile-nav-btn')) {
+      document.querySelectorAll('.nav-item').forEach(n => {
+        if (n.getAttribute('onclick').includes(id)) n.classList.add('active');
+      });
+    }
+    window.scrollTo(0, 0);
+  }
+</script>
+</body>
+</html>
