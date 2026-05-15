@@ -1715,7 +1715,7 @@ const Footer = () => (
           <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Suporte</h4>
           <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
             <li>
-              <a href="/public/faq.html" className="hover:text-white transition-colors">FAQ</a>
+              <a <a href="/public/faq.html" onClick={(e) => { e.preventDefault(); window.location.href = '/public/faq.html'; }} className="hover:text-white transition-colors">FAQ</a>
             </li>
             <li><a href="#" className="hover:text-white transition-colors">Envio e Prazos</a></li>
             <li><a href="/trocas-e-devolucoes.html" className="hover:text-white transition-colors">Trocas e Devoluções</a></li>
