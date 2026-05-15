@@ -1065,12 +1065,22 @@
           },
 
           onSubmit: function(params) {
+            var device Id = window.MP_DEVICE_SESSION_ID
+              || (window.MercadoPago && window.MercadoPago.deviceSessionId)
+              || '';
+            
             var payload = Object.assign({}, params.formData, {
               action: 'process_payment',
               user_id: currentUser.id,
               frete: selectedShipping,
               total_com_frete: subtotalAmount + freteAmount,
-              backUrls: backUrls
+              backUrls: backUrls,
+              device_id: deviceId,
+              irems: cartItemsData,
+              shipping_address: selectedAddress,
+              customer_name: getCustomerNameForOrder(),
+              customer_email: getCustomerEmaiForOrder()
+              customer_phone: getCustomerPhoneForOrder()
             });
 
             var itensPedido = cartItemsData.map(function(item) {
