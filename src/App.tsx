@@ -1722,11 +1722,11 @@ const Footer = () => (
           <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
             <li>
               {/* ── FAQ corrigido — link simples, sem tag <a> duplicada ── */}
-              <a href="/public/faq.html" className="hover:text-white transition-colors">FAQ</a>
+              <a href="/faq.html" className="hover:text-white transition-colors">FAQ</a>
             </li>
-            <li><a href="#" className="hover:text-white transition-colors">Envio e Prazos</a></li>
+            <li><a href="/politica-de-envio" className="hover:text-white transition-colors">Envio e Prazos</a></li>
             <li>
-              <a href="/public/trocas-e-devolucoes.html" className="hover:text-white transition-colors">Trocas e Devoluções</a>
+              <a href="/trocas-e-devolucoes.html" className="hover:text-white transition-colors">Trocas e Devoluções</a>
             </li>
             <li><a href="#" className="hover:text-white transition-colors">Cuidados com a Peça</a></li>
             <li>
