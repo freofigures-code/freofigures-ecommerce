@@ -44,9 +44,6 @@ function setPrefs(p: Omit<CookiePrefs, "at">) {
 }
 
 function applyPrefs(p: Omit<CookiePrefs, "at">) {
-  // Integre seus scripts aqui:
-  // if (p.analytics) { iniciar Google Analytics }
-  // if (p.marketing)  { iniciar Meta Pixel }
   console.log("[Freo Figures] cookies:", p);
 }
 
@@ -300,7 +297,7 @@ function CookieBanner() {
             <p className="ff-title">Sua privacidade importa para nós</p>
             <p className="ff-text">
               Usamos cookies essenciais para o site funcionar e, com sua permissão, cookies analíticos e de marketing.
-              Veja nossa <a href="/politica-de-privacidade.html" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.
+              Veja nossa <a href="/public/politicas.html" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.
             </p>
           </div>
 
@@ -1666,7 +1663,7 @@ const StoreCTA = ({ setCurrentView }: any) => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FOOTER  ← FAQ agora aponta para /public/faq.html
+// FOOTER
 // ─────────────────────────────────────────────────────────────────────────────
 
 const Footer = () => (
@@ -1683,7 +1680,16 @@ const Footer = () => (
           </div>
           <p className="text-freo-light/60 font-body text-sm mb-4 md:mb-6">Transformando filamento em arte. Especialistas em impressão 3D de alta qualidade.</p>
           <div className="flex gap-3 md:gap-4">
-            <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer text-sm font-bold">IG</div>
+            {/* ── Instagram → @freofigures ── */}
+            <a
+              href="https://www.instagram.com/freofigures"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram @freofigures"
+              className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer text-sm font-bold"
+            >
+              IG
+            </a>
             <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer text-sm font-bold">TT</div>
             <div className="w-10 h-10 border border-white/20 flex items-center justify-center hover:bg-freo-orange hover:border-freo-orange transition-colors cursor-pointer text-sm font-bold">YT</div>
           </div>
@@ -1710,15 +1716,18 @@ const Footer = () => (
           </ul>
         </div>
 
-        {/* Suporte — FAQ agora aponta para /public/faq.html */}
+        {/* Suporte */}
         <div>
           <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Suporte</h4>
           <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
             <li>
-              <a <a href="/public/faq.html" onClick={(e) => { e.preventDefault(); window.location.href = '/public/faq.html'; }} className="hover:text-white transition-colors">FAQ</a>
+              {/* ── FAQ corrigido — link simples, sem tag <a> duplicada ── */}
+              <a href="/public/faq.html" className="hover:text-white transition-colors">FAQ</a>
             </li>
             <li><a href="#" className="hover:text-white transition-colors">Envio e Prazos</a></li>
-            <li><a href="/trocas-e-devolucoes.html" className="hover:text-white transition-colors">Trocas e Devoluções</a></li>
+            <li>
+              <a href="/public/trocas-e-devolucoes.html" className="hover:text-white transition-colors">Trocas e Devoluções</a>
+            </li>
             <li><a href="#" className="hover:text-white transition-colors">Cuidados com a Peça</a></li>
             <li>
               <a
@@ -1773,9 +1782,10 @@ const Footer = () => (
       <div className="border-t border-white/10 pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-freo-light/40 font-mono">
         <div className="text-center md:text-left">&copy; {new Date().getFullYear()} FREO FIGURES. TODOS OS DIREITOS RESERVADOS.</div>
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="/termos-de-uso.html" className="hover:text-white transition-colors">TERMOS DE USO</a>
-          <a href="/politica-de-privacidade.html" className="hover:text-white transition-colors">PRIVACIDADE</a>
-          <a href="/trocas-e-devolucoes.html" className="hover:text-white transition-colors">TROCAS E DEVOLUÇÕES</a>
+          {/* ── Links do rodapé atualizados para /public/ ── */}
+          <a href="/public/termos-de-uso.html" className="hover:text-white transition-colors">TERMOS DE USO</a>
+          <a href="/public/politicas.html" className="hover:text-white transition-colors">PRIVACIDADE</a>
+          <a href="/public/trocas-e-devolucoes.html" className="hover:text-white transition-colors">TROCAS E DEVOLUÇÕES</a>
         </div>
       </div>
 
