@@ -1021,7 +1021,7 @@
       ).trim();
     }
 
-    async function initPaymentBrick(preferenceId) {
+    async function initPaymentBrick() {
       paymentBrickInitialized = true;
 
       var totalFinal = subtotalAmount + freteAmount;
@@ -1078,7 +1078,7 @@
               items: cartItemsData,
               shipping_address: selectedAddress,
               customer_name: getCustomerNameForOrder(),
-              customer_email: getCustomerEmaiForOrder(),
+              customer_email: getCustomerEmailForOrder(),
               customer_phone: getCustomerPhoneForOrder()
             });
 
