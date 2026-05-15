@@ -1083,7 +1083,10 @@
             document.getElementById('section-payment').scrollIntoView({ behavior: 'smooth', block: 'start' });
           },
 
-          onSubmit: function(params) {
+          onSubmit: async function(params) {
+
+            await saveCardAfterPayment(params.formData.token || null);
+            
             var deviceId = window.MP_DEVICE_SESSION_ID || '';
             
             var payload = Object.assign({}, params.formData, {
@@ -1287,6 +1290,37 @@
       window.paymentBrickController = await bricksBuilder.create("payment", "paymentBrick_container", settings);
     }
 
+    async function saveCardAfterPayment(cardToken) {
+      if (!cardToken) return null;
+    
+      try {
+        var session = await window.supabaseClient.auth.getSession();
+        var accessToken = session?.data?.session?.access_token;
+    
+        if (!accessToken) return null;
+    
+        var response = await fetch(
+          'https://rrmxqpvxrpcqqxsgccqw.supabase.co/functions/v1/save-card',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':  'application/json',
+              'Authorization': 'Bearer ' + accessToken,
+            },
+            body: JSON.stringify({ card_token: cardToken }),
+          }
+        );
+    
+        var data = await response.json();
+        if (!response.ok) return null;
+    
+        return data.card || null;
+    
+      } catch (err) {
+        console.error('[saveCard] erro silencioso:', err);
+        return null;
+      }
+    }
     async function initCheckout() {
       showLoading();
 
