@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShoppingCart,
@@ -17,7 +17,364 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 
-// --- Types ---
+// ─────────────────────────────────────────────────────────────────────────────
+// COOKIE BANNER
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FF_KEY = "ff_cookies";
+
+type CookiePrefs = {
+  essential: boolean;
+  analytics: boolean;
+  marketing: boolean;
+  at: string;
+};
+
+function getPrefs(): CookiePrefs | null {
+  try {
+    const raw = localStorage.getItem(FF_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setPrefs(p: Omit<CookiePrefs, "at">) {
+  localStorage.setItem(FF_KEY, JSON.stringify({ ...p, at: new Date().toISOString() }));
+}
+
+function applyPrefs(p: Omit<CookiePrefs, "at">) {
+  // Integre seus scripts aqui:
+  // if (p.analytics) { iniciar Google Analytics }
+  // if (p.marketing)  { iniciar Meta Pixel }
+  console.log("[Freo Figures] cookies:", p);
+}
+
+function CookieBanner() {
+  const [visible, setVisible] = useState(false);
+  const [animate, setAnimate] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [analytics, setAnalytics] = useState(true);
+  const [marketing, setMarketing] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; show: boolean }>({ msg: "", show: false });
+
+  useEffect(() => {
+    const prefs = getPrefs();
+    if (!prefs) {
+      setVisible(true);
+      setTimeout(() => setAnimate(true), 100);
+    } else {
+      applyPrefs(prefs);
+    }
+  }, []);
+
+  function showToast(msg: string) {
+    setToast({ msg, show: true });
+    setTimeout(() => setToast({ msg, show: false }), 3000);
+  }
+
+  function hideBanner() {
+    setAnimate(false);
+    setTimeout(() => setVisible(false), 400);
+  }
+
+  function handleAcceptAll() {
+    const p = { essential: true, analytics: true, marketing: true };
+    setPrefs(p);
+    applyPrefs(p);
+    hideBanner();
+    showToast("Todos os cookies aceitos.");
+  }
+
+  function handleSave() {
+    const p = { essential: true, analytics, marketing };
+    setPrefs(p);
+    applyPrefs(p);
+    hideBanner();
+    showToast("Suas preferências foram salvas.");
+  }
+
+  if (!visible) return null;
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
+
+        #ff-banner {
+          position: fixed;
+          bottom: 0; left: 0; right: 0;
+          z-index: 99999;
+          background: #0e0e0f;
+          border-top: 1px solid rgba(255,255,255,0.08);
+          font-family: 'DM Sans', system-ui, sans-serif;
+          transform: translateY(110%);
+          transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+        }
+        #ff-banner.ff-show { transform: translateY(0); }
+
+        .ff-wrap {
+          max-width: 1080px;
+          margin: 0 auto;
+          padding: 1.5rem 2rem;
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+        }
+        .ff-brand {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          flex-shrink: 0;
+          gap: 5px;
+        }
+        .ff-logo-name {
+          font-family: 'DM Serif Display', serif;
+          font-size: 10px;
+          color: #444441;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .ff-sep {
+          width: 1px;
+          height: 52px;
+          background: rgba(255,255,255,0.07);
+          flex-shrink: 0;
+        }
+        .ff-body { flex: 1; min-width: 0; }
+        .ff-title {
+          font-size: 14px;
+          font-weight: 500;
+          color: #f0efeb;
+          margin: 0 0 4px;
+        }
+        .ff-text {
+          font-size: 13px;
+          color: #666663;
+          line-height: 1.6;
+          margin: 0;
+        }
+        .ff-text a { color: #c8ff3e; text-decoration: none; }
+        .ff-text a:hover { text-decoration: underline; }
+
+        .ff-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .ff-btn {
+          font-family: 'DM Sans', system-ui, sans-serif;
+          font-size: 13px;
+          font-weight: 500;
+          padding: 10px 26px;
+          border-radius: 8px;
+          cursor: pointer;
+          white-space: nowrap;
+          min-width: 165px;
+          text-align: center;
+          transition: opacity 0.15s, transform 0.1s;
+          border: none;
+        }
+        .ff-btn:hover { opacity: 0.85; }
+        .ff-btn:active { transform: scale(0.97); }
+        .ff-btn-accept { background: #c8ff3e; color: #0e0e0f; }
+        .ff-btn-config {
+          background: transparent;
+          color: #888885;
+          border: 1px solid rgba(255,255,255,0.1) !important;
+        }
+        .ff-btn-config:hover { color: #f0efeb; background: rgba(255,255,255,0.05); }
+
+        .ff-panel {
+          background: #161618;
+          border-top: 1px solid rgba(255,255,255,0.06);
+          overflow: hidden;
+          max-height: 0;
+          transition: max-height 0.3s ease;
+        }
+        .ff-panel.ff-panel-open { max-height: 300px; }
+
+        .ff-panel-inner {
+          max-width: 1080px;
+          margin: 0 auto;
+          padding: 1.25rem 2rem 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+        }
+        .ff-panel-cards { display: flex; gap: 10px; flex: 1; flex-wrap: wrap; }
+
+        .ff-card {
+          background: #1e1e21;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 10px;
+          padding: 12px 14px;
+          flex: 1;
+          min-width: 160px;
+        }
+        .ff-card-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 5px;
+        }
+        .ff-card-title { font-size: 13px; font-weight: 500; color: #f0efeb; }
+        .ff-card-desc { font-size: 12px; color: #555553; line-height: 1.55; margin: 0; }
+
+        .ff-check {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 18px; height: 18px;
+          border-radius: 5px;
+          border: 1.5px solid rgba(255,255,255,0.18);
+          background: transparent;
+          cursor: pointer;
+          position: relative;
+          flex-shrink: 0;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .ff-check:checked { background: #c8ff3e; border-color: #c8ff3e; }
+        .ff-check:checked::after {
+          content: '';
+          position: absolute;
+          left: 4px; top: 1px;
+          width: 5px; height: 9px;
+          border: 2px solid #0e0e0f;
+          border-top: none; border-left: none;
+          transform: rotate(45deg);
+        }
+        .ff-check:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .ff-panel-save { flex-shrink: 0; }
+
+        .ff-toast {
+          position: fixed;
+          bottom: 1.5rem; left: 50%;
+          transform: translateX(-50%) translateY(60px);
+          background: #1e1e21;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 10px;
+          padding: 11px 18px;
+          font-size: 13px;
+          color: #f0efeb;
+          display: flex; align-items: center; gap: 9px;
+          z-index: 100000;
+          transition: transform 0.3s ease;
+          white-space: nowrap;
+          font-family: 'DM Sans', system-ui, sans-serif;
+          pointer-events: none;
+        }
+        .ff-toast.ff-toast-show { transform: translateX(-50%) translateY(0); }
+        .ff-dot { width: 7px; height: 7px; border-radius: 50%; background: #c8ff3e; flex-shrink: 0; }
+
+        @media (max-width: 680px) {
+          .ff-wrap { flex-direction: column; gap: 1rem; padding: 1.25rem; align-items: flex-start; }
+          .ff-brand { flex-direction: row; gap: 10px; align-items: center; }
+          .ff-sep { display: none; }
+          .ff-actions { flex-direction: row; width: 100%; }
+          .ff-btn { flex: 1; min-width: 0; }
+          .ff-panel-inner { flex-direction: column; padding: 1rem 1.25rem; }
+          .ff-panel-save .ff-btn { width: 100%; }
+        }
+      `}</style>
+
+      {/* Banner */}
+      <div id="ff-banner" className={animate ? "ff-show" : ""} role="dialog" aria-label="Preferências de cookies">
+        <div className="ff-wrap">
+
+          {/* Logo */}
+          <div className="ff-brand">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="36" height="36" rx="8" fill="#c8ff3e"/>
+              <path d="M9 9h18v4H13v4h12v4H13v6H9V9z" fill="#0e0e0f"/>
+            </svg>
+            <span className="ff-logo-name">Freo Figures</span>
+          </div>
+
+          <div className="ff-sep" aria-hidden="true" />
+
+          {/* Texto */}
+          <div className="ff-body">
+            <p className="ff-title">Sua privacidade importa para nós</p>
+            <p className="ff-text">
+              Usamos cookies essenciais para o site funcionar e, com sua permissão, cookies analíticos e de marketing.
+              Veja nossa <a href="/politica-de-privacidade.html" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.
+            </p>
+          </div>
+
+          {/* Botões */}
+          <div className="ff-actions">
+            <button className="ff-btn ff-btn-accept" onClick={handleAcceptAll}>Aceitar todos</button>
+            <button className="ff-btn ff-btn-config" onClick={() => setPanelOpen(o => !o)}>Personalizar</button>
+          </div>
+
+        </div>
+
+        {/* Painel personalizar */}
+        <div className={`ff-panel${panelOpen ? " ff-panel-open" : ""}`}>
+          <div className="ff-panel-inner">
+            <div className="ff-panel-cards">
+
+              <div className="ff-card">
+                <div className="ff-card-top">
+                  <span className="ff-card-title">Essenciais</span>
+                  <input className="ff-check" type="checkbox" defaultChecked disabled aria-label="Cookies essenciais — sempre ativos" />
+                </div>
+                <p className="ff-card-desc">Carrinho, sessão e segurança. Sempre ativos.</p>
+              </div>
+
+              <div className="ff-card">
+                <div className="ff-card-top">
+                  <span className="ff-card-title">Analíticos</span>
+                  <input
+                    className="ff-check"
+                    type="checkbox"
+                    checked={analytics}
+                    onChange={e => setAnalytics(e.target.checked)}
+                    aria-label="Ativar cookies analíticos"
+                  />
+                </div>
+                <p className="ff-card-desc">Google Analytics — dados anonimizados para melhorarmos o site.</p>
+              </div>
+
+              <div className="ff-card">
+                <div className="ff-card-top">
+                  <span className="ff-card-title">Marketing</span>
+                  <input
+                    className="ff-check"
+                    type="checkbox"
+                    checked={marketing}
+                    onChange={e => setMarketing(e.target.checked)}
+                    aria-label="Ativar cookies de marketing"
+                  />
+                </div>
+                <p className="ff-card-desc">Meta Pixel — anúncios personalizados no Instagram e Facebook.</p>
+              </div>
+
+            </div>
+
+            <div className="ff-panel-save">
+              <button className="ff-btn ff-btn-accept" onClick={handleSave}>Salvar escolha</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Toast */}
+      <div className={`ff-toast${toast.show ? " ff-toast-show" : ""}`} role="status" aria-live="polite">
+        <div className="ff-dot" />
+        <span>{toast.msg}</span>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────────────────────────────────────
+
 type CartItem = {
   cartItemId?: number;
   name: string;
@@ -38,7 +395,10 @@ type Product = {
   is_active: boolean;
 };
 
-// --- Category Themes ---
+// ─────────────────────────────────────────────────────────────────────────────
+// CATEGORY THEMES
+// ─────────────────────────────────────────────────────────────────────────────
+
 type CategoryTheme = {
   fontImport: string;
   wrapper: React.CSSProperties;
@@ -298,7 +658,10 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
   },
 };
 
-// Background decorative SVGs por tema
+// ─────────────────────────────────────────────────────────────────────────────
+// THEME BACKGROUND
+// ─────────────────────────────────────────────────────────────────────────────
+
 const ThemeBackground = ({ themeKey }: { themeKey: string }) => {
   const svgs: Record<string, React.ReactNode> = {
     Todos: (
@@ -404,14 +767,13 @@ const ThemeBackground = ({ themeKey }: { themeKey: string }) => {
   return <>{svgs[themeKey] || svgs['Todos']}</>;
 };
 
-// --- Utils ---
-const formatPrice = (value: number) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────────────────────────────────────
 
-// --- Busca Inteligente Marketplace ---
+const formatPrice = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
 const normalizeText = (value: string | number | null | undefined) =>
   String(value ?? '')
     .normalize('NFD')
@@ -658,7 +1020,10 @@ const getSearchScore = (product: Product, searchTerm: string) => {
   return score;
 };
 
-// --- useIsMobile hook ---
+// ─────────────────────────────────────────────────────────────────────────────
+// HOOKS
+// ─────────────────────────────────────────────────────────────────────────────
+
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   useEffect(() => {
@@ -669,7 +1034,10 @@ const useIsMobile = () => {
   return isMobile;
 };
 
-// --- Navbar ---
+// ─────────────────────────────────────────────────────────────────────────────
+// NAVBAR
+// ─────────────────────────────────────────────────────────────────────────────
+
 const Navbar = ({
   currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart, user,
   searchTerm, setSearchTerm, onSearchSubmit, onSearchClear,
@@ -840,47 +1208,25 @@ const Navbar = ({
             <div className="flex-1 overflow-y-auto py-6 px-6 flex flex-col gap-1">
               {currentView === 'home' ? (
                 <>
-                  <a
-                    href="#categorias"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between"
-                  >
+                  <a href="#categorias" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between">
                     Categorias <ChevronRight className="w-4 h-4 opacity-40" />
                   </a>
-                  <a
-                    href="#destaques"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between"
-                  >
+                  <a href="#destaques" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between">
                     Destaques <ChevronRight className="w-4 h-4 opacity-40" />
                   </a>
-                  <a
-                    href="#sobre"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between"
-                  >
+                  <a href="#sobre" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between">
                     O Processo <ChevronRight className="w-4 h-4 opacity-40" />
                   </a>
-                  <a
-                    href="#sobre-nos"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between"
-                  >
+                  <a href="#sobre-nos" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between">
                     A Origem <ChevronRight className="w-4 h-4 opacity-40" />
                   </a>
-                  <button
-                    onClick={goToCatalog}
-                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 text-freo-orange text-left flex items-center justify-between"
-                  >
+                  <button onClick={goToCatalog} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 text-freo-orange text-left flex items-center justify-between">
                     Catálogo <ChevronRight className="w-4 h-4" />
                   </button>
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={goHome}
-                    className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors text-left flex items-center gap-3"
-                  >
+                  <button onClick={goHome} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors text-left flex items-center gap-3">
                     <ArrowLeft className="w-4 h-4" /> Início
                   </button>
                   <span className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 text-freo-orange flex items-center justify-between">
@@ -900,10 +1246,7 @@ const Navbar = ({
 
             <div className="p-6 border-t border-white/10 space-y-3">
               {user && (
-                <a
-                  href="/meus-pedidos.html"
-                  className="flex items-center gap-3 text-freo-orange border border-freo-orange/30 px-5 py-3.5 rounded bg-freo-orange/10 font-display font-bold uppercase tracking-wide text-sm"
-                >
+                <a href="/meus-pedidos.html" className="flex items-center gap-3 text-freo-orange border border-freo-orange/30 px-5 py-3.5 rounded bg-freo-orange/10 font-display font-bold uppercase tracking-wide text-sm">
                   <Box className="w-5 h-5" />
                   Meus Pedidos
                 </a>
@@ -974,7 +1317,10 @@ const Navbar = ({
   );
 };
 
-// --- Hero ---
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO
+// ─────────────────────────────────────────────────────────────────────────────
+
 const Hero = ({ setCurrentView }: any) => (
   <section className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]">
     <div className="absolute inset-0 z-0" style={{ backgroundImage: 'linear-gradient(rgba(221,175,52,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(221,175,52,0.04) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
@@ -1028,7 +1374,10 @@ const Hero = ({ setCurrentView }: any) => (
   </section>
 );
 
-// --- Marquee ---
+// ─────────────────────────────────────────────────────────────────────────────
+// MARQUEE
+// ─────────────────────────────────────────────────────────────────────────────
+
 const Marquee = () => (
   <div className="bg-freo-orange text-freo-black py-3 overflow-hidden flex whitespace-nowrap border-y border-freo-orange/50">
     <motion.div animate={{ x: [0, -1035] }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }} className="flex gap-8 font-display font-black text-xl uppercase tracking-widest">
@@ -1048,7 +1397,10 @@ const Marquee = () => (
   </div>
 );
 
-// --- Categories ---
+// ─────────────────────────────────────────────────────────────────────────────
+// CATEGORIES
+// ─────────────────────────────────────────────────────────────────────────────
+
 const Categories = ({ setCurrentView, setFilter }: any) => {
   const cats = [
     { name: 'Action Figures', slug: 'games', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/ACTION_FIGURES.png', desc: 'Heróis, vilões e cultura pop.' },
@@ -1093,7 +1445,10 @@ const Categories = ({ setCurrentView, setFilter }: any) => {
   );
 };
 
-// --- ProductCard ---
+// ─────────────────────────────────────────────────────────────────────────────
+// PRODUCT CARD
+// ─────────────────────────────────────────────────────────────────────────────
+
 const ProductCard = ({ product, onAddToCart, compact = false }: { product: Product; onAddToCart: (product: Product) => void; compact?: boolean; }) => {
   const thumb = product.images && product.images.length > 0 ? product.images[0] : null;
   const hasPromo = product.promotional_price !== null && product.promotional_price < product.price;
@@ -1145,7 +1500,10 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
   );
 };
 
-// --- FeaturedProducts ---
+// ─────────────────────────────────────────────────────────────────────────────
+// FEATURED PRODUCTS
+// ─────────────────────────────────────────────────────────────────────────────
+
 const FeaturedProducts = ({ addToCart }: any) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1200,7 +1558,10 @@ const FeaturedProducts = ({ addToCart }: any) => {
   );
 };
 
-// --- ProcessSection ---
+// ─────────────────────────────────────────────────────────────────────────────
+// PROCESS SECTION
+// ─────────────────────────────────────────────────────────────────────────────
+
 const ProcessSection = () => (
   <section id="sobre" className="py-16 md:py-24 px-5 md:px-6 max-w-7xl mx-auto">
     <div className="grid lg:grid-cols-2 gap-10 md:gap-16 items-center">
@@ -1240,7 +1601,10 @@ const ProcessSection = () => (
   </section>
 );
 
-// --- AboutSection ---
+// ─────────────────────────────────────────────────────────────────────────────
+// ABOUT SECTION
+// ─────────────────────────────────────────────────────────────────────────────
+
 const AboutSection = () => (
   <section id="sobre-nos" className="py-20 md:py-32 px-5 md:px-6 bg-freo-black relative overflow-hidden border-t border-white/5">
     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-freo-orange/5 rounded-full blur-[150px] pointer-events-none" />
@@ -1282,7 +1646,10 @@ const AboutSection = () => (
   </section>
 );
 
-// --- StoreCTA ---
+// ─────────────────────────────────────────────────────────────────────────────
+// STORE CTA
+// ─────────────────────────────────────────────────────────────────────────────
+
 const StoreCTA = ({ setCurrentView }: any) => (
   <section className="py-16 md:py-24 px-5 md:px-6 bg-freo-orange text-freo-black relative overflow-hidden border-y border-freo-orange/50">
     <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
@@ -1298,7 +1665,10 @@ const StoreCTA = ({ setCurrentView }: any) => (
   </section>
 );
 
-// --- Footer ---
+// ─────────────────────────────────────────────────────────────────────────────
+// FOOTER  ← FAQ agora aponta para /public/faq.html
+// ─────────────────────────────────────────────────────────────────────────────
+
 const Footer = () => (
   <footer className="bg-freo-dark pt-16 md:pt-20 pb-10 border-t border-white/10 relative overflow-hidden">
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15vw] font-display font-black text-white/[0.02] whitespace-nowrap pointer-events-none select-none">FREO FIGURES</div>
@@ -1327,19 +1697,39 @@ const Footer = () => (
             <li><a href="#" className="hover:text-white transition-colors">Artigos Religiosos</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Utensílios & Casa</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Decoração</a></li>
-            <li><a href="https://wa.me/5511946454111?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20sob%20medida!" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Projetos Sob Medida</a></li>
+            <li>
+              <a
+                href="https://wa.me/5511946454111?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20sob%20medida!"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors"
+              >
+                Projetos Sob Medida
+              </a>
+            </li>
           </ul>
         </div>
 
-        {/* Suporte */}
+        {/* Suporte — FAQ agora aponta para /public/faq.html */}
         <div>
           <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Suporte</h4>
           <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
-            <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
+            <li>
+              <a href="/public/faq.html" className="hover:text-white transition-colors">FAQ</a>
+            </li>
             <li><a href="#" className="hover:text-white transition-colors">Envio e Prazos</a></li>
             <li><a href="/trocas-e-devolucoes.html" className="hover:text-white transition-colors">Trocas e Devoluções</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Cuidados com a Peça</a></li>
-            <li><a href="https://wa.me/5511946454111?text=Olá,%20vim%20pelo%20site%20da%20FreoFigures!" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Contato</a></li>
+            <li>
+              <a
+                href="https://wa.me/5511946454111?text=Olá,%20vim%20pelo%20site%20da%20FreoFigures!"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colors"
+              >
+                Contato
+              </a>
+            </li>
           </ul>
         </div>
 
@@ -1393,18 +1783,12 @@ const Footer = () => (
   </footer>
 );
 
-// --- Mobile Category Filter Drawer ---
+// ─────────────────────────────────────────────────────────────────────────────
+// MOBILE CATEGORY DRAWER
+// ─────────────────────────────────────────────────────────────────────────────
+
 const MobileCategoryDrawer = ({
-  isOpen,
-  onClose,
-  categories,
-  activeFilter,
-  onSelect,
-  categoryLabels,
-  theme,
-  hasSearch,
-  searchTerm,
-  onClearSearch,
+  isOpen, onClose, categories, activeFilter, onSelect, categoryLabels, theme, hasSearch, searchTerm, onClearSearch,
 }: any) => (
   <AnimatePresence>
     {isOpen && (
@@ -1472,7 +1856,12 @@ const MobileCategoryDrawer = ({
   </AnimatePresence>
 );
 
-// --- ShopView ---
+// ─────────────────────────────────────────────────────────────────────────────
+// SHOP VIEW
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { useMemo, useRef } from 'react';
+
 const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) => {
   const [activeFilter, setActiveFilter] = useState(initialFilter || 'Todos');
   const [products, setProducts] = useState<Product[]>([]);
@@ -1507,13 +1896,8 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
     document.head.appendChild(link);
   }, [activeThemeKey, theme.fontImport]);
 
-  useEffect(() => {
-    setActiveFilter(initialFilter || 'Todos');
-  }, [initialFilter]);
-
-  useEffect(() => {
-    if (hasSearch) setActiveFilter('Todos');
-  }, [hasSearch, searchTerm]);
+  useEffect(() => { setActiveFilter(initialFilter || 'Todos'); }, [initialFilter]);
+  useEffect(() => { if (hasSearch) setActiveFilter('Todos'); }, [hasSearch, searchTerm]);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -1584,17 +1968,12 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
               <button
                 onClick={() => setIsMobileCatOpen(true)}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-sm font-mono text-xs font-bold uppercase tracking-wide transition-all flex-shrink-0"
-                style={{
-                  background: `${theme.accent}20`,
-                  border: `1px solid ${theme.accent}50`,
-                  color: theme.accent,
-                }}
+                style={{ background: `${theme.accent}20`, border: `1px solid ${theme.accent}50`, color: theme.accent }}
               >
                 <Filter className="w-4 h-4" />
                 {hasSearch ? 'Busca' : categoryLabels[activeFilter]}
                 <ChevronDown className="w-3 h-3" />
               </button>
-
               <div className="font-mono text-xs flex-1 truncate" style={{ color: `${theme.accent}70` }}>
                 {loading ? 'Carregando...' : (
                   hasSearch
@@ -1602,7 +1981,6 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                     : `${filtered.length} produto${filtered.length !== 1 ? 's' : ''}`
                 )}
               </div>
-
               {hasSearch && (
                 <button
                   onClick={onClearSearch}
@@ -1615,10 +1993,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
             </div>
 
             {hasSearch && (
-              <div
-                className="flex items-center gap-2 mb-4 px-3 py-2 rounded-sm"
-                style={{ background: `${theme.accent}12`, border: `1px solid ${theme.accent}30` }}
-              >
+              <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-sm" style={{ background: `${theme.accent}12`, border: `1px solid ${theme.accent}30` }}>
                 <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.accent }} />
                 <span className="font-mono text-xs flex-1 truncate" style={{ color: theme.accent }}>
                   Buscando: <strong>{searchTerm}</strong>
@@ -1652,11 +2027,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                   {hasSearch ? 'Tente outra palavra.' : 'Tente outra categoria.'}
                 </p>
                 {hasSearch && (
-                  <button
-                    onClick={onClearSearch}
-                    className="mt-6 font-mono text-sm uppercase px-5 py-3 rounded-sm"
-                    style={{ border: `1px solid ${theme.accent}60`, color: theme.accent }}
-                  >
+                  <button onClick={onClearSearch} className="mt-6 font-mono text-sm uppercase px-5 py-3 rounded-sm" style={{ border: `1px solid ${theme.accent}60`, color: theme.accent }}>
                     Ver catálogo completo
                   </button>
                 )}
@@ -1665,14 +2036,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
               <motion.div layout className="grid grid-cols-2 gap-3">
                 <AnimatePresence>
                   {filtered.map(product => (
-                    <motion.div
-                      key={product.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.25 }}
-                    >
+                    <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.25 }}>
                       <ProductCard product={product} onAddToCart={addToCart} />
                     </motion.div>
                   ))}
@@ -1688,21 +2052,12 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
             <div className="flex flex-col md:flex-row gap-12">
               {/* Sidebar */}
               <div className="md:w-1/4">
-                <div
-                  className="sticky top-32 rounded-sm overflow-hidden"
-                  style={{ ...theme.sidebar, padding: '24px 0', backdropFilter: 'blur(8px)' }}
-                >
+                <div className="sticky top-32 rounded-sm overflow-hidden" style={{ ...theme.sidebar, padding: '24px 0', backdropFilter: 'blur(8px)' }}>
                   <div style={{ padding: '0 20px 20px' }}>
-                    <h2 className="font-display font-black text-3xl uppercase mb-1" style={theme.sidebarTitle}>
-                      {theme.label}
-                    </h2>
-                    <p style={{ ...theme.headerSub, display: 'block', marginTop: '4px' }}>
-                      {theme.tagline}
-                    </p>
+                    <h2 className="font-display font-black text-3xl uppercase mb-1" style={theme.sidebarTitle}>{theme.label}</h2>
+                    <p style={{ ...theme.headerSub, display: 'block', marginTop: '4px' }}>{theme.tagline}</p>
                   </div>
-
                   <div style={{ height: '1px', background: `${theme.accent}30`, margin: '0 20px 16px' }} />
-
                   {hasSearch && (
                     <div style={{ margin: '0 12px 16px', padding: '12px', background: `${theme.accent}15`, border: `1px solid ${theme.accent}40`, borderRadius: '2px' }}>
                       <div className="font-mono text-[10px] uppercase tracking-widest mb-2" style={{ color: theme.accent }}>Busca ativa</div>
@@ -1712,7 +2067,6 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                       </button>
                     </div>
                   )}
-
                   <div style={{ padding: '0 8px' }}>
                     {categories.map(category => {
                       const isActive = !hasSearch && activeFilter === category;
@@ -1721,14 +2075,9 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                           key={category}
                           onClick={() => handleCategoryClick(category)}
                           style={{
-                            display: 'block',
-                            width: '100%',
-                            textAlign: 'left',
-                            padding: '10px 14px',
-                            marginBottom: '2px',
-                            transition: 'all 0.25s ease',
-                            cursor: 'pointer',
-                            borderRadius: '2px',
+                            display: 'block', width: '100%', textAlign: 'left',
+                            padding: '10px 14px', marginBottom: '2px',
+                            transition: 'all 0.25s ease', cursor: 'pointer', borderRadius: '2px',
                             ...(isActive ? theme.btnActive : theme.btnInactive),
                           }}
                         >
@@ -1754,7 +2103,6 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                   >
                     {theme.label}
                   </motion.h1>
-
                   <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-3">
                     <div className="font-mono text-sm" style={{ color: `${theme.accent}80` }}>
                       {loading ? 'Carregando...' : hasSearch ? (
@@ -1763,13 +2111,8 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                         <>Mostrando {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} em{' '}<span style={{ color: theme.accent }}>[{categoryLabels[activeFilter] || activeFilter}]</span></>
                       )}
                     </div>
-
                     {hasSearch && (
-                      <button
-                        onClick={onClearSearch}
-                        className="self-start md:self-auto text-xs font-mono uppercase tracking-widest px-3 py-2 transition-colors"
-                        style={{ border: `1px solid ${theme.accent}50`, color: theme.accent }}
-                      >
+                      <button onClick={onClearSearch} className="self-start md:self-auto text-xs font-mono uppercase tracking-widest px-3 py-2 transition-colors" style={{ border: `1px solid ${theme.accent}50`, color: theme.accent }}>
                         Ver catálogo completo
                       </button>
                     )}
@@ -1803,14 +2146,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                   <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <AnimatePresence>
                       {filtered.map(product => (
-                        <motion.div
-                          key={product.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          transition={{ duration: 0.3 }}
-                        >
+                        <motion.div key={product.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3 }}>
                           <ProductCard product={product} onAddToCart={addToCart} />
                         </motion.div>
                       ))}
@@ -1839,7 +2175,10 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
   );
 };
 
-// --- HomeView ---
+// ─────────────────────────────────────────────────────────────────────────────
+// HOME VIEW
+// ─────────────────────────────────────────────────────────────────────────────
+
 const HomeView = ({ setCurrentView, addToCart, setFilter }: any) => (
   <>
     <Hero setCurrentView={setCurrentView} />
@@ -1852,7 +2191,10 @@ const HomeView = ({ setCurrentView, addToCart, setFilter }: any) => (
   </>
 );
 
-// --- AuthModal ---
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+
 const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
@@ -1965,7 +2307,10 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
   );
 };
 
-// --- CartDrawer ---
+// ─────────────────────────────────────────────────────────────────────────────
+// CART DRAWER
+// ─────────────────────────────────────────────────────────────────────────────
+
 const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: any) => {
   const total = cartItems.reduce((acc: number, item: CartItem) => {
     const price = item.price.replace('R$', '').replace(/\s/g, '').replace(',', '.');
@@ -2054,7 +2399,10 @@ const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: 
   );
 };
 
-// --- App Principal ---
+// ─────────────────────────────────────────────────────────────────────────────
+// APP PRINCIPAL
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'shop'>('home');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -2095,9 +2443,7 @@ export default function App() {
     const supabase = window.supabaseClient || window.supabase;
     if (supabase) {
       supabase.auth.getSession().then(async ({ data: { session } }: any) => {
-        if (session) {
-          setUser(session.user);
-        }
+        if (session) setUser(session.user);
       });
     }
     return () => {
@@ -2146,7 +2492,16 @@ export default function App() {
     try {
       const thumb = product.images && product.images.length > 0 ? product.images[0] : '';
       const priceNum = product.promotional_price !== null && product.promotional_price < product.price ? product.promotional_price : product.price;
-      const { data, error } = await supabase.from('cart_items').insert({ user_id: session.user.id, product_id: String(product.id), product_name: product.title, quantity: 1, price: priceNum, total_price: priceNum, image_url: thumb, variant: null }).select().single();
+      const { data, error } = await supabase.from('cart_items').insert({
+        user_id: session.user.id,
+        product_id: String(product.id),
+        product_name: product.title,
+        quantity: 1,
+        price: priceNum,
+        total_price: priceNum,
+        image_url: thumb,
+        variant: null,
+      }).select().single();
       if (error) throw error;
       setCartItems(previous => [...previous, { cartItemId: data.id, name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1, variant: null }]);
       const toast = document.createElement('div');
@@ -2158,7 +2513,9 @@ export default function App() {
   };
 
   const updateQuantity = (product: CartItem, delta: number) => {
-    setCartItems(previous => previous.map(item => item.cartItemId === product.cartItemId ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
+    setCartItems(previous => previous.map(item =>
+      item.cartItemId === product.cartItemId ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
+    ));
   };
 
   const removeItem = async (product: CartItem) => {
@@ -2170,6 +2527,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
+      {/* Banner de cookies — renderizado uma vez no topo da árvore */}
+      <CookieBanner />
+
       <Navbar
         currentView={currentView}
         setCurrentView={setCurrentView}
