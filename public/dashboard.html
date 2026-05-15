@@ -33,6 +33,8 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
     window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+
 
   <style>
     /* ── Reset & Base ─────────────────────────────────────────── */
@@ -1318,36 +1320,114 @@
   function setCardType(type) { currentCardType = type; document.getElementById('tab-credit').classList.toggle('active', type === 'credit'); document.getElementById('tab-debit').classList.toggle('active', type === 'debit'); }
   async function saveCard() {
     if (!currentUserId || !window.supabaseClient) return;
-    var errEl = document.getElementById('payment-err'); var okEl = document.getElementById('payment-ok'); var btn = document.getElementById('card-save-btn');
-    errEl.classList.add('hidden'); okEl.classList.add('hidden');
-    var cardName   = document.getElementById('card-name').value.trim();
-    var cardNumber = document.getElementById('card-number').value.replace(/\s/g,'');
+
+    var errEl = document.getElementById('payment-err');
+    var okEl  = document.getElementById('payment-ok');
+    var btn   = document.getElementById('card-save-btn');
+    errEl.classList.add('hidden');
+    okEl.classList.add('hidden');
+  
+    // Coleta os dados do formulário
+    var cardName   = document.getElementById('card-name').value.trim().toUpperCase();
+    var cardNumber = document.getElementById('card-number').value.replace(/\s/g, '');
     var expiry     = document.getElementById('card-expiry').value.trim();
     var cvv        = document.getElementById('card-cvv').value.trim();
-    var brand      = document.getElementById('card-brand').value;
-    if (!cardName || cardNumber.length < 13 || expiry.length < 5 || !cvv || !brand) { errEl.innerText = 'Preencha todos os campos corretamente.'; errEl.classList.remove('hidden'); return; }
-    btn.innerText = 'Salvando...'; btn.disabled = true;
+  
+    // Validação básica
+    if (!cardName || cardNumber.length < 13 || expiry.length < 5 || !cvv) {
+      errEl.innerText = 'Preencha todos os campos corretamente.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+  
     var parts = expiry.split('/');
+    var expMonth = parts[0];
+    var expYear  = '20' + (parts[1] || '');
+  
+    btn.innerText = 'Salvando...';
+    btn.disabled  = true;
+  
     try {
-      var res = await window.supabaseClient.from('payment_methods').insert({ user_id: currentUserId, type: currentCardType, brand: brand, last4: cardNumber.slice(-4), card_holder: cardName, exp_month: parts[0], exp_year: '20' + (parts[1] || '') });
-      if (res.error) throw res.error;
+      // 1. Inicializa o MP.js com sua public key
+      var mp = new MercadoPago('APP_USR-7eb3299c-7dd3-4e5e-aaf0-c2ca09b1f5ad', { locale: 'pt-BR' });
+  
+      // 2. Gera o card_token via MP.js (dados sensíveis nunca saem do navegador)
+      var tokenResult = await mp.createCardToken({
+        cardNumber:      cardNumber,
+        cardholderName:  cardName,
+        cardExpirationMonth: expMonth,
+        cardExpirationYear:  expYear,
+        securityCode:    cvv,
+        identificationType:  'CPF',
+        identificationNumber: ''
+      });
+  
+      if (!tokenResult || !tokenResult.id) {
+        errEl.innerText = 'Dados do cartão inválidos. Verifique e tente novamente.';
+        errEl.classList.remove('hidden');
+        btn.innerText = 'Salvar cartão';
+        btn.disabled  = false;
+        return;
+      }
+  
+      // 3. Envia o token para a Edge Function (nunca os dados reais)
+      var session = await window.supabaseClient.auth.getSession();
+      var accessToken = session?.data?.session?.access_token;
+  
+      var response = await fetch(
+        'https://rrmxqpvxrpcqqxsgccqw.supabase.co/functions/v1/save-card',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': 'Bearer ' + accessToken,
+          },
+          body: JSON.stringify({ card_token: tokenResult.id }),
+        }
+      );
+  
+      var data = await response.json();
+  
+      if (!response.ok) {
+        errEl.innerText = data.error || 'Erro ao salvar cartão.';
+        errEl.classList.remove('hidden');
+        btn.innerText = 'Salvar cartão';
+        btn.disabled  = false;
+        return;
+      }
+  
+      // 4. Sucesso
+      okEl.innerText = data.already_exists
+        ? 'Este cartão já estava salvo!'
+        : 'Cartão salvo com sucesso!';
       okEl.classList.remove('hidden');
-      ['card-name','card-number','card-expiry','card-cvv'].forEach(function(id) { document.getElementById(id).value = ''; });
+  
+      ['card-name','card-number','card-expiry','card-cvv'].forEach(function(id) {
+        document.getElementById(id).value = '';
+      });
       document.getElementById('card-brand').value = '';
-      setTimeout(function() { closeModal('modal-payment'); reloadPayments(); }, 1200);
-    } catch(e) { errEl.innerText = 'Erro: ' + e.message; errEl.classList.remove('hidden'); }
-    btn.innerText = 'Salvar cartão'; btn.disabled = false;
-  }
-
-  // ── Reload ─────────────────────────────────────────────────────
-  async function reloadAddresses() {
-    if (!currentUserId || !window.supabaseClient) return;
-    var r = await window.supabaseClient.from('addresses').select('*').eq('user_id', currentUserId);
-    renderAddressesUI(r.data || []);
+  
+      setTimeout(function() {
+        closeModal('modal-payment');
+        reloadPayments();
+      }, 1500);
+  
+    } catch(e) {
+      console.error('Erro saveCard:', e);
+      errEl.innerText = 'Erro inesperado: ' + (e.message || 'tente novamente.');
+      errEl.classList.remove('hidden');
+    }
+  
+    btn.innerText = 'Salvar cartão';
+    btn.disabled  = false;
   }
   async function reloadPayments() {
     if (!currentUserId || !window.supabaseClient) return;
-    var r = await window.supabaseClient.from('payment_methods').select('*').eq('user_id', currentUserId);
+    var r = await window.supabaseClient
+      .from('user_cards')
+      .select('*')
+      .eq('user_id', currentUserId)
+      .order('created_at', { ascending: false });
     renderPaymentsUI(r.data || []);
   }
 
@@ -1378,30 +1458,39 @@
   // ── Render Payments ────────────────────────────────────────────
   function renderPaymentsUI(methods) {
     var container = document.getElementById('payment-methods');
-    var empty = document.getElementById('payments-empty');
-    if (!container || !empty) return;
-    if (methods && methods.length > 0) {
-      empty.classList.add('hidden');
-      container.innerHTML = methods.map(function(card) {
-        return '<div class="pay-card group">'
-          + '<div class="pay-logo">' + ((card.brand || 'card').substring(0, 4).toUpperCase()) + '</div>'
-          + '<div class="flex-1 min-w-0">'
-          + '<p class="font-mono text-sm">•••• ' + (card.last4 || '****') + '</p>'
-          + '<p class="font-mono text-[10px] text-white/30">' + (card.type === 'credit' ? 'Crédito' : 'Débito') + ' · ' + (card.brand || '') + ' · ' + (card.exp_month || '**') + '/' + ((card.exp_year || '****').slice(-2)) + '</p>'
-          + '</div>'
-          + '<button onclick="deleteCard(\'' + card.id + '\')" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-500/40 hover:text-red-400">'
-          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
-          + '</button></div>';
-      }).join('');
-    } else {
-      empty.classList.remove('hidden');
-      container.innerHTML = '';
-    }
+  var empty     = document.getElementById('payments-empty');
+  if (!container || !empty) return;
+
+  if (methods && methods.length > 0) {
+    empty.classList.add('hidden');
+    container.innerHTML = methods.map(function(card) {
+      return '<div class="pay-card group">'
+        + '<div class="pay-logo">' + ((card.payment_method || 'card').substring(0, 4).toUpperCase()) + '</div>'
+        + '<div class="flex-1 min-w-0">'
+        + '<p class="font-mono text-sm">' + (card.card_label || '•••• ' + (card.last_four || '****')) + '</p>'
+        + '<p class="font-mono text-[10px] text-white/30">'
+        + (card.payment_type === 'credit_card' ? 'Crédito' : 'Débito')
+        + ' · ' + (card.payment_method || '') 
+        + ' · ' + (card.expiration_month || '**') + '/' + String(card.expiration_year || '****').slice(-2)
+        + '</p>'
+        + '</div>'
+        + '<button onclick="deleteCard(\'' + card.id + '\')" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-500/40 hover:text-red-400">'
+        + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button></div>';
+    }).join('');
+  } else {
+    empty.classList.remove('hidden');
+    container.innerHTML = '';
   }
+}
 
   async function deleteAddress(id) { if (!window.supabaseClient) return; await window.supabaseClient.from('addresses').delete().eq('id', id); reloadAddresses(); }
   async function setMainAddress(id) { if (!window.supabaseClient || !currentUserId) return; await window.supabaseClient.from('addresses').update({ is_main: false }).eq('user_id', currentUserId); await window.supabaseClient.from('addresses').update({ is_main: true }).eq('id', id); reloadAddresses(); }
-  async function deleteCard(id) { if (!window.supabaseClient) return; await window.supabaseClient.from('payment_methods').delete().eq('id', id); reloadPayments(); }
+  async function deleteCard(id) {
+    if (!window.supabaseClient) return;
+    await window.supabaseClient.from('user_cards').delete().eq('id', id);
+    reloadPayments();
+  }
 
   // ── Logout ─────────────────────────────────────────────────────
   document.getElementById('logout-btn').addEventListener('click', async function() {
