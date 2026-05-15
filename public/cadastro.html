@@ -30,6 +30,76 @@
       }
     }
   </script>
+
+  <style>
+    /* ── Custom checkbox ── */
+    .freo-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      background: #0A0A0A;
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .freo-checkbox:checked {
+      background: #DDAF34;
+      border-color: #DDAF34;
+    }
+    .freo-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 5px;
+      height: 9px;
+      border: 2px solid #0A0A0A;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+    .freo-checkbox:focus {
+      outline: none;
+      border-color: #DDAF34;
+      box-shadow: 0 0 0 2px rgba(221,175,52,0.2);
+    }
+    .freo-checkbox:hover:not(:checked) {
+      border-color: rgba(221,175,52,0.5);
+    }
+
+    /* ── Botão desabilitado ── */
+    .btn-disabled {
+      opacity: 0.35;
+      cursor: not-allowed !important;
+      pointer-events: none;
+    }
+    .btn-enabled {
+      opacity: 1;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-6px); }
+      40%       { transform: translateX(6px); }
+      60%       { transform: translateX(-4px); }
+      80%       { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(221,175,52,0.3); }
+      50%       { border-color: #DDAF34; box-shadow: 0 0 0 3px rgba(221,175,52,0.25); }
+    }
+    .checkbox-alert { animation: pulse-border 0.5s ease 2; }
+  </style>
 </head>
 
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex items-center justify-center selection:bg-freo-orange selection:text-white px-4 py-10">
@@ -85,8 +155,6 @@
           />
         </div>
 
-
-
         <div>
           <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Telefone / WhatsApp</label>
           <input
@@ -111,10 +179,31 @@
           />
         </div>
 
+        <!-- ── CHECKBOX DE ACEITE ── -->
+        <div id="terms-wrapper" class="border border-white/8 bg-freo-black/40 p-4 mt-2">
+          <label class="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              id="terms-checkbox"
+              class="freo-checkbox mt-0.5"
+            />
+            <span class="text-xs font-mono text-freo-light/55 leading-relaxed group-hover:text-freo-light/75 transition-colors">
+              Li e concordo com a
+              <a href="/politicas.html" target="_blank" class="text-freo-orange hover:underline underline-offset-2">Política de Privacidade</a>,
+              os
+              <a href="/politicas.html" target="_blank" class="text-freo-orange hover:underline underline-offset-2">Termos de Uso</a>
+              e a
+              <a href="/politicas.html" target="_blank" class="text-freo-orange hover:underline underline-offset-2">Política de Trocas e Envio</a>
+              da Freo Figures.
+            </span>
+          </label>
+        </div>
+        <!-- ── /CHECKBOX ── -->
+
         <button
           type="submit"
           id="submit-btn"
-          class="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors mt-4 flex justify-center items-center"
+          class="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors mt-4 flex justify-center items-center btn-disabled"
         >
           Criar Conta
         </button>
@@ -129,101 +218,136 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
 
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const form = document.getElementById('signup-form');
-  const errorDiv = document.getElementById('error-message');
-  const successDiv = document.getElementById('success-message');
-  const submitBtn = document.getElementById('submit-btn');
+    const form       = document.getElementById('signup-form');
+    const errorDiv   = document.getElementById('error-message');
+    const successDiv = document.getElementById('success-message');
+    const submitBtn  = document.getElementById('submit-btn');
+    const checkbox   = document.getElementById('terms-checkbox');
+    const termsWrapper = document.getElementById('terms-wrapper');
 
-  function maskPhone(input) {
-    let v = input.value.replace(/\D/g, '').substring(0, 11);
+    // ── Habilita/desabilita botão conforme checkbox ──
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        submitBtn.classList.remove('btn-disabled');
+        submitBtn.classList.add('btn-enabled');
+        termsWrapper.style.borderColor = 'rgba(221,175,52,0.3)';
+      } else {
+        submitBtn.classList.add('btn-disabled');
+        submitBtn.classList.remove('btn-enabled');
+        termsWrapper.style.borderColor = '';
+      }
+    });
 
-    if (v.length > 6) {
-      v = '(' + v.substring(0, 2) + ') ' + v.substring(2, 7) + '-' + v.substring(7);
-    } else if (v.length > 2) {
-      v = '(' + v.substring(0, 2) + ') ' + v.substring(2);
-    }
-
-    input.value = v;
-  }
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    errorDiv.classList.add('hidden');
-    successDiv.classList.add('hidden');
-
-    const name = document.getElementById('name').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const phoneRaw = document.getElementById('phone').value.trim();
-    const phone = phoneRaw.replace(/\D/g, '');
-
-    if (!name || !email || !password || !phone) {
-      errorDiv.innerText = 'Preencha todos os campos.';
-      errorDiv.classList.remove('hidden');
-      return;
-    }
-
-    if (phone.length < 10 || phone.length > 11) {
-      errorDiv.innerText = 'Informe um telefone válido com DDD.';
-      errorDiv.classList.remove('hidden');
-      return;
-    }
-
-    if (!email.includes('@') || !email.includes('.')) {
-      errorDiv.innerText = 'Por favor, insira um e-mail válido.';
-      errorDiv.classList.remove('hidden');
-      return;
-    }
-
-    if (password.length < 6) {
-      errorDiv.innerText = 'A senha deve ter pelo menos 6 caracteres.';
-      errorDiv.classList.remove('hidden');
-      return;
-    }
-
-    submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
-    submitBtn.disabled = true;
-
-    try {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          redirectTo: 'https://freofigures.com.br/auth/callback.html',
-          data: {
-            full_name: name,
-            name: name,
-            phone: phone
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      successDiv.innerText = 'Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Verifique sua caixa de entrada e também o spam.';
-      successDiv.classList.remove('hidden');
-      form.classList.add('hidden');
-
-      console.log('Cadastro realizado:', data);
-
+    // ── Shake + pulso se tentar submeter sem aceitar ──
+    function alertTerms() {
+      termsWrapper.classList.remove('shake');
+      checkbox.classList.remove('checkbox-alert');
+      void termsWrapper.offsetWidth;
+      termsWrapper.classList.add('shake');
+      checkbox.classList.add('checkbox-alert');
       setTimeout(() => {
-        window.location.href = '/login.html';
-      }, 4000);
-    } catch (err) {
-      console.error('Erro real do cadastro:', err);
-      errorDiv.innerText = err.message || 'Erro ao criar conta. Tente novamente.';
-      errorDiv.classList.remove('hidden');
-      submitBtn.innerHTML = 'Criar Conta';
-      submitBtn.disabled = false;
+        termsWrapper.classList.remove('shake');
+        checkbox.classList.remove('checkbox-alert');
+      }, 1000);
     }
-  });
-</script>
+
+    // Intercepta clique direto no botão desabilitado (ex: via teclado)
+    submitBtn.addEventListener('click', (e) => {
+      if (!checkbox.checked) { e.preventDefault(); alertTerms(); }
+    }, true);
+
+    function maskPhone(input) {
+      let v = input.value.replace(/\D/g, '').substring(0, 11);
+      if (v.length > 6) {
+        v = '(' + v.substring(0, 2) + ') ' + v.substring(2, 7) + '-' + v.substring(7);
+      } else if (v.length > 2) {
+        v = '(' + v.substring(0, 2) + ') ' + v.substring(2);
+      }
+      input.value = v;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Guarda seguro
+      if (!checkbox.checked) { alertTerms(); return; }
+
+      errorDiv.classList.add('hidden');
+      successDiv.classList.add('hidden');
+
+      const name     = document.getElementById('name').value.trim();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const phoneRaw = document.getElementById('phone').value.trim();
+      const phone    = phoneRaw.replace(/\D/g, '');
+
+      if (!name || !email || !password || !phone) {
+        errorDiv.innerText = 'Preencha todos os campos.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      if (phone.length < 10 || phone.length > 11) {
+        errorDiv.innerText = 'Informe um telefone válido com DDD.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      if (!email.includes('@') || !email.includes('.')) {
+        errorDiv.innerText = 'Por favor, insira um e-mail válido.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      if (password.length < 6) {
+        errorDiv.innerText = 'A senha deve ter pelo menos 6 caracteres.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
+      submitBtn.disabled = true;
+
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: {
+            redirectTo: 'https://freofigures.com.br/auth/callback.html',
+            data: {
+              full_name: name,
+              name: name,
+              phone: phone
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        successDiv.innerText = 'Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Verifique sua caixa de entrada e também o spam.';
+        successDiv.classList.remove('hidden');
+        form.classList.add('hidden');
+
+        console.log('Cadastro realizado:', data);
+
+        setTimeout(() => {
+          window.location.href = '/login.html';
+        }, 4000);
+
+      } catch (err) {
+        console.error('Erro real do cadastro:', err);
+        errorDiv.innerText = err.message || 'Erro ao criar conta. Tente novamente.';
+        errorDiv.classList.remove('hidden');
+        submitBtn.innerHTML = 'Criar Conta';
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>
