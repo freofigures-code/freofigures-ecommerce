@@ -1273,6 +1273,10 @@ async function salvarDadosPessoais() {
             first_name: getCustomerNameForOrder().split(' ')[0] || '',
             last_name:  getCustomerNameForOrder().split(' ').slice(1).join(' ') || '',
             email:      getCustomerEmailForOrder(),
+            identification: {
+              type:   'CPF',
+              number: getCustomerCPFForOrder()
+            },
             phone: {
               area_code: getCustomerPhoneForOrder().replace(/\D/g,'').substring(0,2),
               number:    getCustomerPhoneForOrder().replace(/\D/g,'').substring(2)
@@ -1423,6 +1427,10 @@ async function salvarDadosPessoais() {
       ).trim();
     }
 
+    function getCustomerCPFForOrder() {
+      return String((currentProfile && currentProfile.cpf) || '').replace(/\D/g, '');
+    }
+
     async function initPaymentBrick() {
       paymentBrickInitialized = true;
 
@@ -1508,6 +1516,10 @@ async function salvarDadosPessoais() {
                 first_name: getCustomerNameForOrder().split(' ')[0] || '',
                 last_name:  getCustomerNameForOrder().split(' ').slice(1).join(' ') || '',
                 email:      getCustomerEmailForOrder(),
+                identification: {
+                  type:   'CPF',
+                  number: getCustomerCPFForOrder()
+                },
                 phone: {
                   area_code: getCustomerPhoneForOrder().replace(/\D/g,'').substring(0,2),
                   number:    getCustomerPhoneForOrder().replace(/\D/g,'').substring(2)
@@ -1739,7 +1751,7 @@ async function salvarDadosPessoais() {
 
         var profileResult = await window.supabaseClient
           .from('profiles')
-          .select('id, name, email, phone')
+          .select('id, name, email, phone, cpf')
           .eq('id', currentUser.id)
           .single();
 
