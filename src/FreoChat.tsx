@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { X, Send, Paperclip, Minus } from 'lucide-react';
+import { X, Send, Paperclip, Minus, ImageIcon } from 'lucide-react';
 
 // ─── CONFIG — EDITE AQUI ────────────────────────────────────────────────────
 
 const N8N_WEBHOOK_URL = 'https://n8nwebhook.solviaoficial.com/webhook/freozinho';
+
+// Cole aqui a URL da foto de perfil do Freozinho (deixe '' para usar o SVG padrão)
+const AVATAR_URL = 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/freozinho.png';
 
 // ─── ID DO LEAD ─────────────────────────────────────────────────────────────
 
@@ -34,6 +37,7 @@ type Message = {
   role: 'user' | 'bot';
   text: string;
   time: string;
+  imagePreview?: string; // base64 para exibição
 };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -44,6 +48,14 @@ const now = () => {
 };
 
 const uid = () => Math.random().toString(36).slice(2);
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve((r.result as string).split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
 
 // ─── QUICK REPLIES ──────────────────────────────────────────────────────────
 
@@ -63,7 +75,7 @@ const CALLOUT_MSGS = [
   'Dúvidas? É só perguntar!',
 ];
 
-// ─── MASCOTE SVG ────────────────────────────────────────────────────────────
+// ─── MASCOTE SVG (fallback quando AVATAR_URL estiver vazio) ─────────────────
 
 const FreoFace = ({ size = 32 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -75,6 +87,20 @@ const FreoFace = ({ size = 32 }: { size?: number }) => (
     <path d="M10 34 Q10 26 20 26 Q30 26 30 34" fill="#0e0e0f" />
   </svg>
 );
+
+// Avatar: usa imagem de URL se configurado, senão SVG
+const Avatar = ({ size = 32 }: { size?: number }) =>
+  AVATAR_URL ? (
+    <img
+      src={AVATAR_URL}
+      alt="Freozinho"
+      width={size}
+      height={size}
+      style={{ width: size, height: size, objectFit: 'cover', borderRadius: '50%', display: 'block' }}
+    />
+  ) : (
+    <FreoFace size={size} />
+  );
 
 // ─── COMPONENTE PRINCIPAL ───────────────────────────────────────────────────
 
@@ -91,6 +117,7 @@ export default function FreoChat() {
     },
   ]);
   const [inputVal, setInputVal] = useState('');
+  const [pendingImage, setPendingImage] = useState<{ base64: string; preview: string; mediaType: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [badge, setBadge] = useState(1);
@@ -98,6 +125,7 @@ export default function FreoChat() {
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Busca usuário logado no Supabase
   useEffect(() => {
@@ -128,6 +156,36 @@ export default function FreoChat() {
     if (open) setTimeout(() => inputRef.current?.focus(), 120);
   }, [open]);
 
+  // Colar imagem via Ctrl+V
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!open) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) processImageFile(file);
+          break;
+        }
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [open]);
+
+  const processImageFile = async (file: File) => {
+    const preview = URL.createObjectURL(file);
+    const base64 = await fileToBase64(file);
+    setPendingImage({ base64, preview, mediaType: file.type });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) processImageFile(file);
+    e.target.value = '';
+  };
+
   const handleOpen = () => {
     setOpen(true);
     setBadge(0);
@@ -138,29 +196,48 @@ export default function FreoChat() {
 
   // ── Envio de mensagem ────────────────────────────────────────────────────
 
-  const sendMessage = async (text: string) => {
+  const sendMessage = async (text: string, imageOverride?: typeof pendingImage) => {
     const clean = text.trim();
-    if (!clean || loading) return;
+    const img = imageOverride ?? pendingImage;
+
+    if (!clean && !img || loading) return;
 
     setInputVal('');
+    setPendingImage(null);
     setError('');
 
-    const userMsg: Message = { id: uid(), role: 'user', text: clean, time: now() };
+    const userMsg: Message = {
+      id: uid(),
+      role: 'user',
+      text: clean || '📎 Imagem enviada',
+      time: now(),
+      imagePreview: img?.preview,
+    };
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
     try {
+      const payload: Record<string, unknown> = {
+        lead_id: userId ?? LEAD_ID,
+        lead_type: userId ? 'registered' : 'anonymous',
+        session_id: SESSION_ID,
+        message: clean,
+        timestamp: new Date().toISOString(),
+        source: 'freo-widget',
+        has_image: !!img,
+      };
+
+      if (img) {
+        payload.image = {
+          base64: img.base64,
+          media_type: img.mediaType,
+        };
+      }
+
       const res = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lead_id: userId ?? LEAD_ID,
-          lead_type: userId ? 'registered' : 'anonymous',
-          session_id: SESSION_ID,
-          message: clean,
-          timestamp: new Date().toISOString(),
-          source: 'freo-widget',
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -174,7 +251,7 @@ export default function FreoChat() {
 
       setMessages(prev => [...prev, { id: uid(), role: 'bot', text: reply, time: now() }]);
     } catch (err) {
-      console.error('[FreoChat] n8n error:', err);
+      console.error('[FreoChat] webhook error:', err);
       setError('Ops, tive um problema de conexão. Tenta de novo?');
       setMessages(prev => [
         ...prev,
@@ -203,6 +280,15 @@ export default function FreoChat() {
     <>
       <style>{WIDGET_CSS}</style>
 
+      {/* Input de arquivo oculto */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
+
       <div className="ff-widget-root">
 
         {/* ── Painel de chat ── */}
@@ -219,16 +305,14 @@ export default function FreoChat() {
                 <div className="ff-panel-stripe" />
                 <div className="ff-panel-header-inner">
                   <div className="ff-panel-av-wrap">
-                    <div className="ff-panel-av"><FreoFace size={38} /></div>
+                    <div className="ff-panel-av"><Avatar size={38} /></div>
                     <span className="ff-panel-dot" />
                   </div>
                   <div className="ff-panel-info">
-                    <div className="ff-panel-name">
-                      Freozinho <span className="ff-ai-pill">IA</span>
-                    </div>
+                    <div className="ff-panel-name">Freozinho</div>
                     <div className="ff-panel-sub">
                       <span className="ff-sub-dot" />
-                      Online agora · n8n powered
+                      Online agora
                     </div>
                   </div>
                   <div className="ff-panel-actions">
@@ -242,11 +326,25 @@ export default function FreoChat() {
                 <div className="ff-date-label">Hoje</div>
                 {messages.map(msg => (
                   <div key={msg.id} className={`ff-row ${msg.role === 'user' ? 'ff-row-out' : ''}`}>
-                    {msg.role === 'bot' && <div className="ff-mini-av"><FreoFace size={26} /></div>}
+                    {msg.role === 'bot' && (
+                      <div className="ff-mini-av"><Avatar size={26} /></div>
+                    )}
                     <div>
-                      <div className={`ff-bubble ${msg.role === 'user' ? 'ff-bubble-out' : 'ff-bubble-in'}`}>
-                        {msg.text}
-                      </div>
+                      {msg.imagePreview && (
+                        <div className={`ff-img-preview-wrap ${msg.role === 'user' ? 'ff-img-out' : ''}`}>
+                          <img src={msg.imagePreview} alt="imagem enviada" className="ff-img-preview" />
+                        </div>
+                      )}
+                      {msg.text && msg.text !== '📎 Imagem enviada' && (
+                        <div className={`ff-bubble ${msg.role === 'user' ? 'ff-bubble-out' : 'ff-bubble-in'}`}>
+                          {msg.text}
+                        </div>
+                      )}
+                      {msg.text === '📎 Imagem enviada' && !msg.imagePreview && (
+                        <div className={`ff-bubble ${msg.role === 'user' ? 'ff-bubble-out' : 'ff-bubble-in'}`}>
+                          {msg.text}
+                        </div>
+                      )}
                       <div className={`ff-time ${msg.role === 'user' ? 'ff-time-out' : ''}`}>
                         {msg.role === 'user' && <span className="ff-checks">✓✓</span>}
                         {msg.time}
@@ -256,7 +354,7 @@ export default function FreoChat() {
                 ))}
                 {loading && (
                   <div className="ff-row">
-                    <div className="ff-mini-av"><FreoFace size={26} /></div>
+                    <div className="ff-mini-av"><Avatar size={26} /></div>
                     <div className="ff-typing">
                       <span className="ff-dot" /><span className="ff-dot" /><span className="ff-dot" />
                     </div>
@@ -271,29 +369,47 @@ export default function FreoChat() {
                 ))}
               </div>
 
-              <div className="ff-n8n-bar">
-                <span className="ff-n8n-dot" />
-                <span className="ff-n8n-label">IA via n8n</span>
-                <span className="ff-n8n-sep" />
-                <span className="ff-n8n-model">Agente conectado</span>
-              </div>
+              {/* Preview de imagem pendente */}
+              {pendingImage && (
+                <div className="ff-pending-img">
+                  <img src={pendingImage.preview} alt="imagem a enviar" className="ff-pending-thumb" />
+                  <div className="ff-pending-label">
+                    <ImageIcon size={11} />
+                    Imagem pronta para enviar
+                  </div>
+                  <button
+                    className="ff-pending-remove"
+                    onClick={() => setPendingImage(null)}
+                    aria-label="Remover imagem"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              )}
 
               <div className="ff-input-zone">
-                <button className="ff-attach-btn" aria-label="Enviar imagem"><Paperclip size={15} /></button>
+                <button
+                  className="ff-attach-btn"
+                  aria-label="Enviar imagem"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Anexar imagem (ou cole com Ctrl+V)"
+                >
+                  <Paperclip size={15} />
+                </button>
                 <textarea
                   ref={inputRef}
                   className="ff-textarea"
                   value={inputVal}
                   onChange={e => setInputVal(e.target.value)}
                   onKeyDown={handleKey}
-                  placeholder="Mensagem para o Freozinho..."
+                  placeholder={pendingImage ? 'Adicione uma legenda... (opcional)' : 'Mensagem para o Freozinho...'}
                   rows={1}
                   disabled={loading}
                 />
                 <button
                   className="ff-send-btn"
                   onClick={handleSubmit}
-                  disabled={loading || !inputVal.trim()}
+                  disabled={loading || (!inputVal.trim() && !pendingImage)}
                   aria-label="Enviar"
                 >
                   <Send size={15} />
@@ -318,9 +434,9 @@ export default function FreoChat() {
               aria-label="Abrir chat"
               onKeyDown={e => e.key === 'Enter' && handleOpen()}
             >
-              <div className="ff-callout-av"><FreoFace size={30} /></div>
+              <div className="ff-callout-av"><Avatar size={30} /></div>
               <div className="ff-callout-body">
-                <div className="ff-callout-name">Freozinho <span className="ff-ai-pill">IA</span></div>
+                <div className="ff-callout-name">Freozinho</div>
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={calloutIdx}
@@ -409,7 +525,6 @@ const WIDGET_CSS = `
 
 .ff-panel-info { flex: 1; min-width: 0; }
 .ff-panel-name { font-size: 13px; font-weight: 700; color: #f0efeb; display: flex; align-items: center; gap: 5px; line-height: 1; }
-.ff-ai-pill { font-size: 8px; font-weight: 700; background: rgba(200,255,62,0.12); color: #c8ff3e; border: 1px solid rgba(200,255,62,0.28); border-radius: 4px; padding: 1px 5px; letter-spacing: 0.06em; line-height: 1.7; text-transform: uppercase; }
 .ff-panel-sub { font-size: 10px; color: rgba(200,255,62,0.75); margin-top: 3px; display: flex; align-items: center; gap: 4px; line-height: 1; }
 .ff-sub-dot { width: 5px; height: 5px; background: #c8ff3e; border-radius: 50%; flex-shrink: 0; }
 .ff-panel-actions { display: flex; gap: 2px; }
@@ -428,6 +543,10 @@ const WIDGET_CSS = `
 .ff-time-out { justify-content: flex-end; color: rgba(14,14,15,0.4); padding-left: 0; padding-right: 2px; }
 .ff-checks { opacity: 0.8; }
 
+.ff-img-preview-wrap { max-width: 210px; margin-bottom: 4px; }
+.ff-img-out { display: flex; justify-content: flex-end; }
+.ff-img-preview { max-width: 100%; border-radius: 10px; display: block; border: 1px solid rgba(221,175,52,0.2); }
+
 .ff-typing { background: #181818; border: 1px solid rgba(221,175,52,0.1); border-radius: 14px 14px 14px 3px; padding: 10px 14px; display: flex; gap: 4px; align-items: center; }
 .ff-dot { width: 5px; height: 5px; border-radius: 50%; background: #DDAF34; opacity: 0.5; animation: ff-bounce 1.3s infinite; }
 .ff-dot:nth-child(2) { animation-delay: 0.18s; }
@@ -441,11 +560,11 @@ const WIDGET_CSS = `
 .ff-qr:hover { background: rgba(221,175,52,0.1); border-color: rgba(221,175,52,0.5); }
 .ff-qr:active { transform: scale(0.96); }
 
-.ff-n8n-bar { padding: 6px 14px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(221,175,52,0.07); flex-shrink: 0; }
-.ff-n8n-dot { width: 6px; height: 6px; background: #c8ff3e; border-radius: 50%; flex-shrink: 0; animation: ff-pulse-dot 2.5s infinite; }
-.ff-n8n-label { font-size: 9px; color: rgba(200,255,62,0.5); letter-spacing: 0.07em; text-transform: uppercase; font-weight: 600; }
-.ff-n8n-sep { width: 1px; height: 10px; background: rgba(221,175,52,0.15); }
-.ff-n8n-model { font-size: 9px; color: rgba(221,175,52,0.35); letter-spacing: 0.04em; }
+.ff-pending-img { margin: 0 12px 8px; padding: 8px 10px; background: rgba(221,175,52,0.06); border: 1px solid rgba(221,175,52,0.2); border-radius: 10px; display: flex; align-items: center; gap: 8px; position: relative; flex-shrink: 0; }
+.ff-pending-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.ff-pending-label { font-size: 10.5px; color: rgba(221,175,52,0.75); display: flex; align-items: center; gap: 4px; flex: 1; }
+.ff-pending-remove { background: transparent; border: none; cursor: pointer; color: rgba(240,239,235,0.3); display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 50%; transition: color 0.15s, background 0.15s; }
+.ff-pending-remove:hover { color: #f0efeb; background: rgba(255,80,80,0.12); }
 
 .ff-input-zone { background: #0a0a0b; border-top: 1px solid rgba(221,175,52,0.1); padding: 10px 12px; display: flex; align-items: flex-end; gap: 8px; flex-shrink: 0; }
 .ff-attach-btn { width: 32px; height: 32px; border-radius: 50%; background: transparent; border: 1px solid rgba(221,175,52,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center; color: rgba(240,239,235,0.3); transition: all 0.15s; flex-shrink: 0; margin-bottom: 2px; }
