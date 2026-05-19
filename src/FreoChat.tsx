@@ -123,6 +123,9 @@ const ProductCard = ({
 }) => {
   const [imgError, setImgError] = useState(false);
 
+  const resolvedLink: string | undefined = produto.id
+    ? `https://freofigures.com.br/produto?id=${produto.id}`
+    : produto.link || undefined;
   return (
     <motion.div
       className="ff-product-card"
@@ -156,33 +159,27 @@ const ProductCard = ({
           <div className="ff-product-preco">{produto.preco}</div>
         )}
       </div>
-      {produto.link ? (
-        <a
-          href={produto.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ff-product-btn"
-        >
-          <span>Ver produto</span>
-          <ExternalLink size={11} />
-        </a>
-      ) : (
+      
         <button
-          className="ff-product-btn ff-product-btn-ask"
+          className={`ff-product-btn ${resolvedLink ? '' : 'ff-product-btn-ask'}`}
           onClick={() => {
-            const msg = produto.id
-              ? `Quero saber mais sobre o produto #${produto.id}: ${produto.nome}`
-              : `Quero saber mais sobre: ${produto.nome}`;
-            onAsk(msg);
+            if (resolvedLink) {
+              window.open(resolvedLink, '_blank', 'noopener,noreferrer');
+            } else {
+              const msg = produto.id
+                ? `Quero saber mais sobre o produto #${produto.id}: ${produto.nome}`
+                : `Quero saber mais sobre: ${produto.nome}`;
+              onAsk(msg);
+            }
           }}
         >
-          <span>Quero este!</span>
-          <Send size={11} />
+          <span>{resolvedLink ? 'Ver produto' : 'Quero este!'}</span>
+          {resolvedLink ? <ExternalLink size={11} /> : <Send size={11} />}
         </button>
-      )}
-    </motion.div>
-  );
-};
+      </motion.div>
+    );
+  };
+// ─── PARSE DA RESPOSTA DO N8N ─────────────────────────────────────────────────
 
 // ─── PARSE DA RESPOSTA DO N8N ─────────────────────────────────────────────────
 //
