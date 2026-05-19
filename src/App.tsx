@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ArrowLeft,
 } from 'lucide-react';
+  import FreoChat from './FreoChat';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COOKIE BANNER
@@ -2560,6 +2561,7 @@ export default function App() {
       <Footer />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem} />
+      <FreoChat />
     </div>
   );
 }
