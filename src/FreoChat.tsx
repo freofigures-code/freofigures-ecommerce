@@ -6,7 +6,6 @@ import { X, Send, Paperclip, Minus, ImageIcon } from 'lucide-react';
 
 const N8N_WEBHOOK_URL = 'https://n8nwebhook.solviaoficial.com/webhook/freozinho';
 
-// Cole aqui a URL da foto de perfil do Freozinho (deixe '' para usar o SVG padrão)
 const AVATAR_URL = 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/freozinho.png';
 
 // ─── ID DO LEAD ─────────────────────────────────────────────────────────────
@@ -32,12 +31,20 @@ const SESSION_ID = (() => {
 
 // ─── TIPOS ──────────────────────────────────────────────────────────────────
 
+type Produto = {
+  nome: string;
+  preco: string;
+  imagem: string;
+  link: string;
+};
+
 type Message = {
   id: string;
   role: 'user' | 'bot';
   text: string;
   time: string;
-  imagePreview?: string; // base64 para exibição
+  imagePreview?: string;
+  produtos?: Produto[] | null;
 };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -88,7 +95,6 @@ const FreoFace = ({ size = 32 }: { size?: number }) => (
   </svg>
 );
 
-// Avatar: usa imagem de URL se configurado, senão SVG
 const Avatar = ({ size = 32 }: { size?: number }) =>
   AVATAR_URL ? (
     <img
@@ -127,7 +133,6 @@ export default function FreoChat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Busca usuário logado no Supabase
   useEffect(() => {
     // @ts-ignore
     const supabase = window.supabaseClient || window.supabase;
@@ -137,7 +142,6 @@ export default function FreoChat() {
     });
   }, []);
 
-  // Rotaciona callout
   useEffect(() => {
     if (!calloutVisible) return;
     const t = setInterval(() => {
@@ -146,17 +150,14 @@ export default function FreoChat() {
     return () => clearInterval(t);
   }, [calloutVisible]);
 
-  // Scroll ao fundo
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [messages, loading]);
 
-  // Foca input ao abrir
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 120);
   }, [open]);
 
-  // Colar imagem via Ctrl+V
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       if (!open) return;
@@ -200,7 +201,7 @@ export default function FreoChat() {
     const clean = text.trim();
     const img = imageOverride ?? pendingImage;
 
-    if (!clean && !img || loading) return;
+    if ((!clean && !img) || loading) return;
 
     setInputVal('');
     setPendingImage(null);
@@ -244,12 +245,31 @@ export default function FreoChat() {
 
       const data = await res.json();
 
-      const reply =
+      // ── Parse da resposta com suporte a %%PRODUTO%% ──────────────────────
+      const rawReply =
         typeof data === 'string'
           ? data
           : data.reply ?? data.message ?? data.output ?? data.text ?? 'Recebi! Logo te respondo.';
 
-      setMessages(prev => [...prev, { id: uid(), role: 'bot', text: reply, time: now() }]);
+      let replyTexto = rawReply;
+      let produtos: Produto[] | null = null;
+
+      if (rawReply.includes('%%PRODUTO%%')) {
+        const partes: string[] = rawReply.split('%%PRODUTO%%');
+        replyTexto = partes[0].trim();
+        produtos = partes
+          .slice(1)
+          .map((p: string) => {
+            try { return JSON.parse(p.trim()) as Produto; }
+            catch { return null; }
+          })
+          .filter((p): p is Produto => p !== null);
+      }
+
+      setMessages(prev => [
+        ...prev,
+        { id: uid(), role: 'bot', text: replyTexto, time: now(), produtos },
+      ]);
     } catch (err) {
       console.error('[FreoChat] webhook error:', err);
       setError('Ops, tive um problema de conexão. Tenta de novo?');
@@ -280,7 +300,6 @@ export default function FreoChat() {
     <>
       <style>{WIDGET_CSS}</style>
 
-      {/* Input de arquivo oculto */}
       <input
         ref={fileInputRef}
         type="file"
@@ -345,6 +364,28 @@ export default function FreoChat() {
                           {msg.text}
                         </div>
                       )}
+                      {/* ── Cards de produto ── */}
+                      {msg.produtos && msg.produtos.length > 0 && (
+                        <div className="ff-cards-wrap">
+                          {msg.produtos.map((p, i) => (
+                            <div key={i} className="ff-product-card">
+                              <img src={p.imagem} alt={p.nome} className="ff-product-img" />
+                              <div className="ff-product-info">
+                                <div className="ff-product-nome">{p.nome}</div>
+                                <div className="ff-product-preco">{p.preco}</div>
+                              </div>
+                              <a
+                                href={p.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ff-product-btn"
+                              >
+                                Ver produto →
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div className={`ff-time ${msg.role === 'user' ? 'ff-time-out' : ''}`}>
                         {msg.role === 'user' && <span className="ff-checks">✓✓</span>}
                         {msg.time}
@@ -369,7 +410,6 @@ export default function FreoChat() {
                 ))}
               </div>
 
-              {/* Preview de imagem pendente */}
               {pendingImage && (
                 <div className="ff-pending-img">
                   <img src={pendingImage.preview} alt="imagem a enviar" className="ff-pending-thumb" />
@@ -531,7 +571,7 @@ const WIDGET_CSS = `
 .ff-icon-btn { width: 30px; height: 30px; border: none; background: transparent; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: rgba(240,239,235,0.35); transition: background 0.15s, color 0.15s; }
 .ff-icon-btn:hover { background: rgba(221,175,52,0.1); color: #DDAF34; }
 
-.ff-messages { flex: 1; overflow-y: auto; padding: 14px 12px 8px; display: flex; flex-direction: column; gap: 8px; min-height: 240px; max-height: 280px; scrollbar-width: thin; scrollbar-color: rgba(221,175,52,0.12) transparent; }
+.ff-messages { flex: 1; overflow-y: auto; padding: 14px 12px 8px; display: flex; flex-direction: column; gap: 8px; min-height: 240px; max-height: 320px; scrollbar-width: thin; scrollbar-color: rgba(221,175,52,0.12) transparent; }
 .ff-date-label { text-align: center; font-size: 9px; color: rgba(240,239,235,0.2); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; margin-bottom: 4px; }
 .ff-row { display: flex; align-items: flex-end; gap: 6px; }
 .ff-row-out { flex-direction: row-reverse; }
@@ -593,6 +633,16 @@ const WIDGET_CSS = `
 @keyframes ff-ring { 0% { opacity: 0.8; transform: scale(1); } 60% { opacity: 0; transform: scale(1.22); } 100% { opacity: 0; transform: scale(1.22); } }
 .ff-fab-f { font-family: 'DM Serif Display', Georgia, serif; font-size: 36px; color: #0e0e0f; font-style: italic; line-height: 1; user-select: none; letter-spacing: -0.02em; margin-top: 3px; }
 .ff-fab-badge { position: absolute; top: -2px; right: -2px; width: 20px; height: 20px; background: #c8ff3e; border-radius: 50%; border: 2.5px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #0e0e0f; font-family: 'DM Sans', system-ui, sans-serif; pointer-events: none; z-index: 2; }
+
+/* ── Cards de produto ── */
+.ff-cards-wrap { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; max-width: 260px; }
+.ff-product-card { background: #111110; border: 1px solid rgba(221,175,52,0.25); border-radius: 12px; overflow: hidden; }
+.ff-product-img { width: 100%; height: 130px; object-fit: cover; display: block; border-bottom: 1px solid rgba(221,175,52,0.1); }
+.ff-product-info { padding: 8px 10px 6px; }
+.ff-product-nome { font-size: 11px; font-weight: 600; color: #f0efeb; line-height: 1.3; }
+.ff-product-preco { font-size: 13px; font-weight: 700; color: #DDAF34; margin-top: 3px; }
+.ff-product-btn { display: block; margin: 0 10px 10px; padding: 7px 0; background: #DDAF34; color: #0e0e0f; font-size: 11.5px; font-weight: 700; text-align: center; border-radius: 8px; text-decoration: none; transition: background 0.15s; font-family: 'DM Sans', system-ui, sans-serif; }
+.ff-product-btn:hover { background: #c8ff3e; }
 
 @media (max-width: 480px) {
   .ff-widget-root { bottom: 16px; right: 16px; }
