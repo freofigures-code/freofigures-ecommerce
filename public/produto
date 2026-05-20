@@ -274,15 +274,9 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           </button>
         </div>
-
-        <div id="video-section" class="hidden">
-          <p class="font-mono text-xs text-white/30 uppercase tracking-widest mb-2">Vídeo do produto</p>
-          <div class="bg-freo-dark border border-white/[0.06] rounded overflow-hidden" style="aspect-ratio:9/16; max-width:360px;">
-            <iframe id="product-video" class="w-full h-full" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-          </div>
-        </div>
         
         <div id="thumbs-grid" class="flex gap-2 flex-wrap"></div>
+      </div>
 
       <!-- INFORMAÇÕES DO PRODUTO -->
       <div class="space-y-6">
@@ -543,48 +537,41 @@
         estoqueEl.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;flex-shrink:0"></span> Em estoque';
       }
 
+      // ── Monta galeria: vídeo primeiro (se houver), depois imagens ──
       var images = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
-      if (images.length > 0) {
-        setMainImage(images[0]);
-        galleryImages = images;
-        galleryIndex = 0;
-        var thumbsGrid = document.getElementById('thumbs-grid');
-        if (images.length > 1) {
-          thumbsGrid.innerHTML = images.map(function(url, i) {
-            return '<div class="thumb w-20 h-20 bg-freo-dark border border-white/[0.06] rounded overflow-hidden' + (i === 0 ? ' active' : '') + '" onclick="selectThumb(this, \'' + url + '\')">'
-              + '<img src="' + url + '" class="w-full h-full object-cover" onerror="this.parentElement.style.display=\'none\'">'
-              + '</div>';
-          }).join('');
-        }
-      } else {
-        setMainImage(null);
-      }
-
       var embedUrl = getYouTubeEmbed(p.video_url);
 
+      // galleryItems: array de { type: 'image'|'youtube'|'video', src }
+      galleryItems = [];
       if (embedUrl) {
-        document.getElementById('product-video').src = embedUrl;
-        document.getElementById('video-section').classList.remove('hidden');
-
+        galleryItems.push({ type: 'youtube', src: embedUrl });
       } else if (p.video_url) {
-        var videoSection = document.getElementById('video-section');
-        var iframe = document.getElementById('product-video');
+        galleryItems.push({ type: 'video', src: p.video_url });
+      }
+      images.forEach(function(url) {
+        galleryItems.push({ type: 'image', src: url });
+      });
 
-        var videoEl = document.createElement('video');
-        videoEl.src         = p.video_url;
-        videoEl.controls    = true;
-        videoEl.muted       = true;
-        videoEl.autoplay    = false;
-        videoEl.playsInline = true;
-        videoEl.loop        = false;
-        videoEl.className   = 'w-full h-full';
-        videoEl.style.objectFit    = 'contain';   // não corta o vídeo
-        videoEl.style.background   = '#000';
-        videoEl.style.maxWidth     = '360px';
-        videoEl.style.borderRadius = '0';
+      galleryIndex = 0;
+      renderGalleryItem(0);
 
-        iframe.parentNode.replaceChild(videoEl, iframe);
-        videoSection.classList.remove('hidden');
+      // Thumbnails
+      var thumbsGrid = document.getElementById('thumbs-grid');
+      if (galleryItems.length > 1) {
+        thumbsGrid.innerHTML = galleryItems.map(function(item, i) {
+          var inner = '';
+          if (item.type === 'image') {
+            inner = '<img src="' + item.src + '" class="w-full h-full object-cover">';
+          } else {
+            inner = '<div class="w-full h-full flex items-center justify-center bg-black">'
+              + '<svg class="w-6 h-6 text-freo-orange" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
+              + '</div>';
+          }
+          return '<div class="thumb w-20 h-20 bg-freo-dark border border-white/[0.06] rounded overflow-hidden' + (i === 0 ? ' active' : '') + '" onclick="selectGalleryItem(' + i + ')">'
+            + inner + '</div>';
+        }).join('');
+      } else {
+        thumbsGrid.innerHTML = '';
       }
 
       var descEl = document.getElementById('product-description');
@@ -658,27 +645,39 @@
       document.getElementById('page-loading').classList.add('hidden');
       document.getElementById('page-content').classList.remove('hidden');
     }
+    var galleryItems = [];
+    var galleryIndex = 0;
 
-    function selectThumb(el, url) {
-      document.querySelectorAll('.thumb').forEach(function(t) { t.classList.remove('active'); });
-      el.classList.add('active');
-      var img = document.getElementById('main-img');
-      img.style.opacity = '0';
-      setTimeout(function() { setMainImage(url); img.style.opacity = '1'; }, 150);
+    function renderGalleryItem(index) {
+      var wrap = document.querySelector('.img-zoom-wrap');
+      var item = galleryItems[index];
+      if (!item) return;
+
+      if (item.type === 'image') {
+        wrap.style.cursor = 'zoom-in';
+        wrap.innerHTML = '<img id="main-img" src="' + item.src + '" alt="Produto" class="w-full h-full object-cover" style="opacity:1">';
+      } else if (item.type === 'youtube') {
+        wrap.style.cursor = 'default';
+        wrap.innerHTML = '<iframe src="' + item.src + '?autoplay=0" class="w-full h-full" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="aspect-ratio:1;min-height:100%"></iframe>';
+      } else if (item.type === 'video') {
+        wrap.style.cursor = 'default';
+        wrap.innerHTML = '<video src="' + item.src + '" controls muted playsinline class="w-full h-full" style="object-fit:contain;background:#000"></video>';
+      }
+
+      document.querySelectorAll('.thumb').forEach(function(t, i) {
+        t.classList.toggle('active', i === index);
+      });
+      galleryIndex = index;
     }
 
-    var galleryImages = [];
-    var galleryIndex = 0;
-    
+    function selectGalleryItem(index) {
+      renderGalleryItem(index);
+    }
+
     function navigateGallery(dir) {
-      if (galleryImages.length === 0) return;
-      galleryIndex = (galleryIndex + dir + galleryImages.length) % galleryImages.length;
-      var url = galleryImages[galleryIndex];
-      var thumbs = document.querySelectorAll('.thumb');
-      thumbs.forEach(function(t, i) { t.classList.toggle('active', i === galleryIndex); });
-      var img = document.getElementById('main-img');
-      img.style.opacity = '0';
-      setTimeout(function() { setMainImage(url); img.style.opacity = '1'; }, 150);
+      if (galleryItems.length === 0) return;
+      var next = (galleryIndex + dir + galleryItems.length) % galleryItems.length;
+      renderGalleryItem(next);
     }
     
 
