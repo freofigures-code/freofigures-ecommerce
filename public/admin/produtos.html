@@ -229,10 +229,6 @@
               <input type="text" id="tag-input" style="background:transparent;outline:none;border:none;color:#F5F5F5;font-family:'Space Grotesk',sans-serif;font-size:.875rem;min-width:80px;flex:1" placeholder="Ex: 3d impresso, resina, colecionável..." onkeydown="handleTagInput(event)">
             </div>
           </div>
-          <div>
-            <label class="fl">URL do vídeo <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(YouTube ou Vimeo)</span></label>
-            <input type="url" id="f-video" class="fi" placeholder="https://youtube.com/watch?v=...">
-          </div>
           <div class="flex items-center gap-3 pt-1">
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="f-active" class="sr-only peer" checked>
@@ -244,12 +240,24 @@
 
         <!-- ABA IMAGENS -->
         <div id="tab-images" class="form-tab-content hidden p-6 space-y-5">
-          <div id="drop-zone" class="img-drop rounded p-8 text-center" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-            <input type="file" id="file-input" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
-            <svg class="w-10 h-10 text-white/20 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        
+          <!-- Drop zone de imagens -->
+          <div id="drop-zone" class="img-drop rounded p-8 text-center"
+            onclick="document.getElementById('file-input').click()"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event)">
+            <input type="file" id="file-input" accept="image/*" multiple class="hidden"
+              onchange="handleFileSelect(event)">
+            <svg class="w-10 h-10 text-white/20 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
             <p class="font-mono text-sm text-white/40">Clique ou arraste as fotos aqui</p>
             <p class="font-mono text-xs text-white/20 mt-1">JPG, PNG, WEBP · até 5MB por imagem · múltiplas</p>
           </div>
+        
+          <!-- Barra de progresso das imagens -->
           <div id="upload-progress-wrap" class="hidden">
             <div class="flex justify-between mb-1">
               <span class="font-mono text-xs text-white/40">Enviando imagens...</span>
@@ -259,18 +267,99 @@
               <div id="upload-progress-bar" class="upload-bar h-full"></div>
             </div>
           </div>
+        
+          <!-- Grid de previews das imagens -->
           <div>
             <label class="fl mb-2">Imagens do produto <span id="img-count" class="text-freo-orange">(0)</span></label>
             <div id="img-preview-grid" class="flex flex-wrap gap-2"></div>
             <p class="font-mono text-xs text-white/20 mt-2">A primeira imagem é a foto principal. Arraste para reordenar.</p>
           </div>
+        
+          <!-- Adicionar imagem por URL -->
           <div class="pt-2 border-t border-white/[0.06]">
             <label class="fl">Ou adicione por URL</label>
             <div class="flex gap-2">
               <input type="url" id="img-url-input" class="fi py-2" placeholder="https://...">
-              <button onclick="addImageByURL()" class="flex-shrink-0 px-4 bg-freo-orange/10 border border-freo-orange/30 text-freo-orange font-mono text-xs hover:bg-freo-orange hover:text-freo-black transition-colors whitespace-nowrap">+ Adicionar</button>
+              <button onclick="addImageByURL()"
+                class="flex-shrink-0 px-4 bg-freo-orange/10 border border-freo-orange/30
+                       text-freo-orange font-mono text-xs hover:bg-freo-orange
+                       hover:text-freo-black transition-colors whitespace-nowrap">
+                + Adicionar
+              </button>
             </div>
           </div>
+        
+          <!-- ─── BLOCO DE VÍDEO ─────────────────────────────────────────────── -->
+          <div class="pt-4 border-t border-white/[0.06] space-y-3">
+        
+            <label class="fl">Vídeo do produto</label>
+        
+            <!-- Preview do vídeo já salvo (oculto por padrão) -->
+            <div id="video-preview-wrap" class="hidden">
+              <video id="video-preview-el"
+                class="w-full rounded border border-white/[0.06] bg-black"
+                style="max-height:220px"
+                controls muted playsinline>
+              </video>
+              <div class="flex items-center justify-between mt-2">
+                <span id="video-preview-name"
+                  class="font-mono text-xs text-white/30 truncate max-w-xs"></span>
+                <button onclick="removeVideo()"
+                  class="font-mono text-xs text-red-500/50 hover:text-red-400
+                         border border-red-500/20 hover:border-red-500/40
+                         px-3 py-1 transition-colors uppercase tracking-widest">
+                  Remover vídeo
+                </button>
+              </div>
+            </div>
+        
+            <!-- Drop zone do vídeo -->
+            <div id="video-drop-zone"
+              class="img-drop rounded p-8 text-center"
+              onclick="document.getElementById('video-file-input').click()"
+              ondragover="handleVideoDragOver(event)"
+              ondragleave="handleVideoDragLeave(event)"
+              ondrop="handleVideoDrop(event)">
+              <input type="file" id="video-file-input"
+                accept="video/mp4,video/webm,video/mov,video/quicktime"
+                class="hidden" onchange="handleVideoFileSelect(event)">
+              <svg class="w-10 h-10 text-white/20 mx-auto mb-3" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15
+                     14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0
+                     01-2-2V8z"/>
+              </svg>
+              <p class="font-mono text-sm text-white/40">Clique ou arraste o vídeo aqui</p>
+              <p class="font-mono text-xs text-white/20 mt-1">MP4, WEBM, MOV · até 100MB</p>
+            </div>
+        
+            <!-- Barra de progresso do vídeo -->
+            <div id="video-upload-progress-wrap" class="hidden">
+              <div class="flex justify-between mb-1">
+                <span class="font-mono text-xs text-white/40">Enviando vídeo...</span>
+                <span id="video-upload-pct" class="font-mono text-xs text-freo-orange">0%</span>
+              </div>
+              <div class="bg-white/10 h-1 rounded overflow-hidden">
+                <div id="video-upload-progress-bar" class="upload-bar h-full" style="width:0%"></div>
+              </div>
+            </div>
+        
+            <!-- URL externa como fallback (YouTube / Vimeo) -->
+            <div>
+              <label class="fl">
+                Ou use URL externa
+                <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">
+                  (YouTube / Vimeo)
+                </span>
+              </label>
+              <input type="url" id="f-video" class="fi"
+                placeholder="https://youtube.com/watch?v=...">
+            </div>
+        
+          </div>
+          <!-- ─── FIM DO BLOCO DE VÍDEO ──────────────────────────────────────── -->
+        
         </div>
 
         <!-- ABA VARIANTES -->
@@ -486,6 +575,18 @@
       currentImages = Array.isArray(p.images) ? p.images.slice() : [];
       currentTags = Array.isArray(p.tags) ? p.tags.slice() : [];
       currentVariants = normalizeVariantsFromDB(p.variants);
+
+      // Detecta se video_url é upload direto ou YouTube
+      var savedVideo = p.video_url || '';
+      if (savedVideo && !savedVideo.includes('youtube') && !savedVideo.includes('youtu.be') && !savedVideo.includes('vimeo')) {
+        currentVideoUrl = savedVideo;
+        document.getElementById('f-video').value = '';
+      } else {
+        currentVideoUrl = null;
+        document.getElementById('f-video').value = savedVideo;
+      }
+      renderVideoUI();
+      
     } else {
       document.getElementById('form-title').innerText = 'Novo Produto';
       document.getElementById('form-subtitle').innerText = 'Preencha as informações abaixo';
@@ -496,6 +597,9 @@
       document.getElementById('f-active').checked = true;
       document.getElementById('seo-title-count').innerText = '0/60';
       document.getElementById('seo-desc-count').innerText = '0/160';
+
+      currentVideoUrl = null;
+      renderVideoUI();
     }
     renderTagsUI(); renderImagesUI(); renderVariantsUI(); updateSEOPreview();
   }
@@ -738,7 +842,7 @@
       category: document.getElementById('f-category').value || null,
       images: currentImages,
       tags: currentTags.length > 0 ? currentTags : null,
-      video_url: document.getElementById('f-video').value.trim() || null,
+      video_url: currentVideoUrl || document.getElementById('f-video').value.trim() || null,
       variants: variantsPayload,
       seo_title: document.getElementById('f-seo-title').value.trim() || null,
       seo_description: document.getElementById('f-seo-desc').value.trim() || null,
@@ -788,6 +892,111 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function() { el.className = type || 'success'; }, 3200);
   }
+
+    // ─── VÍDEO UPLOAD ─────────────────────────────────────────────────────────
+    var currentVideoUrl = null; // URL final salva no banco
+    
+    function renderVideoUI() {
+      var wrap  = document.getElementById('video-preview-wrap');
+      var dzone = document.getElementById('video-drop-zone');
+      var el    = document.getElementById('video-preview-el');
+      var name  = document.getElementById('video-preview-name');
+    
+      if (currentVideoUrl) {
+        el.src = currentVideoUrl;
+        // Tenta extrair o nome do arquivo da URL
+        var parts = currentVideoUrl.split('/');
+        name.innerText = decodeURIComponent(parts[parts.length - 1]).substring(0, 60);
+        wrap.classList.remove('hidden');
+        dzone.classList.add('hidden');
+      } else {
+        wrap.classList.add('hidden');
+        dzone.classList.remove('hidden');
+        el.src = '';
+      }
+    }
+    
+    function removeVideo() {
+      currentVideoUrl = null;
+      document.getElementById('f-video').value = '';
+      renderVideoUI();
+    }
+    
+    function handleVideoDragOver(e) {
+      e.preventDefault();
+      document.getElementById('video-drop-zone').classList.add('dragover');
+    }
+    function handleVideoDragLeave(e) {
+      document.getElementById('video-drop-zone').classList.remove('dragover');
+    }
+    function handleVideoDrop(e) {
+      e.preventDefault();
+      document.getElementById('video-drop-zone').classList.remove('dragover');
+      var files = Array.from(e.dataTransfer.files)
+        .filter(function(f) { return f.type.startsWith('video/'); });
+      if (files.length > 0) uploadVideo(files[0]);
+    }
+    function handleVideoFileSelect(e) {
+      if (e.target.files.length > 0) uploadVideo(e.target.files[0]);
+    }
+    
+    async function uploadVideo(file) {
+      if (file.size > 100 * 1024 * 1024) {
+        showToast('Vídeo excede 100MB.', 'error');
+        return;
+      }
+    
+      var wrap = document.getElementById('video-upload-progress-wrap');
+      var bar  = document.getElementById('video-upload-progress-bar');
+      var pct  = document.getElementById('video-upload-pct');
+      wrap.classList.remove('hidden');
+      bar.style.width = '10%'; // feedback imediato
+    
+      var ext  = file.name.split('.').pop().toLowerCase();
+      var path = 'videos/' + Date.now() + '_' +
+                 Math.random().toString(36).slice(2) + '.' + ext;
+    
+      try {
+        // Supabase JS v2 não expõe progresso nativo no upload,
+        // mas simulamos com um intervalo para UX
+        var fakeProgress = 10;
+        var interval = setInterval(function() {
+          fakeProgress = Math.min(fakeProgress + 8, 85);
+          bar.style.width = fakeProgress + '%';
+          pct.innerText   = fakeProgress + '%';
+        }, 300);
+    
+        var r = await window.supabaseClient.storage
+          .from('imagens') // mesmo bucket que você já usa
+          .upload(path, file, { upsert: false, contentType: file.type });
+    
+        clearInterval(interval);
+    
+        if (r.error) throw r.error;
+    
+        bar.style.width = '100%';
+        pct.innerText   = '100%';
+    
+        var pub = window.supabaseClient.storage
+          .from('imagens')
+          .getPublicUrl(path);
+    
+        currentVideoUrl = pub.data.publicUrl;
+        // Limpa o campo de URL externa pois agora temos upload direto
+        document.getElementById('f-video').value = '';
+    
+        showToast('Vídeo enviado com sucesso!', 'success');
+        renderVideoUI();
+    
+      } catch (err) {
+        showToast('Erro ao enviar vídeo: ' + err.message, 'error');
+      } finally {
+        setTimeout(function() {
+          wrap.classList.add('hidden');
+          bar.style.width = '0%';
+        }, 800);
+      }
+    }
   </script>
 
   <!-- MODAL IMPORTAR SHOPEE -->
