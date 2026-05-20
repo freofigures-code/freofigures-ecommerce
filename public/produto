@@ -552,9 +552,27 @@
       }
 
       var embedUrl = getYouTubeEmbed(p.video_url);
+
       if (embedUrl) {
         document.getElementById('product-video').src = embedUrl;
         document.getElementById('video-section').classList.remove('hidden');
+
+      } else if (p.video_url) {
+        var videoSection = document.getElementById('video-section');
+        var iframe = document.getElementById('product-video');
+
+        var videoEl = document.createElement('video');
+        videoEl.src         = p.video_url;
+        videoEl.controls    = true;
+        videoEl.muted       = true;
+        videoEl.autoplay    = false;
+        videoEl.playsInline = true;
+        videoEl.loop        = false;
+        videoEl.className   = 'w-full h-full object-cover';
+        videoEl.style.borderRadius = '0';
+
+        iframe.parentNode.replaceChild(videoEl, iframe);
+        videoSection.classList.remove('hidden');
       }
 
       var descEl = document.getElementById('product-description');
