@@ -190,6 +190,77 @@
     ::-webkit-scrollbar-track { background: #0A0A0A; }
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
     ::-webkit-scrollbar-thumb:hover { background: #DDAF34; }
+
+    /* ══════════════════════════════════════
+       AVALIAÇÕES
+    ══════════════════════════════════════ */
+    .review-section { margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 2rem; }
+
+    /* Resumo com estrelas */
+    .rating-summary { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(221,175,52,0.15); padding: 1.25rem 1.5rem; }
+    .rating-big-num { font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 900; color: #DDAF34; line-height: 1; }
+    .stars-row { display: inline-flex; gap: 2px; }
+    .star-svg { width: 18px; height: 18px; }
+    .star-svg.filled { color: #DDAF34; }
+    .star-svg.empty  { color: rgba(221,175,52,0.2); }
+    .star-svg.half   { color: #DDAF34; }
+    .rating-count { font-family: ui-monospace,monospace; font-size: 0.7rem; color: rgba(245,245,245,0.4); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; }
+
+    /* Card de avaliação */
+    .review-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); padding: 1.25rem; margin-bottom: 0.875rem; transition: border-color 0.2s; }
+    .review-card:hover { border-color: rgba(221,175,52,0.2); }
+    .review-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(221,175,52,0.35); flex-shrink: 0; background: #1a1a1a; }
+    .review-name { font-family: 'Space Grotesk', sans-serif; font-size: 0.875rem; font-weight: 600; color: #f0f0f0; }
+    .review-date { font-family: ui-monospace,monospace; font-size: 0.65rem; color: rgba(245,245,245,0.3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
+    .review-text { font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem; color: rgba(245,245,245,0.72); line-height: 1.65; margin-top: 0.625rem; }
+    .verified-badge { display: inline-flex; align-items: center; gap: 4px; font-family: ui-monospace,monospace; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: #4ade80; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); padding: 2px 7px; border-radius: 2px; }
+
+    /* Miniaturas de mídia no card */
+    .review-media-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 0.625rem; }
+    .review-media-thumb { width: 68px; height: 68px; object-fit: cover; border-radius: 3px; cursor: pointer; border: 1px solid rgba(255,255,255,0.08); transition: opacity 0.15s; }
+    .review-media-thumb:hover { opacity: 0.8; }
+    .review-video-thumb { width: 68px; height: 68px; border-radius: 3px; cursor: pointer; border: 1px solid rgba(255,255,255,0.08); background: #111; display: flex; align-items: center; justify-content: center; }
+
+    /* Formulário */
+    .review-form-wrap { background: rgba(221,175,52,0.04); border: 1px solid rgba(221,175,52,0.18); padding: 1.5rem; margin-top: 1.5rem; }
+    .review-form-title { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #DDAF34; margin-bottom: 1rem; }
+    .star-select { display: inline-flex; gap: 4px; margin-bottom: 1rem; }
+    .star-select-btn { background: none; border: none; cursor: pointer; padding: 2px; }
+    .star-select-btn svg { width: 28px; height: 28px; transition: transform 0.1s; }
+    .star-select-btn:hover svg { transform: scale(1.15); }
+    .review-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #f5f5f5; font-family: 'Space Grotesk', sans-serif; font-size: 0.875rem; padding: 10px 14px; outline: none; resize: vertical; transition: border-color 0.15s; margin-bottom: 0.75rem; }
+    .review-input:focus { border-color: rgba(221,175,52,0.5); }
+    .review-file-label { display: inline-flex; align-items: center; gap: 7px; font-family: ui-monospace,monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(221,175,52,0.7); border: 1px dashed rgba(221,175,52,0.3); padding: 8px 14px; cursor: pointer; transition: all 0.15s; margin-bottom: 0.75rem; }
+    .review-file-label:hover { border-color: rgba(221,175,52,0.6); color: #DDAF34; background: rgba(221,175,52,0.05); }
+    .review-previews { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.75rem; }
+    .review-preview-item { position: relative; width: 64px; height: 64px; }
+    .review-preview-item img, .review-preview-item video { width: 64px; height: 64px; object-fit: cover; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1); }
+    .review-preview-remove { position: absolute; top: -5px; right: -5px; width: 17px; height: 17px; background: #ef4444; border: none; border-radius: 50%; color: white; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+    .btn-submit-review { background: #DDAF34; color: #0A0A0A; font-family: 'Outfit', sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; padding: 12px 28px; font-size: 0.8rem; border: none; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+    .btn-submit-review:hover { background: #f0f0f0; }
+    .btn-submit-review:active { transform: scale(0.97); }
+    .btn-submit-review:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Lock message */
+    .review-locked { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 1rem 1.25rem; font-family: ui-monospace,monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(245,245,245,0.4); margin-top: 1.5rem; }
+
+    /* Lightbox */
+    #review-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 99999; display: none; align-items: center; justify-content: center; }
+    #review-lightbox.open { display: flex; }
+    #review-lightbox img, #review-lightbox video { max-width: 90vw; max-height: 88vh; border-radius: 4px; object-fit: contain; }
+    #lightbox-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer; line-height: 1; opacity: 0.6; }
+    #lightbox-close:hover { opacity: 1; }
+
+    /* Paginação */
+    .review-pagination { display: flex; gap: 6px; justify-content: center; margin-top: 1.25rem; flex-wrap: wrap; }
+    .page-btn { font-family: ui-monospace,monospace; font-size: 0.7rem; padding: 6px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(245,245,245,0.5); cursor: pointer; transition: all 0.15s; }
+    .page-btn:hover, .page-btn.active { background: rgba(221,175,52,0.12); border-color: rgba(221,175,52,0.4); color: #DDAF34; }
+
+    /* Responsivo mobile */
+    @media (max-width: 640px) {
+      .rating-summary { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .rating-big-num { font-size: 2.2rem; }
+    }
   </style>
 </head>
 <body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col">
@@ -379,6 +450,48 @@
       </div>
     </div>
   </main>
+
+  <!-- ══════════════════════════════════════════
+       SEÇÃO DE AVALIAÇÕES
+  ══════════════════════════════════════════ -->
+  <section id="reviews-section" class="hidden max-w-7xl mx-auto px-6 pb-16 w-full">
+    <div class="review-section">
+
+      <!-- Título -->
+      <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <h2 class="font-display font-black text-xl uppercase tracking-widest text-white">
+          Avaliações dos Clientes
+        </h2>
+        <span id="review-total-label" class="font-mono text-xs text-white/30 uppercase tracking-wider"></span>
+      </div>
+
+      <!-- Resumo -->
+      <div class="rating-summary" id="rating-summary">
+        <div>
+          <div class="rating-big-num" id="rating-avg-num">—</div>
+          <div class="stars-row mt-1" id="rating-avg-stars"></div>
+          <div class="rating-count" id="rating-count-label"></div>
+        </div>
+        <div class="flex-1 min-w-[140px]" id="rating-bars"></div>
+      </div>
+
+      <!-- Lista de avaliações -->
+      <div id="reviews-list"></div>
+
+      <!-- Paginação -->
+      <div class="review-pagination" id="reviews-pagination"></div>
+
+      <!-- Formulário / Lock -->
+      <div id="review-form-area"></div>
+
+    </div>
+  </section>
+
+  <!-- Lightbox -->
+  <div id="review-lightbox">
+    <button id="lightbox-close" onclick="closeLightbox()">×</button>
+    <div id="lightbox-content"></div>
+  </div>
 
   <!-- Toast -->
   <div id="toast"></div>
@@ -874,6 +987,450 @@
     window.addEventListener('auth-data-loaded', function(e) {
       currentUser = e.detail.user;
     });
+
+    // ══════════════════════════════════════════════════════════════
+    //  SISTEMA DE AVALIAÇÕES
+    // ══════════════════════════════════════════════════════════════
+
+    var allReviews     = [];
+    var reviewPage     = 1;
+    var reviewsPerPage = 5;
+    var selectedRating = 5;
+    var selectedFiles  = [];
+    var reviewProductId = null;
+
+    // ── Renderiza estrelas (0–5, suporta .5) ────────────────────
+    function starsHTML(rating, size) {
+      size = size || 16;
+      var full = Math.floor(rating);
+      var half = (rating - full) >= 0.5 ? 1 : 0;
+      var empty = 5 - full - half;
+      var html = '';
+      var svgOpen = '<svg class="star-svg filled" style="width:' + size + 'px;height:' + size + 'px" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>';
+      var svgEmpty = '<svg class="star-svg empty" style="width:' + size + 'px;height:' + size + 'px;color:rgba(221,175,52,0.2)" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>';
+      for (var i = 0; i < full;  i++) html += svgOpen;
+      if (half)                        html += svgOpen; // usa preenchida para meia-estrela visualmente próximo
+      for (var j = 0; j < empty; j++) html += svgEmpty;
+      return html;
+    }
+
+    // ── Barras de distribuição ───────────────────────────────────
+    function renderRatingBars(reviews) {
+      var counts = {5:0,4:0,3:0,2:0,1:0};
+      reviews.forEach(function(r) { var k = Math.round(r.rating); counts[k] = (counts[k]||0)+1; });
+      var total = reviews.length || 1;
+      var html = '';
+      for (var s = 5; s >= 1; s--) {
+        var pct = Math.round((counts[s]/total)*100);
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+          + '<span style="font-family:ui-monospace,monospace;font-size:0.65rem;color:rgba(245,245,245,0.4);width:8px;text-align:right">' + s + '</span>'
+          + '<svg style="width:11px;height:11px;color:#DDAF34;flex-shrink:0" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>'
+          + '<div style="flex:1;height:5px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">'
+          + '<div style="height:100%;width:' + pct + '%;background:#DDAF34;border-radius:2px;transition:width 0.4s"></div>'
+          + '</div>'
+          + '<span style="font-family:ui-monospace,monospace;font-size:0.65rem;color:rgba(245,245,245,0.3);width:26px">' + pct + '%</span>'
+          + '</div>';
+      }
+      document.getElementById('rating-bars').innerHTML = html;
+    }
+
+    // ── Formata data ─────────────────────────────────────────────
+    function fmtDate(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
+    }
+
+    // ── Renderiza um card ────────────────────────────────────────
+    function reviewCardHTML(r) {
+      var mediaHTML = '';
+      if (r.media_urls && r.media_urls.length > 0) {
+        mediaHTML = '<div class="review-media-grid">';
+        r.media_urls.forEach(function(url) {
+          var isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(url);
+          if (isVideo) {
+            mediaHTML += '<div class="review-video-thumb" onclick="openLightbox(\'' + url + '\',\'video\')">'
+              + '<svg style="width:22px;height:22px;color:#DDAF34" fill="currentColor" viewBox="0 0 20 20"><path d="M8 5v10l8-5-8-5z"/></svg>'
+              + '</div>';
+          } else {
+            mediaHTML += '<img class="review-media-thumb" src="' + url + '" alt="foto da avaliação" loading="lazy" onclick="openLightbox(\'' + url + '\',\'image\')">';
+          }
+        });
+        mediaHTML += '</div>';
+      }
+
+      var verifiedLabel = r.is_artificial
+        ? '<span class="verified-badge"><svg style="width:9px;height:9px" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Compra verificada</span>'
+        : '<span class="verified-badge"><svg style="width:9px;height:9px" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Compra verificada</span>';
+
+      var avatarSrc = r.reviewer_avatar
+        ? r.reviewer_avatar
+        : 'https://api.dicebear.com/7.x/thumbs/svg?seed=' + encodeURIComponent(r.reviewer_name || 'user') + '&backgroundColor=333333';
+
+      return '<div class="review-card">'
+        + '<div style="display:flex;align-items:flex-start;gap:12px">'
+        + '<img class="review-avatar" src="' + avatarSrc + '" alt="' + (r.reviewer_name||'') + '" onerror="this.src=\'https://api.dicebear.com/7.x/thumbs/svg?seed=user&backgroundColor=333333\'">'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        + '<span class="review-name">' + (r.reviewer_name || 'Anônimo') + '</span>'
+        + verifiedLabel
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap">'
+        + '<div class="stars-row">' + starsHTML(r.rating, 14) + '</div>'
+        + '<span class="review-date">' + fmtDate(r.created_at) + '</span>'
+        + '</div>'
+        + '</div>'
+        + '</div>'
+        + '<p class="review-text">' + (r.comment || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>'
+        + mediaHTML
+        + '</div>';
+    }
+
+    // ── Renderiza página de avaliações ───────────────────────────
+    function renderReviewsPage() {
+      var start  = (reviewPage - 1) * reviewsPerPage;
+      var slice  = allReviews.slice(start, start + reviewsPerPage);
+      var listEl = document.getElementById('reviews-list');
+      if (!listEl) return;
+
+      if (allReviews.length === 0) {
+        listEl.innerHTML = '<p style="font-family:ui-monospace,monospace;font-size:0.75rem;color:rgba(245,245,245,0.25);text-align:center;padding:2rem 0;text-transform:uppercase;letter-spacing:0.08em">Nenhuma avaliação ainda. Seja o primeiro!</p>';
+      } else {
+        listEl.innerHTML = slice.map(reviewCardHTML).join('');
+      }
+
+      // Paginação
+      var pages = Math.ceil(allReviews.length / reviewsPerPage);
+      var pagEl = document.getElementById('reviews-pagination');
+      if (pagEl) {
+        pagEl.innerHTML = '';
+        if (pages > 1) {
+          for (var i = 1; i <= pages; i++) {
+            var btn = document.createElement('button');
+            btn.className = 'page-btn' + (i === reviewPage ? ' active' : '');
+            btn.textContent = i;
+            btn.setAttribute('data-page', i);
+            btn.onclick = (function(pg) { return function() { reviewPage = pg; renderReviewsPage(); document.getElementById('reviews-section').scrollIntoView({behavior:'smooth',block:'start'}); }; })(i);
+            pagEl.appendChild(btn);
+          }
+        }
+      }
+    }
+
+    // ── Carrega avaliações do Supabase ───────────────────────────
+    async function loadReviews(productId) {
+      reviewProductId = productId;
+      var result = await window.supabaseClient
+        .from('product_reviews')
+        .select('*')
+        .eq('product_id', String(productId))
+        .order('created_at', { ascending: false });
+
+      if (result.error) { console.error('Erro ao carregar avaliações:', result.error); return; }
+
+      allReviews = result.data || [];
+      reviewPage = 1;
+
+      // Resumo
+      var total = allReviews.length;
+      var avg   = total > 0 ? (allReviews.reduce(function(s,r){ return s + parseFloat(r.rating||0); }, 0) / total) : 0;
+      var avgDisplay = total > 0 ? avg.toFixed(1) : '—';
+
+      var avgNumEl = document.getElementById('rating-avg-num');
+      if (avgNumEl) avgNumEl.textContent = avgDisplay;
+
+      var avgStarsEl = document.getElementById('rating-avg-stars');
+      if (avgStarsEl) avgStarsEl.innerHTML = total > 0 ? starsHTML(avg, 18) : '';
+
+      var countLabelEl = document.getElementById('rating-count-label');
+      if (countLabelEl) countLabelEl.textContent = total + (total === 1 ? ' avaliação' : ' avaliações');
+
+      var totalLabelEl = document.getElementById('review-total-label');
+      if (totalLabelEl) totalLabelEl.textContent = total + (total === 1 ? ' avaliação' : ' avaliações');
+
+      renderRatingBars(allReviews);
+      renderReviewsPage();
+
+      // Verifica se o usuário pode avaliar (compra entregue)
+      renderReviewFormArea(productId);
+
+      // Exibe a seção
+      var sec = document.getElementById('reviews-section');
+      if (sec) sec.classList.remove('hidden');
+    }
+
+    // ── Verifica compra entregue ────────────────────────────────
+    async function checkVerifiedBuyer(productId) {
+      var sessionRes = await window.supabaseClient.auth.getSession();
+      var session = sessionRes.data && sessionRes.data.session;
+      if (!session) return { loggedIn: false, verified: false };
+
+      // Checa se já avaliou
+      var existingRes = await window.supabaseClient
+        .from('product_reviews')
+        .select('id')
+        .eq('product_id', String(productId))
+        .eq('user_id', session.user.id)
+        .eq('is_artificial', false)
+        .maybeSingle();
+
+      if (existingRes.data) return { loggedIn: true, verified: false, alreadyReviewed: true };
+
+      // Checa pedido entregue
+      var ordersRes = await window.supabaseClient
+        .from('orders')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .ilike('status', '%entregue%')
+        .limit(50);
+
+      if (ordersRes.error || !ordersRes.data || ordersRes.data.length === 0) {
+        return { loggedIn: true, verified: false };
+      }
+
+      // Verifica se algum pedido contém o produto
+      var hasProduct = ordersRes.data.some(function(o) {
+        if (!o.items) return false;
+        var itemsStr = typeof o.items === 'string' ? o.items : JSON.stringify(o.items);
+        return itemsStr.includes(String(productId));
+      });
+
+      return { loggedIn: true, verified: hasProduct, user: session.user };
+    }
+
+    // ── Renderiza área do formulário ─────────────────────────────
+    async function renderReviewFormArea(productId) {
+      var area = document.getElementById('review-form-area');
+      if (!area) return;
+
+      var check = await checkVerifiedBuyer(productId);
+
+      if (!check.loggedIn) {
+        area.innerHTML = '<div class="review-locked">'
+          + '<svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
+          + '<span>Faça <a href="/login.html" style="color:#DDAF34;text-decoration:underline">login</a> para deixar sua avaliação após receber o produto.</span>'
+          + '</div>';
+        return;
+      }
+
+      if (check.alreadyReviewed) {
+        area.innerHTML = '<div class="review-locked" style="color:rgba(74,222,128,0.6);border-color:rgba(74,222,128,0.15)">'
+          + '<svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+          + '<span>Você já avaliou este produto. Obrigado!</span>'
+          + '</div>';
+        return;
+      }
+
+      if (!check.verified) {
+        area.innerHTML = '<div class="review-locked">'
+          + '<svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>'
+          + '<span>Somente clientes com pedido entregue podem avaliar este produto.</span>'
+          + '</div>';
+        return;
+      }
+
+      // Formulário completo
+      area.innerHTML = '<div class="review-form-wrap">'
+        + '<div class="review-form-title">Deixe sua avaliação</div>'
+        + '<div>'
+        + '<div style="font-family:ui-monospace,monospace;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.07em;color:rgba(245,245,245,0.4);margin-bottom:6px">Sua nota</div>'
+        + '<div class="star-select" id="star-select-row">'
+        + [1,2,3,4,5].map(function(n) {
+            return '<button type="button" class="star-select-btn" data-val="' + n + '" onclick="setReviewRating(' + n + ')">'
+              + '<svg style="width:28px;height:28px;color:' + (n <= 5 ? '#DDAF34' : 'rgba(221,175,52,0.2)') + '" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>'
+              + '</button>';
+          }).join('')
+        + '</div>'
+        + '</div>'
+        + '<textarea id="review-comment-input" class="review-input" rows="4" placeholder="Conte sua experiência com o produto..."></textarea>'
+        + '<div>'
+        + '<label class="review-file-label" for="review-file-input">'
+        + '<svg style="width:14px;height:14px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>'
+        + 'Adicionar fotos / vídeos (opcional)'
+        + '</label>'
+        + '<input type="file" id="review-file-input" accept="image/*,video/mp4,video/webm" multiple style="display:none" onchange="handleReviewFiles(this)">'
+        + '</div>'
+        + '<div id="review-previews-container" class="review-previews"></div>'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'
+        + '<button class="btn-submit-review" id="btn-submit-review" onclick="submitReview()">Publicar avaliação</button>'
+        + '<span style="font-family:ui-monospace,monospace;font-size:0.65rem;color:rgba(245,245,245,0.25);text-transform:uppercase;letter-spacing:0.06em">Máx. 5 arquivos · 10 MB cada</span>'
+        + '</div>'
+        + '<div id="review-submit-msg" style="margin-top:8px;font-family:ui-monospace,monospace;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.07em"></div>'
+        + '</div>';
+
+      selectedFiles  = [];
+      selectedRating = 5;
+      updateStarSelectUI(5);
+    }
+
+    // ── UI de estrelas selecionáveis ─────────────────────────────
+    function setReviewRating(val) {
+      selectedRating = val;
+      updateStarSelectUI(val);
+    }
+
+    function updateStarSelectUI(val) {
+      var btns = document.querySelectorAll('#star-select-row .star-select-btn');
+      btns.forEach(function(btn) {
+        var n = parseInt(btn.getAttribute('data-val'));
+        btn.querySelector('svg').style.color = n <= val ? '#DDAF34' : 'rgba(221,175,52,0.2)';
+      });
+    }
+
+    // ── Preview de arquivos ──────────────────────────────────────
+    function handleReviewFiles(input) {
+      var files = Array.from(input.files);
+      if (files.length + selectedFiles.length > 5) {
+        alert('Máximo de 5 arquivos por avaliação.');
+        input.value = '';
+        return;
+      }
+      files.forEach(function(f) {
+        if (f.size > 10 * 1024 * 1024) { alert('Arquivo "' + f.name + '" excede 10 MB.'); return; }
+        selectedFiles.push(f);
+      });
+      input.value = '';
+      renderFilePreviews();
+    }
+
+    function renderFilePreviews() {
+      var container = document.getElementById('review-previews-container');
+      if (!container) return;
+      container.innerHTML = '';
+      selectedFiles.forEach(function(f, idx) {
+        var wrap = document.createElement('div');
+        wrap.className = 'review-preview-item';
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          if (f.type.startsWith('video/')) {
+            var vid = document.createElement('video');
+            vid.src = e.target.result;
+            vid.muted = true;
+            wrap.appendChild(vid);
+          } else {
+            var img = document.createElement('img');
+            img.src = e.target.result;
+            wrap.appendChild(img);
+          }
+          var rmBtn = document.createElement('button');
+          rmBtn.className = 'review-preview-remove';
+          rmBtn.innerHTML = '×';
+          rmBtn.onclick = (function(i) { return function() { selectedFiles.splice(i,1); renderFilePreviews(); }; })(idx);
+          wrap.appendChild(rmBtn);
+          container.appendChild(wrap);
+        };
+        reader.readAsDataURL(f);
+      });
+    }
+
+    // ── Upload de mídia ──────────────────────────────────────────
+    async function uploadReviewMedia(userId) {
+      var urls = [];
+      for (var i = 0; i < selectedFiles.length; i++) {
+        var f    = selectedFiles[i];
+        var ext  = f.name.split('.').pop();
+        var path = userId + '/' + Date.now() + '_' + i + '.' + ext;
+        var up   = await window.supabaseClient.storage
+          .from('review-media')
+          .upload(path, f, { cacheControl: '3600', upsert: false });
+        if (up.error) { console.error('Erro upload:', up.error); continue; }
+        var pub = window.supabaseClient.storage.from('review-media').getPublicUrl(path);
+        urls.push(pub.data.publicUrl);
+      }
+      return urls;
+    }
+
+    // ── Submeter avaliação ───────────────────────────────────────
+    async function submitReview() {
+      var msgEl  = document.getElementById('review-submit-msg');
+      var btnEl  = document.getElementById('btn-submit-review');
+      var textEl = document.getElementById('review-comment-input');
+
+      var comment = (textEl && textEl.value || '').trim();
+      if (!comment) {
+        if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = '⚠ Escreva um comentário antes de publicar.'; }
+        return;
+      }
+
+      if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Enviando...'; }
+      if (msgEl) { msgEl.style.color = 'rgba(245,245,245,0.4)'; msgEl.textContent = 'Aguarde...'; }
+
+      try {
+        var sessionRes = await window.supabaseClient.auth.getSession();
+        var session    = sessionRes.data && sessionRes.data.session;
+        if (!session) throw new Error('Sem sessão');
+
+        // Nome do usuário
+        var uMeta = session.user.user_metadata || {};
+        var reviewerName = uMeta.name || uMeta.full_name || session.user.email.split('@')[0];
+
+        // Avatar
+        var reviewerAvatar = uMeta.avatar_url || uMeta.picture || null;
+
+        // Upload de mídia
+        var mediaUrls = [];
+        if (selectedFiles.length > 0) {
+          if (msgEl) msgEl.textContent = 'Enviando arquivos...';
+          mediaUrls = await uploadReviewMedia(session.user.id);
+        }
+
+        var ins = await window.supabaseClient.from('product_reviews').insert({
+          product_id:      String(reviewProductId),
+          user_id:         session.user.id,
+          reviewer_name:   reviewerName,
+          reviewer_avatar: reviewerAvatar,
+          rating:          selectedRating,
+          comment:         comment,
+          media_urls:      mediaUrls,
+          is_artificial:   false
+        });
+
+        if (ins.error) throw ins.error;
+
+        if (msgEl) { msgEl.style.color = '#4ade80'; msgEl.textContent = '✅ Avaliação publicada! Obrigado.'; }
+
+        // Recarrega avaliações
+        setTimeout(function() { loadReviews(reviewProductId); }, 1000);
+
+      } catch(err) {
+        console.error('Erro ao publicar avaliação:', err);
+        var errMsg = 'Erro ao publicar.';
+        if (err.message && err.message.includes('violates row-level security')) {
+          errMsg = 'Somente clientes com pedido entregue podem avaliar.';
+        }
+        if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = '⚠ ' + errMsg; }
+        if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Publicar avaliação'; }
+      }
+    }
+
+    // ── Lightbox ─────────────────────────────────────────────────
+    function openLightbox(url, type) {
+      var lb      = document.getElementById('review-lightbox');
+      var content = document.getElementById('lightbox-content');
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      if (type === 'video') {
+        content.innerHTML = '<video src="' + url + '" controls autoplay style="max-width:90vw;max-height:88vh;border-radius:4px"></video>';
+      } else {
+        content.innerHTML = '<img src="' + url + '" alt="foto avaliação" style="max-width:90vw;max-height:88vh;border-radius:4px;object-fit:contain">';
+      }
+      lb.addEventListener('click', function(e) { if (e.target === lb) closeLightbox(); });
+    }
+
+    function closeLightbox() {
+      var lb = document.getElementById('review-lightbox');
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+      document.getElementById('lightbox-content').innerHTML = '';
+    }
+
+    // ── Integra ao renderProduct ─────────────────────────────────
+    // Sobrescreve a função init para chamar loadReviews após renderProduct
+    var _origRenderProduct = renderProduct;
+    renderProduct = function(p) {
+      _origRenderProduct(p);
+      loadReviews(p.id);
+    };
   </script>
 </body>
 </html>
