@@ -1552,7 +1552,7 @@
         .from('products')
         .select('id, title, price, promotional_price, images, category')
         .eq('category', category)
-        .eq('is_active', true)
+        .is('is_active', true)
         .neq('id', currentId)
         .limit(8);
 
