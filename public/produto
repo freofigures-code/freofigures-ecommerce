@@ -1013,7 +1013,7 @@
           .from('products')
           .select('*')
           .eq('id', id)
-          .is('is_active', true)
+          .eq('is_active', true)
           .single();
 
         if (result.error || !result.data) {
