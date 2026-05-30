@@ -629,6 +629,139 @@ function maskCPF(input) {
   input.value = v;
 }
 
+// ── DADOS PESSOAIS PARA CONVIDADO (modal adaptado) ──────────────────────────
+function abrirDadosPessoaisConvidado(isGuest) {
+  // Pré-preenche se já houver algo salvo (ex: usuário voltou à página)
+  var meta = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
+  var nomeCompleto = (currentProfile && currentProfile.name) || meta.full_name || meta.name || '';
+  var partes = nomeCompleto.trim().split(' ');
+
+  document.getElementById('dp-firstname').value = partes[0] || '';
+  document.getElementById('dp-lastname').value  = partes.slice(1).join(' ') || '';
+  document.getElementById('dp-phone').value     = '';
+  document.getElementById('dp-cpf').value       = '';
+
+  // Se é convidado, injeta campo de e-mail no modal (que usuários logados não precisam)
+  if (isGuest) {
+    var modalBox = document.querySelector('#dados-pessoais-modal .bg-freo-dark');
+    if (modalBox && !document.getElementById('dp-email-wrapper')) {
+      var emailWrapper = document.createElement('div');
+      emailWrapper.id = 'dp-email-wrapper';
+      emailWrapper.className = 'mb-4';
+      emailWrapper.innerHTML = '<label class="fl">E-mail *</label>'
+        + '<input type="email" id="dp-email" class="fi" placeholder="seu@email.com">';
+
+      // Insere antes do campo CPF
+      var cpfField = document.getElementById('dp-cpf');
+      if (cpfField && cpfField.parentElement) {
+        modalBox.insertBefore(emailWrapper, cpfField.parentElement);
+      }
+
+      // Adapta título e subtítulo para linguagem de convidado
+      var titulo = modalBox.querySelector('h3');
+      if (titulo) titulo.innerText = 'Seus dados de entrega';
+
+      var sub = modalBox.querySelector('p.font-mono');
+      if (sub) sub.innerText = 'Sem cadastro obrigatório. Usados apenas para entrega e nota fiscal.';
+
+      // Adapta botão
+      var btn = document.getElementById('btn-salvar-dados');
+      if (btn) btn.innerText = 'Continuar para endereço →';
+
+      // Substitui o handler do botão para usar a versão de convidado
+      btn.onclick = function() { salvarDadosPessoaisConvidado(); };
+    }
+  }
+
+  var modal = document.getElementById('dados-pessoais-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('dp-firstname').focus();
+}
+
+async function salvarDadosPessoaisConvidado() {
+  var firstName = document.getElementById('dp-firstname').value.trim();
+  var lastName  = document.getElementById('dp-lastname').value.trim();
+  var emailInput = document.getElementById('dp-email');
+  var email     = emailInput ? emailInput.value.trim() : '';
+  var cpf       = document.getElementById('dp-cpf').value.replace(/\D/g, '');
+  var phone     = document.getElementById('dp-phone').value.replace(/\D/g, '');
+  var errEl     = document.getElementById('dados-pessoais-error');
+  var btn       = document.getElementById('btn-salvar-dados');
+
+  errEl.classList.add('hidden');
+
+  if (!firstName || !lastName) {
+    errEl.innerText = 'Informe seu nome e sobrenome.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    errEl.innerText = 'Informe um e-mail válido.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (cpf.length !== 11) {
+    errEl.innerText = 'CPF inválido. Digite os 11 dígitos.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (phone.length < 10 || phone.length > 11) {
+    errEl.innerText = 'Telefone inválido. Inclua o DDD.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.innerText = 'Salvando...';
+  btn.disabled  = true;
+
+  try {
+    var fullName = firstName + ' ' + lastName;
+
+    // Salva nos metadados do usuário anônimo
+    await window.supabaseClient.auth.updateUser({
+      data: { full_name: fullName, name: fullName, phone: phone, guest_email: email }
+    });
+
+    // Cria/atualiza profile no banco (usando o user_id anônimo)
+    await window.supabaseClient.from('profiles').upsert({
+      id:    currentUser.id,
+      email: email,
+      name:  fullName,
+      phone: phone,
+      cpf:   cpf
+    });
+
+    // Salva também em sessionStorage para usar na conversão pós-pagamento
+    sessionStorage.setItem('freo_guest_data', JSON.stringify({
+      name:  fullName,
+      email: email,
+      cpf:   cpf,
+      phone: phone
+    }));
+
+    // Atualiza currentProfile em memória para que getCustomer*() funcionem
+    currentProfile = Object.assign({}, currentProfile || {}, {
+      name:  fullName,
+      email: email,
+      phone: phone,
+      cpf:   cpf
+    });
+
+    document.getElementById('dados-pessoais-modal').classList.add('hidden');
+    document.getElementById('dados-pessoais-modal').classList.remove('flex');
+
+  } catch (e) {
+    console.error('Erro ao salvar dados do convidado:', e);
+    errEl.innerText = 'Erro ao salvar. Tente novamente.';
+    errEl.classList.remove('hidden');
+  }
+
+  btn.innerText = 'Continuar para endereço →';
+  btn.disabled  = false;
+}
+// ── FIM DADOS PESSOAIS CONVIDADO ─────────────────────────────────────────────
+
 function abrirDadosPessoais() {
   var meta      = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
   var nomeCompleto = (currentProfile && currentProfile.name) || meta.full_name || meta.name || '';
@@ -1380,10 +1513,17 @@ async function salvarDadosPessoais() {
       }
     }
      async function liberarPagamento() {
-      if (!getCurrentPhone()) {
-        openPhoneRequiredModal();
-        return;
-      }
+  if (!getCurrentPhone()) {
+    // Se for convidado e não tiver dados, reabre o modal completo de dados
+    var isGuest = currentUser && (currentUser.is_anonymous === true
+      || (currentUser.user_metadata && currentUser.user_metadata.is_anonymous === true));
+    if (isGuest) {
+      abrirDadosPessoaisConvidado(true);
+    } else {
+      openPhoneRequiredModal();
+    }
+    return;
+  }
     
       if (!selectedShipping) {
         alert('Escolha uma opção de frete primeiro.');
@@ -1750,74 +1890,82 @@ async function salvarDadosPessoais() {
       }
     }
     async function initCheckout() {
-      showLoading();
+  showLoading();
 
-      try {
-        var sessionResult = await window.supabaseClient.auth.getSession();
-        var session = sessionResult.data && sessionResult.data.session;
+  try {
+    var sessionResult = await window.supabaseClient.auth.getSession();
+    var session = sessionResult.data && sessionResult.data.session;
 
-        if (!session) {
-          window.location.href = '/login.html';
-          return;
-        }
-
-        currentUser = session.user;
-
-        var profileResult = await window.supabaseClient
-          .from('profiles')
-          .select('id, name, email, phone, cpf')
-          .eq('id', currentUser.id)
-          .single();
-
-        var metadata = currentUser.user_metadata || {};
-
-        currentProfile = profileResult.data || {
-          id: currentUser.id,
-          name: metadata.full_name || metadata.name || metadata.display_name || '',
-          email: currentUser.email || '',
-          phone: metadata.phone || metadata.telefone || ''
-        };
-
-        if (!currentProfile.name) {
-          currentProfile.name = metadata.full_name || metadata.name || metadata.display_name || currentUser.email || '';
-        }
-
-        if (!currentProfile.email) {
-          currentProfile.email = currentUser.email || '';
-        }
-
-        if (!currentProfile.phone) {
-          currentProfile.phone = metadata.phone || metadata.telefone || '';
-        }
-
-        var cartResult = await window.supabaseClient
-          .from('cart_items')
-          .select('*')
-          .eq('user_id', currentUser.id);
-
-        cartItemsData = cartResult.data || [];
-
-        if (cartItemsData.length === 0) {
-          showEmpty();
-          return;
-        }
-
-        showCheckout();
-        renderItems(cartItemsData);
-        await carregarEnderecos();
-
-        var temDadosCompletos = getCurrentPhone() &&
-                                getCustomerNameForOrder() &&
-                                (currentProfile && currentProfile.cpf);
-
-        if (!temDadosCompletos) {
-          abrirDadosPessoais();
-        }
-      } catch (err) {
-        console.error('Erro checkout:', err);
-        showEmpty();
-      }
+    // Sem sessão alguma: redireciona para login (caso extremo — não deveria chegar
+    // aqui porque o addToCart já cria sessão anônima antes de chegar ao checkout)
+    if (!session) {
+      window.location.href = '/login.html';
+      return;
     }
+
+    currentUser = session.user;
+
+    // Detecta se é convidado (anônimo) — via query string ou flag do Supabase
+    var urlParams = new URLSearchParams(window.location.search);
+    var isGuest = urlParams.get('guest') === '1'
+      || currentUser.is_anonymous === true
+      || (currentUser.user_metadata && currentUser.user_metadata.is_anonymous === true);
+
+    var profileResult = await window.supabaseClient
+      .from('profiles')
+      .select('id, name, email, phone, cpf')
+      .eq('id', currentUser.id)
+      .single();
+
+    var metadata = currentUser.user_metadata || {};
+
+    currentProfile = profileResult.data || {
+      id: currentUser.id,
+      name: metadata.full_name || metadata.name || metadata.display_name || '',
+      email: currentUser.email || '',
+      phone: metadata.phone || metadata.telefone || ''
+    };
+
+    if (!currentProfile.name) {
+      currentProfile.name = metadata.full_name || metadata.name || metadata.display_name || currentUser.email || '';
+    }
+    if (!currentProfile.email) {
+      currentProfile.email = currentUser.email || '';
+    }
+    if (!currentProfile.phone) {
+      currentProfile.phone = metadata.phone || metadata.telefone || '';
+    }
+
+    var cartResult = await window.supabaseClient
+      .from('cart_items')
+      .select('*')
+      .eq('user_id', currentUser.id);
+
+    cartItemsData = cartResult.data || [];
+
+    if (cartItemsData.length === 0) {
+      showEmpty();
+      return;
+    }
+
+    showCheckout();
+    renderItems(cartItemsData);
+    await carregarEnderecos();
+
+    // Para convidado: sempre abre o modal de dados pessoais (ele não tem cadastro)
+    // Para usuário logado: abre só se dados estiverem incompletos
+    var temDadosCompletos = getCurrentPhone() &&
+                            getCustomerNameForOrder() &&
+                            (currentProfile && currentProfile.cpf);
+
+    if (isGuest || !temDadosCompletos) {
+      abrirDadosPessoaisConvidado(isGuest);
+    }
+  } catch (err) {
+    console.error('Erro checkout:', err);
+    showEmpty();
+  }
+}
 
     async function carregarEnderecos() {
       try {
@@ -2208,8 +2356,10 @@ async function salvarDadosPessoais() {
     document.addEventListener('DOMContentLoaded', initCheckout);
 
     window.addEventListener('auth-not-logged-in', function() {
-      window.location.href = '/login.html';
-    });
+  // Não redireciona — sessão anônima já foi criada pelo addToCart.
+  // Se por algum motivo não houver sessão, o initCheckout trata.
+  console.log('[FreoFigures] auth-not-logged-in ignorado no checkout — sessão anônima ativa.');
+});
   </script>
 </body>
 </html>
