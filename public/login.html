@@ -365,15 +365,30 @@
           return;
         }
 
-        submitBtn.innerHTML = 'Salvando carrinho...';
-        const temPendente = localStorage.getItem('freo_pending_cart');
+        submitBtn.innerHTML = 'Verificando carrinho...';
 
-        if (temPendente) {
-          await processarCarrinhoPendente(data.user.id);
-          window.location.href = '/?carrinho=1';
-        } else {
-          window.location.href = '/dashboard.html';
-        }
+// Migra itens do carrinho anônimo para o usuário logado
+var anonUserId = localStorage.getItem('freo_anon_user_id');
+if (anonUserId && data.user && anonUserId !== data.user.id) {
+  try {
+    await window.supabaseClient
+      .from('cart_items')
+      .update({ user_id: data.user.id })
+      .eq('user_id', anonUserId);
+    localStorage.removeItem('freo_anon_user_id');
+  } catch (e) {
+    console.warn('Erro ao migrar carrinho anônimo:', e);
+  }
+}
+
+// Legado: processa item pendente antigo se existir
+const temPendente = localStorage.getItem('freo_pending_cart');
+if (temPendente) {
+  await processarCarrinhoPendente(data.user.id);
+  window.location.href = '/?carrinho=1';
+} else {
+  window.location.href = '/dashboard.html';
+}
 
       } catch (err) {
         console.error('Erro no login:', err);
