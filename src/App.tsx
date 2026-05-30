@@ -2322,7 +2322,7 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
 // CART DRAWER
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: any) => {
+const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem, user }: any) => {
   const total = cartItems.reduce((acc: number, item: CartItem) => {
     const price = item.price.replace('R$', '').replace(/\s/g, '').replace(',', '.');
     return acc + parseFloat(price) * item.quantity;
@@ -2396,11 +2396,15 @@ const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem }: 
                   <span className="text-xl md:text-2xl font-bold text-freo-orange">R$ {total.toFixed(2).replace('.', ',')}</span>
                 </div>
                 <button
-                  onClick={() => { window.location.href = '/checkout.html'; }}
-                  className="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors text-sm md:text-base active:scale-98"
-                >
-                  Finalizar Compra
-                </button>
+  onClick={() => {
+    const isAnon = user?.is_anonymous === true
+      || user?.user_metadata?.is_anonymous === true;
+    window.location.href = isAnon ? '/checkout.html?guest=1' : '/checkout.html';
+  }}
+  className="w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors text-sm md:text-base active:scale-98"
+>
+  Finalizar Compra
+</button>
               </div>
             )}
           </motion.div>
@@ -2482,47 +2486,62 @@ export default function App() {
   const handleFilterChange = (filter: string) => { setSearchTerm(''); setActiveFilter(filter); };
 
   const addToCart = async (product: Product) => {
-    // @ts-ignore
-    const supabase = window.supabaseClient || window.supabase;
-    if (!supabase) return;
-    const { data: { session } } = await supabase.auth.getSession();
+  // @ts-ignore
+  const supabase = window.supabaseClient || window.supabase;
+  if (!supabase) return;
 
-    if (!session) {
-      localStorage.setItem('freo_pending_cart', JSON.stringify({
-        id: product.id,
-        title: product.title,
-        price: product.promotional_price !== null && product.promotional_price < product.price
-          ? product.promotional_price
-          : product.price,
-        image: product.images && product.images.length > 0 ? product.images[0] : '',
-      }));
-      window.location.href = '/login.html';
+  let { data: { session } } = await supabase.auth.getSession();
+
+  // Sem sessão: cria usuário anônimo em vez de redirecionar para login
+  if (!session) {
+    const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
+    if (anonError || !anonData?.session) {
+      console.error('Erro ao criar sessão anônima:', anonError);
       return;
     }
+    session = anonData.session;
+    setUser({ ...anonData.session.user, is_anonymous: true });
+    // Salva ID anônimo para migrar carrinho caso o usuário faça login depois
+    localStorage.setItem('freo_anon_user_id', anonData.session.user.id);
+  }
 
-    try {
-      const thumb = product.images && product.images.length > 0 ? product.images[0] : '';
-      const priceNum = product.promotional_price !== null && product.promotional_price < product.price ? product.promotional_price : product.price;
-      const { data, error } = await supabase.from('cart_items').insert({
-        user_id: session.user.id,
-        product_id: String(product.id),
-        product_name: product.title,
-        quantity: 1,
-        price: priceNum,
-        total_price: priceNum,
-        image_url: thumb,
-        variant: null,
-      }).select().single();
-      if (error) throw error;
-      setCartItems(previous => [...previous, { cartItemId: data.id, name: product.title, price: formatPrice(priceNum), img: thumb, quantity: 1, variant: null }]);
-      const toast = document.createElement('div');
-      toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#DDAF34;color:#000;padding:12px 24px;font-weight:700;font-family:inherit;text-transform:uppercase;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap;border-radius:2px;font-size:14px;';
-      toast.innerHTML = '✅ Adicionado ao carrinho!';
-      document.body.appendChild(toast);
-      setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s ease'; setTimeout(() => toast.remove(), 500); }, 3000);
-    } catch (error) { console.error('Erro ao adicionar ao carrinho:', error); }
-  };
-
+  try {
+    const thumb = product.images && product.images.length > 0 ? product.images[0] : '';
+    const priceNum = product.promotional_price !== null && product.promotional_price < product.price
+      ? product.promotional_price
+      : product.price;
+    const { data, error } = await supabase.from('cart_items').insert({
+      user_id: session.user.id,
+      product_id: String(product.id),
+      product_name: product.title,
+      quantity: 1,
+      price: priceNum,
+      total_price: priceNum,
+      image_url: thumb,
+      variant: null,
+    }).select().single();
+    if (error) throw error;
+    setCartItems(previous => [...previous, {
+      cartItemId: data.id,
+      name: product.title,
+      price: formatPrice(priceNum),
+      img: thumb,
+      quantity: 1,
+      variant: null,
+    }]);
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#DDAF34;color:#000;padding:12px 24px;font-weight:700;font-family:inherit;text-transform:uppercase;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap;border-radius:2px;font-size:14px;';
+    toast.innerHTML = '✅ Adicionado ao carrinho!';
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.5s ease';
+      setTimeout(() => toast.remove(), 500);
+    }, 3000);
+  } catch (error) {
+    console.error('Erro ao adicionar ao carrinho:', error);
+  }
+};
   const updateQuantity = (product: CartItem, delta: number) => {
     setCartItems(previous => previous.map(item =>
       item.cartItemId === product.cartItemId ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
@@ -2560,7 +2579,7 @@ export default function App() {
       )}
       <Footer />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem} />
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem} user={user} />
       <FreoChat />
     </div>
   );
