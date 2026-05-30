@@ -796,24 +796,23 @@
 
     // ── Adicionar ao carrinho ───────────────────────────────────────────────
     async function addToCart() {
-      if (!product) return;
+  if (!product) return;
 
-      var session = await window.supabaseClient.auth.getSession();
-      var s = session.data && session.data.session;
+  var session = await window.supabaseClient.auth.getSession();
+  var s = session.data && session.data.session;
 
-      if (!s) {
-        // Salva a intenção no localStorage antes de redirecionar para o login
-        localStorage.setItem('freo_pending_cart', JSON.stringify({
-          id: product.id,
-          title: product.title,
-          price: getEffectivePrice(),
-          image: (product.images && product.images.length > 0) ? product.images[0] : '',
-          quantity: qty,
-          variants: selectedVariants
-        }));
-        window.location.href = '/login.html';
-        return;
-      }
+  if (!s) {
+    // Cria sessão anônima em vez de redirecionar para login
+    var anonResult = await window.supabaseClient.auth.signInAnonymously();
+    if (anonResult.error || !anonResult.data || !anonResult.data.session) {
+      console.error('Erro ao criar sessão anônima:', anonResult.error);
+      showToast('Erro ao adicionar ao carrinho. Tente novamente.', 'error');
+      return;
+    }
+    s = anonResult.data.session;
+    // Salva ID anônimo para migrar o carrinho caso o usuário faça login depois
+    localStorage.setItem('freo_anon_user_id', s.user.id);
+  }
 
       var btn = document.getElementById('btn-cart');
       btn.disabled = true;
