@@ -1576,7 +1576,7 @@
           ? '<span class="font-mono text-[10px] text-white/30 line-through mr-1">' + formatCurrency(p.price) + '</span>'
           : '';
 
-        return '<a href="/produto.html?id=' + p.id + '" class="group block bg-freo-card border border-white/[0.06] hover:border-freo-orange/40 transition-colors overflow-hidden" style="border-radius:4px">'
+        return '<a href="/produto?id=' + p.id + '" class="group block bg-freo-card border border-white/[0.06] hover:border-freo-orange/40 transition-colors overflow-hidden" style="border-radius:4px">'
           + '<div class="aspect-square bg-freo-dark overflow-hidden">' + imgHTML + '</div>'
           + '<div class="p-3">'
           + '<p class="font-display font-bold text-sm uppercase tracking-tight text-white/90 leading-tight line-clamp-2 mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + (p.title || '') + '</p>'
