@@ -144,56 +144,30 @@
 
     /* ── HERO ── */
     .hero {
-      min-height: 90vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       position: relative;
       overflow: hidden;
-      padding: 60px 24px;
+      min-height: 560px;
     }
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(221,175,52,0.06) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
     .hero-inner {
-      max-width: 1100px;
-      width: 100%;
+      max-width: 1200px;
       margin: 0 auto;
+      padding: 60px 40px;
       display: grid;
       grid-template-columns: 1fr 1fr;
       align-items: center;
       gap: 60px;
     }
     @media (max-width: 860px) {
-      .hero-inner { grid-template-columns: 1fr; text-align: center; gap: 40px; }
-      .hero-visual { order: -1; }
+      .hero-inner { grid-template-columns: 1fr; padding: 40px 20px; gap: 32px; }
     }
-
-    /* Hero text */
     .hero-eyebrow {
       font-family: ui-monospace, monospace;
-      font-size: .65rem;
+      font-size: .6rem;
       text-transform: uppercase;
       letter-spacing: .18em;
       color: var(--gold);
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      margin-bottom: 14px;
     }
-    .hero-eyebrow::before {
-      content: '';
-      width: 24px; height: 1px;
-      background: var(--gold);
-      flex-shrink: 0;
-    }
-    @media (max-width: 860px) { .hero-eyebrow { justify-content: center; } }
-
     .hero-title {
       font-family: 'Outfit', sans-serif;
       font-weight: 900;
@@ -205,7 +179,6 @@
       margin-bottom: 20px;
     }
     .hero-title .gold { color: var(--gold); }
-
     .hero-sub {
       font-size: .95rem;
       line-height: 1.65;
@@ -213,8 +186,6 @@
       max-width: 420px;
       margin-bottom: 32px;
     }
-    @media (max-width: 860px) { .hero-sub { margin: 0 auto 32px; } }
-
     .hero-cta {
       display: inline-flex;
       align-items: center;
@@ -235,7 +206,6 @@
     .hero-cta:hover { background: #f0c940; }
     .hero-cta:active { transform: scale(.98); }
     .hero-cta svg { width: 16px; height: 16px; }
-
     .hero-note {
       font-family: ui-monospace, monospace;
       font-size: .6rem;
@@ -244,151 +214,20 @@
       text-transform: uppercase;
       letter-spacing: .08em;
     }
-
-    /* ── Mystery Box Visual ── */
     .hero-visual {
       display: flex;
       align-items: center;
       justify-content: center;
     }
-
-    .mystery-wrap {
-      position: relative;
-      width: 280px;
-      height: 280px;
+    .hero-img {
+      width: 100%;
+      max-width: 560px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 0 40px rgba(221,175,52,0.25));
+      animation: float 6s ease-in-out infinite;
     }
-
-    /* Rotating orbit ring */
-    .orbit-ring {
-      position: absolute;
-      inset: -24px;
-      border-radius: 50%;
-      border: 1px dashed rgba(221,175,52,0.2);
-      animation: rotateSlow 18s linear infinite;
-    }
-    .orbit-ring::before, .orbit-ring::after {
-      content: '';
-      position: absolute;
-      width: 8px; height: 8px;
-      background: var(--gold);
-      border-radius: 50%;
-      box-shadow: 0 0 8px rgba(221,175,52,0.6);
-    }
-    .orbit-ring::before { top: -4px; left: 50%; transform: translateX(-50%); }
-    .orbit-ring::after  { bottom: -4px; left: 50%; transform: translateX(-50%); }
-
-    .mystery-box {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, #1a1a1a 0%, #111 50%, #161616 100%);
-      border: 1px solid var(--gold-line);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      animation: float 5s ease-in-out infinite, glowPulse 3s ease-in-out infinite;
-      overflow: hidden;
-    }
-
-    .mystery-box .scan {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 35%;
-      background: linear-gradient(to bottom, rgba(221,175,52,0.06), transparent);
-      pointer-events: none;
-      animation: scanline 5s ease-in-out infinite;
-    }
-
-    /* Decorative cross lines on the box */
-    .mystery-box::before, .mystery-box::after {
-      content: '';
-      position: absolute;
-      background: var(--gold-line);
-    }
-    .mystery-box::before { left: 50%; top: 0; bottom: 0; width: 1px; }
-    .mystery-box::after  { top: 50%; left: 0; right: 0; height: 1px; }
-
-    .q-mark {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 900;
-      font-size: 6rem;
-      color: var(--gold);
-      text-shadow: 0 0 40px rgba(221,175,52,0.4);
-      animation: questionPulse 2.5s ease-in-out infinite;
-      position: relative;
-      z-index: 1;
-      line-height: 1;
-    }
-
-    .mystery-label {
-      position: relative;
-      z-index: 1;
-      font-family: ui-monospace, monospace;
-      font-size: .6rem;
-      text-transform: uppercase;
-      letter-spacing: .18em;
-      color: var(--gold);
-      opacity: 0.7;
-      margin-top: 4px;
-    }
-
-    /* Corner decorations on box */
-    .box-corner {
-      position: absolute;
-      width: 14px; height: 14px;
-      z-index: 2;
-    }
-    .box-corner.tl { top: 8px; left: 8px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
-    .box-corner.tr { top: 8px; right: 8px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); }
-    .box-corner.bl { bottom: 8px; left: 8px; border-bottom: 2px solid var(--gold); border-left: 2px solid var(--gold); }
-    .box-corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
-
-    /* Month counter badge */
-    .month-badge {
-      position: absolute;
-      top: -18px;
-      right: -18px;
-      background: var(--gold);
-      color: #000;
-      font-family: 'Outfit', sans-serif;
-      font-weight: 900;
-      font-size: .65rem;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      padding: 6px 12px;
-      z-index: 10;
-      white-space: nowrap;
-    }
-
-    /* Floating category chips */
-    .float-chip {
-      position: absolute;
-      font-family: ui-monospace, monospace;
-      font-size: .58rem;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      padding: 4px 10px;
-      border: 1px solid;
-      z-index: 10;
-      backdrop-filter: blur(6px);
-      white-space: nowrap;
-    }
-    .float-chip.geek {
-      bottom: -14px; left: -22px;
-      background: rgba(59,130,246,.08);
-      border-color: rgba(59,130,246,.3);
-      color: #60a5fa;
-      animation: float 4s ease-in-out infinite 0.5s;
-    }
-    .float-chip.reli {
-      top: 24px; right: -28px;
-      background: rgba(221,175,52,.08);
-      border-color: var(--gold-line);
-      color: var(--gold);
-      animation: float 4s ease-in-out infinite 1.2s;
-    }
-
-    /* ── SECTION WRAPPER ── */
+    @media (max-width: 860px) { .hero-img { max-width: 360px; } }
     .section {
       max-width: 1100px;
       margin: 0 auto;
@@ -956,15 +795,17 @@
 </nav>
 
 <!-- ── HERO ── -->
-<section class="hero grid-bg">
+<section class="hero">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 50% 60%, rgba(140,90,0,0.35) 0%, rgba(60,30,0,0.18) 40%, transparent 70%);pointer-events:none"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:200px;background:linear-gradient(to top, rgba(10,8,0,0.7), transparent);pointer-events:none"></div>
+
   <div class="hero-inner">
     <!-- Copy -->
     <div class="fade-up">
-      <p class="hero-eyebrow">Coleção exclusiva · toda semana</p>
+      <p class="hero-eyebrow">Caixa surpresa mensal</p>
       <h1 class="hero-title">
-        Todo mês<br>
-        uma nova<br>
-        <span class="gold">lenda chega</span>
+        Todo mês,<br>uma nova
+        <span class="gold">lenda.</span>
       </h1>
       <p class="hero-sub">
         Assine a FreoFigures e receba toda mês uma caixa surpresa temática — geek/gamer ou religiosa — com itens exclusivos selecionados para colecionadores.
@@ -976,23 +817,12 @@
       <p class="hero-note">A partir de R$ 39,90 / mês · cancele quando quiser</p>
     </div>
 
-    <!-- Mystery box visual -->
+    <!-- Imagem da caixa -->
     <div class="hero-visual fade-up fd2">
-      <div class="mystery-wrap">
-        <div class="orbit-ring"></div>
-        <div class="mystery-box">
-          <div class="scan"></div>
-          <div class="box-corner tl"></div>
-          <div class="box-corner tr"></div>
-          <div class="box-corner bl"></div>
-          <div class="box-corner br"></div>
-          <span class="q-mark">?</span>
-          <span class="mystery-label">Jul / 2026</span>
-        </div>
-        <span class="month-badge">Surpresa do Mês</span>
-        <span class="float-chip geek">⚡ Geek / Gamer</span>
-        <span class="float-chip reli">✦ Religioso</span>
-      </div>
+      <img
+        src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/BOX.png"
+        alt="Caixa surpresa FreoFigures"
+        class="hero-img">
     </div>
   </div>
 </section>
