@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assinatura Mensal | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold:       #DDAF34;
+      --gold-dim:   rgba(221,175,52,0.12);
+      --gold-line:  rgba(221,175,52,0.28);
+      --gold-glow:  rgba(221,175,52,0.18);
+      --black:      #0A0A0A;
+      --surface:    #111111;
+      --surface2:   #181818;
+      --border:     rgba(255,255,255,0.07);
+      --muted:      rgba(245,245,245,0.35);
+      --mid:        rgba(245,245,245,0.6);
+      --white:      #F5F5F5;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Space Grotesk', sans-serif;
+      antialiased: true;
+      overflow-x: hidden;
+    }
+
+    /* ── Grid bg ── */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(221,175,52,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(221,175,52,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(-2deg); }
+      50%       { transform: translateY(-12px) rotate(2deg); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 30px rgba(221,175,52,0.2), 0 0 60px rgba(221,175,52,0.08); }
+      50%       { box-shadow: 0 0 50px rgba(221,175,52,0.35), 0 0 90px rgba(221,175,52,0.15); }
+    }
+    @keyframes rotateSlow {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    @keyframes scanline {
+      from { transform: translateY(-100%); }
+      to   { transform: translateY(300%); }
+    }
+    @keyframes questionPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.92); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    @keyframes revealBar {
+      from { width: 0; }
+      to   { width: var(--target-w); }
+    }
+
+    .fade-up { animation: fadeUp 0.6s ease both; }
+    .fd1 { animation-delay: 0.08s; }
+    .fd2 { animation-delay: 0.18s; }
+    .fd3 { animation-delay: 0.28s; }
+    .fd4 { animation-delay: 0.38s; }
+    .fd5 { animation-delay: 0.50s; }
+
+    /* ── NAV ── */
+    nav {
+      background: rgba(13,13,13,0.96);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .logo img {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      object-fit: cover;
+      box-shadow: 0 0 8px rgba(221,175,52,0.35);
+    }
+    .logo-text {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      color: var(--white);
+    }
+    .logo-text span { color: var(--gold); font-weight: 300; }
+
+    .nav-badge {
+      font-family: ui-monospace, monospace;
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      border: 1px solid var(--gold-line);
+      color: var(--gold);
+      padding: 4px 12px;
+      background: var(--gold-dim);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 60px 24px;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(221,175,52,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 60px;
+    }
+    @media (max-width: 860px) {
+      .hero-inner { grid-template-columns: 1fr; text-align: center; gap: 40px; }
+      .hero-visual { order: -1; }
+    }
+
+    /* Hero text */
+    .hero-eyebrow {
+      font-family: ui-monospace, monospace;
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      color: var(--gold);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      width: 24px; height: 1px;
+      background: var(--gold);
+      flex-shrink: 0;
+    }
+    @media (max-width: 860px) { .hero-eyebrow { justify-content: center; } }
+
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2.8rem, 5.5vw, 5rem);
+      line-height: 0.92;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      margin-bottom: 20px;
+    }
+    .hero-title .gold { color: var(--gold); }
+
+    .hero-sub {
+      font-size: .95rem;
+      line-height: 1.65;
+      color: var(--muted);
+      max-width: 420px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 860px) { .hero-sub { margin: 0 auto 32px; } }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--gold);
+      color: #000;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: .85rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      padding: 14px 28px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, transform .1s;
+    }
+    .hero-cta:hover { background: #f0c940; }
+    .hero-cta:active { transform: scale(.98); }
+    .hero-cta svg { width: 16px; height: 16px; }
+
+    .hero-note {
+      font-family: ui-monospace, monospace;
+      font-size: .6rem;
+      color: var(--muted);
+      margin-top: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    /* ── Mystery Box Visual ── */
+    .hero-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mystery-wrap {
+      position: relative;
+      width: 280px;
+      height: 280px;
+    }
+
+    /* Rotating orbit ring */
+    .orbit-ring {
+      position: absolute;
+      inset: -24px;
+      border-radius: 50%;
+      border: 1px dashed rgba(221,175,52,0.2);
+      animation: rotateSlow 18s linear infinite;
+    }
+    .orbit-ring::before, .orbit-ring::after {
+      content: '';
+      position: absolute;
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(221,175,52,0.6);
+    }
+    .orbit-ring::before { top: -4px; left: 50%; transform: translateX(-50%); }
+    .orbit-ring::after  { bottom: -4px; left: 50%; transform: translateX(-50%); }
+
+    .mystery-box {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #1a1a1a 0%, #111 50%, #161616 100%);
+      border: 1px solid var(--gold-line);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: float 5s ease-in-out infinite, glowPulse 3s ease-in-out infinite;
+      overflow: hidden;
+    }
+
+    .mystery-box .scan {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 35%;
+      background: linear-gradient(to bottom, rgba(221,175,52,0.06), transparent);
+      pointer-events: none;
+      animation: scanline 5s ease-in-out infinite;
+    }
+
+    /* Decorative cross lines on the box */
+    .mystery-box::before, .mystery-box::after {
+      content: '';
+      position: absolute;
+      background: var(--gold-line);
+    }
+    .mystery-box::before { left: 50%; top: 0; bottom: 0; width: 1px; }
+    .mystery-box::after  { top: 50%; left: 0; right: 0; height: 1px; }
+
+    .q-mark {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 6rem;
+      color: var(--gold);
+      text-shadow: 0 0 40px rgba(221,175,52,0.4);
+      animation: questionPulse 2.5s ease-in-out infinite;
+      position: relative;
+      z-index: 1;
+      line-height: 1;
+    }
+
+    .mystery-label {
+      position: relative;
+      z-index: 1;
+      font-family: ui-monospace, monospace;
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      color: var(--gold);
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    /* Corner decorations on box */
+    .box-corner {
+      position: absolute;
+      width: 14px; height: 14px;
+      z-index: 2;
+    }
+    .box-corner.tl { top: 8px; left: 8px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+    .box-corner.tr { top: 8px; right: 8px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+    .box-corner.bl { bottom: 8px; left: 8px; border-bottom: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+    .box-corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+
+    /* Month counter badge */
+    .month-badge {
+      position: absolute;
+      top: -18px;
+      right: -18px;
+      background: var(--gold);
+      color: #000;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      padding: 6px 12px;
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    /* Floating category chips */
+    .float-chip {
+      position: absolute;
+      font-family: ui-monospace, monospace;
+      font-size: .58rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      padding: 4px 10px;
+      border: 1px solid;
+      z-index: 10;
+      backdrop-filter: blur(6px);
+      white-space: nowrap;
+    }
+    .float-chip.geek {
+      bottom: -14px; left: -22px;
+      background: rgba(59,130,246,.08);
+      border-color: rgba(59,130,246,.3);
+      color: #60a5fa;
+      animation: float 4s ease-in-out infinite 0.5s;
+    }
+    .float-chip.reli {
+      top: 24px; right: -28px;
+      background: rgba(221,175,52,.08);
+      border-color: var(--gold-line);
+      color: var(--gold);
+      animation: float 4s ease-in-out infinite 1.2s;
+    }
+
+    /* ── SECTION WRAPPER ── */
+    .section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .section-sep {
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-family: ui-monospace, monospace;
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--gold-line);
+      max-width: 60px;
+    }
+
+    .section-title-lg {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 14px;
+    }
+
+    .section-desc {
+      font-size: .9rem;
+      color: var(--muted);
+      max-width: 540px;
+      line-height: 1.65;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1px;
+      border: 1px solid var(--border);
+      margin-top: 50px;
+      background: var(--border);
+    }
+
+    .step-cell {
+      background: var(--surface);
+      padding: 28px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: background .2s;
+    }
+    .step-cell:hover { background: var(--surface2); }
+
+    .step-num {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 3.5rem;
+      line-height: 1;
+      color: rgba(221,175,52,0.12);
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .step-icon {
+      width: 38px; height: 38px;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .step-icon svg { width: 18px; height: 18px; color: var(--gold); }
+
+    .step-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: .9rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 8px;
+      color: var(--white);
+    }
+
+    .step-text {
+      font-size: .8rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── PLANS ── */
+    .plans-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 50px;
+    }
+    @media (max-width: 640px) { .plans-grid { grid-template-columns: 1fr; } }
+
+    .plan-card {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+      transition: border-color .25s;
+    }
+    .plan-card:hover { border-color: var(--gold-line); }
+    .plan-card.featured {
+      border-color: var(--gold-line);
+      background: linear-gradient(160deg, #181510 0%, var(--surface) 60%);
+    }
+    .plan-card.featured::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), rgba(221,175,52,0.3));
+    }
+
+    .plan-ribbon {
+      position: absolute;
+      top: 0; right: 0;
+      background: var(--gold);
+      color: #000;
+      font-family: ui-monospace, monospace;
+      font-size: .55rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      padding: 5px 12px;
+    }
+
+    .plan-inner { padding: 28px; }
+
+    .plan-tier {
+      font-family: ui-monospace, monospace;
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+
+    .plan-price {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .plan-currency {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--mid);
+    }
+    .plan-amount {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 3.2rem;
+      line-height: 1;
+      color: var(--white);
+      letter-spacing: -0.03em;
+    }
+    .plan-period {
+      font-family: ui-monospace, monospace;
+      font-size: .65rem;
+      color: var(--muted);
+    }
+
+    .plan-name {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 14px 0 6px;
+      color: var(--white);
+    }
+
+    .plan-tagline {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .plan-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 20px; }
+
+    .plan-items { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; }
+    .plan-items li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: .82rem;
+      color: var(--mid);
+    }
+    .plan-items li .check {
+      width: 16px; height: 16px;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-line);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .plan-items li .check svg { width: 9px; height: 9px; color: var(--gold); }
+
+    /* Mystery item row */
+    .plan-items li.mystery-item { color: var(--gold); }
+    .plan-items li.mystery-item .check {
+      background: rgba(221,175,52,0.2);
+      border-color: var(--gold);
+    }
+
+    .plan-tbd {
+      font-family: ui-monospace, monospace;
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      padding: 8px 12px;
+      border: 1px dashed rgba(255,255,255,0.1);
+      margin-bottom: 26px;
+      text-align: center;
+    }
+
+    .btn-plan {
+      width: 100%;
+      padding: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: .85rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      border: none;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-plan-primary { background: var(--gold); color: #000; }
+    .btn-plan-primary:hover { background: #f0c940; }
+    .btn-plan-outline { background: transparent; color: var(--white); border: 1px solid rgba(255,255,255,0.15); }
+    .btn-plan-outline:hover { border-color: var(--gold-line); color: var(--gold); }
+
+    /* ── VOTING SECTION ── */
+    .vote-header {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      margin-top: 50px;
+    }
+
+    .category-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 0;
+    }
+    .cat-tab {
+      font-family: ui-monospace, monospace;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      padding: 12px 22px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .2s;
+      margin-bottom: -1px;
+    }
+    .cat-tab:hover { color: var(--white); }
+    .cat-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    .vote-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .vote-option {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+    .vote-option:hover { border-color: var(--gold-line); background: var(--surface2); }
+    .vote-option.voted { border-color: var(--gold); background: rgba(221,175,52,0.06); }
+
+    /* Vote fill bar */
+    .vote-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: rgba(221,175,52,0.05);
+      transition: width 0.8s cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+    }
+
+    .vote-emoji {
+      font-size: 1.8rem;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      width: 44px;
+      text-align: center;
+    }
+
+    .vote-info {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .vote-name {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--white);
+    }
+    .vote-desc {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .vote-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .vote-pct {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 1.3rem;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .vote-count {
+      font-family: ui-monospace, monospace;
+      font-size: .58rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .vote-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      transition: all .2s;
+    }
+    .vote-btn svg { width: 12px; height: 12px; color: var(--muted); transition: color .2s; }
+    .vote-option.voted .vote-btn { background: var(--gold); border-color: var(--gold); }
+    .vote-option.voted .vote-btn svg { color: #000; }
+    .vote-btn:hover { border-color: var(--gold-line); }
+
+    .vote-note {
+      font-family: ui-monospace, monospace;
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .vote-note::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--gold);
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: questionPulse 2s ease-in-out infinite;
+    }
+
+    /* Category panel */
+    .cat-panel { display: none; }
+    .cat-panel.active { display: block; }
+
+    .cat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      font-family: ui-monospace, monospace;
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      border: 1px solid;
+      margin-bottom: 6px;
+    }
+    .cat-badge.geek { color: #60a5fa; border-color: rgba(59,130,246,.3); background: rgba(59,130,246,.06); }
+    .cat-badge.reli { color: var(--gold); border-color: var(--gold-line); background: var(--gold-dim); }
+
+    /* ── FAQ / TRUST ── */
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1px;
+      border: 1px solid var(--border);
+      background: var(--border);
+      margin-top: 50px;
+    }
+
+    .trust-cell {
+      background: var(--surface);
+      padding: 24px;
+      transition: background .2s;
+    }
+    .trust-cell:hover { background: var(--surface2); }
+
+    .trust-ico {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .trust-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: .85rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 6px;
+      color: var(--white);
+    }
+
+    .trust-text {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 24px;
+    }
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .footer-copy {
+      font-family: ui-monospace, monospace;
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+    }
+
+    /* ── STICKY CTA bar on mobile ── */
+    .sticky-cta {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(13,13,13,0.97);
+      border-top: 1px solid var(--gold-line);
+      padding: 14px 20px;
+      z-index: 200;
+      backdrop-filter: blur(12px);
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    @media (max-width: 640px) { .sticky-cta { display: flex; } }
+    .sticky-cta-price {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 1.2rem;
+      color: var(--gold);
+    }
+    .sticky-cta-from {
+      font-family: ui-monospace, monospace;
+      font-size: .55rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      display: block;
+    }
+    .sticky-cta-btn {
+      background: var(--gold);
+      color: #000;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      padding: 12px 22px;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 80px; right: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--gold-line);
+      color: var(--white);
+      font-family: ui-monospace, monospace;
+      font-size: .7rem;
+      padding: 10px 18px;
+      z-index: 999;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all .3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 640px) { .section { padding: 60px 20px; } }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-inner">
+    <a class="logo" href="/">
+      <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo"
+        onerror="this.style.display='none'">
+      <span class="logo-text">Freo<span>Figures</span></span>
+    </a>
+    <span class="nav-badge">✦ Assinatura Mensal</span>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero grid-bg">
+  <div class="hero-inner">
+    <!-- Copy -->
+    <div class="fade-up">
+      <p class="hero-eyebrow">Coleção exclusiva · toda semana</p>
+      <h1 class="hero-title">
+        Todo mês<br>
+        uma nova<br>
+        <span class="gold">lenda chega</span>
+      </h1>
+      <p class="hero-sub">
+        Assine a FreoFigures e receba toda mês uma caixa surpresa temática — geek/gamer ou religiosa — com itens exclusivos selecionados para colecionadores.
+      </p>
+      <a class="hero-cta" href="#planos">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Escolher meu plano
+      </a>
+      <p class="hero-note">A partir de R$ 39,90 / mês · cancele quando quiser</p>
+    </div>
+
+    <!-- Mystery box visual -->
+    <div class="hero-visual fade-up fd2">
+      <div class="mystery-wrap">
+        <div class="orbit-ring"></div>
+        <div class="mystery-box">
+          <div class="scan"></div>
+          <div class="box-corner tl"></div>
+          <div class="box-corner tr"></div>
+          <div class="box-corner bl"></div>
+          <div class="box-corner br"></div>
+          <span class="q-mark">?</span>
+          <span class="mystery-label">Jul / 2026</span>
+        </div>
+        <span class="month-badge">Surpresa do Mês</span>
+        <span class="float-chip geek">⚡ Geek / Gamer</span>
+        <span class="float-chip reli">✦ Religioso</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── COMO FUNCIONA ── -->
+<hr class="section-sep">
+<div class="section">
+  <p class="section-label fade-up">Como funciona</p>
+  <h2 class="section-title-lg fade-up fd1">Simples assim.</h2>
+  <p class="section-desc fade-up fd2">Cada mês um tema diferente é revelado. Antes da virada, você vota no próximo nicho — e a caixa chega na sua porta.</p>
+
+  <div class="steps-grid">
+    <div class="step-cell fade-up fd1">
+      <span class="step-num">01</span>
+      <div class="step-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <p class="step-title">Escolha seu plano</p>
+      <p class="step-text">Selecione entre o plano Colecionador ou o plano Elite e faça sua assinatura mensal.</p>
+    </div>
+    <div class="step-cell fade-up fd2">
+      <span class="step-num">02</span>
+      <div class="step-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+      </div>
+      <p class="step-title">Vote no próximo tema</p>
+      <p class="step-text">Antes de cada virada de mês, assinantes votam nos candidatos da próxima caixa.</p>
+    </div>
+    <div class="step-cell fade-up fd3">
+      <span class="step-num">03</span>
+      <div class="step-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </div>
+      <p class="step-title">Receba a caixa surpresa</p>
+      <p class="step-text">Cada caixa é montada com itens exclusivos do tema vencedor — você só descobre quando abrir.</p>
+    </div>
+    <div class="step-cell fade-up fd4">
+      <span class="step-num">04</span>
+      <div class="step-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+      </div>
+      <p class="step-title">Colecione e repita</p>
+      <p class="step-text">Cada mês um novo tema, sempre com itens de alta qualidade para sua estante ou altar.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── PLANOS ── -->
+<hr class="section-sep">
+<div id="planos" class="section">
+  <p class="section-label fade-up">Escolha seu plano</p>
+  <h2 class="section-title-lg fade-up fd1">Qual colecionador<br>é você?</h2>
+  <p class="section-desc fade-up fd2">Dois planos pensados para diferentes níveis de coleção. Ambos com a surpresa mensal temática garantida.</p>
+
+  <div class="plans-grid">
+
+    <!-- PLANO 1 -->
+    <div class="plan-card fade-up fd2">
+      <div class="plan-inner">
+        <p class="plan-tier">Plano Colecionador</p>
+        <div class="plan-price">
+          <span class="plan-currency">R$</span>
+          <span class="plan-amount">39</span>
+          <span class="plan-period">,90 / mês</span>
+        </div>
+        <p class="plan-name">Starter Box</p>
+        <p class="plan-tagline">O essencial para começar sua coleção com estilo. Itens temáticos surpresa todo mês.</p>
+        <hr class="plan-divider">
+        <ul class="plan-items">
+          <li>
+            <span class="check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+            1 Chaveiro temático exclusivo
+          </li>
+          <li>
+            <span class="check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+            1 Porta-copos colecionável
+          </li>
+          <li class="mystery-item">
+            <span class="check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+            1 Boneco temático 12cm · SURPRESA
+          </li>
+          <li>
+            <span class="check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+            Acesso à votação do próximo mês
+          </li>
+        </ul>
+        <button class="btn-plan btn-plan-outline" onclick="showToast('Em breve! Assinaturas abertas em breve.')">Quero este plano</button>
+      </div>
+    </div>
+
+    <!-- PLANO 2 -->
+    <div class="plan-card featured fade-up fd3">
+      <span class="plan-ribbon">Mais completo</span>
+      <div class="plan-inner">
+        <p class="plan-tier">Plano Elite</p>
+        <div class="plan-price">
+          <span class="plan-currency">R$</span>
+          <span class="plan-amount">79</span>
+          <span class="plan-period">,90 / mês</span>
+        </div>
+        <p class="plan-name">Elite Box</p>
+        <p class="plan-tagline">Para o colecionador de verdade. Mais itens, mais exclusividade, mais surpresas a cada envio.</p>
+        <hr class="plan-divider">
+        <ul class="plan-items">
+          <li>
+            <span class="check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+            Tudo do plano Starter Box
+          </li>
+          <li class="mystery-item">
+            <span class="check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+            Itens adicionais exclusivos · EM BREVE
+          </li>
+          <li class="mystery-item">
+            <span class="check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+            Conteúdos surpresa premium · EM BREVE
+          </li>
+          <li>
+            <span class="check"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+            Prioridade de voto + acesso antecipado
+          </li>
+        </ul>
+        <p class="plan-tbd">✦ Conteúdo completo do plano Elite sendo finalizado · Em breve</p>
+        <button class="btn-plan btn-plan-primary" onclick="showToast('Em breve! Assinaturas abertas em breve.')">Quero este plano</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── VOTAÇÃO ── -->
+<hr class="section-sep">
+<div id="votacao" class="section">
+  <p class="section-label fade-up">Você decide</p>
+  <h2 class="section-title-lg fade-up fd1">Vote no próximo<br><span style="color:var(--gold)">tema surpresa</span></h2>
+  <p class="section-desc fade-up fd2">Ainda não decidimos o tema de Agosto — vote nas suas categorias favoritas e ajude a definir a próxima caixa!</p>
+
+  <!-- Category tabs -->
+  <div class="category-tabs fade-up fd3" style="margin-top:36px">
+    <button class="cat-tab active" onclick="switchCat('geek')">⚡ Geek / Gamer</button>
+    <button class="cat-tab" onclick="switchCat('reli')">✦ Religiosos</button>
+  </div>
+
+  <!-- Geek panel -->
+  <div id="panel-geek" class="cat-panel active">
+    <div style="margin-top:20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <span class="cat-badge geek">⚡ Geek / Gamer — Agosto 2026</span>
+      <span class="vote-note" id="geek-total-note">Votação aberta · sem voto ainda</span>
+    </div>
+    <div class="vote-grid" id="geek-votes">
+
+      <div class="vote-option" onclick="castVote('geek', 0)" data-idx="0">
+        <div class="vote-fill" style="width:0%"></div>
+        <span class="vote-emoji">🕷️</span>
+        <div class="vote-info">
+          <p class="vote-name">Homem-Aranha</p>
+          <p class="vote-desc">Peter Parker — o herói mais querido da Marvel com visual clássico.</p>
+        </div>
+        <div class="vote-right">
+          <span class="vote-pct">0%</span>
+          <span class="vote-count">0 votos</span>
+        </div>
+        <button class="vote-btn" tabindex="-1">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </button>
+      </div>
+
+      <div class="vote-option" onclick="castVote('geek', 1)" data-idx="1">
+        <div class="vote-fill" style="width:0%"></div>
+        <span class="vote-emoji">🎮</span>
+        <div class="vote-info">
+          <p class="vote-name">Sonic the Hedgehog</p>
+          <p class="vote-desc">O ouriço mais veloz dos games — ícone nostálgico dos anos 90.</p>
+        </div>
+        <div class="vote-right">
+          <span class="vote-pct">0%</span>
+          <span class="vote-count">0 votos</span>
+        </div>
+        <button class="vote-btn" tabindex="-1">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </button>
+      </div>
+
+      <div class="vote-option" onclick="castVote('geek', 2)" data-idx="2">
+        <div class="vote-fill" style="width:0%"></div>
+        <span class="vote-emoji">🐉</span>
+        <div class="vote-info">
+          <p class="vote-name">Dragon Ball Z</p>
+          <p class="vote-desc">Goku em modo Super Saiyajin — legenda absoluta dos animes.</p>
+        </div>
+        <div class="vote-right">
+          <span class="vote-pct">0%</span>
+          <span class="vote-count">0 votos</span>
+        </div>
+        <button class="vote-btn" tabindex="-1">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Religioso panel -->
+  <div id="panel-reli" class="cat-panel">
+    <div style="margin-top:20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <span class="cat-badge reli">✦ Religiosos — Agosto 2026</span>
+      <span class="vote-note" id="reli-total-note">Votação aberta · sem voto ainda</span>
+    </div>
+    <div class="vote-grid" id="reli-votes">
+
+      <div class="vote-option" onclick="castVote('reli', 0)" data-idx="0">
+        <div class="vote-fill" style="width:0%"></div>
+        <span class="vote-emoji">✨</span>
+        <div class="vote-info">
+          <p class="vote-name">Menino Jesus</p>
+          <p class="vote-desc">A representação mais pura e amorosa da devoção católica.</p>
+        </div>
+        <div class="vote-right">
+          <span class="vote-pct">0%</span>
+          <span class="vote-count">0 votos</span>
+        </div>
+        <button class="vote-btn" tabindex="-1">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </button>
+      </div>
+
+      <div class="vote-option" onclick="castVote('reli', 1)" data-idx="1">
+        <div class="vote-fill" style="width:0%"></div>
+        <span class="vote-emoji">🌹</span>
+        <div class="vote-info">
+          <p class="vote-name">Nossa Senhora de Fátima</p>
+          <p class="vote-desc">Símbolo de fé e esperança, uma das imagens mais veneradas do Brasil.</p>
+        </div>
+        <div class="vote-right">
+          <span class="vote-pct">0%</span>
+          <span class="vote-count">0 votos</span>
+        </div>
+        <button class="vote-btn" tabindex="-1">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </button>
+      </div>
+
+      <div class="vote-option" onclick="castVote('reli', 2)" data-idx="2">
+        <div class="vote-fill" style="width:0%"></div>
+        <span class="vote-emoji">⚡</span>
+        <div class="vote-info">
+          <p class="vote-name">São Jorge</p>
+          <p class="vote-desc">O guerreiro da fé — padroeiro de lutadores e trabalhadores.</p>
+        </div>
+        <div class="vote-right">
+          <span class="vote-pct">0%</span>
+          <span class="vote-count">0 votos</span>
+        </div>
+        <button class="vote-btn" tabindex="-1">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── GARANTIAS ── -->
+<hr class="section-sep">
+<div class="section">
+  <p class="section-label fade-up">Por que assinar</p>
+  <h2 class="section-title-lg fade-up fd1">Feito para<br>colecionadores.</h2>
+
+  <div class="trust-grid">
+    <div class="trust-cell fade-up fd1">
+      <span class="trust-ico">📦</span>
+      <p class="trust-title">Surpresa garantida</p>
+      <p class="trust-text">O tema é revelado apenas na abertura da caixa. A emoção de colecionar começa antes mesmo de abrir.</p>
+    </div>
+    <div class="trust-cell fade-up fd2">
+      <span class="trust-ico">🎨</span>
+      <p class="trust-title">Itens exclusivos</p>
+      <p class="trust-text">Chaveiros, porta-copos e bonecos produzidos ou selecionados especialmente para a FreoFigures.</p>
+    </div>
+    <div class="trust-cell fade-up fd3">
+      <span class="trust-ico">🗳️</span>
+      <p class="trust-title">Você decide</p>
+      <p class="trust-text">Assinantes votam no próximo tema. Sua voz influencia diretamente o que chega na sua porta.</p>
+    </div>
+    <div class="trust-cell fade-up fd4">
+      <span class="trust-ico">🚚</span>
+      <p class="trust-title">Entrega mensal</p>
+      <p class="trust-text">Caixa enviada uma vez por mês, com rastreamento. Cancele quando quiser, sem multa ou burocracia.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <a class="logo" href="/" style="text-decoration:none">
+      <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo"
+        style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(221,175,52,0.4);object-fit:cover"
+        onerror="this.style.display='none'">
+      <span class="logo-text" style="font-size:.95rem">Freo<span>Figures</span></span>
+    </a>
+    <span class="footer-copy">© 2026 FreoFigures · Assinatura Mensal · Todos os direitos reservados</span>
+  </div>
+</footer>
+
+<!-- Sticky CTA mobile -->
+<div class="sticky-cta">
+  <div>
+    <span class="sticky-cta-from">A partir de</span>
+    <span class="sticky-cta-price">R$ 39,90<span style="font-size:.7rem;font-weight:400;color:var(--muted)">/mês</span></span>
+  </div>
+  <button class="sticky-cta-btn" onclick="document.getElementById('planos').scrollIntoView({behavior:'smooth'})">Ver planos →</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ── Vote state (localStorage) ── */
+  var state = {
+    geek: loadVotes('geek', [0, 0, 0]),
+    reli: loadVotes('reli', [0, 0, 0]),
+    geekVoted: loadVotedIdx('geek'),
+    reliVoted: loadVotedIdx('reli')
+  };
+
+  function loadVotes(cat, def) {
+    try { var s = localStorage.getItem('ff_votes_' + cat); return s ? JSON.parse(s) : def; } catch(e) { return def; }
+  }
+  function saveVotes(cat, arr) {
+    try { localStorage.setItem('ff_votes_' + cat, JSON.stringify(arr)); } catch(e) {}
+  }
+  function loadVotedIdx(cat) {
+    try { var v = localStorage.getItem('ff_voted_' + cat); return v !== null ? parseInt(v) : -1; } catch(e) { return -1; }
+  }
+  function saveVotedIdx(cat, idx) {
+    try { localStorage.setItem('ff_voted_' + cat, String(idx)); } catch(e) {}
+  }
+
+  function castVote(cat, idx) {
+    var votedKey = cat + 'Voted';
+    var votesKey = cat;
+    var prevIdx = state[votedKey];
+
+    if (prevIdx === idx) return; // already voted for this one
+
+    // Remove previous vote
+    if (prevIdx !== -1) {
+      state[votesKey][prevIdx] = Math.max(0, state[votesKey][prevIdx] - 1);
+    }
+
+    // Add new vote
+    state[votesKey][idx] += 1;
+    state[votedKey] = idx;
+
+    saveVotes(cat, state[votesKey]);
+    saveVotedIdx(cat, idx);
+
+    renderVotes(cat);
+    showToast('Voto registrado! Obrigado pela participação.');
+  }
+
+  function renderVotes(cat) {
+    var votes = state[cat];
+    var votedIdx = state[cat + 'Voted'];
+    var total = votes.reduce(function(s, v) { return s + v; }, 0);
+
+    var container = document.getElementById(cat + '-votes');
+    if (!container) return;
+
+    var rows = container.querySelectorAll('.vote-option');
+    rows.forEach(function(row, i) {
+      var pct = total > 0 ? Math.round((votes[i] / total) * 100) : 0;
+      row.querySelector('.vote-fill').style.width = pct + '%';
+      row.querySelector('.vote-pct').textContent = pct + '%';
+      row.querySelector('.vote-count').textContent = votes[i] + (votes[i] === 1 ? ' voto' : ' votos');
+      if (i === votedIdx) {
+        row.classList.add('voted');
+      } else {
+        row.classList.remove('voted');
+      }
+    });
+
+    var noteEl = document.getElementById(cat + '-total-note');
+    if (noteEl) {
+      noteEl.textContent = total > 0
+        ? total + (total === 1 ? ' voto registrado' : ' votos registrados')
+        : 'Votação aberta · sem voto ainda';
+    }
+  }
+
+  /* Initial render */
+  renderVotes('geek');
+  renderVotes('reli');
+
+  /* ── Tab switch ── */
+  function switchCat(cat) {
+    document.querySelectorAll('.cat-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.cat-panel').forEach(function(p) { p.classList.remove('active'); });
+    var tabIdx = cat === 'geek' ? 0 : 1;
+    document.querySelectorAll('.cat-tab')[tabIdx].classList.add('active');
+    document.getElementById('panel-' + cat).classList.add('active');
+  }
+
+  /* ── Toast ── */
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2800);
+  }
+
+  /* ── Intersection observer fade-up ── */
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) {
+          e.target.style.animationPlayState = 'running';
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-up').forEach(function(el) {
+      el.style.animationPlayState = 'paused';
+      obs.observe(el);
+    });
+  }
+</script>
+</body>
+</html>
