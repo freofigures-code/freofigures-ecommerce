@@ -2267,7 +2267,7 @@ const ShopeeReviews = () => {
         </div>
       </div>
 
-      <div className="text-center mt-10"><button onClick={() => window.open('https://shopee.com.br/freofigures', '_blank')} className="inline-flex items-center gap-2 border border-freo-orange/30 text-freo-orange font-mono text-xs uppercase tracking-widest px-6 py-3 hover:bg-freo-orange hover:text-freo-black transition-colors">Ver todas na Shopee</button></div>
+      <div className="text-center mt-10"><a href="https://shopee.com.br/shop/735981690" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 border border-freo-orange/30 text-freo-orange font-mono text-xs uppercase tracking-widest px-6 py-3 hover:bg-freo-orange hover:text-freo-black transition-colors">Ver todas na Shopee</a></div>
     </section>
   );
 };
