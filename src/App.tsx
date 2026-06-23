@@ -2251,7 +2251,6 @@ const ShopeeReviews = () => {
             <div key={i} className="flex-shrink-0 mx-2 overflow-hidden border border-white/8 bg-[#111] hover:border-freo-orange/40 transition-colors" style={{ width: '260px', height: '380px' }}>
               <img src={src} alt="" className="w-full h-full object-cover object-top block" loading="lazy" draggable={false} />
             </div>
-            </div>
           ))}
         </div>
       </div>
