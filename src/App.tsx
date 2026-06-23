@@ -2187,6 +2187,89 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SHOPEE REVIEWS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ShopeeReviews = () => {
+  const reviews = [
+    'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/reviews/review1.jpg',
+    'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/reviews/review2.jpg',
+    'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/reviews/review3.jpg',
+    'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/reviews/review4.jpg',
+    'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/reviews/review5.jpg',
+    'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/reviews/review6.jpg',
+    'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/reviews/review7.jpg',
+    'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/reviews/review8.jpg',
+    'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/reviews/review9.jpg',
+  ];
+
+  const row1 = reviews.slice(0, 5);
+  const row2 = reviews.slice(4);
+
+  return (
+    <section className="py-16 md:py-20 bg-[#080808] border-t border-white/5 overflow-hidden">
+      <style>{`
+        @keyframes freo-scroll-l { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes freo-scroll-r { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+        .freo-track-l { display: flex; width: max-content; animation: freo-scroll-l 30s linear infinite; }
+        .freo-track-r { display: flex; width: max-content; animation: freo-scroll-r 36s linear infinite; }
+        .freo-track-l:hover, .freo-track-r:hover { animation-play-state: paused; }
+      `}</style>
+
+      <div className="max-w-7xl mx-auto px-5 md:px-6 mb-10 text-center">
+        <div className="inline-flex items-center gap-2 border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5 mb-4">
+          <div className="w-1.5 h-1.5 rounded-full bg-freo-orange animate-pulse" />
+          <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">Avaliações verificadas · Shopee</span>
+        </div>
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-black uppercase tracking-tighter">
+          O que nossos <span className="text-freo-orange">clientes dizem</span>
+        </h2>
+        <p className="text-freo-light/50 mt-3 font-body text-sm max-w-md mx-auto">
+          Avaliações reais de quem comprou e aprovou. 100% orgânicas, direto da Shopee.
+        </p>
+      </div>
+
+      <div
+        className="mb-3 overflow-hidden"
+        style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)' }}
+      >
+        <div className="freo-track-l">
+          {[...row1, ...row1].map((src, i) => (
+            <div key={i} className="flex-shrink-0 mx-2 overflow-hidden border border-white/8 bg-[#111] hover:border-freo-orange/40 transition-colors" style={{ width: '260px' }}>
+              <img src={src} alt={`Avaliação ${i + 1}`} className="w-full h-auto block" loading="lazy" draggable={false} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className="overflow-hidden"
+        style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)' }}
+      >
+        <div className="freo-track-r">
+          {[...row2, ...row2].map((src, i) => (
+            <div key={i} className="flex-shrink-0 mx-2 overflow-hidden border border-white/8 bg-[#111] hover:border-freo-orange/40 transition-colors" style={{ width: '260px' }}>
+              <img src={src} alt={`Avaliação ${i + 1}`} className="w-full h-auto block" loading="lazy" draggable={false} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="text-center mt-10">
+        
+          href="https://shopee.com.br/freofigures"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 border border-freo-orange/30 text-freo-orange font-mono text-xs uppercase tracking-widest px-6 py-3 hover:bg-freo-orange hover:text-freo-black transition-colors"
+        >
+          Ver todas na Shopee →
+        </a>
+      </div>
+    </section>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // HOME VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2194,6 +2277,7 @@ const HomeView = ({ setCurrentView, addToCart, setFilter }: any) => (
   <>
     <Hero setCurrentView={setCurrentView} />
     <Marquee />
+    <ShopeeReviews />
     <Categories setCurrentView={setCurrentView} setFilter={setFilter} />
     <FeaturedProducts addToCart={addToCart} />
     <StoreCTA setCurrentView={setCurrentView} />
