@@ -1429,7 +1429,7 @@ const Categories = ({ setCurrentView, setFilter }: any) => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {cats.map((cat, index) => (
           <div key={cat.slug} onClick={() => handleCatClick(cat.slug)} className="group relative aspect-[3/4] md:h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5 active:scale-98">
-            <img src={cat.img} alt={cat.name} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 grayscale group-hover:grayscale-0" referrerPolicy="no-referrer" />
+            <img src={cat.img} alt={cat.name} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 grayscale group-hover:grayscale-0" />
             <div className="absolute inset-0 bg-gradient-to-t from-freo-black via-freo-black/50 to-transparent" />
             <div className="absolute bottom-0 left-0 p-4 md:p-6 w-full">
               <div className="text-freo-orange font-mono text-[10px] mb-1 opacity-0 group-hover:opacity-100 transition-opacity delay-100">// 0{index + 1}</div>
@@ -2235,8 +2235,8 @@ const ShopeeReviews = () => {
       >
         <div className="freo-track-l">
           {[...row1, ...row1].map((src, i) => (
-            <div key={i} className="flex-shrink-0 mx-2 overflow-hidden border border-white/8 bg-[#111] hover:border-freo-orange/40 transition-colors" style={{ width: '260px' }}>
-              <img src={src} alt={`Avaliação ${i + 1}`} className="w-full h-auto block" loading="lazy" draggable={false} />
+            <div key={i} className="flex-shrink-0 mx-2 overflow-hidden border border-white/8 bg-[#111] hover:border-freo-orange/40 transition-colors" style={{ width: '260px', minHeight: '200px' }}>
+              <img src={src} alt="" className="w-full h-auto block" loading="lazy" draggable={false} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
           ))}
         </div>
@@ -2248,8 +2248,8 @@ const ShopeeReviews = () => {
       >
         <div className="freo-track-r">
           {[...row2, ...row2].map((src, i) => (
-            <div key={i} className="flex-shrink-0 mx-2 overflow-hidden border border-white/8 bg-[#111] hover:border-freo-orange/40 transition-colors" style={{ width: '260px' }}>
-              <img src={src} alt={`Avaliação ${i + 1}`} className="w-full h-auto block" loading="lazy" draggable={false} />
+            <div key={i} className="flex-shrink-0 mx-2 overflow-hidden border border-white/8 bg-[#111] hover:border-freo-orange/40 transition-colors" style={{ width: '260px', minHeight: '200px' }}>
+              <img src={src} alt="" className="w-full h-auto block" loading="lazy" draggable={false} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
           ))}
         </div>
