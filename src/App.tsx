@@ -2211,8 +2211,8 @@ const ShopeeReviews = () => {
       <style>{`
         @keyframes freo-scroll-l { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         @keyframes freo-scroll-r { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
-        .freo-track-l { display: flex; width: max-content; animation: freo-scroll-l 30s linear infinite; }
-        .freo-track-r { display: flex; width: max-content; animation: freo-scroll-r 36s linear infinite; }
+        .freo-track-l { display: flex; width: max-content; align-items: flex-start; animation: freo-scroll-l 30s linear infinite; }
+        .freo-track-r { display: flex; width: max-content; align-items: flex-start; animation: freo-scroll-r 36s linear infinite; }
         .freo-track-l:hover, .freo-track-r:hover { animation-play-state: paused; }
       `}</style>
 
@@ -2235,9 +2235,15 @@ const ShopeeReviews = () => {
       >
         <div className="freo-track-l">
           {[...row1, ...row1].map((src, i) => (
-            <div key={i} className="flex-shrink-0 mx-2 overflow-hidden border border-white/8 bg-[#111] hover:border-freo-orange/40 transition-colors" style={{ width: '220px' }}>
-              <img src={src} alt="" className="w-full h-auto block" loading="lazy" draggable={false} />
-            </div>
+            <img
+              key={i}
+              src={src}
+              alt=""
+              className="flex-shrink-0 mx-2 block border border-white/8 hover:border-freo-orange/40 transition-colors"
+              style={{ width: '220px', height: 'auto', display: 'block' }}
+              loading="lazy"
+              draggable={false}
+            />
           ))}
         </div>
       </div>
@@ -2248,9 +2254,15 @@ const ShopeeReviews = () => {
       >
         <div className="freo-track-r">
           {[...row2, ...row2].map((src, i) => (
-            <div key={i} className="flex-shrink-0 mx-2 overflow-hidden border border-white/8 bg-[#111] hover:border-freo-orange/40 transition-colors" style={{ width: '220px' }}>
-              <img src={src} alt="" className="w-full h-auto block" loading="lazy" draggable={false} />
-            </div>
+            <img
+              key={i}
+              src={src}
+              alt=""
+              className="flex-shrink-0 mx-2 block border border-white/8 hover:border-freo-orange/40 transition-colors"
+              style={{ width: '220px', height: 'auto', display: 'block' }}
+              loading="lazy"
+              draggable={false}
+            />
           ))}
         </div>
       </div>
