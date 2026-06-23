@@ -2262,8 +2262,8 @@ const ShopeeReviews = () => {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 border border-freo-orange/30 text-freo-orange font-mono text-xs uppercase tracking-widest px-6 py-3 hover:bg-freo-orange hover:text-freo-black transition-colors"
         >
-            Ver todas na Shopee &#8594;
-          </a>
+          Ver todas na Shopee
+        </a>
       </div>
     </section>
   );
