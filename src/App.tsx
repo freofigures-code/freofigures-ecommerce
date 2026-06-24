@@ -1362,7 +1362,7 @@ const Hero = ({ setCurrentView }: any) => (
         <motion.img
           animate={{ y: [-8, 8, -8] }}
           transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-          src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/LOGO_DEASHBOARD3.png"
+          src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/LOGO_DEASHBOARD4.png"
           alt="Freo Figures"
           className="relative z-10 w-[500px] h-[500px] object-contain"
           style={{ filter: 'drop-shadow(0 0 28px rgba(221,175,52,0.40)) drop-shadow(0 0 8px rgba(221,175,52,0.2))' }}
