@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resgatar Cupom · Freo Figures</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.ico" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #080808; color: #f0efeb; font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <!-- O bundle do Vite injeta aqui automaticamente via index.html -->
+  <!-- ATENÇÃO: esta página precisa ser roteada pelo seu SPA router -->
+  <script>
+    // Redireciona preservando o ?code= para o index.html com hash routing
+    // OU usa o path diretamente se seu servidor suporta SPA fallback
+    const code = new URLSearchParams(window.location.search).get('code');
+    if (code) {
+      window.location.replace('/?_cupom=' + encodeURIComponent(code));
+    } else {
+      window.location.replace('/');
+    }
+  </script>
+</body>
+</html>
