@@ -2518,6 +2518,13 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get('_cupom') || null;
   });
+  const [activeCoupon, setActiveCoupon] = useState<any | null>(() => {
+    try {
+      const raw = localStorage.getItem('freo_active_coupon');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  const [couponModalProduct, setCouponModalProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2577,10 +2584,16 @@ export default function App() {
 
   const handleFilterChange = (filter: string) => { setSearchTerm(''); setActiveFilter(filter); };
 
-  const addToCart = async (product: Product) => {
+  const addToCart = async (product: Product, skipCouponModal = false) => {
   // @ts-ignore
   const supabase = window.supabaseClient || window.supabase;
   if (!supabase) return;
+
+  // Se há cupom ativo e não foi exibido o modal ainda, mostra confirmação
+  if (activeCoupon && !skipCouponModal) {
+    setCouponModalProduct(product);
+    return;
+  }
 
   let { data: { session } } = await supabase.auth.getSession();
 
@@ -2678,6 +2691,130 @@ export default function App() {
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem} user={user} />
       <FreoChat />
+
+      {/* Banner de cupom ativo */}
+      {activeCoupon && !cupomCode && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9990,
+          background: activeCoupon.theme === 'geek'
+            ? 'linear-gradient(90deg, #050510, #0d0d25)'
+            : 'linear-gradient(90deg, #f5f0e8, #ede5d0)',
+          borderTop: `2px solid ${activeCoupon.theme === 'geek' ? '#00f5ff' : '#DDAF34'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 20px', gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>{activeCoupon.theme === 'geek' ? '🎮' : '✝️'}</span>
+            <div>
+              <p style={{
+                fontFamily: 'ui-monospace, monospace', fontSize: 11,
+                color: activeCoupon.theme === 'geek' ? '#00f5ff' : '#5c3d0e',
+                textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0,
+              }}>Cupom ativo</p>
+              <p style={{
+                fontFamily: 'ui-monospace, monospace', fontWeight: 900,
+                fontSize: 14, letterSpacing: '0.15em',
+                color: activeCoupon.theme === 'geek' ? '#00f5ff' : '#8B6914', margin: 0,
+              }}>{activeCoupon.code}</p>
+            </div>
+            <span style={{
+              fontFamily: 'ui-monospace, monospace', fontSize: 11,
+              color: activeCoupon.theme === 'geek' ? 'rgba(0,245,255,0.6)' : 'rgba(92,61,14,0.7)',
+            }}>
+              {activeCoupon.type === 'free_product' ? '🎁 Produto grátis'
+                : activeCoupon.type === 'percent' ? `${activeCoupon.discount_value}% off`
+                : `R$ ${Number(activeCoupon.discount_value).toFixed(2).replace('.', ',')} off`}
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('freo_active_coupon');
+              setActiveCoupon(null);
+            }}
+            style={{
+              background: 'transparent', border: '1px solid rgba(255,255,255,0.2)',
+              color: activeCoupon.theme === 'geek' ? 'rgba(0,245,255,0.5)' : 'rgba(92,61,14,0.5)',
+              fontFamily: 'ui-monospace, monospace', fontSize: 10,
+              textTransform: 'uppercase', letterSpacing: '0.1em',
+              padding: '4px 10px', cursor: 'pointer',
+            }}
+          >Remover</button>
+        </div>
+      )}
+
+      {/* Modal confirmação de cupom ao adicionar produto */}
+      {couponModalProduct && activeCoupon && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 99999,
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }}>
+          <div style={{
+            background: activeCoupon.theme === 'geek' ? '#0d0d25' : '#f5f0e8',
+            border: `1px solid ${activeCoupon.theme === 'geek' ? 'rgba(0,245,255,0.25)' : 'rgba(139,105,20,0.3)'}`,
+            borderRadius: 16, padding: 32, maxWidth: 400, width: '100%',
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <span style={{ fontSize: 48 }}>{activeCoupon.theme === 'geek' ? '🎮' : '✝️'}</span>
+              <h3 style={{
+                fontFamily: activeCoupon.theme === 'geek' ? "'Orbitron', monospace" : "'Cinzel', serif",
+                color: activeCoupon.theme === 'geek' ? '#00f5ff' : '#5c3d0e',
+                fontSize: 18, fontWeight: 900, margin: '12px 0 6px',
+              }}>Aplicar cupom neste produto?</h3>
+              <p style={{
+                fontFamily: 'ui-monospace, monospace', fontSize: 13,
+                color: activeCoupon.theme === 'geek' ? 'rgba(0,245,255,0.7)' : 'rgba(92,61,14,0.7)',
+                letterSpacing: '0.15em', marginBottom: 4,
+              }}>{activeCoupon.code}</p>
+              <p style={{
+                fontFamily: 'ui-monospace, monospace', fontSize: 12,
+                color: activeCoupon.theme === 'geek' ? 'rgba(224,224,255,0.6)' : 'rgba(58,42,10,0.6)',
+              }}>
+                {activeCoupon.type === 'free_product' ? '🎁 Produto grátis (paga só o frete)'
+                  : activeCoupon.type === 'percent' ? `${activeCoupon.discount_value}% de desconto`
+                  : `R$ ${Number(activeCoupon.discount_value).toFixed(2).replace('.', ',')} de desconto`}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexDirection: 'column' }}>
+              <button
+                onClick={async () => {
+                  setCouponModalProduct(null);
+                  await addToCart(couponModalProduct, true);
+                }}
+                style={{
+                  width: '100%', padding: '14px',
+                  background: activeCoupon.theme === 'geek'
+                    ? 'linear-gradient(135deg, #7b2fff, #00f5ff)'
+                    : '#8B6914',
+                  color: '#fff', fontWeight: 700, fontSize: 13,
+                  letterSpacing: '0.15em', border: 'none', borderRadius: 8,
+                  cursor: 'pointer', textTransform: 'uppercase' as const,
+                  fontFamily: activeCoupon.theme === 'geek' ? "'Orbitron', monospace" : "'Cinzel', serif",
+                }}
+              >
+                {activeCoupon.theme === 'geek' ? '⚡ Sim, aplicar cupom' : '✦ Sim, usar minha bênção'}
+              </button>
+              <button
+                onClick={async () => {
+                  setCouponModalProduct(null);
+                  await addToCart(couponModalProduct, true);
+                }}
+                style={{
+                  width: '100%', padding: '12px',
+                  background: 'transparent',
+                  color: activeCoupon.theme === 'geek' ? 'rgba(0,245,255,0.5)' : 'rgba(139,105,20,0.6)',
+                  border: `1px solid ${activeCoupon.theme === 'geek' ? 'rgba(0,245,255,0.2)' : 'rgba(139,105,20,0.3)'}`,
+                  borderRadius: 8, cursor: 'pointer', fontSize: 12,
+                  fontFamily: 'ui-monospace, monospace', textTransform: 'uppercase' as const,
+                  letterSpacing: '0.1em',
+                }}
+              >
+                Não, adicionar sem cupom
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
