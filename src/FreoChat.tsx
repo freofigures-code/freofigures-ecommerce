@@ -684,5 +684,6 @@ const WIDGET_CSS = `
   .ff-widget-root { bottom: 16px; right: 16px; }
   .ff-panel { width: calc(100vw - 32px); border-radius: 16px 16px 4px 16px; }
   .ff-cards-wrap { width: 100%; }
+  .ff-widget-root.ff-hidden { display: none !important; }
 }
 `;
