@@ -52,7 +52,7 @@
     .dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
     .dot.red { background: #e94560; }
     /* Modal QR */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9998; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9998; display: flex; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
     .modal { background: #161618; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; max-width: 480px; width: 100%; }
     .modal h3 { font-family: 'DM Serif Display', serif; color: #DDAF34; font-size: 22px; margin-bottom: 4px; }
     .modal .code { font-family: monospace; font-size: 24px; font-weight: 900; color: #DDAF34; letter-spacing: 0.2em; text-align: center; margin: 20px 0; }
@@ -70,7 +70,7 @@
     .error-text { color: #e94560; font-size: 13px; }
 
     /* ── PDF Modal ───────────────────────────────────────── */
-    .modal-pdf { max-width: 560px; }
+    .modal-pdf { max-width: 560px; max-height: 90vh; overflow-y: auto; }
     .theme-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     .theme-card {
       border: 2px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px;
