@@ -239,7 +239,7 @@ const parseN8nResponse = (data: any): { text: string; produtos: Produto[] | null
 
 // ─── COMPONENTE PRINCIPAL ───────────────────────────────────────────────────
 
-export default function FreoChat() {
+export default function FreoChat({ hideOnMobile }: { hideOnMobile?: boolean }) {
   const [open, setOpen] = useState(false);
   const [calloutVisible, setCalloutVisible] = useState(true);
   const [calloutIdx, setCalloutIdx] = useState(0);
@@ -388,7 +388,7 @@ export default function FreoChat() {
 
       <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
 
-      <div className="ff-widget-root">
+      <div className="ff-widget-root" style={hideOnMobile ? { display: 'none' } : undefined}>
 
         {/* ── Painel de chat ── */}
         <AnimatePresence>
