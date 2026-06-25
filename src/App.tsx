@@ -17,6 +17,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
   import FreoChat from './FreoChat';
+  import FreoCupom from './FreoCupom';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COOKIE BANNER
@@ -2513,6 +2514,10 @@ export default function App() {
   const [user, setUser] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
+  const [cupomCode, setCupomCode] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('_cupom') || null;
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2641,6 +2646,11 @@ export default function App() {
     if (supabase && product.cartItemId) await supabase.from('cart_items').delete().eq('id', product.cartItemId);
     setCartItems(previous => previous.filter(item => item.cartItemId !== product.cartItemId));
   };
+
+  // Se URL tem ?_cupom=CODE, renderiza tela de resgate isolada (sem navbar/footer)
+  if (cupomCode) {
+    return <FreoCupom />;
+  }
 
   return (
     <div className="min-h-screen">
