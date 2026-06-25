@@ -564,18 +564,25 @@
 
       const qrUrl=`https://freofigures.com.br/?_cupom=${encodeURIComponent(code)}`;
       const qrDiv=document.createElement('div');
-      qrDiv.style.cssText='position:fixed;left:-9999px;top:0;';
+      qrDiv.style.cssText='position:fixed;left:-9999px;top:0;width:200px;height:200px;';
       document.body.appendChild(qrDiv);
       new QRCode(qrDiv,{text:qrUrl,width:200,height:200,
         colorDark:isGeek?'#000000':'#3a2a0a',colorLight:'#ffffff',
         correctLevel:QRCode.CorrectLevel.H});
-      const qrImg=qrDiv.querySelector('img');
       const done=()=>{
         const pad=18,qrS=200,boxW=qrS+pad*2,qrX=W/2-boxW/2,qrY=cy;
         ctx.fillStyle='#ffffff';_rr(ctx,qrX,qrY,boxW,boxW,12,true,false);
         ctx.strokeStyle=isGeek?'rgba(0,245,255,0.28)':'rgba(139,105,20,0.22)';
         ctx.lineWidth=1.5;_rr(ctx,qrX,qrY,boxW,boxW,12,false,true);
-        if(qrImg?.complete)ctx.drawImage(qrImg,qrX+pad,qrY+pad,qrS,qrS);
+        const qrCanvas=qrDiv.querySelector('canvas');
+        const qrImg=qrDiv.querySelector('img');
+        if(qrCanvas){
+          ctx.drawImage(qrCanvas,qrX+pad,qrY+pad,qrS,qrS);
+        } else if(qrImg && qrImg.complete && qrImg.naturalWidth>0){
+          ctx.drawImage(qrImg,qrX+pad,qrY+pad,qrS,qrS);
+        } else if(qrImg){
+          qrImg.onload=()=>{ctx.drawImage(qrImg,qrX+pad,qrY+pad,qrS,qrS);};
+        }
         qrDiv.remove();cy+=boxW+20;
         if(isGeek){
           ctx.fillStyle='rgba(255,255,255,0.30)';ctx.font='13px sans-serif';ctx.textAlign='center';
