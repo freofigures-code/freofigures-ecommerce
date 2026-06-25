@@ -604,8 +604,7 @@
         }
         resolve(canvas);
       };
-      if(qrImg){if(qrImg.complete)done();else{qrImg.onload=done;qrImg.onerror=done;}}
-      else setTimeout(done,250);
+      setTimeout(done, 250);
     });
   }
 
