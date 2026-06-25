@@ -197,7 +197,9 @@ export default function FreoCupom() {
   const [redeeming, setRedeeming] = useState(false);
 
   // Pega o code da URL: /cupom?code=XXXX
-  const code = new URLSearchParams(window.location.search).get('code') || '';
+  const code = new URLSearchParams(window.location.search).get('_cupom')
+    || new URLSearchParams(window.location.search).get('code')
+    || '';
 
   useEffect(() => {
     if (!code) { setErrorMsg('Código não encontrado na URL.'); setPhase('error'); return; }
@@ -265,7 +267,7 @@ export default function FreoCupom() {
     setRedeeming(false);
   };
 
-  const goToShop = () => { window.location.href = '/?cupom=' + coupon?.code; };
+  const goToShop = () => { window.location.href = '/?_cupom=' + coupon?.code; };
 
   const benefitText = () => {
     if (!coupon) return '';
