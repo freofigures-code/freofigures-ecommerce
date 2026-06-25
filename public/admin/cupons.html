@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Cupons · Freo Figures</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0e0e0f; color: #f0efeb; font-family: 'DM Sans', system-ui, sans-serif; min-height: 100vh; }
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    h1 { font-family: 'DM Serif Display', serif; font-size: 32px; color: #DDAF34; margin-bottom: 8px; }
+    .subtitle { color: #666663; font-size: 14px; margin-bottom: 40px; }
+    .card { background: #161618; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; margin-bottom: 28px; }
+    .card h2 { font-size: 16px; font-weight: 700; color: #DDAF34; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #888885; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+    input, select, textarea {
+      width: 100%; background: #0e0e0f; border: 1px solid rgba(255,255,255,0.12);
+      color: #f0efeb; padding: 10px 14px; font-family: inherit; font-size: 14px;
+      border-radius: 6px; outline: none; transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #DDAF34; }
+    select option { background: #0e0e0f; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; transition: all 0.15s; }
+    .btn-primary { background: #DDAF34; color: #0e0e0f; }
+    .btn-primary:hover { background: #f5c842; }
+    .btn-secondary { background: transparent; color: #DDAF34; border: 1px solid #DDAF34; }
+    .btn-secondary:hover { background: rgba(221,175,52,0.1); }
+    .btn-print { background: #22c55e; color: #fff; }
+    .btn-print:hover { background: #16a34a; }
+    .btn-danger { background: transparent; color: #e94560; border: 1px solid rgba(233,69,96,0.4); font-size: 12px; padding: 6px 12px; border-radius: 4px; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
+    .badge-active { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-inactive { background: rgba(233,69,96,0.15); color: #e94560; border: 1px solid rgba(233,69,96,0.3); }
+    .badge-geek { background: rgba(0,245,255,0.1); color: #00f5ff; border: 1px solid rgba(0,245,255,0.3); }
+    .badge-religioso { background: rgba(221,175,52,0.1); color: #DDAF34; border: 1px solid rgba(221,175,52,0.3); }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: #444441; text-transform: uppercase; padding: 0 16px 12px; }
+    td { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 13px; vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e1e21; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: #f0efeb; display: flex; align-items: center; gap: 10px; z-index: 9999; transition: transform 0.3s; white-space: nowrap; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+    .dot.red { background: #e94560; }
+    /* Modal QR */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9998; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal { background: #161618; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; max-width: 480px; width: 100%; }
+    .modal h3 { font-family: 'DM Serif Display', serif; color: #DDAF34; font-size: 22px; margin-bottom: 4px; }
+    .modal .code { font-family: monospace; font-size: 24px; font-weight: 900; color: #DDAF34; letter-spacing: 0.2em; text-align: center; margin: 20px 0; }
+    .qr-wrap { background: white; padding: 20px; border-radius: 12px; display: flex; justify-content: center; margin: 20px 0; }
+    .qr-url { font-family: monospace; font-size: 11px; color: #444441; text-align: center; word-break: break-all; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .field-group { margin-bottom: 16px; }
+    @media print {
+      body { background: white !important; color: black !important; }
+      .no-print { display: none !important; }
+      .print-area { page-break-inside: avoid; }
+    }
+    #auth-wall { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 20px; }
+    #auth-wall input { max-width: 320px; }
+    .error-text { color: #e94560; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<!-- Auth wall -->
+<div id="auth-wall" style="display:none;">
+  <div style="text-align:center; margin-bottom:24px;">
+    <div style="font-family:'DM Serif Display',serif; font-size:28px; color:#DDAF34;">Freo Figures</div>
+    <div style="color:#666663; font-size:14px; margin-top:4px;">Painel Admin · Cupons</div>
+  </div>
+  <div style="background:#161618; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:32px; width:100%; max-width:360px;">
+    <label>E-mail admin</label>
+    <div class="field-group"><input type="email" id="auth-email" placeholder="seu@email.com" /></div>
+    <label>Senha</label>
+    <div class="field-group"><input type="password" id="auth-pass" placeholder="••••••••" /></div>
+    <div id="auth-error" class="error-text" style="margin-bottom:12px; display:none;"></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- Main app -->
+<div id="app" style="display:none;">
+  <div class="container">
+    <h1>Painel de Cupons</h1>
+    <p class="subtitle">Gere cupons com QR Code pronto para imprimir · FreoFigures</p>
+
+    <!-- Formulário de criação -->
+    <div class="card no-print">
+      <h2>Criar Novo Cupom</h2>
+      <div class="grid">
+        <div class="field-group">
+          <label>Código do Cupom</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="f-code" placeholder="EX: LOOT2025" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" />
+            <button class="btn btn-secondary" style="white-space:nowrap; padding:10px 14px;" onclick="genCode()">Gerar</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Tema da Animação</label>
+          <select id="f-theme">
+            <option value="geek">🎮 Geek / Gamer ("Você desbloqueou um loot!")</option>
+            <option value="religioso">✝️ Religioso (Animação de luz dourada)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Tipo de Desconto</label>
+          <select id="f-type" onchange="toggleDiscount()">
+            <option value="free_product">Produto Gratuito (paga só o frete)</option>
+            <option value="percent">Percentual (%)</option>
+            <option value="fixed">Valor Fixo (R$)</option>
+          </select>
+        </div>
+        <div class="field-group" id="discount-value-wrap" style="display:none;">
+          <label id="discount-label">Valor do Desconto</label>
+          <input type="number" id="f-discount" min="0" step="0.01" placeholder="Ex: 20" />
+        </div>
+        <div class="field-group">
+          <label>Usos Máximos</label>
+          <input type="number" id="f-max-uses" value="1" min="1" />
+        </div>
+        <div class="field-group">
+          <label>Validade (opcional)</label>
+          <input type="datetime-local" id="f-expires" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Descrição para o Cliente (opcional)</label>
+        <textarea id="f-desc" rows="2" placeholder="Ex: Presente especial para você! Escolha qualquer produto e pague só o frete."></textarea>
+      </div>
+      <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="createCoupon()">Criar Cupom</button>
+      </div>
+    </div>
+
+    <!-- Lista de cupons -->
+    <div class="card">
+      <h2>Cupons Cadastrados</h2>
+      <div id="list-loading" style="text-align:center; padding:40px; color:#444441; font-size:14px;">Carregando...</div>
+      <div id="list-wrap" style="display:none; overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Tema</th>
+              <th>Tipo</th>
+              <th>Usos</th>
+              <th>Validade</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="list-body"></tbody>
+        </table>
+      </div>
+      <div id="list-empty" style="display:none; text-align:center; padding:40px; color:#444441; font-size:14px;">Nenhum cupom cadastrado.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal QR -->
+<div class="modal-overlay" id="qr-modal" style="display:none;" onclick="closeModal(event)">
+  <div class="modal print-area">
+    <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3>QR Code do Cupom</h3>
+      <button onclick="document.getElementById('qr-modal').style.display='none'" style="background:none;border:none;color:#666663;cursor:pointer;font-size:20px;">&times;</button>
+    </div>
+    <div id="qr-code-label" style="text-align:center; font-size:12px; color:#666663; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:4px;"></div>
+    <div class="code" id="qr-code-text"></div>
+    <div class="qr-wrap"><canvas id="qr-canvas"></canvas></div>
+    <div class="qr-url" id="qr-url-text"></div>
+    <div id="qr-benefit" style="text-align:center; font-size:13px; color:#888885; margin-bottom:20px;"></div>
+    <div class="modal-actions no-print">
+      <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir QR Code</button>
+      <button class="btn btn-secondary" onclick="downloadQR()">⬇️ Baixar PNG</button>
+      <button class="btn btn-secondary" onclick="copyLink()">📋 Copiar Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><div class="dot" id="toast-dot"></div><span id="toast-msg"></span></div>
+
+<script>
+  const SUPABASE_URL = 'https://rrmxqpvxrpcqqxsgccqw.supabase.co';
+  const SUPABASE_ANON_KEY = 'SUA_ANON_KEY_AQUI'; // substitua pela sua anon key
+  const BASE_URL = 'https://freofigures.com.br';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentQRUrl = '';
+
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { showApp(); }
+    else { document.getElementById('auth-wall').style.display = 'flex'; }
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('auth-email').value;
+    const pass = document.getElementById('auth-pass').value;
+    const errEl = document.getElementById('auth-error');
+    errEl.style.display = 'none';
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) { errEl.textContent = 'E-mail ou senha incorretos.'; errEl.style.display = 'block'; }
+    else { showApp(); }
+  }
+
+  function showApp() {
+    document.getElementById('auth-wall').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadCoupons();
+  }
+
+  // ── Utils ───────────────────────────────────────────────────────────────────
+  function showToast(msg, ok = true) {
+    const el = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    document.getElementById('toast-dot').className = 'dot' + (ok ? '' : ' red');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  function genCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    document.getElementById('f-code').value = code;
+  }
+
+  function toggleDiscount() {
+    const type = document.getElementById('f-type').value;
+    const wrap = document.getElementById('discount-value-wrap');
+    const label = document.getElementById('discount-label');
+    if (type === 'percent') { wrap.style.display = 'block'; label.textContent = 'Percentual (%)'; }
+    else if (type === 'fixed') { wrap.style.display = 'block'; label.textContent = 'Valor em R$'; }
+    else { wrap.style.display = 'none'; }
+  }
+
+  // ── Criar cupom ─────────────────────────────────────────────────────────────
+  async function createCoupon() {
+    const code = document.getElementById('f-code').value.trim().toUpperCase();
+    const theme = document.getElementById('f-theme').value;
+    const type = document.getElementById('f-type').value;
+    const discountRaw = document.getElementById('f-discount').value;
+    const maxUses = parseInt(document.getElementById('f-max-uses').value) || 1;
+    const expiresRaw = document.getElementById('f-expires').value;
+    const desc = document.getElementById('f-desc').value.trim();
+
+    if (!code) { showToast('Informe o código do cupom.', false); return; }
+
+    const payload = {
+      code,
+      theme,
+      type,
+      discount_value: (type !== 'free_product' && discountRaw) ? parseFloat(discountRaw) : null,
+      max_uses: maxUses,
+      expires_at: expiresRaw ? new Date(expiresRaw).toISOString() : null,
+      description: desc || null,
+    };
+
+    const { error } = await sb.from('coupons').insert(payload);
+    if (error) { showToast('Erro: ' + (error.message || 'verifique o código único'), false); return; }
+
+    showToast('Cupom criado com sucesso!');
+    document.getElementById('f-code').value = '';
+    document.getElementById('f-desc').value = '';
+    loadCoupons();
+  }
+
+  // ── Carregar lista ───────────────────────────────────────────────────────────
+  async function loadCoupons() {
+    document.getElementById('list-loading').style.display = 'block';
+    document.getElementById('list-wrap').style.display = 'none';
+    document.getElementById('list-empty').style.display = 'none';
+
+    const { data, error } = await sb.from('coupons').select('*').order('created_at', { ascending: false });
+
+    document.getElementById('list-loading').style.display = 'none';
+
+    if (!data || data.length === 0) { document.getElementById('list-empty').style.display = 'block'; return; }
+
+    document.getElementById('list-wrap').style.display = 'block';
+    const tbody = document.getElementById('list-body');
+    tbody.innerHTML = '';
+
+    data.forEach(c => {
+      const typeLabel = c.type === 'free_product' ? 'Produto grátis' : c.type === 'percent' ? `${c.discount_value}%` : `R$ ${parseFloat(c.discount_value).toFixed(2)}`;
+      const expires = c.expires_at ? new Date(c.expires_at).toLocaleDateString('pt-BR') : '—';
+      const statusBadge = c.is_active ? '<span class="badge badge-active">Ativo</span>' : '<span class="badge badge-inactive">Inativo</span>';
+      const themeBadge = c.theme === 'geek' ? '<span class="badge badge-geek">🎮 Geek</span>' : '<span class="badge badge-religioso">✝️ Religioso</span>';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span style="font-family:monospace; font-size:15px; font-weight:700; color:#DDAF34; letter-spacing:0.1em;">${c.code}</span></td>
+        <td>${themeBadge}</td>
+        <td><span style="font-size:12px; color:#888885;">${typeLabel}</span></td>
+        <td><span style="font-size:12px;">${c.used_count} / ${c.max_uses}</span></td>
+        <td><span style="font-size:12px; color:#666663;">${expires}</span></td>
+        <td>${statusBadge}</td>
+        <td style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px;" onclick="showQR('${c.code}','${c.theme}','${c.type}',${c.discount_value || 0})">📱 QR Code</button>
+          <button class="btn btn-danger" onclick="toggleActive('${c.id}', ${c.is_active})">${c.is_active ? 'Desativar' : 'Ativar'}</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── Toggle ativo ────────────────────────────────────────────────────────────
+  async function toggleActive(id, current) {
+    await sb.from('coupons').update({ is_active: !current }).eq('id', id);
+    showToast(current ? 'Cupom desativado.' : 'Cupom ativado.');
+    loadCoupons();
+  }
+
+  // ── QR Code ─────────────────────────────────────────────────────────────────
+  function showQR(code, theme, type, discountValue) {
+    const url = `${BASE_URL}/?_cupom=${encodeURIComponent(code)}`;
+    currentQRUrl = url;
+
+    document.getElementById('qr-code-label').textContent = theme === 'geek' ? '🎮 Cupom Geek' : '✝️ Cupom Religioso';
+    document.getElementById('qr-code-text').textContent = code;
+    document.getElementById('qr-url-text').textContent = url;
+
+    let benefit = '';
+    if (type === 'free_product') benefit = '🎁 Produto GRÁTIS — cliente paga só o frete';
+    else if (type === 'percent') benefit = `🏷️ ${discountValue}% de desconto`;
+    else benefit = `💰 R$ ${parseFloat(discountValue).toFixed(2)} de desconto`;
+    document.getElementById('qr-benefit').textContent = benefit;
+
+    const canvas = document.getElementById('qr-canvas');
+    QRCode.toCanvas(canvas, url, { width: 240, margin: 2, color: { dark: '#000000', light: '#FFFFFF' } }, err => {
+      if (err) console.error(err);
+    });
+
+    document.getElementById('qr-modal').style.display = 'flex';
+  }
+
+  function closeModal(event) {
+    if (event.target === document.getElementById('qr-modal')) {
+      document.getElementById('qr-modal').style.display = 'none';
+    }
+  }
+
+  function downloadQR() {
+    const canvas = document.getElementById('qr-canvas');
+    const code = document.getElementById('qr-code-text').textContent;
+    const link = document.createElement('a');
+    link.download = `cupom-freo-${code}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(currentQRUrl).then(() => showToast('Link copiado!'));
+  }
+
+  init();
+</script>
+</body>
+</html>
