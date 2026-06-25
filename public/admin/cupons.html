@@ -109,8 +109,19 @@
           <input type="number" id="f-discount" min="0" step="0.01" placeholder="Ex: 20" />
         </div>
         <div class="field-group">
-          <label>Usos Máximos</label>
+          <label>Modo de Uso</label>
+          <select id="f-usage-mode" onchange="toggleUsageMode()">
+            <option value="global">Global — limite compartilhado entre todos</option>
+            <option value="per_user">Por Usuário — cada pessoa tem seu próprio limite</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Usos Máximos <span id="max-uses-hint" style="font-weight:400;color:#666663;">(total geral)</span></label>
           <input type="number" id="f-max-uses" value="1" min="1" />
+        </div>
+        <div class="field-group" id="per-user-wrap" style="display:none;">
+          <label>Usos por Usuário</label>
+          <input type="number" id="f-max-uses-per-user" value="1" min="1" />
         </div>
         <div class="field-group">
           <label>Validade (opcional)</label>
@@ -137,6 +148,7 @@
               <th>Código</th>
               <th>Tema</th>
               <th>Tipo</th>
+              <th>Modo</th>
               <th>Usos</th>
               <th>Validade</th>
               <th>Status</th>
@@ -221,6 +233,19 @@
     else { wrap.style.display = 'none'; }
   }
 
+  function toggleUsageMode() {
+    const mode = document.getElementById('f-usage-mode').value;
+    const hint = document.getElementById('max-uses-hint');
+    const wrap = document.getElementById('per-user-wrap');
+    if (mode === 'per_user') {
+      hint.textContent = '(total geral entre todos os usuários)';
+      wrap.style.display = 'block';
+    } else {
+      hint.textContent = '(total geral)';
+      wrap.style.display = 'none';
+    }
+  }
+
   // ── Criar cupom ─────────────────────────────────────────────────────────────
   async function createCoupon() {
     const code = document.getElementById('f-code').value.trim().toUpperCase();
@@ -233,12 +258,17 @@
 
     if (!code) { showToast('Informe o código do cupom.', false); return; }
 
+    const usageMode = document.getElementById('f-usage-mode').value;
+    const maxUsesPerUser = parseInt(document.getElementById('f-max-uses-per-user').value) || 1;
+
     const payload = {
       code,
       theme,
       type,
       discount_value: (type !== 'free_product' && discountRaw) ? parseFloat(discountRaw) : null,
       max_uses: maxUses,
+      usage_mode: usageMode,
+      max_uses_per_user: usageMode === 'per_user' ? maxUsesPerUser : 1,
       expires_at: expiresRaw ? new Date(expiresRaw).toISOString() : null,
       description: desc || null,
     };
@@ -273,12 +303,16 @@
       const expires = c.expires_at ? new Date(c.expires_at).toLocaleDateString('pt-BR') : '—';
       const statusBadge = c.is_active ? '<span class="badge badge-active">Ativo</span>' : '<span class="badge badge-inactive">Inativo</span>';
       const themeBadge = c.theme === 'geek' ? '<span class="badge badge-geek">🎮 Geek</span>' : '<span class="badge badge-religioso">✝️ Religioso</span>';
+      const modeLabel = (c.usage_mode === 'per_user')
+        ? `<span style="font-size:11px;color:#00f5ff;">👤 Por usuário<br><span style="color:#444441;">(máx. ${c.max_uses_per_user}/pessoa)</span></span>`
+        : `<span style="font-size:11px;color:#888885;">🌐 Global</span>`;
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><span style="font-family:monospace; font-size:15px; font-weight:700; color:#DDAF34; letter-spacing:0.1em;">${c.code}</span></td>
         <td>${themeBadge}</td>
         <td><span style="font-size:12px; color:#888885;">${typeLabel}</span></td>
+        <td>${modeLabel}</td>
         <td><span style="font-size:12px;">${c.used_count} / ${c.max_uses}</span></td>
         <td><span style="font-size:12px; color:#666663;">${expires}</span></td>
         <td>${statusBadge}</td>
