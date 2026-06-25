@@ -74,6 +74,7 @@ type Coupon = {
   is_active: boolean;
   usage_mode: 'global' | 'per_user';
   max_uses_per_user: number;
+  max_discount_value: number | null;
 };
 
 // ─── Animação GEEK ──────────────────────────────────────────────────────────
@@ -292,6 +293,7 @@ export default function FreoCupom() {
       code: coupon.code,
       type: coupon.type,
       discount_value: coupon.discount_value,
+      max_discount_value: coupon.max_discount_value,
       description: coupon.description,
       theme: coupon.theme,
     }));
