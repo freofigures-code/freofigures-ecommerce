@@ -475,6 +475,10 @@
           class="hidden items-center gap-2 text-xs font-mono text-white/40 border border-white/10 px-3 py-1.5 hover:text-white transition-colors">
           Pedidos
         </a>
+        <a href="/admin/cupons.html" id="nav-admin-cupons"
+          class="hidden items-center gap-2 text-xs font-mono text-white/40 border border-white/10 px-3 py-1.5 hover:text-white transition-colors">
+          Cupons
+        </a>
         <!-- Client button -->
         <a href="/meus-pedidos.html" id="my-orders-btn"
           class="hidden items-center gap-2 text-xs font-mono text-freo-orange border border-freo-orange/30 bg-freo-orange/8 px-3 py-1.5 hover:bg-freo-orange/20 transition-colors">
@@ -949,6 +953,8 @@
     document.getElementById('nav-admin-produtos').classList.add('flex');
     document.getElementById('nav-admin-pedidos').classList.remove('hidden');
     document.getElementById('nav-admin-pedidos').classList.add('flex');
+    document.getElementById('nav-admin-cupons').classList.remove('hidden');
+    document.getElementById('nav-admin-cupons').classList.add('flex');
     document.getElementById('logout-btn').classList.remove('hidden');
 
     var name = (profile && (profile.full_name || profile.name)) || user.email.split('@')[0];
