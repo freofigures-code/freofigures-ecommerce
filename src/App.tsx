@@ -2532,6 +2532,12 @@ export default function App() {
     if (temCarrinhoPendente) {
       window.history.replaceState({}, '', '/');
     }
+    const categoriaParam = params.get('categoria');
+    if (categoriaParam) {
+      setActiveFilter(categoriaParam);
+      setCurrentView('shop');
+      window.history.replaceState({}, '', '/');
+    }
     const handleAuthData = (event: any) => {
       setUser(event.detail.user);
       if (event.detail.cartItems) {
