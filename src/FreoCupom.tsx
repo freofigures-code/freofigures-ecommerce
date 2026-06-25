@@ -302,7 +302,10 @@ export default function FreoCupom() {
     setRedeeming(false);
   };
 
-  const goToShop = () => { window.location.href = '/'; };
+  const goToShop = () => {
+    const categoria = coupon?.theme === 'religioso' ? 'religioso' : 'games';
+    window.location.href = `/?categoria=${categoria}`;
+  };
 
   const benefitText = () => {
     if (!coupon) return '';
