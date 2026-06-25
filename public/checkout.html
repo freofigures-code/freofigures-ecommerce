@@ -1057,7 +1057,15 @@ async function salvarDadosPessoais() {
 
       document.getElementById('checkout-items').innerHTML = html;
 
-      updateTotals();
+      // Recalcula o desconto do cupom agora que o subtotal real do carrinho
+      // está disponível. O cupom pode ter sido carregado do localStorage
+      // ANTES do carrinho ser buscado no Supabase (quando subtotalAmount
+      // ainda era 0), o que travava o desconto em R$ 0,00.
+      if (activeCouponData) {
+        aplicarDescontoCupom();
+      } else {
+        updateTotals();
+      }
     }
 
     async function calcularFrete(cepParam) {
