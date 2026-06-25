@@ -2704,7 +2704,7 @@ export default function App() {
       <Footer />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cartItems} updateQuantity={updateQuantity} removeItem={removeItem} user={user} />
-      <FreoChat />
+      <FreoChat hideOnMobile={isCartOpen} />
 
       {/* Banner de cupom ativo */}
       {activeCoupon && !cupomCode && !isCartOpen && (
