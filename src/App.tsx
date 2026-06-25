@@ -2648,7 +2648,6 @@ export default function App() {
     console.error('Erro ao adicionar ao carrinho:', error);
   }
 };
-};
   const updateQuantity = (product: CartItem, delta: number) => {
     setCartItems(previous => previous.map(item =>
       item.cartItemId === product.cartItemId ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
