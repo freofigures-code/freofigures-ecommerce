@@ -501,9 +501,33 @@
               <span id="summary-subtotal">R$ 0,00</span>
             </div>
 
+            <div id="coupon-discount-row" class="hidden flex justify-between text-green-400">
+              <span>Desconto cupom</span>
+              <span id="coupon-discount-display">—</span>
+            </div>
             <div class="flex justify-between text-freo-light/60">
               <span>Frete</span>
               <span id="frete-placeholder" class="text-white/30 italic text-xs">calcule acima</span>
+            </div>
+          </div>
+
+          <!-- Cupom -->
+          <div id="coupon-section" class="border-t border-white/10 mt-4 pt-4">
+            <div id="coupon-active-display" class="hidden mb-3 p-3 rounded-lg flex items-center justify-between gap-2" style="background:rgba(221,175,52,0.08);border:1px solid rgba(221,175,52,0.25)">
+              <div>
+                <p class="font-mono text-xs text-freo-orange uppercase tracking-widest">Cupom aplicado</p>
+                <p class="font-mono font-bold text-sm text-white mt-0.5" id="coupon-code-display">—</p>
+                <p class="font-mono text-xs text-white/40 mt-0.5" id="coupon-benefit-display">—</p>
+              </div>
+              <button onclick="removerCupom()" class="font-mono text-xs text-red-400/60 hover:text-red-400 transition-colors uppercase tracking-widest border border-red-400/20 px-2 py-1">Remover</button>
+            </div>
+            <div id="coupon-input-area">
+              <p class="font-mono text-xs text-white/30 uppercase tracking-widest mb-2">Tem um cupom?</p>
+              <div class="flex gap-2">
+                <input type="text" id="coupon-input" placeholder="CÓDIGO" class="fi flex-1 text-sm font-mono uppercase" oninput="this.value=this.value.toUpperCase()" style="background:#0A0A0A;border:1px solid rgba(255,255,255,0.1);color:#F5F5F5;padding:8px 12px;outline:none;font-family:ui-monospace,monospace;font-size:13px;letter-spacing:0.1em">
+                <button onclick="aplicarCupom()" class="flex-shrink-0 bg-freo-orange text-freo-black font-mono font-bold text-xs uppercase tracking-widest px-4 hover:bg-white transition-colors">Aplicar</button>
+              </div>
+              <p id="coupon-error" class="hidden font-mono text-xs text-red-400 mt-2"></p>
             </div>
           </div>
 
@@ -992,7 +1016,7 @@ async function salvarDadosPessoais() {
     }
 
     function updateTotals() {
-      var total = subtotalAmount + freteAmount;
+      var total = Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount;
 
       document.getElementById('summary-subtotal').innerText = formatCurrency(subtotalAmount);
       document.getElementById('summary-total').innerText = formatCurrency(total);
@@ -1396,7 +1420,7 @@ async function salvarDadosPessoais() {
           return;
         }
     
-        var totalFinal = subtotalAmount + freteAmount;
+        var totalFinal = Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount;
         var userId     = currentUser.id;
         var freteNomeCompleto = selectedShipping
           ? (selectedShipping.company ? selectedShipping.company + ' - ' : '') + (selectedShipping.service_name || 'Entrega')
@@ -1485,6 +1509,7 @@ async function salvarDadosPessoais() {
     
         await window.supabaseClient.from('orders').update(updateData).eq('id', orderId).eq('user_id', userId);
         await window.supabaseClient.from('cart_items').delete().eq('user_id', userId);
+        await consumirCupomAposPayment(orderId);
     
         cartItemsData.forEach(function(item) {
           var productId = parseInt(item.product_id, 10);
@@ -1700,7 +1725,7 @@ async function salvarDadosPessoais() {
               })
             });
 
-            var totalFinalOrder = subtotalAmount + freteAmount;
+            var totalFinalOrder = Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount;
             var userId = currentUser.id;
 
             var customerName = getCustomerNameForOrder();
@@ -1801,6 +1826,7 @@ async function salvarDadosPessoais() {
                     .then(function(r) {
                       if (r.error) console.error('Erro limpar carrinho:', r.error);
                     });
+                  consumirCupomAposPayment(orderId);
 
                   cartItemsData.forEach(function(item) {
                     var productId = parseInt(item.product_id, 10);
@@ -2352,6 +2378,120 @@ async function salvarDadosPessoais() {
         }
       });
     }
+
+    // ─── SISTEMA DE CUPOM NO CHECKOUT ──────────────────────────────────────────
+    var activeCouponData = null;
+    var couponDiscountAmount = 0;
+
+    (function carregarCupomDoStorage() {
+      try {
+        var raw = localStorage.getItem('freo_active_coupon');
+        if (raw) {
+          activeCouponData = JSON.parse(raw);
+          renderizarCupomAtivo();
+        }
+      } catch(e) {}
+    })();
+
+    function renderizarCupomAtivo() {
+      if (!activeCouponData) return;
+
+      document.getElementById('coupon-active-display').classList.remove('hidden');
+      document.getElementById('coupon-input-area').classList.add('hidden');
+      document.getElementById('coupon-code-display').innerText = activeCouponData.code;
+
+      var benefit = '';
+      if (activeCouponData.type === 'free_product') benefit = '🎁 Produto grátis (paga só o frete)';
+      else if (activeCouponData.type === 'percent') benefit = activeCouponData.discount_value + '% de desconto';
+      else if (activeCouponData.type === 'fixed') benefit = 'R$ ' + Number(activeCouponData.discount_value).toFixed(2).replace('.', ',') + ' de desconto';
+      document.getElementById('coupon-benefit-display').innerText = benefit;
+
+      aplicarDescontoCupom();
+    }
+
+    function aplicarDescontoCupom() {
+      if (!activeCouponData) { couponDiscountAmount = 0; updateTotals(); return; }
+
+      if (activeCouponData.type === 'free_product') {
+        couponDiscountAmount = subtotalAmount;
+      } else if (activeCouponData.type === 'percent') {
+        couponDiscountAmount = subtotalAmount * (Number(activeCouponData.discount_value) / 100);
+      } else if (activeCouponData.type === 'fixed') {
+        couponDiscountAmount = Math.min(Number(activeCouponData.discount_value), subtotalAmount);
+      }
+
+      document.getElementById('coupon-discount-row').classList.remove('hidden');
+      document.getElementById('coupon-discount-display').innerText = '− ' + formatCurrency(couponDiscountAmount);
+      updateTotals();
+    }
+
+    async function aplicarCupom() {
+      var code = document.getElementById('coupon-input').value.trim().toUpperCase();
+      var errEl = document.getElementById('coupon-error');
+      errEl.classList.add('hidden');
+
+      if (!code) { errEl.innerText = 'Digite o código do cupom.'; errEl.classList.remove('hidden'); return; }
+
+      var r = await window.supabaseClient
+        .from('coupons')
+        .select('*')
+        .eq('code', code)
+        .eq('is_active', true)
+        .single();
+
+      if (r.error || !r.data) { errEl.innerText = 'Cupom inválido ou expirado.'; errEl.classList.remove('hidden'); return; }
+      var c = r.data;
+      if (c.used_count >= c.max_uses) { errEl.innerText = 'Este cupom já atingiu o limite de usos.'; errEl.classList.remove('hidden'); return; }
+      if (c.expires_at && new Date(c.expires_at) < new Date()) { errEl.innerText = 'Este cupom expirou.'; errEl.classList.remove('hidden'); return; }
+
+      activeCouponData = {
+        code: c.code,
+        type: c.type,
+        discount_value: c.discount_value,
+        description: c.description,
+        theme: c.theme,
+        id: c.id,
+        used_count: c.used_count,
+        max_uses: c.max_uses,
+      };
+      localStorage.setItem('freo_active_coupon', JSON.stringify(activeCouponData));
+      renderizarCupomAtivo();
+    }
+
+    function removerCupom() {
+      activeCouponData = null;
+      couponDiscountAmount = 0;
+      localStorage.removeItem('freo_active_coupon');
+      document.getElementById('coupon-active-display').classList.add('hidden');
+      document.getElementById('coupon-input-area').classList.remove('hidden');
+      document.getElementById('coupon-input').value = '';
+      document.getElementById('coupon-discount-row').classList.add('hidden');
+      updateTotals();
+    }
+
+    async function consumirCupomAposPayment(orderId) {
+      if (!activeCouponData) return;
+      try {
+        await window.supabaseClient
+          .from('coupons')
+          .update({ used_count: (activeCouponData.used_count || 0) + 1 })
+          .eq('id', activeCouponData.id)
+          .lt('used_count', activeCouponData.max_uses);
+
+        await window.supabaseClient.from('coupon_redemptions').insert({
+          coupon_id: activeCouponData.id,
+          user_id: currentUser ? currentUser.id : null,
+          order_id: orderId,
+          session_info: { code: activeCouponData.code },
+        });
+
+        localStorage.removeItem('freo_active_coupon');
+        activeCouponData = null;
+      } catch(e) {
+        console.error('Erro ao consumir cupom:', e);
+      }
+    }
+    // ─── FIM SISTEMA DE CUPOM ───────────────────────────────────────────────────
 
     document.addEventListener('DOMContentLoaded', initCheckout);
 
