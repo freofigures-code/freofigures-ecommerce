@@ -505,6 +505,7 @@
               <span>Desconto cupom</span>
               <span id="coupon-discount-display">—</span>
             </div>
+            <div id="coupon-limit-warning" class="hidden text-amber-400 text-[11px] leading-relaxed py-1"></div>
             <div class="flex justify-between text-freo-light/60">
               <span>Frete</span>
               <span id="frete-placeholder" class="text-white/30 italic text-xs">calcule acima</span>
@@ -2428,9 +2429,40 @@ async function salvarDadosPessoais() {
         couponDiscountAmount = Math.min(Number(activeCouponData.discount_value), subtotalAmount);
       }
 
+      // Aplica o limite máximo de desconto configurado no admin. Vale para
+      // todos os tipos de cupom, inclusive "produto grátis": se o produto custar
+      // mais que o limite, o cliente paga a diferença além do frete.
+      var maxDiscount = activeCouponData.max_discount_value;
+      if (maxDiscount !== null && maxDiscount !== undefined && maxDiscount !== '') {
+        couponDiscountAmount = Math.min(couponDiscountAmount, Number(maxDiscount));
+      }
+
       document.getElementById('coupon-discount-row').classList.remove('hidden');
       document.getElementById('coupon-discount-display').innerText = '− ' + formatCurrency(couponDiscountAmount);
+
+      mostrarAvisoLimiteCupom();
       updateTotals();
+    }
+
+    function mostrarAvisoLimiteCupom() {
+      var el = document.getElementById('coupon-limit-warning');
+      if (!el) return;
+
+      var maxDiscount = activeCouponData ? activeCouponData.max_discount_value : null;
+      var excedeu = maxDiscount !== null && maxDiscount !== undefined && maxDiscount !== ''
+        && subtotalAmount > Number(maxDiscount);
+
+      if (!activeCouponData || !excedeu) {
+        el.classList.add('hidden');
+        el.innerText = '';
+        return;
+      }
+
+      var diferenca = subtotalAmount - Number(maxDiscount);
+      el.innerText = '⚠ Este cupom cobre até ' + formatCurrency(Number(maxDiscount)) +
+        '. Como seu produto custa ' + formatCurrency(subtotalAmount) +
+        ', você pagará a diferença de ' + formatCurrency(diferenca) + ' + frete.';
+      el.classList.remove('hidden');
     }
 
     async function aplicarCupom() {
@@ -2456,6 +2488,7 @@ async function salvarDadosPessoais() {
         code: c.code,
         type: c.type,
         discount_value: c.discount_value,
+        max_discount_value: c.max_discount_value,
         description: c.description,
         theme: c.theme,
         id: c.id,
@@ -2474,6 +2507,7 @@ async function salvarDadosPessoais() {
       document.getElementById('coupon-input-area').classList.remove('hidden');
       document.getElementById('coupon-input').value = '';
       document.getElementById('coupon-discount-row').classList.add('hidden');
+      document.getElementById('coupon-limit-warning').classList.add('hidden');
       updateTotals();
     }
 
