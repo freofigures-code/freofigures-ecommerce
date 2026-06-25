@@ -72,6 +72,8 @@ type Coupon = {
   used_count: number;
   expires_at: string | null;
   is_active: boolean;
+  usage_mode: 'global' | 'per_user';
+  max_uses_per_user: number;
 };
 
 // ─── Animação GEEK ──────────────────────────────────────────────────────────
@@ -219,6 +221,23 @@ export default function FreoCupom() {
       if (data.used_count >= data.max_uses) { setErrorMsg('Este cupom já foi utilizado o número máximo de vezes.'); setPhase('error'); return; }
       if (data.expires_at && new Date(data.expires_at) < new Date()) { setErrorMsg('Este cupom expirou.'); setPhase('error'); return; }
 
+      // Validação por usuário: se usage_mode === 'per_user', checa resgates do usuário atual
+      if (data.usage_mode === 'per_user') {
+        let { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          const { count } = await supabase
+            .from('coupon_redemptions')
+            .select('id', { count: 'exact', head: true })
+            .eq('coupon_id', data.id)
+            .eq('user_id', session.user.id);
+          if ((count ?? 0) >= data.max_uses_per_user) {
+            setErrorMsg('Você já utilizou este cupom o número máximo de vezes permitido.');
+            setPhase('error');
+            return;
+          }
+        }
+      }
+
       setCoupon(data);
       setPhase('animating');
     };
@@ -238,7 +257,21 @@ export default function FreoCupom() {
       session = anonData?.session;
     }
 
-    // Incrementa uso
+    // Validação por usuário no momento do resgate (double-check antes de gravar)
+    if (coupon.usage_mode === 'per_user' && session?.user?.id) {
+      const { count } = await supabase
+        .from('coupon_redemptions')
+        .select('id', { count: 'exact', head: true })
+        .eq('coupon_id', coupon.id)
+        .eq('user_id', session.user.id);
+      if ((count ?? 0) >= coupon.max_uses_per_user) {
+        setErrorMsg('Você já utilizou este cupom o número máximo de vezes permitido.');
+        setRedeeming(false);
+        return;
+      }
+    }
+
+    // Incrementa uso global (sempre, independente do modo)
     const { error: updateError } = await supabase
       .from('coupons')
       .update({ used_count: coupon.used_count + 1 })
