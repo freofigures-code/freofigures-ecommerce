@@ -186,6 +186,81 @@
   </div>
 </div>
 
+<!-- Modal Edição -->
+<div class="modal-overlay" id="edit-modal" style="display:none;" onclick="closeEditModal(event)">
+  <div class="modal" style="max-width:560px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3>Editar Cupom</h3>
+      <button onclick="document.getElementById('edit-modal').style.display='none'"
+        style="background:none;border:none;color:#666663;cursor:pointer;font-size:20px;">&times;</button>
+    </div>
+    <input type="hidden" id="edit-id" />
+    <div class="grid">
+      <div class="field-group">
+        <label>Código do Cupom</label>
+        <input type="text" id="edit-code" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" />
+      </div>
+      <div class="field-group">
+        <label>Tema da Animação</label>
+        <select id="edit-theme">
+          <option value="geek">🎮 Geek / Gamer</option>
+          <option value="religioso">✝️ Religioso</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Tipo de Desconto</label>
+        <select id="edit-type" onchange="toggleEditDiscount()">
+          <option value="free_product">Produto Gratuito</option>
+          <option value="percent">Percentual (%)</option>
+          <option value="fixed">Valor Fixo (R$)</option>
+        </select>
+      </div>
+      <div class="field-group" id="edit-discount-wrap" style="display:none;">
+        <label id="edit-discount-label">Valor do Desconto</label>
+        <input type="number" id="edit-discount" min="0" step="0.01" />
+      </div>
+      <div class="field-group">
+        <label>Limite Máximo de Desconto (R$) <span style="font-weight:400;color:#666663;">(opcional)</span></label>
+        <input type="number" id="edit-max-discount" min="0" step="0.01" placeholder="vazio = sem limite" />
+      </div>
+      <div class="field-group">
+        <label>Modo de Uso</label>
+        <select id="edit-usage-mode" onchange="toggleEditUsageMode()">
+          <option value="global">Global</option>
+          <option value="per_user">Por Usuário</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Usos Máximos (total)</label>
+        <input type="number" id="edit-max-uses" min="1" />
+      </div>
+      <div class="field-group" id="edit-per-user-wrap" style="display:none;">
+        <label>Usos por Usuário</label>
+        <input type="number" id="edit-max-uses-per-user" min="1" />
+      </div>
+      <div class="field-group">
+        <label>Validade (opcional)</label>
+        <input type="datetime-local" id="edit-expires" />
+      </div>
+      <div class="field-group">
+        <label>Status</label>
+        <select id="edit-is-active">
+          <option value="true">Ativo</option>
+          <option value="false">Inativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group" style="margin-top:4px;">
+      <label>Descrição para o Cliente (opcional)</label>
+      <textarea id="edit-desc" rows="2"></textarea>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="saveCouponEdit()">Salvar Alterações</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('edit-modal').style.display='none'">Cancelar</button>
+    </div>
+  </div>
+</div>
+  
 <!-- Modal QR -->
 <div class="modal-overlay" id="qr-modal" style="display:none;" onclick="closeModal(event)">
   <div class="modal print-area">
@@ -384,6 +459,7 @@
         <td style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px;" onclick="showQR('${c.code}','${c.theme}','${c.type}',${c.discount_value || 0})">📱 QR Code</button>
           <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px; color:#DDAF34; border-color:rgba(221,175,52,0.4);" onclick="showPdfModal('${c.code}','${c.theme}','${c.type}',${c.discount_value || 0})">📄 PDF</button>
+          <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px; color:#888885; border-color:rgba(255,255,255,0.15);" onclick="openEditModal('${c.id}')">✏️ Editar</button>
           <button class="btn btn-danger" onclick="toggleActive('${c.id}', ${c.is_active})">${c.is_active ? 'Desativar' : 'Ativar'}</button>
         </td>
       `;
@@ -702,6 +778,93 @@
       setTimeout(() => URL.revokeObjectURL(url), 5000);
       showToast('PDF baixado!');
     } catch(e) { showToast('Erro ao gerar PDF.', false); }
+  }
+
+  // ── Edição de cupom ─────────────────────────────────────────────────────────
+  async function openEditModal(id) {
+    const { data, error } = await sb.from('coupons').select('*').eq('id', id).single();
+    if (error || !data) { showToast('Erro ao carregar cupom.', false); return; }
+
+    document.getElementById('edit-id').value = data.id;
+    document.getElementById('edit-code').value = data.code;
+    document.getElementById('edit-theme').value = data.theme;
+    document.getElementById('edit-type').value = data.type;
+    document.getElementById('edit-discount').value = data.discount_value ?? '';
+    document.getElementById('edit-max-discount').value = data.max_discount_value ?? '';
+    document.getElementById('edit-usage-mode').value = data.usage_mode || 'global';
+    document.getElementById('edit-max-uses').value = data.max_uses;
+    document.getElementById('edit-max-uses-per-user').value = data.max_uses_per_user || 1;
+    document.getElementById('edit-desc').value = data.description || '';
+    document.getElementById('edit-is-active').value = String(data.is_active);
+
+    if (data.expires_at) {
+      const d = new Date(data.expires_at);
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('edit-expires').value =
+        `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } else {
+      document.getElementById('edit-expires').value = '';
+    }
+
+    toggleEditDiscount();
+    toggleEditUsageMode();
+    document.getElementById('edit-modal').style.display = 'flex';
+  }
+
+  function toggleEditDiscount() {
+    const type = document.getElementById('edit-type').value;
+    const wrap = document.getElementById('edit-discount-wrap');
+    const label = document.getElementById('edit-discount-label');
+    if (type === 'percent') { wrap.style.display = 'block'; label.textContent = 'Percentual (%)'; }
+    else if (type === 'fixed') { wrap.style.display = 'block'; label.textContent = 'Valor em R$'; }
+    else { wrap.style.display = 'none'; }
+  }
+
+  function toggleEditUsageMode() {
+    const mode = document.getElementById('edit-usage-mode').value;
+    document.getElementById('edit-per-user-wrap').style.display = mode === 'per_user' ? 'block' : 'none';
+  }
+
+  async function saveCouponEdit() {
+    const id = document.getElementById('edit-id').value;
+    const code = document.getElementById('edit-code').value.trim().toUpperCase();
+    const type = document.getElementById('edit-type').value;
+    const discountRaw = document.getElementById('edit-discount').value;
+    const maxDiscountRaw = document.getElementById('edit-max-discount').value;
+    const usageMode = document.getElementById('edit-usage-mode').value;
+    const maxUses = parseInt(document.getElementById('edit-max-uses').value) || 1;
+    const maxUsesPerUser = parseInt(document.getElementById('edit-max-uses-per-user').value) || 1;
+    const expiresRaw = document.getElementById('edit-expires').value;
+    const desc = document.getElementById('edit-desc').value.trim();
+    const isActive = document.getElementById('edit-is-active').value === 'true';
+
+    if (!code) { showToast('O código não pode estar vazio.', false); return; }
+
+    const payload = {
+      code,
+      theme: document.getElementById('edit-theme').value,
+      type,
+      discount_value: (type !== 'free_product' && discountRaw) ? parseFloat(discountRaw) : null,
+      max_discount_value: maxDiscountRaw ? parseFloat(maxDiscountRaw) : null,
+      max_uses: maxUses,
+      usage_mode: usageMode,
+      max_uses_per_user: usageMode === 'per_user' ? maxUsesPerUser : 1,
+      expires_at: expiresRaw ? new Date(expiresRaw).toISOString() : null,
+      description: desc || null,
+      is_active: isActive,
+    };
+
+    const { error } = await sb.from('coupons').update(payload).eq('id', id);
+    if (error) { showToast('Erro ao salvar: ' + error.message, false); return; }
+
+    showToast('Cupom atualizado com sucesso!');
+    document.getElementById('edit-modal').style.display = 'none';
+    loadCoupons();
+  }
+
+  function closeEditModal(event) {
+    if (event.target === document.getElementById('edit-modal'))
+      document.getElementById('edit-modal').style.display = 'none';
   }
 
   </script>
