@@ -6,7 +6,7 @@
   <title>Admin · Cupons · Freo Figures</title>
   <meta name="robots" content="noindex,nofollow" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
   <script>
     const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
@@ -160,7 +160,7 @@
     </div>
     <div id="qr-code-label" style="text-align:center; font-size:12px; color:#666663; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:4px;"></div>
     <div class="code" id="qr-code-text"></div>
-    <div class="qr-wrap"><canvas id="qr-canvas"></canvas></div>
+    <div class="qr-wrap"><div id="qr-canvas-wrap"></div></div>
     <div class="qr-url" id="qr-url-text"></div>
     <div id="qr-benefit" style="text-align:center; font-size:13px; color:#888885; margin-bottom:20px;"></div>
     <div class="modal-actions no-print">
@@ -313,9 +313,15 @@
     else benefit = `💰 R$ ${parseFloat(discountValue).toFixed(2)} de desconto`;
     document.getElementById('qr-benefit').textContent = benefit;
 
-    const canvas = document.getElementById('qr-canvas');
-    QRCode.toCanvas(canvas, url, { width: 240, margin: 2, color: { dark: '#000000', light: '#FFFFFF' } }, err => {
-      if (err) console.error(err);
+    const qrWrap = document.getElementById('qr-canvas-wrap');
+    qrWrap.innerHTML = '';
+    new QRCode(qrWrap, {
+      text: url,
+      width: 240,
+      height: 240,
+      colorDark: '#000000',
+      colorLight: '#FFFFFF',
+      correctLevel: QRCode.CorrectLevel.H
     });
 
     document.getElementById('qr-modal').style.display = 'flex';
@@ -328,11 +334,12 @@
   }
 
   function downloadQR() {
-    const canvas = document.getElementById('qr-canvas');
     const code = document.getElementById('qr-code-text').textContent;
+    const img = document.querySelector('#qr-canvas-wrap img');
+    if (!img) return;
     const link = document.createElement('a');
     link.download = `cupom-freo-${code}.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.href = img.src;
     link.click();
   }
 
