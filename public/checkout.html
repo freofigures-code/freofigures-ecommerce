@@ -2082,32 +2082,73 @@ async function salvarDadosPessoais() {
 
     async function buscarCEP() {
       var cep = document.getElementById('addr-cep').value.replace(/\D/g, '');
-
+    
       if (cep.length !== 8) {
-        alert('CEP inválido.');
+        alert('CEP inválido. Digite os 8 dígitos.');
         return;
       }
-
+    
       document.getElementById('cep-searching').classList.remove('hidden');
       document.getElementById('btn-buscar-cep').disabled = true;
-
+    
+      var preencheu = false;
+    
+      // Tentativa 1: ViaCEP
       try {
-        var r = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
-        var d = await r.json();
-
-        if (!d.erro) {
-          document.getElementById('addr-street').value = d.logradouro || '';
-          document.getElementById('addr-neighborhood').value = d.bairro || '';
-          document.getElementById('addr-city').value = d.localidade || '';
-          document.getElementById('addr-state').value = d.uf || '';
-          document.getElementById('addr-number').focus();
-        } else {
-          alert('CEP não encontrado.');
+        var r1 = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
+        if (r1.ok) {
+          var d1 = await r1.json();
+          if (!d1.erro && d1.logradouro !== undefined) {
+            document.getElementById('addr-street').value = d1.logradouro || '';
+            document.getElementById('addr-neighborhood').value = d1.bairro || '';
+            document.getElementById('addr-city').value = d1.localidade || '';
+            document.getElementById('addr-state').value = d1.uf || '';
+            document.getElementById('addr-number').focus();
+            preencheu = true;
+          }
         }
-      } catch(e) {
-        alert('Erro ao buscar CEP.');
+      } catch(e1) { /* segue para fallback */ }
+    
+      // Tentativa 2: ApiCEP (fallback)
+      if (!preencheu) {
+        try {
+          var r2 = await fetch('https://cdn.apicep.com/file/apicep/' + cep.substring(0,5) + '-' + cep.substring(5) + '.json');
+          if (r2.ok) {
+            var d2 = await r2.json();
+            if (d2.ok && d2.address) {
+              document.getElementById('addr-street').value = d2.address || '';
+              document.getElementById('addr-neighborhood').value = d2.district || '';
+              document.getElementById('addr-city').value = d2.city || '';
+              document.getElementById('addr-state').value = d2.state || '';
+              document.getElementById('addr-number').focus();
+              preencheu = true;
+            }
+          }
+        } catch(e2) { /* segue para fallback 2 */ }
       }
-
+    
+      // Tentativa 3: BrasilAPI (segundo fallback)
+      if (!preencheu) {
+        try {
+          var r3 = await fetch('https://brasilapi.com.br/api/cep/v1/' + cep);
+          if (r3.ok) {
+            var d3 = await r3.json();
+            if (d3.street !== undefined) {
+              document.getElementById('addr-street').value = d3.street || '';
+              document.getElementById('addr-neighborhood').value = d3.neighborhood || '';
+              document.getElementById('addr-city').value = d3.city || '';
+              document.getElementById('addr-state').value = d3.state || '';
+              document.getElementById('addr-number').focus();
+              preencheu = true;
+            }
+          }
+        } catch(e3) { /* todas falharam */ }
+      }
+    
+      if (!preencheu) {
+        alert('CEP não encontrado. Preencha o endereço manualmente.');
+      }
+    
       document.getElementById('cep-searching').classList.add('hidden');
       document.getElementById('btn-buscar-cep').disabled = false;
     }
