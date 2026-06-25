@@ -2643,9 +2643,11 @@ export default function App() {
       toast.style.transition = 'opacity 0.5s ease';
       setTimeout(() => toast.remove(), 500);
     }, 3000);
+    setIsCartOpen(true);
   } catch (error) {
     console.error('Erro ao adicionar ao carrinho:', error);
   }
+};
 };
   const updateQuantity = (product: CartItem, delta: number) => {
     setCartItems(previous => previous.map(item =>
@@ -2693,7 +2695,7 @@ export default function App() {
       <FreoChat />
 
       {/* Banner de cupom ativo */}
-      {activeCoupon && !cupomCode && (
+      {activeCoupon && !cupomCode && !isCartOpen && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9990,
           background: activeCoupon.theme === 'geek'
