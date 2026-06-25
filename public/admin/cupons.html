@@ -127,6 +127,10 @@
           <input type="number" id="f-discount" min="0" step="0.01" placeholder="Ex: 20" />
         </div>
         <div class="field-group">
+          <label>Limite Máximo de Desconto (R$) <span style="font-weight:400;color:#666663;">(opcional)</span></label>
+          <input type="number" id="f-max-discount" min="0" step="0.01" placeholder="Ex: 80.00 — vazio = sem limite" />
+        </div>
+        <div class="field-group">
           <label>Modo de Uso</label>
           <select id="f-usage-mode" onchange="toggleUsageMode()">
             <option value="global">Global — limite compartilhado entre todos</option>
@@ -166,6 +170,7 @@
               <th>Código</th>
               <th>Tema</th>
               <th>Tipo</th>
+              <th>Limite</th>
               <th>Modo</th>
               <th>Usos</th>
               <th>Validade</th>
@@ -305,6 +310,7 @@
     const theme = document.getElementById('f-theme').value;
     const type = document.getElementById('f-type').value;
     const discountRaw = document.getElementById('f-discount').value;
+    const maxDiscountRaw = document.getElementById('f-max-discount').value;
     const maxUses = parseInt(document.getElementById('f-max-uses').value) || 1;
     const expiresRaw = document.getElementById('f-expires').value;
     const desc = document.getElementById('f-desc').value.trim();
@@ -319,6 +325,7 @@
       theme,
       type,
       discount_value: (type !== 'free_product' && discountRaw) ? parseFloat(discountRaw) : null,
+      max_discount_value: maxDiscountRaw ? parseFloat(maxDiscountRaw) : null,
       max_uses: maxUses,
       usage_mode: usageMode,
       max_uses_per_user: usageMode === 'per_user' ? maxUsesPerUser : 1,
@@ -331,6 +338,7 @@
 
     showToast('Cupom criado com sucesso!');
     document.getElementById('f-code').value = '';
+    document.getElementById('f-max-discount').value = '';
     document.getElementById('f-desc').value = '';
     loadCoupons();
   }
@@ -353,6 +361,9 @@
 
     data.forEach(c => {
       const typeLabel = c.type === 'free_product' ? 'Produto grátis' : c.type === 'percent' ? `${c.discount_value}%` : `R$ ${parseFloat(c.discount_value).toFixed(2)}`;
+      const maxDiscountLabel = (c.max_discount_value !== null && c.max_discount_value !== undefined)
+        ? `R$ ${parseFloat(c.max_discount_value).toFixed(2)}`
+        : '<span style="color:#444441;">Sem limite</span>';
       const expires = c.expires_at ? new Date(c.expires_at).toLocaleDateString('pt-BR') : '—';
       const statusBadge = c.is_active ? '<span class="badge badge-active">Ativo</span>' : '<span class="badge badge-inactive">Inativo</span>';
       const themeBadge = c.theme === 'geek' ? '<span class="badge badge-geek">🎮 Geek</span>' : '<span class="badge badge-religioso">✝️ Religioso</span>';
@@ -365,6 +376,7 @@
         <td><span style="font-family:monospace; font-size:15px; font-weight:700; color:#DDAF34; letter-spacing:0.1em;">${c.code}</span></td>
         <td>${themeBadge}</td>
         <td><span style="font-size:12px; color:#888885;">${typeLabel}</span></td>
+        <td><span style="font-size:12px; color:#888885;">${maxDiscountLabel}</span></td>
         <td>${modeLabel}</td>
         <td><span style="font-size:12px;">${c.used_count} / ${c.max_uses}</span></td>
         <td><span style="font-size:12px; color:#666663;">${expires}</span></td>
