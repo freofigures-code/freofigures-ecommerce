@@ -8,6 +8,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0e0e0f; color: #f0efeb; font-family: 'DM Sans', system-ui, sans-serif; min-height: 100vh; }
@@ -66,22 +71,6 @@
   </style>
 </head>
 <body>
-
-<!-- Auth wall -->
-<div id="auth-wall" style="display:none;">
-  <div style="text-align:center; margin-bottom:24px;">
-    <div style="font-family:'DM Serif Display',serif; font-size:28px; color:#DDAF34;">Freo Figures</div>
-    <div style="color:#666663; font-size:14px; margin-top:4px;">Painel Admin · Cupons</div>
-  </div>
-  <div style="background:#161618; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:32px; width:100%; max-width:360px;">
-    <label>E-mail admin</label>
-    <div class="field-group"><input type="email" id="auth-email" placeholder="seu@email.com" /></div>
-    <label>Senha</label>
-    <div class="field-group"><input type="password" id="auth-pass" placeholder="••••••••" /></div>
-    <div id="auth-error" class="error-text" style="margin-bottom:12px; display:none;"></div>
-    <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">Entrar</button>
-  </div>
-</div>
 
 <!-- Main app -->
 <div id="app" style="display:none;">
@@ -186,35 +175,26 @@
 <div class="toast" id="toast"><div class="dot" id="toast-dot"></div><span id="toast-msg"></span></div>
 
 <script>
-  const SUPABASE_URL = 'https://rrmxqpvxrpcqqxsgccqw.supabase.co';
-  const SUPABASE_ANON_KEY = 'SUA_ANON_KEY_AQUI'; // substitua pela sua anon key
   const BASE_URL = 'https://freofigures.com.br';
 
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const sb = window.supabaseClient;
   let currentQRUrl = '';
 
-  // ── Auth ────────────────────────────────────────────────────────────────────
-  async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) { showApp(); }
-    else { document.getElementById('auth-wall').style.display = 'flex'; }
-  }
+  // ── Auth (mesmo padrão do pedidos.html) ─────────────────────────────────────
+  window.addEventListener('auth-not-logged-in', () => {
+    window.location.href = '/login.html';
+  });
 
-  async function doLogin() {
-    const email = document.getElementById('auth-email').value;
-    const pass = document.getElementById('auth-pass').value;
-    const errEl = document.getElementById('auth-error');
-    errEl.style.display = 'none';
-    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) { errEl.textContent = 'E-mail ou senha incorretos.'; errEl.style.display = 'block'; }
-    else { showApp(); }
-  }
-
-  function showApp() {
-    document.getElementById('auth-wall').style.display = 'none';
+  window.addEventListener('auth-data-loaded', (e) => {
+    const { profile } = e.detail;
+    if (!profile || profile.is_admin !== true) {
+      alert('Acesso negado. Apenas administradores podem acessar esta página.');
+      window.location.href = '/dashboard.html';
+      return;
+    }
     document.getElementById('app').style.display = 'block';
     loadCoupons();
-  }
+  });
 
   // ── Utils ───────────────────────────────────────────────────────────────────
   function showToast(msg, ok = true) {
@@ -360,7 +340,7 @@
     navigator.clipboard.writeText(currentQRUrl).then(() => showToast('Link copiado!'));
   }
 
-  init();
-</script>
+  </script>
+<script src="/auth-listener.js"></script>
 </body>
 </html>
