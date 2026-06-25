@@ -267,7 +267,7 @@ export default function FreoCupom() {
     setRedeeming(false);
   };
 
-  const goToShop = () => { window.location.href = '/?_cupom=' + coupon?.code; };
+  const goToShop = () => { window.location.href = '/'; };
 
   const benefitText = () => {
     if (!coupon) return '';
