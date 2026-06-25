@@ -68,6 +68,24 @@
     #auth-wall { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 20px; }
     #auth-wall input { max-width: 320px; }
     .error-text { color: #e94560; font-size: 13px; }
+
+    /* ── PDF Modal ───────────────────────────────────────── */
+    .modal-pdf { max-width: 560px; }
+    .theme-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .theme-card {
+      border: 2px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px;
+      cursor: pointer; transition: all 0.2s; text-align: center; background: #0e0e0f;
+    }
+    .theme-card:hover { border-color: rgba(255,255,255,0.2); }
+    .theme-card.selected-geek { border-color: #00f5ff; background: rgba(0,245,255,0.06); }
+    .theme-card.selected-religioso { border-color: #DDAF34; background: rgba(221,175,52,0.06); }
+    .theme-card .tc-icon { font-size: 28px; margin-bottom: 6px; }
+    .theme-card .tc-name { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+    .theme-card .tc-sub  { font-size: 11px; color: #444441; margin-top: 3px; }
+    .pdf-preview-wrap { background: #0a0a0b; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px; margin: 16px 0; display: flex; justify-content: center; min-height: 80px; align-items: center; }
+    .pdf-preview-wrap canvas { border-radius: 4px; max-width: 100%; }
+    .btn-pdf { background: linear-gradient(135deg, #DDAF34, #f5c842); color: #0e0e0f; }
+    .btn-pdf:hover { opacity: 0.88; }
   </style>
 </head>
 <body>
@@ -179,6 +197,41 @@
       <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir QR Code</button>
       <button class="btn btn-secondary" onclick="downloadQR()">⬇️ Baixar PNG</button>
       <button class="btn btn-secondary" onclick="copyLink()">📋 Copiar Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal PDF Decorado -->
+<div class="modal-overlay" id="pdf-modal" style="display:none;" onclick="closePdfModal(event)">
+  <div class="modal modal-pdf">
+    <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3>Gerar PDF do Cupom</h3>
+      <button onclick="document.getElementById('pdf-modal').style.display='none'"
+        style="background:none;border:none;color:#666663;cursor:pointer;font-size:20px;">&times;</button>
+    </div>
+    <label style="margin-bottom:10px;display:block;">Tema do PDF</label>
+    <div class="theme-picker">
+      <div class="theme-card selected-geek" id="pdf-theme-geek" onclick="selectPdfTheme('geek')">
+        <div class="tc-icon">🎮</div>
+        <div class="tc-name" style="color:#00f5ff;">Geek / Gamer</div>
+        <div class="tc-sub">Fundo escuro · Neon · Grid</div>
+      </div>
+      <div class="theme-card" id="pdf-theme-religioso" onclick="selectPdfTheme('religioso')">
+        <div class="tc-icon">✝️</div>
+        <div class="tc-name" style="color:#DDAF34;">Religioso</div>
+        <div class="tc-sub">Fundo creme · Dourado · Luz</div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Nome do Cliente <span style="font-weight:400;color:#444441;">(opcional — vazio = genérico)</span></label>
+      <input type="text" id="pdf-client-name" placeholder="Ex: Maria Santos" maxlength="40" oninput="schedulePdfPreview()" />
+    </div>
+    <div class="pdf-preview-wrap" id="pdf-preview-wrap">
+      <span style="color:#444441;font-size:13px;">Carregando preview...</span>
+    </div>
+    <div class="modal-actions no-print" style="margin-top:4px;">
+      <button class="btn btn-pdf" onclick="downloadPdfCoupon()">⬇️ Baixar PDF</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('pdf-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -318,6 +371,7 @@
         <td>${statusBadge}</td>
         <td style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px;" onclick="showQR('${c.code}','${c.theme}','${c.type}',${c.discount_value || 0})">📱 QR Code</button>
+          <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px; color:#DDAF34; border-color:rgba(221,175,52,0.4);" onclick="showPdfModal('${c.code}','${c.theme}','${c.type}',${c.discount_value || 0})">📄 PDF</button>
           <button class="btn btn-danger" onclick="toggleActive('${c.id}', ${c.is_active})">${c.is_active ? 'Desativar' : 'Ativar'}</button>
         </td>
       `;
@@ -379,6 +433,257 @@
 
   function copyLink() {
     navigator.clipboard.writeText(currentQRUrl).then(() => showToast('Link copiado!'));
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // PDF CUPOM DECORADO
+  // ══════════════════════════════════════════════════════════
+  let _pdfCoupon = { code: '', theme: 'geek', type: '', discountValue: 0 };
+  let _pdfTheme  = 'geek';
+  let _pdfPreviewTimer = null;
+
+  function showPdfModal(code, theme, type, discountValue) {
+    _pdfCoupon = { code, theme, type, discountValue };
+    _pdfTheme  = theme;
+    selectPdfTheme(_pdfTheme, false);
+    document.getElementById('pdf-client-name').value = '';
+    document.getElementById('pdf-modal').style.display = 'flex';
+    renderPdfPreview();
+  }
+
+  function closePdfModal(event) {
+    if (event.target === document.getElementById('pdf-modal'))
+      document.getElementById('pdf-modal').style.display = 'none';
+  }
+
+  function selectPdfTheme(theme, rerender = true) {
+    _pdfTheme = theme;
+    document.getElementById('pdf-theme-geek').className      = 'theme-card' + (theme === 'geek' ? ' selected-geek' : '');
+    document.getElementById('pdf-theme-religioso').className = 'theme-card' + (theme === 'religioso' ? ' selected-religioso' : '');
+    if (rerender) renderPdfPreview();
+  }
+
+  function schedulePdfPreview() {
+    clearTimeout(_pdfPreviewTimer);
+    _pdfPreviewTimer = setTimeout(renderPdfPreview, 320);
+  }
+
+  function buildCouponCanvas(W = 794, H = 1123) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      const isGeek = _pdfTheme === 'geek';
+      const clientName = (document.getElementById('pdf-client-name')?.value || '').trim();
+      const { code, type, discountValue } = _pdfCoupon;
+
+      if (isGeek) {
+        ctx.fillStyle = '#050510'; ctx.fillRect(0,0,W,H);
+        ctx.strokeStyle = 'rgba(0,245,255,0.06)'; ctx.lineWidth = 1;
+        for (let x=0;x<W;x+=38){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+        for (let y=0;y<H;y+=38){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+        const g1=ctx.createRadialGradient(W/2,210,0,W/2,210,400);
+        g1.addColorStop(0,'rgba(123,47,255,0.38)');g1.addColorStop(1,'transparent');
+        ctx.fillStyle=g1;ctx.fillRect(0,0,W,H);
+        const g2=ctx.createRadialGradient(W/2,800,0,W/2,800,280);
+        g2.addColorStop(0,'rgba(0,245,255,0.15)');g2.addColorStop(1,'transparent');
+        ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
+        ctx.strokeStyle='rgba(0,245,255,0.22)';ctx.lineWidth=3;
+        _rr(ctx,18,18,W-36,H-36,16,false,true);
+        _corners(ctx,W,H,'#00f5ff');
+      } else {
+        const bg=ctx.createLinearGradient(0,0,0,H);
+        bg.addColorStop(0,'#f8f3e9');bg.addColorStop(1,'#ece3c9');
+        ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+        ctx.strokeStyle='rgba(139,105,20,0.07)';ctx.lineWidth=1;
+        for(let x=0;x<W;x+=48)for(let y=0;y<H;y+=48){ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.stroke();}
+        for(let i=0;i<14;i++){
+          const a=-Math.PI/2+(i/13)*Math.PI,x2=W/2+Math.cos(a)*750,y2=Math.sin(a)*750;
+          const rg=ctx.createLinearGradient(W/2,0,x2,y2);
+          rg.addColorStop(0,'rgba(221,175,52,0.13)');rg.addColorStop(1,'transparent');
+          ctx.fillStyle=rg;ctx.beginPath();ctx.moveTo(W/2,0);
+          const sp=20;
+          ctx.lineTo(x2+Math.cos(a+Math.PI/2)*sp,y2+Math.sin(a+Math.PI/2)*sp);
+          ctx.lineTo(x2-Math.cos(a+Math.PI/2)*sp,y2-Math.sin(a+Math.PI/2)*sp);
+          ctx.closePath();ctx.fill();
+        }
+        ctx.strokeStyle='rgba(139,105,20,0.32)';ctx.lineWidth=2;_rr(ctx,20,20,W-40,H-40,14,false,true);
+        ctx.strokeStyle='rgba(139,105,20,0.13)';ctx.lineWidth=1;_rr(ctx,30,30,W-60,H-60,10,false,true);
+        _ornaments(ctx,W,H,'#8B6914');
+      }
+
+      let cy = 90;
+      ctx.font='62px serif';ctx.textAlign='center';
+      ctx.fillText(isGeek?'🎮':'✝️',W/2,cy);cy+=50;
+      if(isGeek){ctx.fillStyle='#00f5ff';ctx.font='bold 12px monospace';ctx.fillText('FREO FIGURES',W/2,cy);}
+      else{ctx.fillStyle='#8B6914';ctx.font='400 13px serif';ctx.fillText('✦  FREO FIGURES  ✦',W/2,cy);}
+      cy+=22;_div(ctx,W,cy,isGeek);cy+=36;
+
+      if(clientName){
+        if(isGeek){
+          ctx.fillStyle='rgba(0,245,255,0.5)';ctx.font='11px monospace';ctx.textAlign='center';
+          ctx.fillText('// DESTINADO A',W/2,cy);cy+=28;
+          ctx.fillStyle='#ffffff';ctx.font='bold 28px sans-serif';ctx.fillText(clientName.toUpperCase(),W/2,cy);
+        } else {
+          ctx.fillStyle='#8B6914';ctx.font='italic 13px serif';ctx.textAlign='center';
+          ctx.fillText('Um presente especial para',W/2,cy);cy+=32;
+          ctx.fillStyle='#5c3d0e';ctx.font='700 30px serif';ctx.fillText(clientName,W/2,cy);
+        }
+        cy+=36;
+      }
+
+      const b=_benefit(type,discountValue);
+      if(isGeek){
+        ctx.fillStyle='rgba(0,245,255,0.1)';_rr(ctx,W/2-145,cy-16,290,28,6,true,false);
+        ctx.fillStyle='#00f5ff';ctx.font='bold 11px monospace';ctx.textAlign='center';
+        ctx.fillText('⚡  LOOT DESBLOQUEADO',W/2,cy+5);cy+=48;
+        ctx.fillStyle='#ffffff';ctx.font='bold 34px sans-serif';ctx.fillText(b.line1,W/2,cy);cy+=40;
+        if(b.line2){ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='16px sans-serif';ctx.fillText(b.line2,W/2,cy);cy+=30;}
+      } else {
+        ctx.fillStyle='rgba(139,105,20,0.1)';_rr(ctx,W/2-135,cy-16,270,28,14,true,false);
+        ctx.fillStyle='#8B6914';ctx.font='12px serif';ctx.textAlign='center';
+        ctx.fillText('✦  UMA BÊNÇÃO PARA VOCÊ  ✦',W/2,cy+5);cy+=48;
+        ctx.fillStyle='#5c3d0e';ctx.font='bold 34px serif';ctx.fillText(b.line1,W/2,cy);cy+=40;
+        if(b.line2){ctx.fillStyle='#8B6914';ctx.font='italic 16px serif';ctx.fillText(b.line2,W/2,cy);cy+=30;}
+      }
+
+      cy+=14;_div(ctx,W,cy,isGeek);cy+=34;
+      if(isGeek){
+        ctx.fillStyle='rgba(0,0,0,0.45)';_rr(ctx,W/2-165,cy-18,330,64,8,true,false);
+        ctx.strokeStyle='rgba(0,245,255,0.3)';ctx.lineWidth=1;_rr(ctx,W/2-165,cy-18,330,64,8,false,true);
+        ctx.fillStyle='rgba(0,245,255,0.45)';ctx.font='10px monospace';ctx.textAlign='center';ctx.fillText('SEU CÓDIGO',W/2,cy+3);
+        ctx.shadowColor='#00f5ff';ctx.shadowBlur=22;ctx.fillStyle='#00f5ff';
+        ctx.font='bold 34px monospace';ctx.fillText(code,W/2,cy+38);ctx.shadowBlur=0;
+      } else {
+        ctx.fillStyle='rgba(139,105,20,0.07)';_rr(ctx,W/2-155,cy-18,310,64,8,true,false);
+        ctx.strokeStyle='rgba(139,105,20,0.28)';ctx.lineWidth=1;_rr(ctx,W/2-155,cy-18,310,64,8,false,true);
+        ctx.fillStyle='#8B6914';ctx.font='10px serif';ctx.textAlign='center';ctx.fillText('SEU CÓDIGO',W/2,cy+3);
+        ctx.fillStyle='#5c3d0e';ctx.font='bold 34px monospace';ctx.fillText(code,W/2,cy+38);
+      }
+      cy+=78;
+
+      const qrUrl=`https://freofigures.com.br/?_cupom=${encodeURIComponent(code)}`;
+      const qrDiv=document.createElement('div');
+      qrDiv.style.cssText='position:fixed;left:-9999px;top:0;';
+      document.body.appendChild(qrDiv);
+      new QRCode(qrDiv,{text:qrUrl,width:200,height:200,
+        colorDark:isGeek?'#000000':'#3a2a0a',colorLight:'#ffffff',
+        correctLevel:QRCode.CorrectLevel.H});
+      const qrImg=qrDiv.querySelector('img');
+      const done=()=>{
+        const pad=18,qrS=200,boxW=qrS+pad*2,qrX=W/2-boxW/2,qrY=cy;
+        ctx.fillStyle='#ffffff';_rr(ctx,qrX,qrY,boxW,boxW,12,true,false);
+        ctx.strokeStyle=isGeek?'rgba(0,245,255,0.28)':'rgba(139,105,20,0.22)';
+        ctx.lineWidth=1.5;_rr(ctx,qrX,qrY,boxW,boxW,12,false,true);
+        if(qrImg?.complete)ctx.drawImage(qrImg,qrX+pad,qrY+pad,qrS,qrS);
+        qrDiv.remove();cy+=boxW+20;
+        if(isGeek){
+          ctx.fillStyle='rgba(255,255,255,0.30)';ctx.font='13px sans-serif';ctx.textAlign='center';
+          ctx.fillText('Escaneie o QR ou acesse o link · código aplicado automaticamente',W/2,cy);
+        } else {
+          ctx.fillStyle='#8B6914';ctx.font='italic 13px serif';ctx.textAlign='center';
+          ctx.fillText('Escaneie o QR Code ou acesse o link para resgatar',W/2,cy);
+        }
+        cy+=24;
+        ctx.fillStyle=isGeek?'rgba(0,245,255,0.28)':'rgba(139,105,20,0.38)';
+        ctx.font='10px monospace';ctx.textAlign='center';ctx.fillText(qrUrl,W/2,cy);cy+=34;
+        _div(ctx,W,cy,isGeek);cy+=24;
+        if(isGeek){
+          ctx.fillStyle='rgba(0,245,255,0.22)';ctx.font='10px monospace';ctx.textAlign='center';
+          ctx.fillText('FREOFIGURES.COM.BR  ·  FIGURAS & COLECIONÁVEIS',W/2,cy+6);
+        } else {
+          ctx.fillStyle='rgba(139,105,20,0.38)';ctx.font='11px serif';ctx.textAlign='center';
+          ctx.fillText('freofigures.com.br  ·  Figuras & Colecionáveis',W/2,cy+6);
+        }
+        resolve(canvas);
+      };
+      if(qrImg){if(qrImg.complete)done();else{qrImg.onload=done;qrImg.onerror=done;}}
+      else setTimeout(done,250);
+    });
+  }
+
+  function _rr(ctx,x,y,w,h,r,fill,stroke){
+    ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+    if(fill)ctx.fill();if(stroke)ctx.stroke();
+  }
+  function _div(ctx,w,y,isGeek){
+    const g=ctx.createLinearGradient(80,y,w-80,y);
+    const c=isGeek?'rgba(0,245,255,0.35)':'rgba(139,105,20,0.32)';
+    g.addColorStop(0,'transparent');g.addColorStop(0.3,c);g.addColorStop(0.7,c);g.addColorStop(1,'transparent');
+    ctx.strokeStyle=g;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(80,y);ctx.lineTo(w-80,y);ctx.stroke();
+    ctx.fillStyle=isGeek?'#00f5ff':'#DDAF34';ctx.font=isGeek?'12px monospace':'14px serif';
+    ctx.textAlign='center';ctx.fillText(isGeek?'◆':'✦',w/2,y+5);
+  }
+  function _corners(ctx,w,h,color){
+    const s=28,p=22;ctx.strokeStyle=color;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(p,p+s);ctx.lineTo(p,p);ctx.lineTo(p+s,p);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(w-p-s,p);ctx.lineTo(w-p,p);ctx.lineTo(w-p,p+s);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(p,h-p-s);ctx.lineTo(p,h-p);ctx.lineTo(p+s,h-p);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(w-p-s,h-p);ctx.lineTo(w-p,h-p);ctx.lineTo(w-p,h-p-s);ctx.stroke();
+  }
+  function _ornaments(ctx,w,h,color){
+    ctx.fillStyle=color;ctx.font='20px serif';ctx.textAlign='center';ctx.globalAlpha=0.3;
+    ctx.fillText('✦',50,50);ctx.fillText('✦',w-50,50);ctx.fillText('✦',50,h-40);ctx.fillText('✦',w-50,h-40);
+    ctx.globalAlpha=1;
+  }
+  function _benefit(type,v){
+    if(type==='free_product')return{line1:'PRODUTO GRÁTIS',line2:''};
+    if(type==='percent')return{line1:`${v}% DE DESCONTO`,line2:'Aplicado automaticamente'};
+    if(type==='fixed')return{line1:`R$ ${parseFloat(v).toFixed(2).replace('.',',')} OFF`,line2:'Desconto no checkout'};
+    return{line1:'',line2:''};
+  }
+
+  async function renderPdfPreview() {
+    const wrap = document.getElementById('pdf-preview-wrap');
+    if (!wrap) return;
+    wrap.innerHTML = '<span style="color:#444441;font-size:13px;">Gerando preview...</span>';
+    const full = await buildCouponCanvas(794,1123);
+    const wW = wrap.clientWidth - 24;
+    const prev = document.createElement('canvas');
+    prev.width = Math.round(wW); prev.height = Math.round(1123*(wW/794));
+    prev.style.borderRadius = '4px';
+    prev.getContext('2d').drawImage(full,0,0,prev.width,prev.height);
+    wrap.innerHTML = ''; wrap.appendChild(prev);
+  }
+
+  async function downloadPdfCoupon() {
+    showToast('Gerando PDF...');
+    const full = await buildCouponCanvas(794,1123);
+    const pngData = full.toDataURL('image/png');
+    const code = _pdfCoupon.code;
+    const tryPdf = () => _genPdfBlob(pngData, code);
+    if (typeof PDFLib !== 'undefined') { tryPdf(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+    s.onload = tryPdf;
+    s.onerror = () => {
+      const a = document.createElement('a');
+      a.download = `cupom-freo-${code}.png`; a.href = pngData; a.click();
+      showToast('Baixado como PNG (CDN indisponível).');
+    };
+    document.head.appendChild(s);
+  }
+
+  async function _genPdfBlob(pngData, code) {
+    try {
+      const { PDFDocument } = PDFLib;
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([595.28, 841.89]);
+      const b64 = pngData.split(',')[1];
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      const img = await pdfDoc.embedPng(bytes);
+      page.drawImage(img, {x:0,y:0,width:595.28,height:841.89});
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], {type:'application/pdf'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.download = `cupom-freo-${code}.pdf`; a.href = url; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      showToast('PDF baixado!');
+    } catch(e) { showToast('Erro ao gerar PDF.', false); }
   }
 
   </script>
