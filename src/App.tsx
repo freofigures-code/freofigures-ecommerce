@@ -2666,6 +2666,19 @@ export default function App() {
     return <FreoCupom />;
   }
 
+  // Verifica se o produto que está sendo confirmado no modal de cupom excede o
+  // limite máximo de desconto configurado no admin (vale também para "produto grátis").
+  const couponMaxDiscount = activeCoupon && activeCoupon.max_discount_value != null
+    ? Number(activeCoupon.max_discount_value)
+    : null;
+  const couponModalProductPrice = couponModalProduct
+    ? (couponModalProduct.promotional_price !== null && couponModalProduct.promotional_price < couponModalProduct.price
+        ? couponModalProduct.promotional_price
+        : couponModalProduct.price)
+    : 0;
+  const couponExcedeLimite = couponMaxDiscount !== null && couponModalProductPrice > couponMaxDiscount;
+  const couponDiferenca = couponExcedeLimite ? couponModalProductPrice - couponMaxDiscount : 0;
+
   return (
     <div className="min-h-screen">
       {/* Banner de cookies — renderizado uma vez no topo da árvore */}
@@ -2775,6 +2788,18 @@ export default function App() {
                   : activeCoupon.type === 'percent' ? `${activeCoupon.discount_value}% de desconto`
                   : `R$ ${Number(activeCoupon.discount_value).toFixed(2).replace('.', ',')} de desconto`}
               </p>
+              {couponExcedeLimite && (
+                <p style={{
+                  fontFamily: 'ui-monospace, monospace', fontSize: 11.5, lineHeight: 1.5,
+                  color: '#f59e0b', background: 'rgba(245,158,11,0.1)',
+                  border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8,
+                  padding: '10px 12px', marginTop: 10, textAlign: 'left',
+                }}>
+                  ⚠️ Este produto custa {formatPrice(couponModalProductPrice)}, mas o cupom cobre até{' '}
+                  {formatPrice(couponMaxDiscount as number)}. Você pagará a diferença de{' '}
+                  <strong>{formatPrice(couponDiferenca)}</strong> + frete.
+                </p>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 12, flexDirection: 'column' }}>
               <button
