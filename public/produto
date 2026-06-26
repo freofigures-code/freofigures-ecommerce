@@ -523,6 +523,48 @@
 
   <script src="/auth-listener.js"></script>
 
+  <!-- ══════════════════════════════════════════
+       ANALYTICS TRACKER
+  ══════════════════════════════════════════ -->
+  <script>
+  (function() {
+    // Gera ou recupera session_id único por aba/sessão
+    function getSessionId() {
+      var key = 'freo_sid';
+      var sid = sessionStorage.getItem(key);
+      if (!sid) {
+        sid = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+        sessionStorage.setItem(key, sid);
+      }
+      return sid;
+    }
+
+    // Envia evento para Supabase de forma não-bloqueante (fire-and-forget)
+    window.trackEvent = function(eventType, productId, productName) {
+      try {
+        var supabase = window.supabaseClient;
+        if (!supabase) return;
+        var payload = {
+          event_type:   eventType,
+          product_id:   productId   || null,
+          product_name: productName || null,
+          page:         window.location.pathname + window.location.search,
+          session_id:   getSessionId(),
+          referrer:     document.referrer || null,
+          user_agent:   navigator.userAgent ? navigator.userAgent.substring(0, 200) : null
+        };
+        // Fire-and-forget — não bloqueia o fluxo principal
+        supabase.from('analytics_events').insert(payload).then(function(res) {
+          if (res.error) console.warn('[Analytics] erro ao registrar evento:', res.error.message);
+        });
+      } catch(e) {
+        // Nunca deixa analytics quebrar a experiência do usuário
+        console.warn('[Analytics] exceção silenciosa:', e);
+      }
+    };
+  })();
+  </script>
+
   <script>
     var product = null;
     var currentUser = null;
@@ -842,6 +884,10 @@
       var btn = document.getElementById('btn-cart');
       btn.disabled = true;
       btn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div> Adicionando...';
+      // Rastreia clique em adicionar ao carrinho
+      if (window.trackEvent && product) {
+        window.trackEvent('add_to_cart', String(product.id), product.title);
+      }
 
       try {
         var priceNum = getEffectivePrice();
@@ -940,6 +986,10 @@
       var btn = document.getElementById('btn-buynow');
       btn.disabled = true;
       btn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div> Aguarde...';
+      // Rastreia clique em comprar agora
+      if (window.trackEvent && product) {
+        window.trackEvent('buy_now', String(product.id), product.title);
+      }
 
       try {
         var priceNum = getEffectivePrice();
@@ -1535,6 +1585,10 @@
       _origRenderProduct(p);
       loadReviews(p.id);
       loadRelatedProducts(p.id, p.category);
+      // Rastreia visualização de produto
+      if (window.trackEvent) {
+        window.trackEvent('page_view', String(p.id), p.title);
+      }
     };
 
     // ── Produtos Relacionados ────────────────────────────────────
