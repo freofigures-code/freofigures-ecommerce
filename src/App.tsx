@@ -23,6 +23,42 @@ import {
 // COOKIE BANNER
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ANALYTICS TRACKER (fire-and-forget, nunca quebra o app)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getSessionId(): string {
+  const key = 'freo_sid';
+  let sid = sessionStorage.getItem(key);
+  if (!sid) {
+    sid = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+    sessionStorage.setItem(key, sid);
+  }
+  return sid;
+}
+
+function trackEvent(eventType: string, productId?: string, productName?: string): void {
+  try {
+    // @ts-ignore
+    const supabase = window.supabaseClient || window.supabase;
+    if (!supabase) return;
+    const payload = {
+      event_type:   eventType,
+      product_id:   productId   || null,
+      product_name: productName || null,
+      page:         window.location.pathname + window.location.search,
+      session_id:   getSessionId(),
+      referrer:     document.referrer || null,
+      user_agent:   navigator.userAgent ? navigator.userAgent.substring(0, 200) : null,
+    };
+    supabase.from('analytics_events').insert(payload).then((res: any) => {
+      if (res?.error) console.warn('[Analytics]', res.error.message);
+    });
+  } catch (e) {
+    console.warn('[Analytics] silenced:', e);
+  }
+}
+
 const FF_KEY = "ff_cookies";
 
 type CookiePrefs = {
@@ -1455,8 +1491,10 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
   const tags = Array.isArray(product.tags) ? product.tags : typeof product.tags === 'string' ? [product.tags] : [];
   const tag = tags.length > 0 ? tags[0] : null;
 
-  const goToProduct = () => { window.location.href = `/produto?id=${product.id}`; };
-
+  const goToProduct = () => {
+    trackEvent('product_click', String(product.id), product.title);
+    window.location.href = `/produto?id=${product.id}`;
+  };
   return (
     <div className={`group flex flex-col ${compact ? '' : 'bg-freo-dark border border-white/5 hover:border-freo-orange/50 transition-colors'}`}>
       <div
@@ -1487,7 +1525,11 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
             <span className="font-mono text-base md:text-xl font-bold text-freo-orange">{formatPrice(displayPrice)}</span>
           </div>
           <button
-            onClick={event => { event.stopPropagation(); onAddToCart(product); }}
+            onClick={event => {
+              event.stopPropagation();
+              trackEvent('add_to_cart', String(product.id), product.title);
+              onAddToCart(product);
+            }}
             className="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-wider py-3 md:py-3 hover:bg-white transition-colors flex items-center justify-center gap-1.5 md:gap-2 text-xs md:text-sm active:scale-98"
           >
             <ShoppingCart className="w-4 h-4" />
