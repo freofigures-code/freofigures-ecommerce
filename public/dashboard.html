@@ -595,6 +595,66 @@
         </div>
       </div>
     </div>
+
+    <!-- ══════ ANALYTICS PANEL ══════ -->
+    <div class="mt-10" id="analytics-section">
+      <div class="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+        <h2 class="text-xl font-display font-bold uppercase text-freo-orange flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Analytics do Site
+        </h2>
+        <div class="flex gap-1">
+          <button onclick="loadAnalytics(1)"  id="an-period-1"  class="period-btn active">Hoje</button>
+          <button onclick="loadAnalytics(7)"  id="an-period-7"  class="period-btn">7d</button>
+          <button onclick="loadAnalytics(30)" id="an-period-30" class="period-btn">30d</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div class="stat-card">
+          <div class="stat-value text-2xl" id="an-pageviews">—</div>
+          <div class="stat-label">Visualizações de produto</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value text-2xl" id="an-sessions">—</div>
+          <div class="stat-label">Sessões únicas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value text-2xl" id="an-clicks">—</div>
+          <div class="stat-label">Cliques em produtos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value text-2xl" id="an-addcart">—</div>
+          <div class="stat-label">Adicionados ao carrinho</div>
+        </div>
+      </div>
+
+      <!-- Top Produtos Clicados -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-freo-dark border border-white/10 p-6">
+          <h3 class="text-base font-display font-bold uppercase text-freo-orange mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            Top produtos visualizados
+          </h3>
+          <div id="an-top-viewed" class="space-y-2">
+            <div class="text-center py-6"><div class="w-6 h-6 border-2 border-freo-orange/40 border-t-freo-orange rounded-full animate-spin mx-auto"></div></div>
+          </div>
+        </div>
+
+        <div class="bg-freo-dark border border-white/10 p-6">
+          <h3 class="text-base font-display font-bold uppercase text-freo-orange mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Top produtos adicionados ao carrinho
+          </h3>
+          <div id="an-top-cart" class="space-y-2">
+            <div class="text-center py-6"><div class="w-6 h-6 border-2 border-freo-orange/40 border-t-freo-orange rounded-full animate-spin mx-auto"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ══════ FIM ANALYTICS PANEL ══════ -->
+
   </main>
 
   <!-- ══════════════════════════════════════════════════════════════
@@ -975,6 +1035,7 @@
     loadOrdersToShip();
     loadFaturamento(1);
     loadTopProducts();
+    loadAnalytics(1);
   }
 
   // ── Client ─────────────────────────────────────────────────────
@@ -1250,6 +1311,102 @@
           + '</div></div>';
       }).join('');
     } catch(e) { container.innerHTML = '<p class="font-mono text-xs text-white/25 text-center py-4">Tabela order_items não encontrada.</p>'; }
+  }
+
+  // ── Admin: Analytics ───────────────────────────────────────────
+  async function loadAnalytics(days) {
+    // Atualiza botões de período
+    [1, 7, 30].forEach(function(d) {
+      var btn = document.getElementById('an-period-' + d);
+      if (btn) btn.classList.toggle('active', d === days);
+    });
+
+    try {
+      var start = new Date();
+      start.setDate(start.getDate() - days);
+      var startISO = start.toISOString();
+
+      // Busca todos os eventos do período de uma só vez
+      var r = await window.supabaseClient
+        .from('analytics_events')
+        .select('event_type, product_id, product_name, session_id')
+        .gte('created_at', startISO);
+
+      if (r.error) throw r.error;
+      var events = r.data || [];
+
+      // KPIs
+      var pageViews  = events.filter(function(e) { return e.event_type === 'page_view'; }).length;
+      var clicks     = events.filter(function(e) { return e.event_type === 'product_click'; }).length;
+      var addToCart  = events.filter(function(e) { return e.event_type === 'add_to_cart'; }).length;
+      var sessions   = new Set(events.map(function(e) { return e.session_id; }).filter(Boolean)).size;
+
+      document.getElementById('an-pageviews').innerText = pageViews;
+      document.getElementById('an-sessions').innerText  = sessions;
+      document.getElementById('an-clicks').innerText    = clicks;
+      document.getElementById('an-addcart').innerText   = addToCart;
+
+      // Ranking top visualizados
+      var viewMap = {};
+      events.filter(function(e) { return e.event_type === 'page_view' && e.product_id; }).forEach(function(e) {
+        var key = e.product_id;
+        if (!viewMap[key]) viewMap[key] = { name: e.product_name || e.product_id, count: 0 };
+        viewMap[key].count++;
+      });
+      var topViewed = Object.values(viewMap).sort(function(a, b) { return b.count - a.count; }).slice(0, 8);
+
+      var viewContainer = document.getElementById('an-top-viewed');
+      if (topViewed.length === 0) {
+        viewContainer.innerHTML = '<p class="font-mono text-xs text-white/25 text-center py-4">Sem dados no período.</p>';
+      } else {
+        var maxV = topViewed[0].count;
+        viewContainer.innerHTML = topViewed.map(function(p, i) {
+          var pct = Math.round((p.count / maxV) * 100);
+          return '<div class="flex items-center gap-3 py-2 border-b border-white/[0.04] last:border-0">'
+            + '<span class="font-mono text-[10px] text-white/30 w-4 flex-shrink-0">' + (i+1) + '</span>'
+            + '<div class="flex-1 min-w-0">'
+            + '<p class="font-body text-xs font-bold text-white truncate">' + (p.name || '—') + '</p>'
+            + '<div class="flex items-center gap-2 mt-1">'
+            + '<div class="flex-1 bg-white/[0.06] h-1"><div class="h-full bg-freo-orange" style="width:' + pct + '%"></div></div>'
+            + '<span class="font-mono text-[10px] text-freo-orange flex-shrink-0">' + p.count + 'x</span>'
+            + '</div></div></div>';
+        }).join('');
+      }
+
+      // Ranking top adicionados ao carrinho
+      var cartMap = {};
+      events.filter(function(e) { return e.event_type === 'add_to_cart' && e.product_id; }).forEach(function(e) {
+        var key = e.product_id;
+        if (!cartMap[key]) cartMap[key] = { name: e.product_name || e.product_id, count: 0 };
+        cartMap[key].count++;
+      });
+      var topCart = Object.values(cartMap).sort(function(a, b) { return b.count - a.count; }).slice(0, 8);
+
+      var cartContainer = document.getElementById('an-top-cart');
+      if (topCart.length === 0) {
+        cartContainer.innerHTML = '<p class="font-mono text-xs text-white/25 text-center py-4">Sem dados no período.</p>';
+      } else {
+        var maxC = topCart[0].count;
+        cartContainer.innerHTML = topCart.map(function(p, i) {
+          var pct = Math.round((p.count / maxC) * 100);
+          return '<div class="flex items-center gap-3 py-2 border-b border-white/[0.04] last:border-0">'
+            + '<span class="font-mono text-[10px] text-white/30 w-4 flex-shrink-0">' + (i+1) + '</span>'
+            + '<div class="flex-1 min-w-0">'
+            + '<p class="font-body text-xs font-bold text-white truncate">' + (p.name || '—') + '</p>'
+            + '<div class="flex items-center gap-2 mt-1">'
+            + '<div class="flex-1 bg-white/[0.06] h-1"><div class="h-full bg-freo-orange" style="width:' + pct + '%"></div></div>'
+            + '<span class="font-mono text-[10px] text-freo-orange flex-shrink-0">' + p.count + 'x</span>'
+            + '</div></div></div>';
+        }).join('');
+      }
+
+    } catch(e) {
+      console.error('[Analytics] erro ao carregar:', e);
+      document.getElementById('an-pageviews').innerText = '—';
+      document.getElementById('an-sessions').innerText  = '—';
+      document.getElementById('an-clicks').innerText    = '—';
+      document.getElementById('an-addcart').innerText   = '—';
+    }
   }
 
   // ── Modals ─────────────────────────────────────────────────────
