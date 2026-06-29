@@ -1528,7 +1528,10 @@ async function salvarDadosPessoais() {
         });
     
         if (data.status === 'approved') {
-          setTimeout(function() { window.location.href = backUrls.success; }, 1500);
+          setTimeout(function() {
+            window.location.href = backUrls.success
+              + '?payment_id=' + encodeURIComponent(String(data.id || ''));
+          }, 1500);
         } else if (data.status === 'rejected') {
           errEl.innerText = 'Pagamento recusado. Tente outro cartão.';
           errEl.classList.remove('hidden');
@@ -1865,7 +1868,8 @@ async function salvarDadosPessoais() {
 
                   if (data.status === 'approved') {
                     setTimeout(function() {
-                      window.location.href = backUrls.success;
+                      window.location.href = backUrls.success
+                        + '?payment_id=' + encodeURIComponent(String(data.id || ''));
                     }, 2000);
                   }
 
