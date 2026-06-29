@@ -1863,7 +1863,7 @@ async function salvarDadosPessoais() {
                     data.point_of_interaction.transaction_data
                   ) {
                     var txData = data.point_of_interaction.transaction_data;
-                    exibirPixNaPagina(txData.qr_code, txData.qr_code_base64, txData.ticket_url);
+                    exibirPixNaPagina(txData.qr_code, txData.qr_code_base64, txData.ticket_url, orderId, userId);
                   }
 
                   if (data.status === 'approved') {
@@ -2257,7 +2257,60 @@ async function salvarDadosPessoais() {
       }
     }
 
-    function exibirPixNaPagina(qrCode, qrCodeBase64, ticketUrl) {
+    // ─── MONITORAMENTO DO PAGAMENTO PIX (polling) ──────────────────────────────
+    // O Mercado Pago confirma o Pix de forma assíncrona: o cliente paga pelo
+    // banco dele, o MP notifica o n8n (webhook notificacao-pagamento), e o n8n
+    // grava status='pago' na tabela orders. Como esse webhook é servidor→servidor,
+    // ele não tem como avisar o navegador do cliente sozinho — por isso a página
+    // precisa consultar periodicamente se o status já mudou.
+    var pixPollInterval = null;
+    var pixPollAttempts = 0;
+    var PIX_POLL_MAX_ATTEMPTS = 180; // 180 x 5s = 15 minutos de tentativa
+
+    function monitorarPagamentoPix(orderId, userId) {
+      if (!orderId || !userId) return;
+
+      if (pixPollInterval) {
+        clearInterval(pixPollInterval);
+      }
+      pixPollAttempts = 0;
+
+      pixPollInterval = setInterval(async function() {
+        pixPollAttempts++;
+
+        if (pixPollAttempts > PIX_POLL_MAX_ATTEMPTS) {
+          clearInterval(pixPollInterval);
+          pixPollInterval = null;
+          return;
+        }
+
+        try {
+          var r = await window.supabaseClient
+            .from('orders')
+            .select('status, payment_id')
+            .eq('id', orderId)
+            .eq('user_id', userId)
+            .single();
+
+          if (r.error || !r.data) return;
+
+          if (r.data.status === 'pago') {
+            clearInterval(pixPollInterval);
+            pixPollInterval = null;
+
+            var modalEl = document.getElementById('pix-modal-checkout');
+            if (modalEl) modalEl.remove();
+
+            window.location.href = backUrls.success
+              + '?payment_id=' + encodeURIComponent(String(r.data.payment_id || ''));
+          }
+        } catch (e) {
+          console.warn('[PixPoll] erro ao verificar status do pagamento:', e);
+        }
+      }, 5000);
+    }
+
+    function exibirPixNaPagina(qrCode, qrCodeBase64, ticketUrl, orderId, userId) {
       var oldModal = document.getElementById('pix-modal-checkout');
 
       if (oldModal) {
@@ -2431,6 +2484,9 @@ async function salvarDadosPessoais() {
           modal.remove();
         }
       });
+
+      // Começa a monitorar o pagamento — redireciona sozinho quando confirmar
+      monitorarPagamentoPix(orderId, userId);
     }
 
     // ─── SISTEMA DE CUPOM NO CHECKOUT ──────────────────────────────────────────
