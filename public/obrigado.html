@@ -166,7 +166,6 @@
       const urlParams = new URLSearchParams(window.location.search);
       const paymentId = urlParams.get('payment_id');
 
-      // Exibe o payment_id imediatamente como número de referência
       document.getElementById('order-number').innerText = paymentId ? '#' + paymentId : '#---';
 
       if (!paymentId) {
@@ -175,8 +174,6 @@
         return;
       }
 
-      // Busca o pedido na tabela orders pelo payment_id
-      // O n8n já atualizou status='pago' quando o MP notificou
       const { data, error } = await window.supabaseClient
         .from('orders')
         .select('id, total, items, status')
@@ -207,6 +204,28 @@
           + '<span class="font-mono text-freo-light/50">' + formatCurrency(price * qty) + '</span>'
           + '</div>';
       }).join('');
+
+      // Envia evento de compra para o GTM
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ ecommerce: null });
+      window.dataLayer.push({
+        event: 'purchase',
+        ecommerce: {
+          transaction_id: String(paymentId),
+          value: parseFloat(data.total) || 0,
+          currency: 'BRL',
+          items: items.map(function(item) {
+            const qty   = parseInt(item.quantity, 10) || 1;
+            const price = parseFloat(item.price) || 0;
+            return {
+              item_id:   String(item.product_id || item.id || ''),
+              item_name: item.product_name || 'Produto',
+              price:     price,
+              quantity:  qty
+            };
+          })
+        }
+      });
     }
 
     document.addEventListener('DOMContentLoaded', carregarPedido);
