@@ -39,6 +39,14 @@
     }
   </script>
 
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+
   <!-- Confetti JS -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
@@ -150,25 +158,58 @@
       confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
     }, 250);
 
-    // Mock data fetching (in a real scenario, fetch from URL params or localStorage)
-    document.addEventListener('DOMContentLoaded', () => {
-      // Tenta pegar dados do localStorage (salvos no checkout) ou URL
+    function formatCurrency(v) {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(v) || 0);
+    }
+
+    async function carregarPedido() {
       const urlParams = new URLSearchParams(window.location.search);
-      const paymentId = urlParams.get('payment_id') || Math.floor(Math.random() * 90000) + 10000;
-      
-      document.getElementById('order-number').innerText = `#${paymentId}`;
-      
-      // Simula carregamento de itens (idealmente buscaria do Supabase pelo paymentId)
-      setTimeout(() => {
-        document.getElementById('order-total').innerText = 'R$ 1.250,00';
-        document.getElementById('order-items').innerHTML = `
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-freo-light/80">1x Estátua Kratos 1/4</span>
-            <span class="font-mono text-freo-light/50">R$ 1.250,00</span>
-          </div>
-        `;
-      }, 1000);
-    });
+      const paymentId = urlParams.get('payment_id');
+
+      // Exibe o payment_id imediatamente como número de referência
+      document.getElementById('order-number').innerText = paymentId ? '#' + paymentId : '#---';
+
+      if (!paymentId) {
+        document.getElementById('order-items').innerHTML =
+          '<p class="text-sm text-freo-light/40">Detalhes do pedido enviados por e-mail.</p>';
+        return;
+      }
+
+      // Busca o pedido na tabela orders pelo payment_id
+      // O n8n já atualizou status='pago' quando o MP notificou
+      const { data, error } = await window.supabaseClient
+        .from('orders')
+        .select('id, total, items, status')
+        .eq('payment_id', paymentId)
+        .single();
+
+      if (error || !data) {
+        document.getElementById('order-items').innerHTML =
+          '<p class="text-sm text-freo-light/40">Detalhes do pedido enviados por e-mail.</p>';
+        return;
+      }
+
+      document.getElementById('order-total').innerText = formatCurrency(data.total);
+
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      if (items.length === 0) {
+        document.getElementById('order-items').innerHTML =
+          '<p class="text-sm text-freo-light/40">Detalhes do pedido enviados por e-mail.</p>';
+        return;
+      }
+
+      document.getElementById('order-items').innerHTML = items.map(function(item) {
+        const qty   = parseInt(item.quantity, 10) || 1;
+        const price = parseFloat(item.price) || 0;
+        return '<div class="flex justify-between items-center text-sm">'
+          + '<span class="text-freo-light/80">' + qty + 'x ' + (item.product_name || 'Produto') + '</span>'
+          + '<span class="font-mono text-freo-light/50">' + formatCurrency(price * qty) + '</span>'
+          + '</div>';
+      }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', carregarPedido);
   </script>
 </body>
 </html>
