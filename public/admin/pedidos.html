@@ -264,6 +264,11 @@
                 <p class="text-[10px] font-mono text-freo-light/40 uppercase">Telefone</p>
                 <p class="text-sm text-freo-light/80" id="modal-customer-phone">---</p>
               </div>
+
+              <div>
+                <p class="text-[10px] font-mono text-freo-light/40 uppercase">CPF</p>
+                <p class="text-sm text-freo-light/80 font-mono" id="modal-customer-cpf">---</p>
+              </div>
             </div>
           </div>
 
@@ -568,6 +573,11 @@
       document.getElementById('modal-customer-phone').innerText =
         currentOrder.customer_phone ||
         (currentOrder.profiles && currentOrder.profiles.phone) ||
+        'Não informado';
+
+      document.getElementById('modal-customer-cpf').innerText =
+        currentOrder.customer_cpf ||
+        (currentOrder.profiles && currentOrder.profiles.cpf) ||
         'Não informado';
 
       renderShippingAddress();
