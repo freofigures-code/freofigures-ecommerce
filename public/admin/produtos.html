@@ -101,6 +101,25 @@
     #toast.success { background:#1a2e1a; border:1px solid rgba(34,197,94,.4); color:#86efac; }
     #toast.error   { background:#2e1a1a; border:1px solid rgba(239,68,68,.4); color:#fca5a5; }
     .upload-bar { height:3px; background:#DDAF34; width:0%; transition:width .3s; }
+
+    /* Toggle Varejo/B2B */
+    .view-mode-btn { background:transparent; color:rgba(245,245,245,.35); border:none; cursor:pointer; }
+    .view-mode-btn.active-varejo { background:#DDAF34; color:#000; font-weight:700; }
+    .view-mode-btn.active-b2b { background:#3B6E8F; color:#fff; font-weight:700; }
+
+    /* Faixas de preço B2B */
+    .tier-row { display:flex; align-items:center; gap:8px; background:#0D0D0D; border:1px solid rgba(255,255,255,.06); padding:.5rem .6rem; border-radius:2px; }
+    .tier-input { background:transparent; border:none; outline:none; color:#F5F5F5; font-family:ui-monospace,monospace; font-size:.8rem; width:100%; }
+    .tier-del-btn { background:none; border:none; cursor:pointer; color:rgba(239,68,68,.35); flex-shrink:0; display:flex; align-items:center; }
+    .tier-del-btn:hover { color:#ef4444; }
+    .b2b-badge-quote { background:rgba(221,175,52,.12); color:#DDAF34; border:1px solid rgba(221,175,52,.3); }
+
+    /* Partnership requests panel */
+    .partner-row { background:#141414; border:1px solid rgba(255,255,255,.06); padding:1rem; }
+    .partner-status-pending   { background:rgba(245,158,11,.1); color:#f59e0b; border:1px solid rgba(245,158,11,.25); }
+    .partner-status-in_review{ background:rgba(59,130,246,.1); color:#60a5fa; border:1px solid rgba(59,130,246,.25); }
+    .partner-status-approved { background:rgba(34,197,94,.1); color:#4ade80; border:1px solid rgba(34,197,94,.25); }
+    .partner-status-rejected { background:rgba(239,68,68,.1); color:#f87171; border:1px solid rgba(239,68,68,.25); }
   </style>
 </head>
 <body class="text-freo-light font-body antialiased min-h-screen flex flex-col">
@@ -122,6 +141,10 @@
       </div>
       <div class="flex items-center gap-3">
         <span id="admin-badge" class="hidden font-mono text-[10px] bg-freo-orange/10 border border-freo-orange/30 text-freo-orange px-2 py-1 uppercase tracking-widest">Admin</span>
+        <div class="flex border border-white/10 rounded overflow-hidden mr-1">
+          <button onclick="setViewMode('varejo')" id="mode-varejo" class="view-mode-btn font-mono text-xs uppercase tracking-widest px-3 py-2 transition-colors">Varejo</button>
+          <button onclick="setViewMode('b2b')" id="mode-b2b" class="view-mode-btn font-mono text-xs uppercase tracking-widest px-3 py-2 transition-colors">B2B</button>
+        </div>
         <button onclick="openImport()" class="flex items-center gap-2 border border-freo-orange/40 text-freo-orange font-mono text-xs uppercase tracking-widest px-4 py-2 hover:bg-freo-orange hover:text-freo-black transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
           Importar Shopee
@@ -139,6 +162,22 @@
   </div>
 
   <main id="main-content" class="hidden max-w-7xl mx-auto px-6 py-8 w-full flex-1">
+
+    <!-- ══════ PAINEL B2B: Solicitações de Parceria (só aparece em modo B2B) ══════ -->
+    <div id="b2b-partnerships-panel" class="hidden mb-8 border border-white/10 bg-freo-dark">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-white/[0.07]">
+        <h2 class="font-display font-black uppercase text-sm text-white flex items-center gap-2">
+          <svg class="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 3c0 1.657-3.134 3-7 3s-7-1.343-7-3"/></svg>
+          Solicitações de Parceria/Fornecedor
+          <span id="partnerships-badge" class="font-mono text-[10px] bg-freo-orange text-freo-black px-2 py-0.5 rounded-full font-bold">0</span>
+        </h2>
+      </div>
+      <div id="partnerships-list" class="p-5 space-y-3"></div>
+      <div id="partnerships-empty" class="hidden p-8 text-center">
+        <p class="font-mono text-xs text-white/25">Nenhuma solicitação de parceria ainda.</p>
+      </div>
+    </div>
+
     <div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
       <div class="flex gap-2 flex-wrap">
         <button onclick="filterStatus('all')" id="filter-all" class="filter-btn active font-mono text-xs uppercase tracking-widest px-3 py-1.5 border border-freo-orange text-freo-orange">Todos</button>
@@ -180,7 +219,8 @@
         <button onclick="showTab('tab-basic')" id="btn-tab-basic" class="form-tab active py-3 mr-6 font-mono text-xs uppercase tracking-widest text-freo-orange border-b-2 border-freo-orange">Básico</button>
         <button onclick="showTab('tab-images')" id="btn-tab-images" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Imagens</button>
         <button onclick="showTab('tab-variants')" id="btn-tab-variants" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Variantes</button>
-        <button onclick="showTab('tab-seo')" id="btn-tab-seo" class="form-tab py-3 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">SEO</button>
+        <button onclick="showTab('tab-seo')" id="btn-tab-seo" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">SEO</button>
+        <button onclick="showTab('tab-b2b')" id="btn-tab-b2b" class="form-tab py-3 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">B2B</button>
       </div>
 
       <div class="flex-1 overflow-y-auto">
@@ -401,6 +441,39 @@
           </div>
         </div>
 
+        <!-- ABA B2B -->
+        <div id="tab-b2b" class="form-tab-content hidden p-6 space-y-5">
+
+          <div class="flex items-start gap-3 p-4 border" style="background:rgba(59,110,143,.06);border-color:rgba(59,110,143,.25)">
+            <svg class="w-4 h-4 flex-shrink-0 mt-0.5" style="color:#3B6E8F" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p class="font-mono text-xs text-white/40 leading-relaxed">Configure aqui como este produto aparece no catálogo B2B (freofigures.com.br/b2b.html). Salvo separadamente do produto — use o botão específico abaixo.</p>
+          </div>
+
+          <div>
+            <label class="fl">Modo de venda no B2B</label>
+            <select id="f-sale-mode" class="fi">
+              <option value="normal">Normal — preço por faixa de quantidade</option>
+              <option value="quote_only">Somente cotação via WhatsApp</option>
+            </select>
+            <p id="sale-mode-hint" class="font-mono text-[10px] text-white/20 mt-1.5"></p>
+          </div>
+
+          <div id="tiers-editor-wrap">
+            <div class="flex items-center justify-between mb-2">
+              <label class="fl mb-0">Faixas de preço por quantidade</label>
+              <span id="tiers-save-status" class="font-mono text-[10px] text-white/20"></span>
+            </div>
+            <div id="tiers-list" class="space-y-2"></div>
+            <button onclick="addTier()" type="button" class="w-full mt-2 border border-dashed border-white/10 py-2.5 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors">
+              + Adicionar faixa
+            </button>
+            <button onclick="saveTiers()" id="save-tiers-btn" type="button" class="w-full mt-3 py-2.5 font-mono text-xs uppercase tracking-widest transition-colors" style="background:#3B6E8F;color:#fff">
+              Salvar faixas de preço
+            </button>
+          </div>
+
+        </div>
+
       </div>
 
       <!-- Footer -->
@@ -428,6 +501,8 @@
   var editingProductId = null;
   var currentImages = [];
   var currentTags = [];
+  var currentViewMode = 'varejo'; // 'varejo' | 'b2b'
+  var currentTiers = []; // faixas de preço do produto em edição, formato: [{id, min_qty, max_qty, unit_price, _isNew}]
 
   /*
     Formato interno de currentVariants:
@@ -458,8 +533,97 @@
       return;
     }
     document.getElementById('admin-badge').classList.remove('hidden');
+    setViewMode('varejo');
     loadProducts();
   });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TOGGLE VAREJO / B2B
+  // ─────────────────────────────────────────────────────────────────────────
+  function setViewMode(mode) {
+    currentViewMode = mode;
+    var btnVarejo = document.getElementById('mode-varejo');
+    var btnB2b = document.getElementById('mode-b2b');
+    btnVarejo.classList.toggle('active-varejo', mode === 'varejo');
+    btnB2b.classList.toggle('active-b2b', mode === 'b2b');
+
+    var panel = document.getElementById('b2b-partnerships-panel');
+    if (mode === 'b2b') {
+      panel.classList.remove('hidden');
+      loadPartnerships();
+    } else {
+      panel.classList.add('hidden');
+    }
+    renderList();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SOLICITAÇÕES DE PARCERIA (b2b_partnership_requests)
+  // ─────────────────────────────────────────────────────────────────────────
+  async function loadPartnerships() {
+    var list = document.getElementById('partnerships-list');
+    var empty = document.getElementById('partnerships-empty');
+    try {
+      var r = await window.supabaseClient
+        .from('b2b_partnership_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (r.error) throw r.error;
+      var rows = r.data || [];
+      document.getElementById('partnerships-badge').innerText = rows.filter(function(x) { return x.status === 'pending'; }).length;
+
+      if (rows.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      list.innerHTML = rows.map(renderPartnerRow).join('');
+    } catch (e) {
+      list.innerHTML = '<p class="font-mono text-xs text-red-400/60">Erro ao carregar solicitações: ' + e.message + '</p>';
+    }
+  }
+
+  function renderPartnerRow(p) {
+    var statusLabel = { pending: 'Pendente', in_review: 'Em análise', approved: 'Aprovado', rejected: 'Rejeitado' };
+    var date = new Date(p.created_at).toLocaleDateString('pt-BR');
+    return '<div class="partner-row">'
+      + '<div class="flex items-start justify-between gap-4 flex-wrap">'
+      + '<div class="flex-1 min-w-[240px]">'
+      + '<div class="flex items-center gap-2 mb-1">'
+      + '<p class="font-display font-bold text-sm text-white">' + escapeHTMLAdmin(p.company_name) + '</p>'
+      + '<span class="font-mono text-[9px] px-1.5 py-0.5 uppercase partner-status-' + p.status + '">' + (statusLabel[p.status] || p.status) + '</span>'
+      + '</div>'
+      + '<p class="font-mono text-xs text-white/40">CNPJ: ' + escapeHTMLAdmin(p.cnpj) + ' · ' + date + '</p>'
+      + '<p class="font-mono text-xs text-white/40 mt-1">' + escapeHTMLAdmin(p.contact_name) + ' · ' + escapeHTMLAdmin(p.email) + ' · ' + escapeHTMLAdmin(p.phone) + '</p>'
+      + (p.segment ? '<p class="font-mono text-xs text-white/30 mt-1">Segmento: ' + escapeHTMLAdmin(p.segment) + '</p>' : '')
+      + (p.message ? '<p class="font-mono text-xs text-white/30 mt-2 border-l-2 border-white/10 pl-2">' + escapeHTMLAdmin(p.message) + '</p>' : '')
+      + '</div>'
+      + '<div class="flex flex-col gap-1.5 flex-shrink-0">'
+      + '<select class="fi py-1.5 text-xs" style="width:140px" onchange="updatePartnerStatus(\'' + p.id + '\', this.value)">'
+      + ['pending','in_review','approved','rejected'].map(function(s) {
+          return '<option value="' + s + '"' + (p.status === s ? ' selected' : '') + '>' + statusLabel[s] + '</option>';
+        }).join('')
+      + '</select>'
+      + '</div>'
+      + '</div></div>';
+  }
+
+  async function updatePartnerStatus(id, newStatus) {
+    try {
+      var r = await window.supabaseClient.from('b2b_partnership_requests').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
+      if (r.error) throw r.error;
+      showToast('Status atualizado.', 'success');
+      loadPartnerships();
+    } catch (e) {
+      showToast('Erro ao atualizar status: ' + e.message, 'error');
+    }
+  }
+
+  function escapeHTMLAdmin(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // PRODUTOS
@@ -504,10 +668,18 @@
       var imgs = p.images || [];
       var thumb = imgs.length > 0 ? imgs[0] : null;
       var hasPromo = p.promotional_price && p.promotional_price < p.price;
+      var isQuoteOnly = p.sale_mode === 'quote_only';
+      var b2bBadge = '';
+      if (currentViewMode === 'b2b') {
+        b2bBadge = isQuoteOnly
+          ? '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase b2b-badge-quote">Sob cotação</span>'
+          : '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase" style="background:rgba(59,110,143,.15);color:#5A8FB0;border:1px solid rgba(59,110,143,.3)">Normal B2B</span>';
+      }
       return '<div class="product-card" onclick="openForm(\'' + p.id + '\')">'
         + '<div class="relative aspect-square bg-freo-black overflow-hidden">'
         + (thumb ? '<img src="' + thumb + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">'
                  : '<div class="w-full h-full flex items-center justify-center"><svg class="w-12 h-12 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>')
+        + b2bBadge
         + '<span class="absolute top-2 right-2 font-mono text-[9px] px-1.5 py-0.5 uppercase ' + (p.is_active ? 'badge-active' : 'badge-inactive') + '">' + (p.is_active ? 'Ativo' : 'Inativo') + '</span>'
         + (imgs.length > 1 ? '<span class="absolute bottom-2 left-2 font-mono text-[9px] bg-black/60 text-white/60 px-1.5 py-0.5">' + imgs.length + ' fotos</span>' : '')
         + '</div><div class="p-3">'
@@ -575,6 +747,9 @@
       currentImages = Array.isArray(p.images) ? p.images.slice() : [];
       currentTags = Array.isArray(p.tags) ? p.tags.slice() : [];
       currentVariants = normalizeVariantsFromDB(p.variants);
+      document.getElementById('f-sale-mode').value = p.sale_mode || 'normal';
+      updateSaleModeHint();
+      loadTiersForProduct(p.id);
 
       // Detecta se video_url é upload direto ou YouTube
       var savedVideo = p.video_url || '';
@@ -597,6 +772,10 @@
       document.getElementById('f-active').checked = true;
       document.getElementById('seo-title-count').innerText = '0/60';
       document.getElementById('seo-desc-count').innerText = '0/160';
+      document.getElementById('f-sale-mode').value = 'normal';
+      updateSaleModeHint();
+      currentTiers = [];
+      renderTiersUI();
 
       currentVideoUrl = null;
       renderVideoUI();
@@ -788,6 +967,166 @@
     }).join('');
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // B2B: MODO DE VENDA + FAIXAS DE PREÇO
+  // ─────────────────────────────────────────────────────────────────────────
+  function updateSaleModeHint() {
+    var val = document.getElementById('f-sale-mode').value;
+    var hint = document.getElementById('sale-mode-hint');
+    hint.innerText = val === 'quote_only'
+      ? 'Este produto NÃO mostrará preço no /b2b.html — só um botão para pedir cotação via WhatsApp.'
+      : 'Este produto mostrará a tabela de faixas de preço abaixo para clientes PJ.';
+  }
+  document.getElementById('f-sale-mode').addEventListener('change', updateSaleModeHint);
+
+  async function loadTiersForProduct(productId) {
+    document.getElementById('tiers-save-status').innerText = 'Carregando...';
+    try {
+      var r = await window.supabaseClient
+        .from('product_price_tiers')
+        .select('*')
+        .eq('product_id', productId)
+        .order('min_qty', { ascending: true });
+      if (r.error) throw r.error;
+      currentTiers = (r.data || []).map(function(t) {
+        return { id: t.id, min_qty: t.min_qty, max_qty: t.max_qty, unit_price: t.unit_price, _isNew: false, _deleted: false };
+      });
+      document.getElementById('tiers-save-status').innerText = '';
+      renderTiersUI();
+    } catch (e) {
+      document.getElementById('tiers-save-status').innerText = 'Erro ao carregar faixas.';
+      showToast('Erro ao carregar faixas de preço: ' + e.message, 'error');
+    }
+  }
+
+  function addTier() {
+    currentTiers.push({ id: null, min_qty: '', max_qty: '', unit_price: '', _isNew: true, _deleted: false });
+    renderTiersUI();
+  }
+
+  function removeTier(i) {
+    if (currentTiers[i].id) {
+      // Já existe no banco: marca para deletar no próximo save, mas some da UI
+      currentTiers[i]._deleted = true;
+    } else {
+      currentTiers.splice(i, 1);
+    }
+    renderTiersUI();
+  }
+
+  function updateTierField(i, field, value) {
+    currentTiers[i][field] = value;
+  }
+
+  function renderTiersUI() {
+    var list = document.getElementById('tiers-list');
+    var visible = currentTiers.filter(function(t) { return !t._deleted; });
+
+    if (visible.length === 0) {
+      list.innerHTML = '<p class="font-mono text-xs text-white/20 py-2">Nenhuma faixa cadastrada. Sem faixas, o catálogo B2B mostra o preço normal do produto.</p>';
+      return;
+    }
+
+    list.innerHTML = currentTiers.map(function(t, i) {
+      if (t._deleted) return '';
+      return '<div class="tier-row">'
+        + '<div style="width:70px"><input type="number" min="1" class="tier-input" placeholder="Mín." value="' + (t.min_qty !== '' ? t.min_qty : '') + '" oninput="updateTierField(' + i + ',\'min_qty\',this.value)"></div>'
+        + '<span class="font-mono text-xs text-white/20">a</span>'
+        + '<div style="width:70px"><input type="number" min="1" class="tier-input" placeholder="Máx. (vazio=∞)" value="' + (t.max_qty !== null && t.max_qty !== undefined ? t.max_qty : '') + '" oninput="updateTierField(' + i + ',\'max_qty\',this.value)"></div>'
+        + '<span class="font-mono text-xs text-white/20">un. →</span>'
+        + '<div style="flex:1"><input type="number" min="0" step="0.01" class="tier-input" placeholder="Preço unitário R$" value="' + (t.unit_price !== '' ? t.unit_price : '') + '" oninput="updateTierField(' + i + ',\'unit_price\',this.value)"></div>'
+        + '<button type="button" class="tier-del-btn" onclick="removeTier(' + i + ')">'
+        + '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button></div>';
+    }).join('');
+  }
+
+  async function saveTiers() {
+    var btn = document.getElementById('save-tiers-btn');
+    var statusEl = document.getElementById('tiers-save-status');
+    btn.innerText = 'Salvando...'; btn.disabled = true;
+
+    try {
+      // 1. Se o produto ainda não existe (novo), salva o produto primeiro pra gerar o ID.
+      if (!editingProductId) {
+        var title = document.getElementById('f-title').value.trim();
+        var priceRaw = document.getElementById('f-price').value;
+        if (!title || priceRaw === '' || isNaN(parseFloat(priceRaw))) {
+          showToast('Preencha título e preço na aba Básico antes de salvar as faixas — o produto precisa existir primeiro.', 'error');
+          showTab('tab-basic');
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+        showToast('Salvando produto primeiro (necessário para vincular as faixas)...', 'success');
+        await saveProductCore();
+        if (!editingProductId) {
+          // saveProductCore falhou e já mostrou o toast de erro
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+      }
+
+      var productId = editingProductId;
+
+      // 2. Valida faixas antes de mandar pro banco
+      var toInsert = [];
+      var toUpdate = [];
+      var toDeleteIds = [];
+
+      for (var i = 0; i < currentTiers.length; i++) {
+        var t = currentTiers[i];
+        if (t._deleted) {
+          if (t.id) toDeleteIds.push(t.id);
+          continue;
+        }
+        var minQty = parseInt(t.min_qty, 10);
+        var maxQty = (t.max_qty === '' || t.max_qty === null || t.max_qty === undefined) ? null : parseInt(t.max_qty, 10);
+        var unitPrice = parseFloat(t.unit_price);
+
+        if (isNaN(minQty) || minQty <= 0) {
+          showToast('Faixa ' + (i+1) + ': quantidade mínima inválida.', 'error');
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+        if (maxQty !== null && maxQty < minQty) {
+          showToast('Faixa ' + (i+1) + ': quantidade máxima não pode ser menor que a mínima.', 'error');
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+        if (isNaN(unitPrice) || unitPrice <= 0) {
+          showToast('Faixa ' + (i+1) + ': preço unitário inválido.', 'error');
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+
+        var row = { product_id: productId, min_qty: minQty, max_qty: maxQty, unit_price: unitPrice, is_active: true };
+        if (t.id) { row.id = t.id; toUpdate.push(row); }
+        else { toInsert.push(row); }
+      }
+
+      // 3. Aplica no banco: deletes, updates, inserts
+      if (toDeleteIds.length > 0) {
+        var rDel = await window.supabaseClient.from('product_price_tiers').delete().in('id', toDeleteIds);
+        if (rDel.error) throw rDel.error;
+      }
+      for (var u = 0; u < toUpdate.length; u++) {
+        var rUpd = await window.supabaseClient.from('product_price_tiers').update(toUpdate[u]).eq('id', toUpdate[u].id);
+        if (rUpd.error) throw rUpd.error;
+      }
+      if (toInsert.length > 0) {
+        var rIns = await window.supabaseClient.from('product_price_tiers').insert(toInsert);
+        if (rIns.error) throw rIns.error;
+      }
+
+      showToast('Faixas de preço salvas!', 'success');
+      await loadTiersForProduct(productId);
+    } catch (e) {
+      showToast('Erro ao salvar faixas: ' + e.message, 'error');
+    } finally {
+      btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+    }
+  }
+
   // ─── SEO ──────────────────────────────────────────────────────────────────
   function updateSEOCount(input, countId, max) { document.getElementById(countId).innerText = input.value.length + '/' + max; updateSEOPreview(); }
   function updateSEOPreview() {
@@ -804,21 +1143,21 @@
   // ─────────────────────────────────────────────────────────────────────────
   // SALVAR
   // ─────────────────────────────────────────────────────────────────────────
-  async function saveProduct() {
+  // Núcleo de validação + gravação do produto, reaproveitável pelo botão
+  // "Salvar" principal E pelo botão "Salvar faixas de preço" (quando o
+  // produto ainda não tem ID). Retorna true em sucesso, false em falha.
+  // Efeito colateral: se criar produto novo, seta editingProductId com o ID gerado.
+  async function saveProductCore() {
     var title = document.getElementById('f-title').value.trim();
     var priceRaw = document.getElementById('f-price').value;
     var price = parseFloat(priceRaw);
 
-    if (!title) { showToast('Informe o título do produto.', 'error'); showTab('tab-basic'); return; }
-    if (priceRaw === '' || isNaN(price) || price < 0) { showToast('Informe um preço válido.', 'error'); showTab('tab-basic'); return; }
-
-    var btn = document.getElementById('form-save-btn');
-    btn.innerText = 'Salvando...'; btn.disabled = true;
+    if (!title) { showToast('Informe o título do produto.', 'error'); showTab('tab-basic'); return false; }
+    if (priceRaw === '' || isNaN(price) || price < 0) { showToast('Informe um preço válido.', 'error'); showTab('tab-basic'); return false; }
 
     var promoPrice = parseFloat(document.getElementById('f-promo').value);
     promoPrice = isNaN(promoPrice) ? null : promoPrice;
 
-    // Monta payload das variantes limpando entradas vazias
     var variantsPayload = currentVariants
       .filter(function(v) { return v.name || (v.options && v.options.length > 0); })
       .map(function(v) {
@@ -846,23 +1185,45 @@
       variants: variantsPayload,
       seo_title: document.getElementById('f-seo-title').value.trim() || null,
       seo_description: document.getElementById('f-seo-desc').value.trim() || null,
-      is_active: document.getElementById('f-active').checked
+      is_active: document.getElementById('f-active').checked,
+      sale_mode: document.getElementById('f-sale-mode').value || 'normal'
     };
 
     try {
-      var r = editingProductId
-        ? await window.supabaseClient.from('products').update(payload).eq('id', editingProductId)
-        : await window.supabaseClient.from('products').insert(payload);
-      if (r.error) throw r.error;
+      if (editingProductId) {
+        var rUpd = await window.supabaseClient.from('products').update(payload).eq('id', editingProductId);
+        if (rUpd.error) throw rUpd.error;
+      } else {
+        var rIns = await window.supabaseClient.from('products').insert(payload).select().single();
+        if (rIns.error) throw rIns.error;
+        editingProductId = rIns.data.id;
+        document.getElementById('form-title').innerText = 'Editar Produto';
+        document.getElementById('form-subtitle').innerText = 'ID: ' + editingProductId;
+        document.getElementById('form-delete-btn').classList.remove('hidden');
+      }
+      return true;
+    } catch (e) {
+      console.error('saveProductCore error:', e);
+      showToast('Erro ao salvar: ' + (e.message || JSON.stringify(e)), 'error');
+      return false;
+    }
+  }
+
+  // Botão "Salvar" principal do form — mesmo comportamento de antes,
+  // agora usando saveProductCore() por baixo.
+  async function saveProduct() {
+    var btn = document.getElementById('form-save-btn');
+    btn.innerText = 'Salvando...'; btn.disabled = true;
+
+    var ok = await saveProductCore();
+
+    if (ok) {
       showToast(editingProductId ? 'Produto atualizado!' : 'Produto criado!', 'success');
       closeForm(); loadProducts();
-    } catch(e) {
-      console.error('saveProduct error:', e);
-      showToast('Erro ao salvar: ' + (e.message || JSON.stringify(e)), 'error');
-    } finally {
-      btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar';
-      btn.disabled = false;
     }
+
+    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar';
+    btn.disabled = false;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
