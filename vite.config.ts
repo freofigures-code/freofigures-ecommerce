@@ -15,6 +15,14 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+          b2b: path.resolve(__dirname, 'b2b.html'),
+        },
+      },
+    },
     server: {
       allowedHosts: ['freofigures.com.br', 'www.freofigures.com.br'],
     },
