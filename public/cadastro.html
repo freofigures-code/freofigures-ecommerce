@@ -108,6 +108,19 @@
       50%       { border-color: #DDAF34; box-shadow: 0 0 0 3px rgba(221,175,52,0.25); }
     }
     .checkbox-alert { animation: pulse-border 0.5s ease 2; }
+
+    /* ── Toggle PF/PJ ── */
+    .account-tab {
+      background: transparent;
+      color: rgba(245,245,245,0.4);
+      cursor: pointer;
+      border: none;
+    }
+    .account-tab.active {
+      background: #DDAF34;
+      color: #0A0A0A;
+      font-weight: 700;
+    }
   </style>
 </head>
 
@@ -146,6 +159,22 @@
       </div>
 
       <form id="signup-form" class="space-y-4">
+        <!-- ── Toggle PF / PJ ── -->
+        <div class="flex border border-white/10 bg-freo-black/40 mb-1">
+          <button
+            type="button"
+            id="tab-pf"
+            onclick="setAccountType('pf')"
+            class="account-tab active flex-1 py-2.5 text-xs font-mono uppercase tracking-widest transition-colors"
+          >Pessoa Física</button>
+          <button
+            type="button"
+            id="tab-pj"
+            onclick="setAccountType('pj')"
+            class="account-tab flex-1 py-2.5 text-xs font-mono uppercase tracking-widest transition-colors"
+          >Empresa (B2B)</button>
+        </div>
+
         <div>
           <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Nome completo</label>
           <input
@@ -155,6 +184,46 @@
             class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm"
             placeholder="Seu nome"
           />
+        </div>
+
+        <!-- ── Campos PJ (ocultos por padrão) ── -->
+        <div id="pj-fields" class="hidden space-y-4">
+          <div>
+            <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">CNPJ</label>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                id="cnpj"
+                maxlength="18"
+                class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm"
+                placeholder="00.000.000/0000-00"
+                oninput="maskCNPJ(this)"
+                onblur="buscarCNPJ()"
+              />
+            </div>
+            <p id="cnpj-searching" class="hidden text-[11px] font-mono text-freo-light/40 mt-1">Consultando CNPJ...</p>
+            <p id="cnpj-error" class="hidden text-[11px] font-mono text-red-400 mt-1"></p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Razão Social</label>
+            <input
+              type="text"
+              id="company-name"
+              class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm"
+              placeholder="Preenchido automaticamente"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Nome Fantasia <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(opcional)</span></label>
+            <input
+              type="text"
+              id="trade-name"
+              class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-orange transition-colors font-mono text-sm"
+              placeholder="Preenchido automaticamente"
+            />
+          </div>
         </div>
 
         <div>
@@ -285,6 +354,64 @@
       input.value = v;
     }
 
+    // ── Toggle PF / PJ ──────────────────────────────────────────
+    let currentAccountType = 'pf';
+
+    function setAccountType(type) {
+      currentAccountType = type;
+      document.getElementById('tab-pf').classList.toggle('active', type === 'pf');
+      document.getElementById('tab-pj').classList.toggle('active', type === 'pj');
+      document.getElementById('pj-fields').classList.toggle('hidden', type !== 'pj');
+    }
+
+    // ── Máscara CNPJ ────────────────────────────────────────────
+    function maskCNPJ(input) {
+      let v = input.value.replace(/\D/g, '').substring(0, 14);
+      if (v.length > 12) {
+        v = v.substring(0,2)+'.'+v.substring(2,5)+'.'+v.substring(5,8)+'/'+v.substring(8,12)+'-'+v.substring(12);
+      } else if (v.length > 8) {
+        v = v.substring(0,2)+'.'+v.substring(2,5)+'.'+v.substring(5,8)+'/'+v.substring(8);
+      } else if (v.length > 5) {
+        v = v.substring(0,2)+'.'+v.substring(2,5)+'.'+v.substring(5);
+      } else if (v.length > 2) {
+        v = v.substring(0,2)+'.'+v.substring(2);
+      }
+      input.value = v;
+    }
+
+    // ── Busca dados do CNPJ na BrasilAPI (mesma API já usada no checkout para CEP) ──
+    async function buscarCNPJ() {
+      const cnpjRaw = document.getElementById('cnpj').value.replace(/\D/g, '');
+      const searchingEl = document.getElementById('cnpj-searching');
+      const errorEl = document.getElementById('cnpj-error');
+
+      errorEl.classList.add('hidden');
+
+      if (cnpjRaw.length !== 14) {
+        if (cnpjRaw.length > 0) {
+          errorEl.innerText = 'CNPJ deve ter 14 dígitos.';
+          errorEl.classList.remove('hidden');
+        }
+        return;
+      }
+
+      searchingEl.classList.remove('hidden');
+
+      try {
+        const r = await fetch('https://brasilapi.com.br/api/cnpj/v1/' + cnpjRaw);
+        if (!r.ok) throw new Error('CNPJ não encontrado');
+        const d = await r.json();
+
+        document.getElementById('company-name').value = d.razao_social || '';
+        document.getElementById('trade-name').value = d.nome_fantasia || '';
+      } catch (e) {
+        errorEl.innerText = 'Não foi possível validar este CNPJ. Você pode preencher a Razão Social manualmente.';
+        errorEl.classList.remove('hidden');
+      }
+
+      searchingEl.classList.add('hidden');
+    }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -324,6 +451,29 @@
         return;
       }
 
+      // ── Validações extras para PJ ──
+      let cnpjClean = '';
+      let companyName = '';
+      let tradeName = '';
+
+      if (currentAccountType === 'pj') {
+        cnpjClean = document.getElementById('cnpj').value.replace(/\D/g, '');
+        companyName = document.getElementById('company-name').value.trim();
+        tradeName = document.getElementById('trade-name').value.trim();
+
+        if (cnpjClean.length !== 14) {
+          errorDiv.innerText = 'Informe um CNPJ válido com 14 dígitos.';
+          errorDiv.classList.remove('hidden');
+          return;
+        }
+
+        if (!companyName) {
+          errorDiv.innerText = 'Informe a Razão Social da empresa.';
+          errorDiv.classList.remove('hidden');
+          return;
+        }
+      }
+
       submitBtn.innerHTML = '<div class="w-5 h-5 border-2 border-freo-black/30 border-t-freo-black rounded-full animate-spin"></div>';
       submitBtn.disabled = true;
 
@@ -336,12 +486,36 @@
             data: {
               full_name: name,
               name: name,
-              phone: phone
+              phone: phone,
+              account_type: currentAccountType
             }
           }
         });
 
         if (error) throw error;
+
+        // ── Grava dados de PJ no profiles (upsert é seguro mesmo se um trigger já criou a linha) ──
+        if (currentAccountType === 'pj' && data.user) {
+          const { error: profileError } = await supabaseClient
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              name: name,
+              phone: phone,
+              email: email,
+              account_type: 'pj',
+              cnpj: cnpjClean,
+              company_name: companyName,
+              trade_name: tradeName || null,
+              b2b_approved_at: new Date().toISOString()
+            });
+
+          if (profileError) {
+            console.warn('Aviso: erro ao salvar dados PJ no profile:', profileError.message);
+            // Não bloqueia o cadastro — a conta de autenticação já foi criada com sucesso.
+            // Os dados PJ podem ser completados depois pelo usuário ou por você via admin.
+          }
+        }
 
         successDiv.innerText = 'Conta criada com sucesso! Enviamos um link de confirmação para o seu e-mail. Verifique sua caixa de entrada e também o spam.';
         successDiv.classList.remove('hidden');
