@@ -456,7 +456,8 @@ export default function BApp() {
   useEffect(() => {
     const handleAuthData = (e: any) => {
       const p = e.detail.profile;
-      if (!p || p.account_type !== 'pj') {
+      const isAdmin = !!(p && p.is_admin === true);
+      if (!p || (p.account_type !== 'pj' && !isAdmin)) {
         setAuthState('not_pj');
         return;
       }
