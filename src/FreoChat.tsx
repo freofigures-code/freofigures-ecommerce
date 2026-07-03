@@ -40,6 +40,13 @@ type Produto = {
   variante?: string | null;
 };
 
+type CtaCard = {
+  titulo: string;
+  descricao?: string;
+  link: string;
+  label_botao?: string;
+};
+
 type Message = {
   id: string;
   role: 'user' | 'bot';
@@ -47,6 +54,7 @@ type Message = {
   time: string;
   imagePreview?: string;
   produtos?: Produto[] | null;
+  cta?: CtaCard | null;
 };
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -179,6 +187,30 @@ const ProductCard = ({
       </motion.div>
     );
   };
+
+// ─── CARD DE CTA (ex: "Ver Catálogo Completo") ──────────────────────────────
+
+const CtaCardView = ({ cta }: { cta: CtaCard }) => (
+  <motion.div
+    className="ff-cta-card"
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ type: 'spring', stiffness: 340, damping: 26 }}
+  >
+    <div className="ff-cta-body">
+      <div className="ff-cta-titulo">{cta.titulo}</div>
+      {cta.descricao && <div className="ff-cta-desc">{cta.descricao}</div>}
+    </div>
+    <button
+      className="ff-cta-btn"
+      onClick={() => window.open(cta.link, '_blank', 'noopener,noreferrer')}
+    >
+      <span>{cta.label_botao || 'Ver mais'}</span>
+      <ExternalLink size={12} />
+    </button>
+  </motion.div>
+);
+
 // ─── PARSE DA RESPOSTA DO N8N ─────────────────────────────────────────────────
 
 // ─── PARSE DA RESPOSTA DO N8N ─────────────────────────────────────────────────
@@ -197,15 +229,24 @@ const ProductCard = ({
 //  Formato D — campo produtos explícito:
 //    { reply: "...", produtos: [{nome, imagem, link, preco}] }
 
-const parseN8nResponse = (data: any): { text: string; produtos: Produto[] | null } => {
+const parseN8nResponse = (data: any): { text: string; produtos: Produto[] | null; cta: CtaCard | null } => {
   // Formato B — array, pega o primeiro item
   const item = Array.isArray(data) ? data[0] : data;
+
+  // Campo cta — presente em qualquer formato, extraído sempre que existir
+  const extractCta = (source: any): CtaCard | null => {
+    if (source && typeof source === 'object' && source.cta && typeof source.cta === 'object' && source.cta.titulo && source.cta.link) {
+      return source.cta as CtaCard;
+    }
+    return null;
+  };
 
   // Formatos A e B — objeto com resultado_busca
   if (item && typeof item === 'object' && Array.isArray(item.resultado_busca)) {
     return {
       text: item.reply ?? item.message ?? item.output ?? item.text ?? 'Encontrei esses produtos pra você!',
       produtos: item.resultado_busca.length > 0 ? item.resultado_busca : null,
+      cta: extractCta(item),
     };
   }
 
@@ -214,6 +255,17 @@ const parseN8nResponse = (data: any): { text: string; produtos: Produto[] | null
     return {
       text: item.reply ?? item.message ?? item.output ?? item.text ?? 'Encontrei esses produtos pra você!',
       produtos: item.produtos.length > 0 ? item.produtos : null,
+      cta: extractCta(item),
+    };
+  }
+
+  // Formato E — apenas cta, sem produtos
+  const ctaOnly = extractCta(item);
+  if (ctaOnly) {
+    return {
+      text: item.reply ?? item.message ?? item.output ?? item.text ?? 'Aqui está!',
+      produtos: null,
+      cta: ctaOnly,
     };
   }
 
@@ -231,10 +283,10 @@ const parseN8nResponse = (data: any): { text: string; produtos: Produto[] | null
       .slice(1)
       .map((p: string) => { try { return JSON.parse(p.trim()) as Produto; } catch { return null; } })
       .filter((p): p is Produto => p !== null);
-    return { text: replyTexto, produtos: produtos.length > 0 ? produtos : null };
+    return { text: replyTexto, produtos: produtos.length > 0 ? produtos : null, cta: null };
   }
 
-  return { text: rawReply, produtos: null };
+  return { text: rawReply, produtos: null, cta: null };
 };
 
 // ─── COMPONENTE PRINCIPAL ───────────────────────────────────────────────────
@@ -359,11 +411,11 @@ export default function FreoChat({ hideOnMobile }: { hideOnMobile?: boolean }) {
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const { text: replyTexto, produtos } = parseN8nResponse(data);
+      const { text: replyTexto, produtos, cta } = parseN8nResponse(data);
 
       setMessages(prev => [
         ...prev,
-        { id: uid(), role: 'bot', text: replyTexto, time: now(), produtos },
+        { id: uid(), role: 'bot', text: replyTexto, time: now(), produtos, cta },
       ]);
     } catch (err) {
       console.error('[FreoChat] webhook error:', err);
@@ -456,6 +508,13 @@ export default function FreoChat({ hideOnMobile }: { hideOnMobile?: boolean }) {
                               onAsk={sendMessage}
                             />
                           ))}
+                        </div>
+                      )}
+
+                      {/* ── Card de CTA vindo do n8n (ex: Ver Catálogo Completo) ── */}
+                      {msg.cta && (
+                        <div className="ff-cards-wrap">
+                          <CtaCardView cta={msg.cta} />
                         </div>
                       )}
 
@@ -679,6 +738,13 @@ const WIDGET_CSS = `
 .ff-product-btn:active { transform: scale(0.97); }
 .ff-product-btn-ask { background: transparent !important; border: 1px solid rgba(221,175,52,0.4) !important; color: #DDAF34 !important; }
 .ff-product-btn-ask:hover { background: rgba(221,175,52,0.1) !important; border-color: rgba(221,175,52,0.7) !important; }
+
+.ff-cta-card { background: linear-gradient(135deg, rgba(221,175,52,0.12), rgba(221,175,52,0.04)); border: 1px solid rgba(221,175,52,0.35); border-radius: 12px; padding: 12px; width: 260px; display: flex; flex-direction: column; gap: 10px; }
+.ff-cta-titulo { font-size: 12.5px; font-weight: 700; color: #f0efeb; line-height: 1.35; }
+.ff-cta-desc { font-size: 11px; color: rgba(240,239,235,0.6); line-height: 1.4; margin-top: 3px; }
+.ff-cta-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 0; background: #DDAF34; color: #0e0e0f; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; width: 100%; transition: background 0.15s, transform 0.1s; font-family: 'DM Sans', system-ui, sans-serif; }
+.ff-cta-btn:hover { background: #c8ff3e; }
+.ff-cta-btn:active { transform: scale(0.97); }
 
 @media (max-width: 480px) {
   .ff-widget-root { bottom: 16px; right: 16px; }
