@@ -1499,7 +1499,8 @@ async function salvarDadosPessoais() {
             shipping_address:   selectedAddress  ? JSON.stringify(selectedAddress) : null,
             customer_name:      getCustomerNameForOrder(),
             customer_email:     getCustomerEmailForOrder(),
-            customer_phone:     getCustomerPhoneForOrder()
+            customer_phone:     getCustomerPhoneForOrder(),
+            customer_cpf:       getCustomerCPFForOrder()
           })
           .select('id')
           .single();
@@ -1743,6 +1744,7 @@ async function salvarDadosPessoais() {
             var customerName = getCustomerNameForOrder();
             var customerEmail = getCustomerEmailForOrder();
             var customerPhone = getCustomerPhoneForOrder();
+            var customerCPF = getCustomerCPFForOrder();
 
             var freteNomeCompleto = null;
 
@@ -1783,7 +1785,8 @@ async function salvarDadosPessoais() {
 
                 customer_name: customerName,
                 customer_email: customerEmail,
-                customer_phone: customerPhone
+                customer_phone: customerPhone,
+                customer_cpf: customerCPF
               })
               .select('id')
               .single()
