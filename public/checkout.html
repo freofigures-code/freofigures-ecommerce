@@ -1625,8 +1625,8 @@ async function salvarDadosPessoais() {
 
     async function initPaymentBrick() {
       paymentBrickInitialized = true;
-
-      var totalFinal = subtotalAmount + freteAmount;
+    
+      var totalFinal = Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount;
       var mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
       var bricksBuilder = mp.bricks();
 
@@ -1695,7 +1695,7 @@ async function salvarDadosPessoais() {
               action:          'process_payment',
               user_id:         currentUser.id,
               frete:           selectedShipping,
-              total_com_frete: subtotalAmount + freteAmount,
+              total_com_frete: Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount,
               backUrls: backUrls,
 
               // Segurança / antifraude
