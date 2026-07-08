@@ -329,6 +329,20 @@
           <div id="modal-timeline" class="space-y-4 pl-1"></div>
         </div>
 
+        <div id="modal-tracking-block" class="hidden">
+          <p class="font-mono text-[10px] text-white/30 uppercase tracking-widest mb-3">Rastreio</p>
+          <a id="modal-tracking-link" href="#" target="_blank" rel="noopener"
+             style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.2);border-radius:12px;padding:14px 16px;text-decoration:none;">
+            <span style="display:flex;align-items:center;gap:10px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+              </svg>
+              <span class="font-mono text-xs text-white/80">Acompanhar entrega em tempo real</span>
+            </span>
+            <span class="font-display font-bold text-freo-orange" style="font-size:12px;">Ver →</span>
+          </a>
+        </div>
+
       </div>
     </div>
   </div>
@@ -575,6 +589,15 @@
           }).join('')
         : '<p class="font-mono text-white/30 text-sm">Detalhes não disponíveis.</p>';
       document.getElementById('modal-items').innerHTML = itemsHtml;
+
+      var trackingBlock = document.getElementById('modal-tracking-block');
+      var trackingLink = document.getElementById('modal-tracking-link');
+      if (order.tracking_url) {
+        trackingBlock.classList.remove('hidden');
+        trackingLink.href = order.tracking_url;
+      } else {
+        trackingBlock.classList.add('hidden');
+      }
 
       var allStatuses = ['pendente','pago','enviado','entregue'];
       var currentIdx = allStatuses.indexOf((order.status||'').toLowerCase());
