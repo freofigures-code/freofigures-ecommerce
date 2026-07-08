@@ -370,6 +370,15 @@
                 Gerar Etiqueta
               </button>
 
+              <div class="pt-3 mt-1 border-t border-white/10">
+                <label class="text-[10px] font-mono text-freo-light/40 uppercase tracking-widest mb-1 block">Ou informe o código de rastreio manualmente</label>
+                <div style="display:flex; gap:8px;">
+                  <input type="text" id="modal-tracking-code-manual" class="nfe-input" placeholder="Ex: ME220021P96BR" maxlength="30" style="text-transform:uppercase;">
+                  <button id="btn-salvar-tracking-manual" class="btn-gerar-etiqueta" style="width:auto; white-space:nowrap; padding:8px 16px;">Salvar</button>
+                </div>
+                <p class="text-[10px] font-mono text-freo-light/30 mt-1">Use quando postar fora do fluxo automático (ex: balcão dos Correios).</p>
+              </div>
+
               <div id="etiqueta-info" class="hidden pt-2 space-y-2">
                 <div class="flex items-center justify-between">
                   <span class="text-[10px] font-mono text-freo-light/40 uppercase">Status</span>
@@ -701,8 +710,10 @@
       const btnGerar = document.getElementById('btn-gerar-etiqueta');
       const hint = document.getElementById('nfe-key-hint');
       const info = document.getElementById('etiqueta-info');
+      const trackingManualInput = document.getElementById('modal-tracking-code-manual');
 
       nfeInput.value = currentOrder.nfe_key || '';
+      trackingManualInput.value = currentOrder.tracking_code || '';
 
       function updateButtonState() {
         const valid = validateNfeKey(nfeInput.value);
@@ -752,6 +763,55 @@
         info.classList.add('hidden');
       }
     }
+
+    document.getElementById('btn-salvar-tracking-manual').addEventListener('click', async () => {
+      if (!currentOrder) return;
+
+      const input = document.getElementById('modal-tracking-code-manual');
+      const code = input.value.trim().toUpperCase();
+
+      if (!code) {
+        alert('Digite um código de rastreio válido.');
+        return;
+      }
+
+      const btn = document.getElementById('btn-salvar-tracking-manual');
+      const originalText = btn.innerText;
+      btn.disabled = true;
+      btn.innerText = 'Salvando...';
+
+      const trackingUrl = 'https://www.melhorrastreio.com.br/rastreio/' + encodeURIComponent(code);
+
+      try {
+        const { error } = await window.supabaseClient
+          .from('orders')
+          .update({
+            tracking_code: code,
+            tracking_url: trackingUrl,
+            label_status: currentOrder.label_status || 'posted'
+          })
+          .eq('id', currentOrder.id);
+
+        if (error) throw error;
+
+        currentOrder.tracking_code = code;
+        currentOrder.tracking_url = trackingUrl;
+        if (!currentOrder.label_status) currentOrder.label_status = 'posted';
+
+        const idx = allOrders.findIndex(o => String(o.id) === String(currentOrder.id));
+        if (idx !== -1) allOrders[idx] = currentOrder;
+
+        input.value = '';
+        renderEtiquetaInfo();
+        alert('Código de rastreio salvo! Já aparece para o cliente em Meus Pedidos.');
+      } catch (err) {
+        console.error('Erro ao salvar rastreio manual:', err);
+        alert('Erro ao salvar: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
+      }
+    });
 
     document.getElementById('btn-gerar-etiqueta').addEventListener('click', async () => {
       if (!currentOrder) return;
