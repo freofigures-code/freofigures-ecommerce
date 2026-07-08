@@ -72,6 +72,55 @@
       color: #D4AF37;
       margin-top: 4px;
     }
+
+    .label-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .label-status-pending, .label-status-released { color: #F59E0B; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+    .label-status-generated { color: #3B82F6; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); }
+    .label-status-posted { color: #8B5CF6; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); }
+    .label-status-delivered { color: #10B981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); }
+    .label-status-cancelled { color: #EF4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+
+    .nfe-input {
+      background: #0A0A0A;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #F5F5F5;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      padding: 8px 12px;
+      border-radius: 6px;
+      width: 100%;
+      letter-spacing: 0.03em;
+    }
+    .nfe-input:focus { outline: none; border-color: #D4AF37; }
+    .nfe-input.invalid { border-color: #EF4444; }
+
+    .btn-gerar-etiqueta {
+      background: #D4AF37;
+      color: #0A0A0A;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    .btn-gerar-etiqueta:hover:not(:disabled) { background: #fff; }
+    .btn-gerar-etiqueta:disabled { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3); cursor: not-allowed; }
   </style>
 </head>
 
@@ -298,6 +347,44 @@
               <div class="flex justify-between items-end pt-4 border-t border-white/10 mt-4">
                 <span class="font-display font-bold uppercase text-white">Total</span>
                 <span id="modal-total" class="font-mono font-bold text-2xl text-freo-orange">R$ 0,00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white/5 rounded-xl p-6 border border-white/5">
+            <h4 class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Etiqueta &amp; Rastreio
+            </h4>
+
+            <div class="space-y-3">
+              <div>
+                <label class="text-[10px] font-mono text-freo-light/40 uppercase tracking-widest mb-1 block">Chave da NF-e (44 dígitos)</label>
+                <input type="text" id="modal-nfe-key" class="nfe-input" placeholder="Cole a chave de acesso da NF-e" maxlength="44">
+                <p id="nfe-key-hint" class="text-[10px] font-mono text-freo-light/30 mt-1"></p>
+              </div>
+
+              <button id="btn-gerar-etiqueta" class="btn-gerar-etiqueta" disabled>
+                Gerar Etiqueta
+              </button>
+
+              <div id="etiqueta-info" class="hidden pt-2 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-mono text-freo-light/40 uppercase">Status</span>
+                  <span id="label-status-badge" class="label-status-badge">—</span>
+                </div>
+                <div id="tracking-code-row" class="hidden flex items-center justify-between">
+                  <span class="text-[10px] font-mono text-freo-light/40 uppercase">Rastreio</span>
+                  <span id="tracking-code-text" class="text-xs font-mono text-white">—</span>
+                </div>
+                <a id="link-rastreio" href="#" target="_blank" class="hidden text-center text-xs font-mono text-freo-orange hover:text-white transition-colors underline pt-1">
+                  Ver rastreio completo →
+                </a>
+                <a id="link-etiqueta-pdf" href="#" target="_blank" class="hidden text-center text-xs font-mono text-freo-orange hover:text-white transition-colors underline">
+                  Baixar / Reimprimir etiqueta (PDF) →
+                </a>
               </div>
             </div>
           </div>
@@ -583,12 +670,154 @@
       renderShippingAddress();
       renderOrderItems();
       renderFinancialSummary();
+      renderEtiquetaInfo();
 
       modal.classList.remove('hidden');
       void modal.offsetWidth;
       modal.classList.remove('opacity-0');
       modalContent.classList.remove('scale-95');
     }
+
+    const N8N_BASE_URL = "https://n8nwebhook.solviaoficial.com/webhook";
+
+    function validateNfeKey(key) {
+      return /^\d{44}$/.test((key || '').replace(/\D/g, ''));
+    }
+
+    function getLabelStatusInfo(status) {
+      const map = {
+        pending:   { label: 'Aguardando geração', class: 'label-status-pending' },
+        released:  { label: 'Liberado',            class: 'label-status-released' },
+        generated: { label: 'Etiqueta gerada',      class: 'label-status-generated' },
+        posted:    { label: 'Postado',              class: 'label-status-posted' },
+        delivered: { label: 'Entregue',             class: 'label-status-delivered' },
+        cancelled: { label: 'Cancelado',            class: 'label-status-cancelled' }
+      };
+      return map[(status || '').toLowerCase()] || { label: status || 'Sem etiqueta', class: 'label-status-pending' };
+    }
+
+    function renderEtiquetaInfo() {
+      const nfeInput = document.getElementById('modal-nfe-key');
+      const btnGerar = document.getElementById('btn-gerar-etiqueta');
+      const hint = document.getElementById('nfe-key-hint');
+      const info = document.getElementById('etiqueta-info');
+
+      nfeInput.value = currentOrder.nfe_key || '';
+
+      function updateButtonState() {
+        const valid = validateNfeKey(nfeInput.value);
+        nfeInput.classList.toggle('invalid', nfeInput.value.length > 0 && !valid);
+        hint.innerText = nfeInput.value.length > 0 && !valid
+          ? 'A chave deve ter exatamente 44 dígitos.'
+          : '';
+        btnGerar.disabled = !valid || !!currentOrder.label_pdf_url;
+        btnGerar.innerText = currentOrder.label_pdf_url ? 'Etiqueta já gerada' : 'Gerar Etiqueta';
+      }
+
+      nfeInput.oninput = updateButtonState;
+      updateButtonState();
+
+      if (currentOrder.label_status || currentOrder.tracking_code || currentOrder.label_pdf_url) {
+        info.classList.remove('hidden');
+
+        const st = getLabelStatusInfo(currentOrder.label_status);
+        const badge = document.getElementById('label-status-badge');
+        badge.className = 'label-status-badge ' + st.class;
+        badge.innerText = st.label;
+
+        const trackingRow = document.getElementById('tracking-code-row');
+        if (currentOrder.tracking_code) {
+          trackingRow.classList.remove('hidden');
+          document.getElementById('tracking-code-text').innerText = currentOrder.tracking_code;
+        } else {
+          trackingRow.classList.add('hidden');
+        }
+
+        const linkRastreio = document.getElementById('link-rastreio');
+        if (currentOrder.tracking_url) {
+          linkRastreio.classList.remove('hidden');
+          linkRastreio.href = currentOrder.tracking_url;
+        } else {
+          linkRastreio.classList.add('hidden');
+        }
+
+        const linkPdf = document.getElementById('link-etiqueta-pdf');
+        if (currentOrder.label_pdf_url) {
+          linkPdf.classList.remove('hidden');
+          linkPdf.href = currentOrder.label_pdf_url;
+        } else {
+          linkPdf.classList.add('hidden');
+        }
+      } else {
+        info.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('btn-gerar-etiqueta').addEventListener('click', async () => {
+      if (!currentOrder) return;
+
+      const nfeInput = document.getElementById('modal-nfe-key');
+      const nfeKey = nfeInput.value.replace(/\D/g, '');
+
+      if (!validateNfeKey(nfeKey)) {
+        alert('Chave de NF-e inválida. Deve conter exatamente 44 dígitos.');
+        return;
+      }
+
+      const btn = document.getElementById('btn-gerar-etiqueta');
+      const originalText = btn.innerText;
+      btn.disabled = true;
+      btn.innerText = 'Salvando chave da NF-e...';
+
+      try {
+        // 1) salva a chave da NF-e no pedido antes de gerar a etiqueta
+        const { error: updateError } = await window.supabaseClient
+          .from('orders')
+          .update({ nfe_key: nfeKey })
+          .eq('id', currentOrder.id);
+
+        if (updateError) throw updateError;
+        currentOrder.nfe_key = nfeKey;
+
+        // 2) chama o n8n para gerar a etiqueta
+        btn.innerText = 'Gerando etiqueta...';
+
+        const response = await fetch(N8N_BASE_URL + '/gerar-etiqueta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: currentOrder.id })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Erro ao gerar etiqueta.');
+        }
+
+        // 3) recarrega o pedido do Supabase pra pegar os campos atualizados pelo n8n
+        const { data: refreshed, error: refreshError } = await window.supabaseClient
+          .from('orders')
+          .select('*')
+          .eq('id', currentOrder.id)
+          .single();
+
+        if (refreshError) throw refreshError;
+
+        currentOrder = { ...currentOrder, ...refreshed };
+
+        const idx = allOrders.findIndex(o => String(o.id) === String(currentOrder.id));
+        if (idx !== -1) allOrders[idx] = currentOrder;
+
+        renderEtiquetaInfo();
+        alert('Etiqueta gerada com sucesso!');
+      } catch (err) {
+        console.error('Erro ao gerar etiqueta:', err);
+        alert('Erro ao gerar etiqueta: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
+      }
+    });
 
     function renderShippingAddress() {
       const addrContainer = document.getElementById('modal-shipping-address');
