@@ -643,6 +643,9 @@
     var paymentBrickInitialized = false;
     var savedAddresses = [];
     var selectedAddress = null;
+    var shippingPromotionRules = [];       // regras carregadas do Supabase (shipping_promotions)
+    var shippingPromotionRulesLoaded = false;
+    var lastFreteMotivo = null;            // 'gratis' | 'subsidio' | 'normal' | 'sem_regra' — usado na exibição
 
     // ─── DADOS PESSOAIS ────────────────────────────────────────────────────────
 
@@ -1069,6 +1072,108 @@ async function salvarDadosPessoais() {
       }
     }
 
+    // ─── PROMOÇÃO DE FRETE GRÁTIS / SUBSIDIADO ─────────────────────────────────
+    async function carregarRegrasFrete() {
+      if (shippingPromotionRulesLoaded) return;
+      try {
+        var r = await window.supabaseClient
+          .from('shipping_promotions')
+          .select('*')
+          .eq('is_active', true);
+
+        shippingPromotionRules = r.data || [];
+      } catch (e) {
+        console.warn('Não foi possível carregar regras de frete:', e);
+        shippingPromotionRules = [];
+      }
+      shippingPromotionRulesLoaded = true;
+    }
+
+    function aplicarPromocaoFrete(opcoes, subtotal, uf) {
+      var regras = shippingPromotionRules;
+
+      // Normaliza price para número em TODOS os caminhos, mesmo sem regra aplicável.
+      var opcoesNormalizadas = opcoes.map(function(o) {
+        return Object.assign({}, o, { price: parseFloat(o.price) || 0 });
+      });
+
+      if (!regras || !regras.length || !uf) {
+        return { opcoes: opcoesNormalizadas, motivo: 'sem_regra', regraAplicada: null };
+      }
+
+      var ufNormalizada = String(uf).trim().toUpperCase();
+
+      var regrasComUF = regras.filter(function(r) {
+        return Array.isArray(r.uf_list) && r.uf_list.length > 0 && r.uf_list.indexOf(ufNormalizada) !== -1;
+      });
+
+      var regraCatchAll = regras.find(function(r) {
+        return !r.uf_list || r.uf_list.length === 0;
+      });
+
+      var regra = regrasComUF.length > 0 ? regrasComUF[0] : regraCatchAll;
+
+      if (!regra) {
+        return { opcoes: opcoesNormalizadas, motivo: 'sem_regra', regraAplicada: null };
+      }
+
+      var isGratisTotal = regra.min_order_value_free !== null && regra.min_order_value_free !== undefined
+        && subtotal >= parseFloat(regra.min_order_value_free);
+
+      var isSubsidioParcial = !isGratisTotal
+        && regra.subsidy_type && regra.subsidy_type !== 'none'
+        && regra.min_order_value_subsidy !== null && regra.min_order_value_subsidy !== undefined
+        && subtotal >= parseFloat(regra.min_order_value_subsidy);
+
+      var novasOpcoes = opcoesNormalizadas.map(function(o) {
+        var precoOriginal = o.price;
+        var precoFinal = precoOriginal;
+
+        if (isGratisTotal) {
+          precoFinal = 0;
+        } else if (isSubsidioParcial) {
+          var desconto = 0;
+          if (regra.subsidy_type === 'fixed') {
+            desconto = Math.min(parseFloat(regra.subsidy_value) || 0, precoOriginal);
+          } else if (regra.subsidy_type === 'percent') {
+            desconto = precoOriginal * ((parseFloat(regra.subsidy_value) || 0) / 100);
+          }
+          precoFinal = Math.max(0, +(precoOriginal - desconto).toFixed(2));
+        }
+
+        return Object.assign({}, o, { price: precoFinal, price_original: precoOriginal });
+      });
+
+      var motivo = isGratisTotal ? 'gratis' : (isSubsidioParcial ? 'subsidio' : 'normal');
+
+      return { opcoes: novasOpcoes, motivo: motivo, regraAplicada: regra };
+    }
+
+    function exibirAvisoPromocaoFrete(motivo, regra) {
+      var existente = document.getElementById('frete-promo-banner');
+      if (existente) existente.remove();
+
+      if (motivo !== 'gratis' && motivo !== 'subsidio') return;
+
+      var banner = document.createElement('div');
+      banner.id = 'frete-promo-banner';
+      banner.className = 'mb-4 p-3 rounded-lg flex items-center gap-2';
+
+      if (motivo === 'gratis') {
+        banner.style.cssText = 'background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25)';
+        banner.innerHTML = '<span class="font-mono text-sm text-green-400">🎉 Frete grátis aplicado' + (regra && regra.description ? ' — ' + regra.description : '') + '!</span>';
+      } else {
+        banner.style.cssText = 'background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25)';
+        banner.innerHTML = '<span class="font-mono text-sm text-freo-orange">✨ Desconto de frete aplicado' + (regra && regra.description ? ' — ' + regra.description : '') + '!</span>';
+      }
+
+      var opcoesEl = document.getElementById('frete-options');
+      if (opcoesEl && opcoesEl.parentElement) {
+        opcoesEl.parentElement.insertBefore(banner, opcoesEl);
+      }
+    }
+    // ─── FIM PROMOÇÃO DE FRETE ──────────────────────────────────────────────────
+
     async function calcularFrete(cepParam) {
       var cep = cepParam || document.getElementById('cep-input').value.replace(/\D/g, '');
 
@@ -1127,6 +1232,16 @@ async function salvarDadosPessoais() {
           showFreteError('Não foi possível calcular o frete para este CEP.');
           return;
         }
+
+        await carregarRegrasFrete();
+
+        var ufDestino = selectedAddress ? selectedAddress.state : null;
+        var resultadoPromo = aplicarPromocaoFrete(opcoes, subtotalAmount, ufDestino);
+
+        opcoes = resultadoPromo.opcoes;
+        lastFreteMotivo = resultadoPromo.motivo;
+
+        exibirAvisoPromocaoFrete(resultadoPromo.motivo, resultadoPromo.regraAplicada);
 
         renderFreteOptions(opcoes);
       } catch (err) {
@@ -1992,6 +2107,7 @@ async function salvarDadosPessoais() {
 
     showCheckout();
     renderItems(cartItemsData);
+    carregarRegrasFrete(); // dispara em paralelo, não precisa aguardar aqui
     await carregarEnderecos();
 
     // Para convidado: sempre abre o modal de dados pessoais (ele não tem cadastro)
