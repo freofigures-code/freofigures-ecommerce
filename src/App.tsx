@@ -1353,7 +1353,221 @@ const Navbar = ({
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HERO
+// HERO CAROUSEL (banners editáveis pelo painel admin /admin/banners.html)
+// ─────────────────────────────────────────────────────────────────────────────
+
+type Banner = {
+  id: string;
+  title: string | null;
+  subtitle: string | null;
+  image_url: string;
+  mobile_image_url: string | null;
+  link_url: string | null;
+  button_label: string | null;
+  display_order: number;
+  is_active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+};
+
+const isBannerCurrentlyVisible = (banner: Banner) => {
+  const now = Date.now();
+  if (banner.starts_at && new Date(banner.starts_at).getTime() > now) return false;
+  if (banner.ends_at && new Date(banner.ends_at).getTime() < now) return false;
+  return true;
+};
+
+const resolveBannerLink = (linkUrl: string | null) => {
+  if (!linkUrl) return null;
+  const isExternal = /^https?:\/\//i.test(linkUrl) || linkUrl.startsWith('mailto:') || linkUrl.startsWith('tel:');
+  return { href: linkUrl, isExternal };
+};
+
+const HeroCarousel = ({ setCurrentView }: any) => {
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const loadBanners = async () => {
+      try {
+        // @ts-ignore
+        const supabase = window.supabaseClient || window.supabase;
+        if (!supabase) { setLoading(false); return; }
+        const { data, error } = await supabase
+          .from('banners')
+          .select('*')
+          .eq('is_active', true)
+          .order('display_order', { ascending: true });
+        if (!error && data) {
+          const visible = (data as Banner[]).filter(isBannerCurrentlyVisible);
+          setBanners(visible);
+        }
+      } catch (error) {
+        console.error('[HeroCarousel] erro ao carregar banners:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadBanners();
+  }, []);
+
+  // Autoplay: 6s por slide, pausa se só houver 1 banner
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveIndex(previous => (previous + 1) % banners.length);
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, [banners.length]);
+
+  const goToSlide = (index: number) => setActiveIndex(index);
+  const goToPrev = () => setActiveIndex(previous => (previous - 1 + banners.length) % banners.length);
+  const goToNext = () => setActiveIndex(previous => (previous + 1) % banners.length);
+
+  const handleBannerClick = (banner: Banner) => {
+    trackEvent('banner_click', banner.id, banner.title || undefined);
+    const resolved = resolveBannerLink(banner.link_url);
+    if (!resolved) return;
+    if (resolved.isExternal) {
+      window.open(resolved.href, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.href = resolved.href;
+    }
+  };
+
+  // Enquanto carrega, ou se não houver nenhum banner cadastrado no admin,
+  // cai de volta pro Hero estático original — o site nunca fica vazio no topo.
+  if (loading) {
+    return (
+      <section className="relative h-[92vh] md:h-screen flex items-center justify-center overflow-hidden bg-[#080808]">
+        <div className="w-10 h-10 border-2 border-freo-orange border-t-transparent rounded-full animate-spin" />
+      </section>
+    );
+  }
+
+  if (banners.length === 0) {
+    return <Hero setCurrentView={setCurrentView} />;
+  }
+
+  return (
+    <section className="relative h-[92vh] md:h-screen overflow-hidden bg-[#080808]">
+      <AnimatePresence mode="wait">
+        {banners.map((banner, index) => {
+          if (index !== activeIndex) return null;
+          const imageSrc = (isMobile && banner.mobile_image_url) ? banner.mobile_image_url : banner.image_url;
+          const resolved = resolveBannerLink(banner.link_url);
+          const isClickable = !!resolved;
+
+          return (
+            <motion.div
+              key={banner.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, ease: 'easeInOut' }}
+              className="absolute inset-0"
+              onClick={() => { if (isClickable && !banner.button_label) handleBannerClick(banner); }}
+              style={{ cursor: isClickable && !banner.button_label ? 'pointer' : 'default' }}
+            >
+              <img
+                src={imageSrc}
+                alt={banner.title || 'Banner promocional'}
+                className="absolute inset-0 w-full h-full object-cover"
+                draggable={false}
+              />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(0deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 45%, rgba(0,0,0,0.35) 100%)' }} />
+
+              {(banner.title || banner.subtitle || banner.button_label) && (
+                <div className="absolute inset-0 flex items-end md:items-center">
+                  <div className="max-w-7xl mx-auto px-5 md:px-6 lg:px-12 w-full pb-16 md:pb-0">
+                    <div className="max-w-xl">
+                      {banner.title && (
+                        <motion.h2
+                          initial={{ opacity: 0, y: 24 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6, delay: 0.15 }}
+                          className="font-display font-black uppercase text-white leading-[0.95] mb-3"
+                          style={{ fontSize: 'clamp(1.8rem, 6vw, 3.6rem)', textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
+                        >
+                          {banner.title}
+                        </motion.h2>
+                      )}
+                      {banner.subtitle && (
+                        <motion.p
+                          initial={{ opacity: 0, y: 18 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6, delay: 0.25 }}
+                          className="text-freo-light/85 text-base md:text-lg font-body mb-6"
+                          style={{ textShadow: '0 1px 12px rgba(0,0,0,0.6)' }}
+                        >
+                          {banner.subtitle}
+                        </motion.p>
+                      )}
+                      {banner.button_label && (
+                        <motion.button
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.6, delay: 0.35 }}
+                          onClick={(event) => { event.stopPropagation(); handleBannerClick(banner); }}
+                          className="group relative flex items-center gap-3 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-7 py-3.5 hover:bg-white transition-colors overflow-hidden active:scale-95"
+                        >
+                          <span className="relative">{banner.button_label}</span>
+                          <ChevronRight className="relative w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </motion.button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+
+      {/* Setas de navegação (só aparecem com mais de 1 banner) */}
+      {banners.length > 1 && (
+        <>
+          <button
+            onClick={goToPrev}
+            aria-label="Banner anterior"
+            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 items-center justify-center bg-black/30 hover:bg-freo-orange hover:text-freo-black text-white backdrop-blur-sm border border-white/10 transition-colors rounded-full"
+          >
+            <ChevronRight className="w-5 h-5 rotate-180" />
+          </button>
+          <button
+            onClick={goToNext}
+            aria-label="Próximo banner"
+            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 items-center justify-center bg-black/30 hover:bg-freo-orange hover:text-freo-black text-white backdrop-blur-sm border border-white/10 transition-colors rounded-full"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+
+          {/* Dots de navegação */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+            {banners.map((banner, index) => (
+              <button
+                key={banner.id}
+                onClick={() => goToSlide(index)}
+                aria-label={`Ir para banner ${index + 1}`}
+                className="transition-all rounded-full"
+                style={{
+                  width: index === activeIndex ? '28px' : '8px',
+                  height: '8px',
+                  background: index === activeIndex ? '#DDAF34' : 'rgba(255,255,255,0.4)',
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HERO (fallback estático — usado apenas se não houver nenhum banner ativo cadastrado)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const Hero = ({ setCurrentView }: any) => (
@@ -2321,7 +2535,7 @@ const ShopeeReviews = () => {
 
 const HomeView = ({ setCurrentView, addToCart, setFilter }: any) => (
   <>
-    <Hero setCurrentView={setCurrentView} />
+    <HeroCarousel setCurrentView={setCurrentView} />
     <Marquee />
     <ShopeeReviews />
     <Categories setCurrentView={setCurrentView} setFilter={setFilter} />
