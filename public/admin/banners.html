@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Banners | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#111111',
+            'freo-card': '#181818',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#DDAF34',
+            'freo-muted': '#888',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #0A0A0A; }
+
+    .fi { width:100%; background:#0D0D0D; border:1px solid rgba(255,255,255,0.08); color:#F5F5F5; padding:.7rem 1rem; font-family:'Space Grotesk',sans-serif; font-size:.875rem; outline:none; transition:border-color .15s; border-radius:2px; }
+    .fi:focus { border-color:#DDAF34; }
+    .fi::placeholder { color:rgba(245,245,245,.2); }
+    textarea.fi { resize:vertical; min-height:70px; }
+    .fl { display:block; font-family:ui-monospace,monospace; font-size:.65rem; color:rgba(245,245,245,.35); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
+
+    .banner-card { background:#141414; border:1px solid rgba(255,255,255,.06); transition:border-color .2s; }
+    .banner-card:hover { border-color:rgba(221,175,52,.3); }
+    .banner-card.dragging { opacity:.35; }
+    .banner-card.drag-over { border-color:#DDAF34; box-shadow:0 0 0 2px rgba(221,175,52,.25); }
+
+    .img-drop { border:2px dashed rgba(255,255,255,.1); transition:border-color .2s,background .2s; cursor:pointer; }
+    .img-drop:hover, .img-drop.dragover { border-color:#DDAF34; background:rgba(221,175,52,.04); }
+
+    .badge-active { background:rgba(34,197,94,.1); color:#22c55e; border:1px solid rgba(34,197,94,.2); }
+    .badge-inactive { background:rgba(239,68,68,.1); color:#ef4444; border:1px solid rgba(239,68,68,.2); }
+    .badge-scheduled { background:rgba(96,165,250,.1); color:#60a5fa; border:1px solid rgba(96,165,250,.25); }
+    .modal-overlay { background:rgba(0,0,0,.85); backdrop-filter:blur(8px); }
+
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:#0A0A0A; }
+    ::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+    ::-webkit-scrollbar-thumb:hover { background:#DDAF34; }
+
+    #toast { position:fixed; bottom:2rem; right:2rem; z-index:9999; font-family:'Space Grotesk',sans-serif; font-size:.875rem; padding:.75rem 1.25rem; border-radius:4px; transform:translateY(120%); transition:transform .25s; pointer-events:none; max-width:320px; }
+    #toast.show { transform:translateY(0); }
+    #toast.success { background:#1a2e1a; border:1px solid rgba(34,197,94,.4); color:#86efac; }
+    #toast.error   { background:#2e1a1a; border:1px solid rgba(239,68,68,.4); color:#fca5a5; }
+    .upload-bar { height:3px; background:#DDAF34; width:0%; transition:width .3s; }
+
+    .drag-handle { cursor:grab; color:rgba(245,245,245,.2); }
+    .drag-handle:active { cursor:grabbing; }
+  </style>
+</head>
+<body class="text-freo-light font-body antialiased min-h-screen flex flex-col">
+
+  <!-- NAV -->
+  <nav class="bg-freo-dark border-b border-white/[0.06] py-3 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="/dashboard.html" class="text-freo-light/40 hover:text-freo-orange transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </a>
+        <div class="flex items-center gap-2">
+          <span class="font-display font-black text-xl tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
+          <span class="text-white/20 font-mono text-xs">/</span>
+          <span class="font-mono text-xs text-freo-orange uppercase tracking-widest">Admin</span>
+          <span class="text-white/20 font-mono text-xs">/</span>
+          <span class="font-mono text-xs text-white/40 uppercase tracking-widest">Banners</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="admin-badge" class="hidden font-mono text-[10px] bg-freo-orange/10 border border-freo-orange/30 text-freo-orange px-2 py-1 uppercase tracking-widest">Admin</span>
+        <a href="/admin/produtos.html" class="flex items-center gap-2 border border-white/10 text-white/40 font-mono text-xs uppercase tracking-widest px-4 py-2 hover:text-white hover:border-white/30 transition-colors">
+          Produtos
+        </a>
+        <button onclick="openForm(null)" class="flex items-center gap-2 bg-freo-orange text-freo-black font-display font-bold uppercase text-xs tracking-widest px-4 py-2 hover:bg-white transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Novo Banner
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="page-loading" class="flex-1 flex items-center justify-center min-h-[60vh]">
+    <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <main id="main-content" class="hidden max-w-5xl mx-auto px-6 py-8 w-full flex-1">
+
+    <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15 mb-6">
+      <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <div class="font-mono text-xs text-white/40 leading-relaxed space-y-1">
+        <p>Estes banners aparecem em rotação no topo da <strong style="color:rgba(221,175,52,.7)">página inicial</strong> (Hero).</p>
+        <p style="color:rgba(245,245,245,.2)">Arraste os cards abaixo para reordenar. Apenas banners <strong style="color:rgba(221,175,52,.5)">ativos</strong> aparecem no site.</p>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between mb-4">
+      <span id="banner-count" class="font-mono text-xs text-white/30">0 banners</span>
+    </div>
+
+    <div id="banner-list" class="space-y-3"></div>
+    <div id="list-empty" class="hidden text-center py-20">
+      <div class="text-6xl mb-4">🖼️</div>
+      <p class="font-display font-bold text-xl text-white/20 uppercase">Nenhum banner ainda</p>
+      <p class="font-mono text-sm text-white/20 mt-2 mb-6">Clique em "Novo Banner" para começar</p>
+      <button onclick="openForm(null)" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm px-6 py-3 hover:bg-white transition-colors">+ Adicionar primeiro banner</button>
+    </div>
+  </main>
+
+  <!-- PAINEL LATERAL -->
+  <div id="form-overlay" class="fixed inset-0 z-50 hidden modal-overlay" onclick="handleOverlayClick(event)">
+    <div id="form-panel" class="absolute right-0 top-0 h-full w-full max-w-xl bg-freo-dark border-l border-white/[0.07] flex flex-col shadow-2xl" style="overflow:hidden">
+
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] flex-shrink-0">
+        <div>
+          <h2 id="form-title" class="font-display font-black uppercase text-xl text-white">Novo Banner</h2>
+          <p id="form-subtitle" class="font-mono text-xs text-white/30 mt-0.5">Preencha as informações abaixo</p>
+        </div>
+        <button onclick="closeForm()" class="text-white/30 hover:text-white transition-colors p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
+
+        <!-- Imagem desktop -->
+        <div>
+          <label class="fl">Imagem do banner (desktop) *</label>
+          <div id="drop-zone" class="img-drop rounded p-6 text-center"
+            onclick="document.getElementById('file-input').click()"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event)">
+            <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+            <div id="img-preview-wrap" class="hidden mb-3">
+              <img id="img-preview-el" src="" alt="" class="w-full max-h-52 object-cover rounded border border-white/[0.06]">
+            </div>
+            <svg id="img-drop-icon" class="w-9 h-9 text-white/20 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <p class="font-mono text-sm text-white/40">Clique ou arraste a imagem aqui</p>
+            <p class="font-mono text-xs text-white/20 mt-1">Recomendado: 1920x800px · JPG, PNG, WEBP · até 5MB</p>
+          </div>
+          <div id="upload-progress-wrap" class="hidden mt-2">
+            <div class="flex justify-between mb-1">
+              <span class="font-mono text-xs text-white/40">Enviando imagem...</span>
+              <span id="upload-pct" class="font-mono text-xs text-freo-orange">0%</span>
+            </div>
+            <div class="bg-white/10 h-1 rounded overflow-hidden"><div id="upload-progress-bar" class="upload-bar h-full"></div></div>
+          </div>
+          <div class="flex gap-2 mt-2">
+            <input type="url" id="img-url-input" class="fi py-2" placeholder="Ou cole uma URL de imagem...">
+            <button onclick="setImageByURL()" class="flex-shrink-0 px-4 bg-freo-orange/10 border border-freo-orange/30 text-freo-orange font-mono text-xs hover:bg-freo-orange hover:text-freo-black transition-colors whitespace-nowrap">+ Usar URL</button>
+          </div>
+        </div>
+
+        <!-- Imagem mobile (opcional) -->
+        <div>
+          <label class="fl">Imagem para mobile <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(opcional — se vazio, usa a mesma de desktop)</span></label>
+          <div id="mobile-drop-zone" class="img-drop rounded p-5 text-center"
+            onclick="document.getElementById('mobile-file-input').click()"
+            ondragover="handleMobileDragOver(event)"
+            ondragleave="handleMobileDragLeave(event)"
+            ondrop="handleMobileDrop(event)">
+            <input type="file" id="mobile-file-input" accept="image/*" class="hidden" onchange="handleMobileFileSelect(event)">
+            <div id="mobile-img-preview-wrap" class="hidden mb-2">
+              <img id="mobile-img-preview-el" src="" alt="" class="mx-auto max-h-32 object-cover rounded border border-white/[0.06]">
+            </div>
+            <p class="font-mono text-xs text-white/30">Clique ou arraste (opcional) · recomendado 1080x1350px</p>
+          </div>
+          <div id="mobile-upload-progress-wrap" class="hidden mt-2">
+            <div class="flex justify-between mb-1">
+              <span class="font-mono text-xs text-white/40">Enviando...</span>
+              <span id="mobile-upload-pct" class="font-mono text-xs text-freo-orange">0%</span>
+            </div>
+            <div class="bg-white/10 h-1 rounded overflow-hidden"><div id="mobile-upload-progress-bar" class="upload-bar h-full"></div></div>
+          </div>
+          <button type="button" id="mobile-remove-btn" onclick="removeMobileImage()" class="hidden mt-2 font-mono text-[11px] text-red-500/50 hover:text-red-400 uppercase tracking-widest">Remover imagem mobile</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="fl">Título <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(opcional — texto sobre a imagem)</span></label>
+            <input type="text" id="f-title" class="fi" placeholder="Ex: Nova coleção Games chegou">
+          </div>
+          <div class="col-span-2">
+            <label class="fl">Subtítulo <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(opcional)</span></label>
+            <input type="text" id="f-subtitle" class="fi" placeholder="Ex: Até 30% off em action figures selecionadas">
+          </div>
+        </div>
+
+        <div>
+          <label class="fl">Link do anúncio <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(para onde vai ao clicar)</span></label>
+          <input type="text" id="f-link" class="fi" placeholder="Ex: /produto?id=12  ou  /shop  ou  https://wa.me/5511946454111">
+          <p class="font-mono text-[10px] text-white/20 mt-1.5">Pode ser um link interno do site (ex: <code style="color:rgba(221,175,52,.5)">/shop</code>, <code style="color:rgba(221,175,52,.5)">/produto?id=12</code>) ou uma URL completa (ex: WhatsApp).</p>
+        </div>
+
+        <div>
+          <label class="fl">Texto do botão <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(opcional — se vazio, o banner inteiro fica clicável)</span></label>
+          <input type="text" id="f-button-label" class="fi" placeholder="Ex: Ver oferta">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 pt-2 border-t border-white/[0.06]">
+          <div>
+            <label class="fl">Início da exibição <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(opcional)</span></label>
+            <input type="datetime-local" id="f-starts-at" class="fi">
+          </div>
+          <div>
+            <label class="fl">Fim da exibição <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(opcional — some sozinho)</span></label>
+            <input type="datetime-local" id="f-ends-at" class="fi">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-1">
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="f-active" class="sr-only peer" checked>
+            <div class="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-freo-orange transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-4 after:h-4 after:transition-transform peer-checked:after:translate-x-5"></div>
+          </label>
+          <span class="font-mono text-xs text-white/50 uppercase tracking-widest">Banner ativo (visível no site)</span>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="border-t border-white/[0.07] px-6 py-4 flex items-center gap-3 flex-shrink-0 bg-freo-dark">
+        <button id="form-delete-btn" onclick="confirmDelete()" class="hidden text-xs font-mono text-red-500/50 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 transition-colors uppercase tracking-widest">Excluir banner</button>
+        <div class="flex-1"></div>
+        <button onclick="closeForm()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
+        <button onclick="saveBanner()" id="form-save-btn" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-6 py-2.5 hover:bg-white transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="/auth-listener.js"></script>
+
+  <script>
+  // ─────────────────────────────────────────────────────────────────────────
+  // ESTADO GLOBAL
+  // ─────────────────────────────────────────────────────────────────────────
+  var allBanners = [];
+  var editingBannerId = null;
+  var currentImageUrl = null;
+  var currentMobileImageUrl = null;
+  var dragSrcId = null;
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUTH
+  // ─────────────────────────────────────────────────────────────────────────
+  window.addEventListener('auth-data-loaded', function(e) {
+    var profile = e.detail.profile;
+    if (!profile || !profile.is_admin) {
+      showToast('Acesso negado. Área restrita a administradores.', 'error');
+      setTimeout(function() { window.location.href = '/dashboard.html'; }, 1500);
+      return;
+    }
+    document.getElementById('admin-badge').classList.remove('hidden');
+    loadBanners();
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // LISTAR
+  // ─────────────────────────────────────────────────────────────────────────
+  async function loadBanners() {
+    try {
+      var r = await window.supabaseClient.from('banners').select('*').order('display_order', { ascending: true });
+      if (r.error) throw r.error;
+      allBanners = r.data || [];
+      document.getElementById('page-loading').classList.add('hidden');
+      document.getElementById('main-content').classList.remove('hidden');
+      renderList();
+    } catch (e) { showToast('Erro ao carregar banners: ' + e.message, 'error'); }
+  }
+
+  function getBannerStatusBadge(b) {
+    var now = new Date();
+    if (!b.is_active) return '<span class="font-mono text-[9px] px-1.5 py-0.5 uppercase badge-inactive">Inativo</span>';
+    if (b.starts_at && new Date(b.starts_at) > now) return '<span class="font-mono text-[9px] px-1.5 py-0.5 uppercase badge-scheduled">Agendado</span>';
+    if (b.ends_at && new Date(b.ends_at) < now) return '<span class="font-mono text-[9px] px-1.5 py-0.5 uppercase badge-inactive">Expirado</span>';
+    return '<span class="font-mono text-[9px] px-1.5 py-0.5 uppercase badge-active">Ativo no site</span>';
+  }
+
+  function renderList() {
+    var container = document.getElementById('banner-list');
+    var emptyEl = document.getElementById('list-empty');
+    document.getElementById('banner-count').innerText = allBanners.length + ' banner' + (allBanners.length !== 1 ? 's' : '');
+
+    if (allBanners.length === 0) { container.innerHTML = ''; emptyEl.classList.remove('hidden'); return; }
+    emptyEl.classList.add('hidden');
+
+    container.innerHTML = allBanners.map(function(b, i) {
+      return '<div class="banner-card rounded p-3 flex items-center gap-4" draggable="true" data-id="' + b.id + '"'
+        + ' ondragstart="onCardDragStart(event,\'' + b.id + '\')"'
+        + ' ondragover="onCardDragOver(event,\'' + b.id + '\')"'
+        + ' ondragleave="onCardDragLeave(event)"'
+        + ' ondrop="onCardDrop(event,\'' + b.id + '\')"'
+        + ' ondragend="onCardDragEnd()">'
+        + '<svg class="drag-handle w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>'
+        + '<div class="w-28 h-16 flex-shrink-0 bg-freo-black rounded overflow-hidden border border-white/[0.06]">'
+        + '<img src="' + b.image_url + '" class="w-full h-full object-cover" onerror="this.style.opacity=0.15">'
+        + '</div>'
+        + '<div class="flex-1 min-w-0 cursor-pointer" onclick="openForm(\'' + b.id + '\')">'
+        + '<div class="flex items-center gap-2 mb-1">'
+        + '<p class="font-display font-bold text-sm text-white truncate">' + (b.title || '(sem título)') + '</p>'
+        + getBannerStatusBadge(b)
+        + '</div>'
+        + '<p class="font-mono text-[10px] text-white/30 truncate">' + (b.link_url ? '→ ' + b.link_url : 'Sem link definido') + '</p>'
+        + '</div>'
+        + '<button onclick="event.stopPropagation();openForm(\'' + b.id + '\')" class="flex-shrink-0 text-xs font-mono text-white/30 hover:text-freo-orange border border-white/10 hover:border-freo-orange/40 px-3 py-1.5 transition-colors uppercase tracking-widest">Editar</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // REORDENAR (drag and drop dos cards)
+  // ─────────────────────────────────────────────────────────────────────────
+  function onCardDragStart(e, id) {
+    dragSrcId = id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+    setTimeout(function() { e.target.classList.add('dragging'); }, 0);
+  }
+  function onCardDragOver(e, id) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragSrcId === id) return;
+    document.querySelectorAll('.banner-card').forEach(function(c) { c.classList.remove('drag-over'); });
+    e.currentTarget.classList.add('drag-over');
+  }
+  function onCardDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+  async function onCardDrop(e, targetId) {
+    e.preventDefault();
+    if (!dragSrcId || dragSrcId === targetId) return;
+    var srcIdx = allBanners.findIndex(function(b) { return String(b.id) === String(dragSrcId); });
+    var targetIdx = allBanners.findIndex(function(b) { return String(b.id) === String(targetId); });
+    if (srcIdx === -1 || targetIdx === -1) return;
+    var moved = allBanners.splice(srcIdx, 1)[0];
+    allBanners.splice(targetIdx, 0, moved);
+    dragSrcId = null;
+    renderList();
+    await persistOrder();
+    showToast('Ordem atualizada!', 'success');
+  }
+  function onCardDragEnd() {
+    dragSrcId = null;
+    document.querySelectorAll('.banner-card').forEach(function(c) { c.classList.remove('dragging', 'drag-over'); });
+  }
+  async function persistOrder() {
+    try {
+      for (var i = 0; i < allBanners.length; i++) {
+        await window.supabaseClient.from('banners').update({ display_order: i }).eq('id', allBanners[i].id);
+        allBanners[i].display_order = i;
+      }
+    } catch (e) { showToast('Erro ao salvar ordem: ' + e.message, 'error'); }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FORMULÁRIO
+  // ─────────────────────────────────────────────────────────────────────────
+  function toDatetimeLocalValue(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    var pad = function(n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function openForm(bannerId) {
+    editingBannerId = bannerId;
+    currentImageUrl = null;
+    currentMobileImageUrl = null;
+    document.getElementById('form-overlay').classList.remove('hidden');
+    document.getElementById('form-overlay').classList.add('flex');
+
+    if (bannerId) {
+      var b = allBanners.find(function(x) { return String(x.id) === String(bannerId); });
+      if (!b) return;
+      document.getElementById('form-title').innerText = 'Editar Banner';
+      document.getElementById('form-subtitle').innerText = 'ID: ' + b.id;
+      document.getElementById('form-delete-btn').classList.remove('hidden');
+      document.getElementById('f-title').value = b.title || '';
+      document.getElementById('f-subtitle').value = b.subtitle || '';
+      document.getElementById('f-link').value = b.link_url || '';
+      document.getElementById('f-button-label').value = b.button_label || '';
+      document.getElementById('f-active').checked = b.is_active !== false;
+      document.getElementById('f-starts-at').value = toDatetimeLocalValue(b.starts_at);
+      document.getElementById('f-ends-at').value = toDatetimeLocalValue(b.ends_at);
+      currentImageUrl = b.image_url || null;
+      currentMobileImageUrl = b.mobile_image_url || null;
+    } else {
+      document.getElementById('form-title').innerText = 'Novo Banner';
+      document.getElementById('form-subtitle').innerText = 'Preencha as informações abaixo';
+      document.getElementById('form-delete-btn').classList.add('hidden');
+      ['f-title', 'f-subtitle', 'f-link', 'f-button-label', 'f-starts-at', 'f-ends-at'].forEach(function(id) { document.getElementById(id).value = ''; });
+      document.getElementById('f-active').checked = true;
+    }
+    renderImagePreview();
+    renderMobileImagePreview();
+  }
+
+  function closeForm() {
+    document.getElementById('form-overlay').classList.add('hidden');
+    document.getElementById('form-overlay').classList.remove('flex');
+    editingBannerId = null;
+  }
+  function handleOverlayClick(e) { if (e.target === document.getElementById('form-overlay')) closeForm(); }
+
+  // ─── IMAGEM DESKTOP ─────────────────────────────────────────────────────
+  function renderImagePreview() {
+    var wrap = document.getElementById('img-preview-wrap');
+    var el = document.getElementById('img-preview-el');
+    var icon = document.getElementById('img-drop-icon');
+    if (currentImageUrl) {
+      el.src = currentImageUrl;
+      wrap.classList.remove('hidden');
+      icon.classList.add('hidden');
+    } else {
+      wrap.classList.add('hidden');
+      icon.classList.remove('hidden');
+      el.src = '';
+    }
+  }
+  function setImageByURL() {
+    var url = document.getElementById('img-url-input').value.trim();
+    if (!url) return;
+    currentImageUrl = url;
+    document.getElementById('img-url-input').value = '';
+    renderImagePreview();
+  }
+  function handleFileSelect(e) { if (e.target.files.length > 0) uploadBannerImage(e.target.files[0], 'desktop'); }
+  function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
+  function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('dragover'); }
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('dragover');
+    var files = Array.from(e.dataTransfer.files).filter(function(f) { return f.type.startsWith('image/'); });
+    if (files.length > 0) uploadBannerImage(files[0], 'desktop');
+  }
+
+  // ─── IMAGEM MOBILE ──────────────────────────────────────────────────────
+  function renderMobileImagePreview() {
+    var wrap = document.getElementById('mobile-img-preview-wrap');
+    var el = document.getElementById('mobile-img-preview-el');
+    var removeBtn = document.getElementById('mobile-remove-btn');
+    if (currentMobileImageUrl) {
+      el.src = currentMobileImageUrl;
+      wrap.classList.remove('hidden');
+      removeBtn.classList.remove('hidden');
+    } else {
+      wrap.classList.add('hidden');
+      removeBtn.classList.add('hidden');
+      el.src = '';
+    }
+  }
+  function removeMobileImage() { currentMobileImageUrl = null; renderMobileImagePreview(); }
+  function handleMobileFileSelect(e) { if (e.target.files.length > 0) uploadBannerImage(e.target.files[0], 'mobile'); }
+  function handleMobileDragOver(e) { e.preventDefault(); document.getElementById('mobile-drop-zone').classList.add('dragover'); }
+  function handleMobileDragLeave(e) { document.getElementById('mobile-drop-zone').classList.remove('dragover'); }
+  function handleMobileDrop(e) {
+    e.preventDefault();
+    document.getElementById('mobile-drop-zone').classList.remove('dragover');
+    var files = Array.from(e.dataTransfer.files).filter(function(f) { return f.type.startsWith('image/'); });
+    if (files.length > 0) uploadBannerImage(files[0], 'mobile');
+  }
+
+  // ─── UPLOAD (mesmo bucket "imagens" já usado em produtos.html) ─────────
+  async function uploadBannerImage(file, kind) {
+    if (file.size > 5 * 1024 * 1024) { showToast(file.name + ' excede 5MB.', 'error'); return; }
+
+    var wrapId = kind === 'mobile' ? 'mobile-upload-progress-wrap' : 'upload-progress-wrap';
+    var barId  = kind === 'mobile' ? 'mobile-upload-progress-bar' : 'upload-progress-bar';
+    var pctId  = kind === 'mobile' ? 'mobile-upload-pct' : 'upload-pct';
+    var wrap = document.getElementById(wrapId), bar = document.getElementById(barId), pct = document.getElementById(pctId);
+    wrap.classList.remove('hidden'); bar.style.width = '15%'; pct.innerText = '15%';
+
+    var ext = file.name.split('.').pop();
+    var path = 'banners/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+
+    try {
+      var r = await window.supabaseClient.storage.from('imagens').upload(path, file, { upsert: false, contentType: file.type });
+      if (r.error) throw r.error;
+      bar.style.width = '100%'; pct.innerText = '100%';
+      var pub = window.supabaseClient.storage.from('imagens').getPublicUrl(path);
+      if (kind === 'mobile') { currentMobileImageUrl = pub.data.publicUrl; renderMobileImagePreview(); }
+      else { currentImageUrl = pub.data.publicUrl; renderImagePreview(); }
+      showToast('Imagem enviada!', 'success');
+    } catch (e) {
+      showToast('Erro ao enviar imagem: ' + e.message, 'error');
+    } finally {
+      setTimeout(function() { wrap.classList.add('hidden'); bar.style.width = '0%'; }, 800);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SALVAR
+  // ─────────────────────────────────────────────────────────────────────────
+  async function saveBanner() {
+    var btn = document.getElementById('form-save-btn');
+
+    if (!currentImageUrl) {
+      showToast('Envie ou informe a imagem do banner (desktop).', 'error');
+      return;
+    }
+
+    var startsAtRaw = document.getElementById('f-starts-at').value;
+    var endsAtRaw = document.getElementById('f-ends-at').value;
+
+    var payload = {
+      title: document.getElementById('f-title').value.trim() || null,
+      subtitle: document.getElementById('f-subtitle').value.trim() || null,
+      image_url: currentImageUrl,
+      mobile_image_url: currentMobileImageUrl || null,
+      link_url: document.getElementById('f-link').value.trim() || null,
+      button_label: document.getElementById('f-button-label').value.trim() || null,
+      is_active: document.getElementById('f-active').checked,
+      starts_at: startsAtRaw ? new Date(startsAtRaw).toISOString() : null,
+      ends_at: endsAtRaw ? new Date(endsAtRaw).toISOString() : null,
+    };
+
+    btn.innerText = 'Salvando...'; btn.disabled = true;
+
+    try {
+      if (editingBannerId) {
+        var rUpd = await window.supabaseClient.from('banners').update(payload).eq('id', editingBannerId);
+        if (rUpd.error) throw rUpd.error;
+      } else {
+        payload.display_order = allBanners.length; // novo banner vai pro final da fila
+        var rIns = await window.supabaseClient.from('banners').insert(payload);
+        if (rIns.error) throw rIns.error;
+      }
+      showToast(editingBannerId ? 'Banner atualizado!' : 'Banner criado!', 'success');
+      closeForm();
+      loadBanners();
+    } catch (e) {
+      showToast('Erro ao salvar: ' + e.message, 'error');
+    } finally {
+      btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar';
+      btn.disabled = false;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // EXCLUIR
+  // ─────────────────────────────────────────────────────────────────────────
+  function confirmDelete() {
+    if (!editingBannerId) return;
+    var b = allBanners.find(function(x) { return String(x.id) === String(editingBannerId); });
+    if (!confirm('Excluir o banner "' + (b ? (b.title || '(sem título)') : '') + '"?\n\nEsta ação não pode ser desfeita.')) return;
+    deleteBanner();
+  }
+  async function deleteBanner() {
+    if (!editingBannerId) return;
+    try {
+      var r = await window.supabaseClient.from('banners').delete().eq('id', editingBannerId);
+      if (r.error) throw r.error;
+      showToast('Banner excluído.', 'success');
+      closeForm();
+      loadBanners();
+    } catch (e) { showToast('Erro ao excluir: ' + e.message, 'error'); }
+  }
+
+  // ─── TOAST ────────────────────────────────────────────────────────────────
+  var toastTimer;
+  function showToast(msg, type) {
+    var el = document.getElementById('toast');
+    el.innerText = msg; el.className = 'show ' + (type || 'success');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { el.className = type || 'success'; }, 3200);
+  }
+  </script>
+</body>
+</html>
