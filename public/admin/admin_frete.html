@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Frete · Freo Figures</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0e0e0f; color: #f0efeb; font-family: 'DM Sans', system-ui, sans-serif; min-height: 100vh; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+    h1 { font-family: 'DM Serif Display', serif; font-size: 32px; color: #DDAF34; margin-bottom: 8px; }
+    .subtitle { color: #666663; font-size: 14px; margin-bottom: 40px; }
+    .card { background: #161618; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; margin-bottom: 28px; }
+    .card h2 { font-size: 16px; font-weight: 700; color: #DDAF34; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px; }
+    .card-hint { font-size: 12px; color: #666663; margin-bottom: 20px; line-height: 1.6; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #888885; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+    label .opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: #666663; }
+    input, select, textarea {
+      width: 100%; background: #0e0e0f; border: 1px solid rgba(255,255,255,0.12);
+      color: #f0efeb; padding: 10px 14px; font-family: inherit; font-size: 14px;
+      border-radius: 6px; outline: none; transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #DDAF34; }
+    select option { background: #0e0e0f; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; transition: all 0.15s; }
+    .btn-primary { background: #DDAF34; color: #0e0e0f; }
+    .btn-primary:hover { background: #f5c842; }
+    .btn-secondary { background: transparent; color: #DDAF34; border: 1px solid #DDAF34; }
+    .btn-secondary:hover { background: rgba(221,175,52,0.1); }
+    .btn-danger { background: transparent; color: #e94560; border: 1px solid rgba(233,69,96,0.4); font-size: 12px; padding: 6px 12px; border-radius: 4px; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
+    .badge-active { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-inactive { background: rgba(233,69,96,0.15); color: #e94560; border: 1px solid rgba(233,69,96,0.3); }
+    .badge-uf { background: rgba(0,245,255,0.1); color: #00f5ff; border: 1px solid rgba(0,245,255,0.3); }
+    .badge-catchall { background: rgba(221,175,52,0.1); color: #DDAF34; border: 1px solid rgba(221,175,52,0.3); }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: #444441; text-transform: uppercase; padding: 0 16px 12px; }
+    td { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 13px; vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e1e21; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: #f0efeb; display: flex; align-items: center; gap: 10px; z-index: 9999; transition: transform 0.3s; white-space: nowrap; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
+    .dot.red { background: #e94560; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9998; display: flex; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+    .modal { background: #161618; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px; max-width: 560px; width: 100%; }
+    .modal h3 { font-family: 'DM Serif Display', serif; color: #DDAF34; font-size: 22px; margin-bottom: 4px; }
+    .field-group { margin-bottom: 16px; }
+    #auth-wall { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 20px; }
+    .uf-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; margin-top: 4px; }
+    .uf-chip {
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px 0; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.05em; cursor: pointer;
+      color: #888885; background: #0e0e0f; transition: all 0.15s; user-select: none;
+    }
+    .uf-chip:hover { border-color: rgba(221,175,52,0.4); }
+    .uf-chip.selected { background: rgba(221,175,52,0.12); border-color: #DDAF34; color: #DDAF34; }
+    .catchall-note { font-size: 12px; color: #666663; margin-top: 10px; line-height: 1.6; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); }
+    .rule-desc { font-weight: 700; color: #f0efeb; }
+    .rule-detail { font-size: 11px; color: #666663; margin-top: 2px; }
+    @media (max-width: 640px) { .uf-grid { grid-template-columns: repeat(6, 1fr); } }
+  </style>
+</head>
+<body>
+
+<div id="app" style="display:none;">
+  <div class="container">
+    <h1>Promoções de Frete</h1>
+    <p class="subtitle">Configure frete grátis ou subsidiado por estado · FreoFigures</p>
+
+    <!-- Formulário de criação -->
+    <div class="card no-print">
+      <h2>Nova Regra de Frete</h2>
+      <p class="card-hint">
+        Escolha os estados aos quais esta regra se aplica. Se você não marcar nenhum estado,
+        a regra vira o <strong>padrão para o resto do Brasil</strong> — ou seja, vale para
+        qualquer estado que não tenha uma regra própria mais específica.
+      </p>
+
+      <div class="field-group">
+        <label>Nome da Regra <span class="opt">(só para você identificar na lista)</span></label>
+        <input type="text" id="f-desc" placeholder="Ex: São Paulo capital ou Resto do Brasil" />
+      </div>
+
+      <div class="field-group">
+        <label>Estados desta regra <span class="opt">(clique para selecionar — nenhum selecionado = regra padrão)</span></label>
+        <div class="uf-grid" id="f-uf-grid"></div>
+        <div class="catchall-note" id="f-catchall-note">
+          ⚡ Nenhum estado selecionado — esta será a <strong>regra padrão</strong> para todos os estados
+          que não tiverem uma regra própria.
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:8px;">
+        <div class="field-group">
+          <label>Frete 100% grátis a partir de <span class="opt">(opcional)</span></label>
+          <input type="number" id="f-min-free" min="0" step="0.01" placeholder="Ex: 300.00 — vazio = nunca fica 100% grátis" />
+        </div>
+        <div class="field-group">
+          <label>Tipo de subsídio abaixo desse valor</label>
+          <select id="f-subsidy-type" onchange="toggleSubsidyFields('f')">
+            <option value="none">Nenhum — cobra o frete cheio</option>
+            <option value="fixed">Valor fixo (R$ a loja paga)</option>
+            <option value="percent">Percentual (% do frete a loja paga)</option>
+          </select>
+        </div>
+        <div class="field-group" id="f-subsidy-value-wrap" style="display:none;">
+          <label id="f-subsidy-value-label">Valor do subsídio</label>
+          <input type="number" id="f-subsidy-value" min="0" step="0.01" placeholder="Ex: 15.00 ou 50" />
+        </div>
+        <div class="field-group" id="f-subsidy-min-wrap" style="display:none;">
+          <label>Subsídio parcial válido a partir de</label>
+          <input type="number" id="f-min-subsidy" min="0" step="0.01" placeholder="Ex: 150.00" />
+        </div>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="createRule()">Criar Regra</button>
+      </div>
+    </div>
+
+    <!-- Lista de regras -->
+    <div class="card">
+      <h2>Regras Cadastradas</h2>
+      <div id="list-loading" style="text-align:center; padding:40px; color:#444441; font-size:14px;">Carregando...</div>
+      <div id="list-wrap" style="display:none; overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Regra</th>
+              <th>Estados</th>
+              <th>Grátis a partir de</th>
+              <th>Subsídio parcial</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="list-body"></tbody>
+        </table>
+      </div>
+      <div id="list-empty" style="display:none; text-align:center; padding:40px; color:#444441; font-size:14px;">
+        Nenhuma regra cadastrada. Sem regras, o frete é sempre cobrado integralmente.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edição -->
+<div class="modal-overlay" id="edit-modal" style="display:none;" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3>Editar Regra</h3>
+      <button onclick="document.getElementById('edit-modal').style.display='none'"
+        style="background:none;border:none;color:#666663;cursor:pointer;font-size:20px;">&times;</button>
+    </div>
+    <input type="hidden" id="edit-id" />
+
+    <div class="field-group">
+      <label>Nome da Regra</label>
+      <input type="text" id="edit-desc" />
+    </div>
+
+    <div class="field-group">
+      <label>Estados desta regra <span class="opt">(nenhum selecionado = regra padrão)</span></label>
+      <div class="uf-grid" id="edit-uf-grid"></div>
+      <div class="catchall-note" id="edit-catchall-note">
+        ⚡ Nenhum estado selecionado — esta será a <strong>regra padrão</strong> para todos os estados
+        que não tiverem uma regra própria.
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="field-group">
+        <label>Frete 100% grátis a partir de <span class="opt">(opcional)</span></label>
+        <input type="number" id="edit-min-free" min="0" step="0.01" placeholder="vazio = nunca fica 100% grátis" />
+      </div>
+      <div class="field-group">
+        <label>Tipo de subsídio abaixo desse valor</label>
+        <select id="edit-subsidy-type" onchange="toggleSubsidyFields('edit')">
+          <option value="none">Nenhum — cobra o frete cheio</option>
+          <option value="fixed">Valor fixo (R$ a loja paga)</option>
+          <option value="percent">Percentual (% do frete a loja paga)</option>
+        </select>
+      </div>
+      <div class="field-group" id="edit-subsidy-value-wrap" style="display:none;">
+        <label id="edit-subsidy-value-label">Valor do subsídio</label>
+        <input type="number" id="edit-subsidy-value" min="0" step="0.01" />
+      </div>
+      <div class="field-group" id="edit-subsidy-min-wrap" style="display:none;">
+        <label>Subsídio parcial válido a partir de</label>
+        <input type="number" id="edit-min-subsidy" min="0" step="0.01" />
+      </div>
+      <div class="field-group">
+        <label>Status</label>
+        <select id="edit-is-active">
+          <option value="true">Ativa</option>
+          <option value="false">Inativa</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="saveRuleEdit()">Salvar Alterações</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('edit-modal').style.display='none'">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><div class="dot" id="toast-dot"></div><span id="toast-msg"></span></div>
+
+<script>
+  const sb = window.supabaseClient;
+
+  const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+
+  // Estado dos chips selecionados (form de criação e de edição são independentes)
+  let selectedUFsCreate = new Set();
+  let selectedUFsEdit = new Set();
+
+  // ── Auth (mesmo padrão do resto do admin) ────────────────────────────────
+  window.addEventListener('auth-not-logged-in', () => {
+    window.location.href = '/login.html';
+  });
+
+  window.addEventListener('auth-data-loaded', (e) => {
+    const { profile } = e.detail;
+    if (!profile || profile.is_admin !== true) {
+      alert('Acesso negado. Apenas administradores podem acessar esta página.');
+      window.location.href = '/dashboard.html';
+      return;
+    }
+    document.getElementById('app').style.display = 'block';
+    buildUfGrid('f-uf-grid', selectedUFsCreate, 'f');
+    buildUfGrid('edit-uf-grid', selectedUFsEdit, 'edit');
+    loadRules();
+  });
+
+  // ── Utils ───────────────────────────────────────────────────────────────
+  function showToast(msg, ok = true) {
+    const el = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    document.getElementById('toast-dot').className = 'dot' + (ok ? '' : ' red');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  function fmtMoney(v) {
+    return 'R$ ' + parseFloat(v).toFixed(2).replace('.', ',');
+  }
+
+  function buildUfGrid(containerId, selectedSet, prefix) {
+    const grid = document.getElementById(containerId);
+    grid.innerHTML = '';
+    UFS.forEach(uf => {
+      const chip = document.createElement('div');
+      chip.className = 'uf-chip';
+      chip.textContent = uf;
+      chip.dataset.uf = uf;
+      chip.onclick = () => {
+        if (selectedSet.has(uf)) { selectedSet.delete(uf); chip.classList.remove('selected'); }
+        else { selectedSet.add(uf); chip.classList.add('selected'); }
+        updateCatchallNote(prefix, selectedSet);
+      };
+      grid.appendChild(chip);
+    });
+    updateCatchallNote(prefix, selectedSet);
+  }
+
+  function updateCatchallNote(prefix, selectedSet) {
+    const note = document.getElementById(prefix + '-catchall-note');
+    if (!note) return;
+    note.style.display = selectedSet.size === 0 ? 'block' : 'none';
+  }
+
+  function toggleSubsidyFields(prefix) {
+    const type = document.getElementById(prefix + '-subsidy-type').value;
+    const valueWrap = document.getElementById(prefix + '-subsidy-value-wrap');
+    const minWrap = document.getElementById(prefix + '-subsidy-min-wrap');
+    const label = document.getElementById(prefix + '-subsidy-value-label');
+    if (type === 'none') {
+      valueWrap.style.display = 'none';
+      minWrap.style.display = 'none';
+    } else {
+      valueWrap.style.display = 'block';
+      minWrap.style.display = 'block';
+      label.textContent = type === 'percent' ? 'Percentual que a loja paga (%)' : 'Valor fixo que a loja paga (R$)';
+    }
+  }
+
+  // ── Criar regra ───────────────────────────────────────────────────────────
+  async function createRule() {
+    const desc = document.getElementById('f-desc').value.trim();
+    const minFreeRaw = document.getElementById('f-min-free').value;
+    const subsidyType = document.getElementById('f-subsidy-type').value;
+    const subsidyValueRaw = document.getElementById('f-subsidy-value').value;
+    const minSubsidyRaw = document.getElementById('f-min-subsidy').value;
+
+    if (!desc) { showToast('Dê um nome para a regra.', false); return; }
+
+    if (!minFreeRaw && subsidyType === 'none') {
+      showToast('Configure ao menos o frete grátis ou um subsídio parcial.', false);
+      return;
+    }
+
+    if (subsidyType !== 'none' && !subsidyValueRaw) {
+      showToast('Informe o valor do subsídio.', false);
+      return;
+    }
+
+    const payload = {
+      description: desc,
+      uf_list: selectedUFsCreate.size > 0 ? Array.from(selectedUFsCreate) : null,
+      min_order_value_free: minFreeRaw ? parseFloat(minFreeRaw) : null,
+      subsidy_type: subsidyType,
+      subsidy_value: subsidyType !== 'none' ? parseFloat(subsidyValueRaw) : null,
+      min_order_value_subsidy: subsidyType !== 'none' && minSubsidyRaw ? parseFloat(minSubsidyRaw) : null,
+    };
+
+    const { error } = await sb.from('shipping_promotions').insert(payload);
+    if (error) { showToast('Erro: ' + error.message, false); return; }
+
+    showToast('Regra criada com sucesso!');
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-min-free').value = '';
+    document.getElementById('f-subsidy-value').value = '';
+    document.getElementById('f-min-subsidy').value = '';
+    document.getElementById('f-subsidy-type').value = 'none';
+    toggleSubsidyFields('f');
+    selectedUFsCreate.clear();
+    buildUfGrid('f-uf-grid', selectedUFsCreate, 'f');
+    loadRules();
+  }
+
+  // ── Carregar lista ────────────────────────────────────────────────────────
+  async function loadRules() {
+    document.getElementById('list-loading').style.display = 'block';
+    document.getElementById('list-wrap').style.display = 'none';
+    document.getElementById('list-empty').style.display = 'none';
+
+    const { data, error } = await sb.from('shipping_promotions').select('*').order('created_at', { ascending: false });
+
+    document.getElementById('list-loading').style.display = 'none';
+
+    if (error) { showToast('Erro ao carregar regras: ' + error.message, false); return; }
+
+    if (!data || data.length === 0) { document.getElementById('list-empty').style.display = 'block'; return; }
+
+    document.getElementById('list-wrap').style.display = 'block';
+    const tbody = document.getElementById('list-body');
+    tbody.innerHTML = '';
+
+    data.forEach(r => {
+      const isCatchall = !r.uf_list || r.uf_list.length === 0;
+      const ufBadge = isCatchall
+        ? '<span class="badge badge-catchall">🌎 Resto do Brasil</span>'
+        : '<span class="badge badge-uf">' + r.uf_list.join(', ') + '</span>';
+
+      const freeLabel = r.min_order_value_free !== null && r.min_order_value_free !== undefined
+        ? fmtMoney(r.min_order_value_free)
+        : '<span style="color:#444441;">Não configurado</span>';
+
+      let subsidyLabel = '<span style="color:#444441;">Nenhum</span>';
+      if (r.subsidy_type === 'fixed') {
+        subsidyLabel = fmtMoney(r.subsidy_value) + ' fixo<div class="rule-detail">a partir de ' + fmtMoney(r.min_order_value_subsidy || 0) + '</div>';
+      } else if (r.subsidy_type === 'percent') {
+        subsidyLabel = parseFloat(r.subsidy_value) + '% do frete<div class="rule-detail">a partir de ' + fmtMoney(r.min_order_value_subsidy || 0) + '</div>';
+      }
+
+      const statusBadge = r.is_active ? '<span class="badge badge-active">Ativa</span>' : '<span class="badge badge-inactive">Inativa</span>';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="rule-desc">${escapeHTML(r.description)}</span></td>
+        <td>${ufBadge}</td>
+        <td><span style="font-size:12px; color:#888885;">${freeLabel}</span></td>
+        <td><span style="font-size:12px; color:#888885;">${subsidyLabel}</span></td>
+        <td>${statusBadge}</td>
+        <td style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button class="btn btn-secondary" style="padding:6px 12px; font-size:11px;" onclick="openEditModal('${r.id}')">✏️ Editar</button>
+          <button class="btn btn-danger" onclick="toggleActive('${r.id}', ${r.is_active})">${r.is_active ? 'Desativar' : 'Ativar'}</button>
+          <button class="btn btn-danger" onclick="deleteRule('${r.id}')">🗑️ Excluir</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function escapeHTML(v) {
+    if (v === null || v === undefined) return '';
+    return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  // ── Toggle ativo ──────────────────────────────────────────────────────────
+  async function toggleActive(id, current) {
+    const { error } = await sb.from('shipping_promotions').update({ is_active: !current }).eq('id', id);
+    if (error) { showToast('Erro: ' + error.message, false); return; }
+    showToast(current ? 'Regra desativada.' : 'Regra ativada.');
+    loadRules();
+  }
+
+  // ── Excluir ───────────────────────────────────────────────────────────────
+  async function deleteRule(id) {
+    if (!confirm('Excluir esta regra de frete permanentemente?')) return;
+    const { error } = await sb.from('shipping_promotions').delete().eq('id', id);
+    if (error) { showToast('Erro: ' + error.message, false); return; }
+    showToast('Regra excluída.');
+    loadRules();
+  }
+
+  // ── Editar ────────────────────────────────────────────────────────────────
+  async function openEditModal(id) {
+    const { data, error } = await sb.from('shipping_promotions').select('*').eq('id', id).single();
+    if (error || !data) { showToast('Erro ao carregar regra.', false); return; }
+
+    document.getElementById('edit-id').value = data.id;
+    document.getElementById('edit-desc').value = data.description;
+    document.getElementById('edit-min-free').value = data.min_order_value_free ?? '';
+    document.getElementById('edit-subsidy-type').value = data.subsidy_type || 'none';
+    document.getElementById('edit-subsidy-value').value = data.subsidy_value ?? '';
+    document.getElementById('edit-min-subsidy').value = data.min_order_value_subsidy ?? '';
+    document.getElementById('edit-is-active').value = String(data.is_active);
+
+    selectedUFsEdit = new Set(data.uf_list || []);
+    buildUfGrid('edit-uf-grid', selectedUFsEdit, 'edit');
+    // marca visualmente os chips já selecionados
+    document.querySelectorAll('#edit-uf-grid .uf-chip').forEach(chip => {
+      if (selectedUFsEdit.has(chip.dataset.uf)) chip.classList.add('selected');
+    });
+
+    toggleSubsidyFields('edit');
+    document.getElementById('edit-modal').style.display = 'flex';
+  }
+
+  async function saveRuleEdit() {
+    const id = document.getElementById('edit-id').value;
+    const desc = document.getElementById('edit-desc').value.trim();
+    const minFreeRaw = document.getElementById('edit-min-free').value;
+    const subsidyType = document.getElementById('edit-subsidy-type').value;
+    const subsidyValueRaw = document.getElementById('edit-subsidy-value').value;
+    const minSubsidyRaw = document.getElementById('edit-min-subsidy').value;
+    const isActive = document.getElementById('edit-is-active').value === 'true';
+
+    if (!desc) { showToast('O nome da regra não pode estar vazio.', false); return; }
+
+    if (subsidyType !== 'none' && !subsidyValueRaw) {
+      showToast('Informe o valor do subsídio.', false);
+      return;
+    }
+
+    const payload = {
+      description: desc,
+      uf_list: selectedUFsEdit.size > 0 ? Array.from(selectedUFsEdit) : null,
+      min_order_value_free: minFreeRaw ? parseFloat(minFreeRaw) : null,
+      subsidy_type: subsidyType,
+      subsidy_value: subsidyType !== 'none' ? parseFloat(subsidyValueRaw) : null,
+      min_order_value_subsidy: subsidyType !== 'none' && minSubsidyRaw ? parseFloat(minSubsidyRaw) : null,
+      is_active: isActive,
+    };
+
+    const { error } = await sb.from('shipping_promotions').update(payload).eq('id', id);
+    if (error) { showToast('Erro ao salvar: ' + error.message, false); return; }
+
+    showToast('Regra atualizada com sucesso!');
+    document.getElementById('edit-modal').style.display = 'none';
+    loadRules();
+  }
+
+  function closeEditModal(event) {
+    if (event.target === document.getElementById('edit-modal'))
+      document.getElementById('edit-modal').style.display = 'none';
+  }
+</script>
+<script src="/auth-listener.js"></script>
+</body>
+</html>
