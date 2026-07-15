@@ -1833,14 +1833,14 @@ const ProcessSection = () => (
       </div>
       <div className="order-1 lg:order-2">
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-black uppercase tracking-tighter mb-6 md:mb-8">
-          A Arte da <br /><span className="text-freo-orange">Manufatura Aditiva</span>
+          Feito para <br /><span className="text-freo-orange">representar você</span>
         </h2>
         <div className="space-y-6 md:space-y-8">
           {[
-            { num: '01', title: 'Design & Modelagem', desc: 'Criamos ou curamos modelos 3D exclusivos, otimizados para a melhor resolução possível.' },
-            { num: '02', title: 'Fatiamento de Precisão', desc: 'Configuramos cada camada no software para garantir resistência estrutural e acabamento impecável.' },
-            { num: '03', title: 'Impressão Camada a Camada', desc: 'Nossas máquinas depositam o material com precisão para transformar ideia em peça real.' },
-            { num: '04', title: 'Pós-Processamento', desc: 'Limpeza, ajustes e controle de qualidade antes do envio.' },
+            { num: '01', title: 'Significado', desc: 'Peças escolhidas para representar sua fé, suas paixões e sua personalidade..' },
+            { num: '02', title: 'Precisão', desc: 'Produção cuidadosa e atenção aos detalhes em cada etapa..' },
+            { num: '03', title: 'Presença', desc: 'Criações que transformam ambientes e fazem seu espaço falar por você..' },
+            { num: '04', title: 'Sua história', desc: 'Cada peça encontra seu verdadeiro propósito quando passa a fazer parte do seu ambiente e da sua história..' },
           ].map(step => (
             <div key={step.num} className="flex gap-5 md:gap-6 group">
               <div className="font-display font-black text-3xl md:text-4xl text-freo-gray group-hover:text-freo-orange transition-colors flex-shrink-0">{step.num}</div>
