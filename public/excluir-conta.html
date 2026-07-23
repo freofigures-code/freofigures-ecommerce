@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-PSSBXMVL');</script>
+  <!-- End Google Tag Manager -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Excluir Conta | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#121212',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#DDAF34',
+            'freo-cyan': '#2C3E50',
+            'freo-red': '#E14848',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ── Custom checkbox ── */
+    .freo-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      background: #0A0A0A;
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .freo-checkbox:checked {
+      background: #E14848;
+      border-color: #E14848;
+    }
+    .freo-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 5px;
+      height: 9px;
+      border: 2px solid #0A0A0A;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+    .freo-checkbox:focus {
+      outline: none;
+      border-color: #E14848;
+      box-shadow: 0 0 0 2px rgba(225,72,72,0.2);
+    }
+    .freo-checkbox:hover:not(:checked) {
+      border-color: rgba(225,72,72,0.5);
+    }
+
+    /* ── Botão desabilitado ── */
+    .btn-disabled {
+      opacity: 0.35;
+      cursor: not-allowed !important;
+      pointer-events: none;
+    }
+    .btn-enabled {
+      opacity: 1;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    /* ── Shake animation ── */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-6px); }
+      40%       { transform: translateX(6px); }
+      60%       { transform: translateX(-4px); }
+      80%       { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(225,72,72,0.3); }
+      50%       { border-color: #E14848; box-shadow: 0 0 0 3px rgba(225,72,72,0.25); }
+    }
+    .checkbox-alert { animation: pulse-border 0.5s ease 2; }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 0.7s linear infinite; }
+
+    /* ── Check de sucesso ── */
+    @keyframes pop-in {
+      0%   { transform: scale(0); opacity: 0; }
+      70%  { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pop-in { animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+</head>
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex items-center justify-center selection:bg-freo-orange selection:text-white px-4">
+
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PSSBXMVL"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
+  <div class="relative w-full max-w-md bg-freo-dark border border-white/10 shadow-2xl overflow-hidden">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-red to-freo-orange"></div>
+
+    <!-- ═══════════ ESTADO: VERIFICANDO LOGIN ═══════════ -->
+    <div id="state-checking" class="p-8 text-center">
+      <div class="flex justify-center mb-6">
+        <div class="w-8 h-8 border-2 border-freo-orange/30 border-t-freo-orange rounded-full spin"></div>
+      </div>
+      <p class="text-freo-light/60 font-mono text-sm">Verificando sua sessão...</p>
+    </div>
+
+    <!-- ═══════════ ESTADO: NÃO LOGADO ═══════════ -->
+    <div id="state-not-logged" class="hidden p-8 text-center">
+      <div class="flex justify-center mb-6">
+        <span class="text-5xl">🔒</span>
+      </div>
+      <h2 class="text-2xl font-display font-black uppercase mb-3 text-white">
+        Você precisa entrar
+      </h2>
+      <p class="text-freo-light/60 font-body text-sm mb-8">
+        Para excluir uma conta, primeiro faça login com o e-mail e senha dela.
+      </p>
+      <a href="/login.html" class="inline-block w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors">
+        Ir para o Login
+      </a>
+    </div>
+
+    <!-- ═══════════ ESTADO: CONFIRMAÇÃO ═══════════ -->
+    <div id="state-confirm" class="hidden p-8">
+      <div class="flex justify-center mb-8">
+        <div class="w-16 h-16 rounded-full bg-freo-red/10 border-2 border-freo-red flex items-center justify-center">
+          <span class="text-3xl">⚠️</span>
+        </div>
+      </div>
+
+      <h2 class="text-3xl font-display font-black uppercase text-center mb-2 text-white">
+        Excluir Conta
+      </h2>
+      <p class="text-freo-light/60 text-center font-body text-sm mb-2">
+        Você está prestes a excluir permanentemente a conta:
+      </p>
+      <p id="user-email-display" class="text-freo-orange text-center font-mono text-sm mb-8 break-all"></p>
+
+      <div id="error-message" class="hidden bg-red-500/10 border border-red-500 text-red-500 p-4 text-center font-mono text-sm mb-6"></div>
+
+      <!-- Lista do que será apagado -->
+      <div class="border border-white/8 bg-freo-black/40 p-5 mb-6">
+        <p class="text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-3">Isso vai apagar permanentemente:</p>
+        <ul class="space-y-2 text-sm text-freo-light/75 font-body">
+          <li class="flex items-start gap-2"><span class="text-freo-red mt-0.5">✕</span> Seus dados de login e acesso</li>
+          <li class="flex items-start gap-2"><span class="text-freo-red mt-0.5">✕</span> Itens salvos no seu carrinho</li>
+          <li class="flex items-start gap-2"><span class="text-freo-red mt-0.5">✕</span> Histórico de pedidos vinculado à conta</li>
+          <li class="flex items-start gap-2"><span class="text-freo-red mt-0.5">✕</span> Todas as informações pessoais associadas</li>
+        </ul>
+        <p class="text-freo-red/90 font-mono text-xs mt-4 uppercase tracking-wide">Esta ação não pode ser desfeita.</p>
+      </div>
+
+      <!-- Confirmação de senha -->
+      <div class="mb-4">
+        <label class="block text-xs font-mono text-freo-light/50 uppercase tracking-widest mb-2">Confirme sua senha</label>
+        <input type="password" id="confirm-password" required class="w-full bg-freo-black border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-freo-red transition-colors font-mono text-sm" placeholder="••••••••" />
+      </div>
+
+      <!-- Checkbox de aceite -->
+      <div id="terms-wrapper" class="border border-white/8 bg-freo-black/40 p-4 mb-4">
+        <label class="flex items-start gap-3 cursor-pointer group">
+          <input type="checkbox" id="confirm-checkbox" class="freo-checkbox mt-0.5" />
+          <span class="text-xs font-mono text-freo-light/55 leading-relaxed group-hover:text-freo-light/75 transition-colors">
+            Entendo que essa ação é <strong class="text-freo-light/80">permanente e irreversível</strong>, e que todos os meus dados serão excluídos definitivamente da FreoFigures.
+          </span>
+        </label>
+      </div>
+
+      <button id="delete-btn" type="button" class="w-full bg-freo-red text-white font-bold font-display uppercase tracking-widest py-4 hover:bg-red-600 transition-colors flex justify-center items-center gap-2 btn-disabled">
+        Excluir minha conta
+      </button>
+
+      <div class="mt-6 text-center">
+        <a href="/dashboard.html" class="text-freo-light/50 hover:text-freo-orange text-sm font-body transition-colors">
+          Cancelar e voltar
+        </a>
+      </div>
+    </div>
+
+    <!-- ═══════════ ESTADO: PROCESSANDO ═══════════ -->
+    <div id="state-processing" class="hidden p-8 text-center">
+      <div class="flex justify-center mb-6">
+        <div class="w-10 h-10 border-2 border-freo-red/30 border-t-freo-red rounded-full spin"></div>
+      </div>
+      <h2 class="text-xl font-display font-black uppercase mb-2 text-white">
+        Excluindo sua conta...
+      </h2>
+      <p class="text-freo-light/50 font-mono text-xs">Por favor, aguarde. Não feche esta página.</p>
+    </div>
+
+    <!-- ═══════════ ESTADO: SUCESSO ═══════════ -->
+    <div id="state-success" class="hidden p-8 text-center">
+      <div class="flex justify-center mb-6">
+        <div class="w-16 h-16 rounded-full bg-green-500/10 border-2 border-green-500 flex items-center justify-center pop-in">
+          <svg class="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      </div>
+      <h2 class="text-2xl font-display font-black uppercase mb-2 text-white">
+        Conta excluída
+      </h2>
+      <p class="text-freo-light/60 font-body text-sm mb-8">
+        Sua conta e todos os seus dados foram removidos permanentemente da FreoFigures. Sentiremos sua falta na forja.
+      </p>
+      <a href="/" class="inline-block w-full bg-freo-orange text-freo-black font-bold font-display uppercase tracking-widest py-4 hover:bg-white transition-colors">
+        Voltar ao início
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    const stateChecking   = document.getElementById('state-checking');
+    const stateNotLogged  = document.getElementById('state-not-logged');
+    const stateConfirm    = document.getElementById('state-confirm');
+    const stateProcessing = document.getElementById('state-processing');
+    const stateSuccess    = document.getElementById('state-success');
+
+    function showState(el) {
+      [stateChecking, stateNotLogged, stateConfirm, stateProcessing, stateSuccess].forEach(s => s.classList.add('hidden'));
+      el.classList.remove('hidden');
+    }
+
+    let currentUser = null;
+
+    // ── Verifica se há sessão ativa ao carregar a página ──
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const { data: { session }, error } = await window.supabaseClient.auth.getSession();
+        if (error || !session || !session.user) {
+          showState(stateNotLogged);
+          return;
+        }
+        currentUser = session.user;
+        document.getElementById('user-email-display').textContent = currentUser.email || '';
+        showState(stateConfirm);
+      } catch (e) {
+        console.error('Erro ao verificar sessão:', e);
+        showState(stateNotLogged);
+      }
+    });
+
+    // ── Controle do checkbox / senha para habilitar o botão ──
+    const checkbox        = document.getElementById('confirm-checkbox');
+    const passwordInput   = document.getElementById('confirm-password');
+    const deleteBtn        = document.getElementById('delete-btn');
+    const termsWrapper      = document.getElementById('terms-wrapper');
+    const errorDiv           = document.getElementById('error-message');
+
+    function updateButtonState() {
+      const ready = checkbox.checked && passwordInput.value.length > 0;
+      if (ready) {
+        deleteBtn.classList.remove('btn-disabled');
+        deleteBtn.classList.add('btn-enabled');
+      } else {
+        deleteBtn.classList.add('btn-disabled');
+        deleteBtn.classList.remove('btn-enabled');
+      }
+    }
+    checkbox.addEventListener('change', updateButtonState);
+    passwordInput.addEventListener('input', updateButtonState);
+
+    function alertTerms() {
+      termsWrapper.classList.remove('shake');
+      checkbox.classList.remove('checkbox-alert');
+      void termsWrapper.offsetWidth;
+      termsWrapper.classList.add('shake');
+      checkbox.classList.add('checkbox-alert');
+      setTimeout(() => {
+        termsWrapper.classList.remove('shake');
+        checkbox.classList.remove('checkbox-alert');
+      }, 1000);
+    }
+
+    deleteBtn.addEventListener('click', async (e) => {
+      if (!checkbox.checked) { alertTerms(); return; }
+      if (!passwordInput.value) { passwordInput.focus(); return; }
+
+      errorDiv.classList.add('hidden');
+
+      // 1) Reautentica com a senha informada, por segurança,
+      //    antes de fazer qualquer exclusão de dados.
+      try {
+        const { error: reauthError } = await window.supabaseClient.auth.signInWithPassword({
+          email: currentUser.email,
+          password: passwordInput.value,
+        });
+
+        if (reauthError) {
+          errorDiv.innerText = 'Senha incorreta. Verifique e tente novamente.';
+          errorDiv.classList.remove('hidden');
+          return;
+        }
+      } catch (err) {
+        errorDiv.innerText = 'Erro de conexão. Tente novamente.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      showState(stateProcessing);
+
+      // 2) Chama a função RPC "delete_user_account" no banco.
+      //    Essa função precisa existir no Supabase como SECURITY DEFINER
+      //    e deve apagar SOMENTE o usuário autenticado (auth.uid()),
+      //    nunca um user_id vindo do client. Veja o SQL de exemplo
+      //    fornecido junto com este arquivo.
+      try {
+        const { error: rpcError } = await window.supabaseClient.rpc('delete_user_account');
+
+        if (rpcError) {
+          console.error('Erro ao excluir conta:', rpcError);
+          showState(stateConfirm);
+          errorDiv.innerText = 'Não foi possível excluir sua conta. Tente novamente ou contate o suporte.';
+          errorDiv.classList.remove('hidden');
+          return;
+        }
+
+        // 3) Limpa qualquer dado local relacionado ao usuário
+        try {
+          localStorage.removeItem('freo_pending_cart');
+          localStorage.removeItem('freo_anon_user_id');
+          localStorage.removeItem('freo_open_cart');
+        } catch (e) {}
+
+        // 4) Encerra a sessão local. O signOut() pode retornar erro
+        //    porque o usuário já não existe mais no banco (comportamento
+        //    conhecido do Supabase Auth) — isso é esperado e ignorado.
+        try {
+          await window.supabaseClient.auth.signOut();
+        } catch (e) {
+          console.warn('Sessão local encerrada com aviso (esperado):', e);
+        }
+
+        showState(stateSuccess);
+
+      } catch (err) {
+        console.error('Erro inesperado ao excluir conta:', err);
+        showState(stateConfirm);
+        errorDiv.innerText = 'Erro inesperado. Tente novamente.';
+        errorDiv.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
