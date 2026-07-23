@@ -898,6 +898,12 @@
           <div><label class="freo-label">Telefone / WhatsApp</label><input type="tel" id="profile-phone" class="freo-input" placeholder="(11) 99999-9999" oninput="maskPhone(this)"></div>
         </div>
         <button onclick="saveProfile()" id="profile-save-btn" class="w-full mt-6 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3 hover:bg-white transition-colors">Salvar alterações</button>
+
+        <div id="delete-account-wrapper" class="hidden mt-4 pt-4 border-t border-white/10 text-center">
+          <a href="/excluir-conta.html" class="text-xs font-mono text-red-500/50 hover:text-red-400 transition-colors uppercase tracking-widest">
+            Excluir minha conta
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -1071,6 +1077,9 @@
     }
     if (profile && profile.phone) document.getElementById('profile-phone').value = profile.phone;
     document.getElementById('profile-name').value = name;
+
+    var delAccWrapper = document.getElementById('delete-account-wrapper');
+    if (delAccWrapper) delAccWrapper.classList.remove('hidden');
 
     if (window.renderCartUI) window.renderCartUI(cartItems || []);
     renderAddressesUI(addresses || []);
