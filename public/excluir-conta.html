@@ -277,8 +277,19 @@
           return;
         }
         currentUser = session.user;
-        document.getElementById('user-email-display').textContent = currentUser.email || '';
-        showState(stateConfirm);
+document.getElementById('user-email-display').textContent = currentUser.email || '';
+
+// Detecta se o login foi via senha ou via provedor OAuth (Google, etc.)
+const provider = currentUser.app_metadata?.provider || 'email';
+const isOAuthUser = provider !== 'email';
+
+if (isOAuthUser) {
+  // Esconde o campo de senha e ajusta o texto, já que não existe senha pra confirmar
+  document.getElementById('confirm-password').closest('div').classList.add('hidden');
+  document.getElementById('confirm-password').removeAttribute('required');
+}
+
+showState(stateConfirm);
       } catch (e) {
         console.error('Erro ao verificar sessão:', e);
         showState(stateNotLogged);
@@ -293,7 +304,9 @@
     const errorDiv           = document.getElementById('error-message');
 
     function updateButtonState() {
-      const ready = checkbox.checked && passwordInput.value.length > 0;
+      const provider = currentUser?.app_metadata?.provider || 'email';
+      const isOAuthUser = provider !== 'email';
+      const ready = checkbox.checked && (isOAuthUser || passwordInput.value.length > 0);
       if (ready) {
         deleteBtn.classList.remove('btn-disabled');
         deleteBtn.classList.add('btn-enabled');
@@ -319,27 +332,34 @@
 
     deleteBtn.addEventListener('click', async (e) => {
       if (!checkbox.checked) { alertTerms(); return; }
-      if (!passwordInput.value) { passwordInput.focus(); return; }
+
+      const provider = currentUser?.app_metadata?.provider || 'email';
+      const isOAuthUser = provider !== 'email';
+
+      if (!isOAuthUser && !passwordInput.value) { passwordInput.focus(); return; }
 
       errorDiv.classList.add('hidden');
 
-      // 1) Reautentica com a senha informada, por segurança,
-      //    antes de fazer qualquer exclusão de dados.
-      try {
-        const { error: reauthError } = await window.supabaseClient.auth.signInWithPassword({
-          email: currentUser.email,
-          password: passwordInput.value,
-        });
+      // 1) Reautentica com a senha, mas SÓ se o login original foi por e-mail/senha.
+      //    Usuários de Google/OAuth não têm senha, então pulamos essa etapa —
+      //    a sessão OAuth ativa já é a garantia de que é o dono da conta.
+      if (!isOAuthUser) {
+        try {
+          const { error: reauthError } = await window.supabaseClient.auth.signInWithPassword({
+            email: currentUser.email,
+            password: passwordInput.value,
+          });
 
-        if (reauthError) {
-          errorDiv.innerText = 'Senha incorreta. Verifique e tente novamente.';
+          if (reauthError) {
+            errorDiv.innerText = 'Senha incorreta. Verifique e tente novamente.';
+            errorDiv.classList.remove('hidden');
+            return;
+          }
+        } catch (err) {
+          errorDiv.innerText = 'Erro de conexão. Tente novamente.';
           errorDiv.classList.remove('hidden');
           return;
         }
-      } catch (err) {
-        errorDiv.innerText = 'Erro de conexão. Tente novamente.';
-        errorDiv.classList.remove('hidden');
-        return;
       }
 
       showState(stateProcessing);
