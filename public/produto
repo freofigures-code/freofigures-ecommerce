@@ -470,6 +470,12 @@
           <div id="variants-detail-content" class="space-y-3"></div>
         </div>
 
+        <!-- Itens do Kit Fixo -->
+        <div id="kit-items-detail" class="hidden border-t border-white/[0.06] pt-6 space-y-3">
+          <h3 class="font-mono text-xs text-freo-orange uppercase tracking-widest">✦ Este kit inclui</h3>
+          <div id="kit-items-detail-content" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+        </div>
+
       </div>
     </div>
   </main>
@@ -651,7 +657,41 @@
       return parseFloat(hasPromo ? product.promotional_price : product.price) || 0;
     }
 
+    var kitFixedItems = []; // produtos completos que compõem o kit fixo (carregados via product_kit_items)
+    var kitFixedPrice = 0;
+
+    function applyKitDiscount(sum, discountType, discountValue) {
+      var dt = discountType || 'percent';
+      var dv = parseFloat(discountValue) || 0;
+      var result = dt === 'percent' ? sum * (1 - dv / 100) : sum - dv;
+      return Math.max(0, Math.round(result * 100) / 100);
+    }
+
+    async function loadKitFixedItems(kitProductId) {
+      var rel = await window.supabaseClient
+        .from('product_kit_items')
+        .select('child_product_id')
+        .eq('kit_product_id', kitProductId);
+      if (rel.error || !rel.data || rel.data.length === 0) { kitFixedItems = []; kitFixedPrice = 0; return; }
+
+      var childIds = rel.data.map(function(r) { return r.child_product_id; });
+      var childRes = await window.supabaseClient
+        .from('products')
+        .select('id, title, price, promotional_price, images')
+        .in('id', childIds);
+      kitFixedItems = childRes.data || [];
+
+      var sum = kitFixedItems.reduce(function(acc, p) {
+        var hasPromo = p.promotional_price && parseFloat(p.promotional_price) < parseFloat(p.price);
+        return acc + parseFloat(hasPromo ? p.promotional_price : p.price);
+      }, 0);
+      kitFixedPrice = applyKitDiscount(sum, product.kit_discount_type, product.kit_discount_value);
+    }
+
     function getEffectivePrice() {
+      if (product && product.is_kit && product.kit_type === 'fixed') {
+        return kitFixedPrice;
+      }
       var keys = Object.keys(selectedVariants);
       for (var k = 0; k < keys.length; k++) {
         var sel = selectedVariants[keys[k]];
@@ -689,12 +729,16 @@
     }
 
     // ── Renderiza produto ───────────────────────────────────────────────────
-    function renderProduct(p) {
+    async function renderProduct(p) {
       product = p;
       maxStock = p.stock || 99;
       selectedVariants = {};
 
       document.title = (p.title || 'Produto') + ' | FreoFigures';
+
+      if (p.is_kit && p.kit_type === 'fixed') {
+        await loadKitFixedItems(p.id);
+      }
 
       if (p.category) {
         document.getElementById('breadcrumb-cat').innerText = p.category;
@@ -712,8 +756,9 @@
 
       document.getElementById('product-title').innerText = p.title || '';
 
-      var hasPromo = p.promotional_price && parseFloat(p.promotional_price) < parseFloat(p.price);
-      var displayPrice = hasPromo ? p.promotional_price : p.price;
+      var isKitFixed = p.is_kit && p.kit_type === 'fixed';
+      var hasPromo = !isKitFixed && p.promotional_price && parseFloat(p.promotional_price) < parseFloat(p.price);
+      var displayPrice = isKitFixed ? kitFixedPrice : (hasPromo ? p.promotional_price : p.price);
       document.getElementById('price-main').innerText = formatCurrency(displayPrice);
 
       if (hasPromo) {
@@ -722,6 +767,20 @@
         var pct = Math.round((1 - parseFloat(p.promotional_price) / parseFloat(p.price)) * 100);
         document.getElementById('price-discount-badge').classList.remove('hidden');
         document.getElementById('price-discount-pct').innerText = pct;
+      }
+
+      if (isKitFixed && kitFixedItems.length > 0) {
+        var kitSum = kitFixedItems.reduce(function(acc, item) {
+          var itemHasPromo = item.promotional_price && parseFloat(item.promotional_price) < parseFloat(item.price);
+          return acc + parseFloat(itemHasPromo ? item.promotional_price : item.price);
+        }, 0);
+        if (kitSum > kitFixedPrice) {
+          document.getElementById('price-promo').classList.remove('hidden');
+          document.getElementById('price-original').innerText = formatCurrency(kitSum);
+          var kitPct = Math.round((1 - kitFixedPrice / kitSum) * 100);
+          document.getElementById('price-discount-badge').classList.remove('hidden');
+          document.getElementById('price-discount-pct').innerText = kitPct;
+        }
       }
 
       if (hasAnyPerOptionPricing()) {
@@ -873,6 +932,21 @@
         }).join('');
       }
 
+      if (p.is_kit && p.kit_type === 'fixed' && kitFixedItems.length > 0) {
+        var kitDetailEl = document.getElementById('kit-items-detail');
+        var kitDetailContent = document.getElementById('kit-items-detail-content');
+        kitDetailEl.classList.remove('hidden');
+        kitDetailContent.innerHTML = kitFixedItems.map(function(item) {
+          var itemThumb = (item.images && item.images.length > 0) ? item.images[0] : null;
+          return '<div style="text-align:center">'
+            + (itemThumb
+                ? '<img src="' + itemThumb + '" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:3px;border:1px solid rgba(255,255,255,.06)">'
+                : '<div style="width:100%;aspect-ratio:1;background:#161616;border-radius:3px"></div>')
+            + '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:.7rem;color:rgba(245,245,245,.6);margin-top:6px;line-height:1.3">' + item.title + '</p>'
+            + '</div>';
+        }).join('');
+      }
+
       document.getElementById('page-loading').classList.add('hidden');
       document.getElementById('page-content').classList.remove('hidden');
     }
@@ -956,14 +1030,18 @@
         var priceNum = getEffectivePrice();
         var thumb = (product.images && product.images.length > 0) ? product.images[0] : null;
 
-        var variantKeys = Object.keys(selectedVariants);
-        var variantStr = variantKeys.length > 0
-          ? variantKeys.map(function(k) {
-              var sel = selectedVariants[k];
-              return sel.variantName + ': ' + sel.optionName;
-            }).join(' | ')
-          : null;
-
+        var variantStr = null;
+        if (product.is_kit && product.kit_type === 'fixed' && kitFixedItems.length > 0) {
+          variantStr = 'Kit: ' + kitFixedItems.map(function(item) { return item.title; }).join(', ');
+        } else {
+          var variantKeys = Object.keys(selectedVariants);
+          variantStr = variantKeys.length > 0
+            ? variantKeys.map(function(k) {
+                var sel = selectedVariants[k];
+                return sel.variantName + ': ' + sel.optionName;
+              }).join(' | ')
+            : null;
+        }
         var query = window.supabaseClient
           .from('cart_items')
           .select('id, quantity')
@@ -1070,13 +1148,18 @@
         var priceNum = getEffectivePrice();
         var thumb = (product.images && product.images.length > 0) ? product.images[0] : null;
 
-        var variantKeys = Object.keys(selectedVariants);
-        var variantStr = variantKeys.length > 0
-          ? variantKeys.map(function(k) {
-              var sel = selectedVariants[k];
-              return sel.variantName + ': ' + sel.optionName;
-            }).join(' | ')
-          : null;
+        var variantStr = null;
+        if (product.is_kit && product.kit_type === 'fixed' && kitFixedItems.length > 0) {
+          variantStr = 'Kit: ' + kitFixedItems.map(function(item) { return item.title; }).join(', ');
+        } else {
+          var variantKeys = Object.keys(selectedVariants);
+          variantStr = variantKeys.length > 0
+            ? variantKeys.map(function(k) {
+                var sel = selectedVariants[k];
+                return sel.variantName + ': ' + sel.optionName;
+              }).join(' | ')
+            : null;
+        }
 
         var query = window.supabaseClient
           .from('cart_items')
