@@ -1170,7 +1170,7 @@ const Navbar = ({
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-4 lg:gap-6 flex-shrink-0 whitespace-nowrap">
+        <div className="hidden lg:flex items-center gap-3 xl:gap-6 flex-shrink-0 whitespace-nowrap">
           {user && (
             <a href="/meus-pedidos.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded whitespace-nowrap">
               <Box className="w-4 h-4" />
@@ -1194,7 +1194,7 @@ const Navbar = ({
         </div>
 
         {/* Mobile Actions */}
-        <div className="flex md:hidden items-center gap-1 z-50">
+        <div className="flex lg:hidden items-center gap-1 z-50">
           <button
             onClick={() => setIsSearchOpen(true)}
             className="p-2.5 text-freo-light hover:text-freo-orange transition-colors"
