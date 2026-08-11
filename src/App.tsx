@@ -428,6 +428,11 @@ type Product = {
   images: string[];
   tags: string[] | string | null;
   is_active: boolean;
+  is_kit?: boolean;
+  kit_type?: 'fixed' | 'configurable' | null;
+  kit_slots?: number | null;
+  kit_discount_type?: 'percent' | 'fixed' | null;
+  kit_discount_value?: number | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1715,7 +1720,10 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
         className={`relative ${compact ? 'aspect-square' : 'aspect-square bg-freo-black'} overflow-hidden ${compact ? 'border border-white/5 group-hover:border-freo-orange/50 transition-colors' : ''} mb-3 md:mb-4 cursor-pointer`}
         onClick={goToProduct}
       >
-        {tag && (
+        {product.is_kit && (
+          <div className="absolute top-2 left-2 md:top-3 md:left-3 z-10 bg-freo-orange text-freo-black text-[9px] md:text-[10px] font-bold uppercase tracking-widest px-1.5 md:px-2 py-0.5 md:py-1">✦ Kit</div>
+        )}
+        {!product.is_kit && tag && (
           <div className="absolute top-2 left-2 md:top-3 md:left-3 z-10 bg-freo-orange text-freo-black text-[9px] md:text-[10px] font-bold uppercase tracking-widest px-1.5 md:px-2 py-0.5 md:py-1">{tag}</div>
         )}
         {thumb ? (
@@ -2105,14 +2113,23 @@ const MobileCategoryDrawer = ({
           <div className="overflow-y-auto px-4 pb-8" style={{ maxHeight: 'calc(80vh - 140px)' }}>
             {categories.map((category: string) => {
               const isActive = !hasSearch && activeFilter === category;
+              const isKitEntry = category === 'kit_fixo' || category === 'montar_kit';
+              const kitStyle = isKitEntry
+                ? { color: '#DDAF34', fontWeight: 700, border: '1px solid rgba(221,175,52,0.35)' }
+                : {};
               return (
                 <button
                   key={category}
                   onClick={() => { onSelect(category); onClose(); }}
                   className="w-full text-left px-4 py-3.5 mb-2 rounded-sm font-bold tracking-wide transition-all active:scale-98"
-                  style={isActive ? { ...theme.btnActive, display: 'flex', alignItems: 'center', gap: '8px' } : { ...theme.btnInactive, display: 'flex', alignItems: 'center', gap: '8px' }}
+                  style={{
+                    ...(isActive ? theme.btnActive : theme.btnInactive),
+                    ...kitStyle,
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                  }}
                 >
                   {isActive && <span>›</span>}
+                  {category === 'montar_kit' && <span>✦</span>}
                   {categoryLabels[category] || category}
                 </button>
               );
@@ -2137,7 +2154,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
   const [isMobileCatOpen, setIsMobileCatOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const categories = ['Todos', 'games', 'religioso', 'keycaps', 'personalizado', 'lifestyle', 'outros'];
+  const categories = ['Todos', 'games', 'religioso', 'keycaps', 'personalizado', 'lifestyle', 'outros', 'kit_fixo', 'montar_kit'];
 
   const categoryLabels: Record<string, string> = {
     Todos: 'Todos',
@@ -2147,8 +2164,9 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
     personalizado: 'Personalizado',
     lifestyle: 'Lifestyle',
     outros: 'Outros',
+    kit_fixo: 'Kits Prontos',
+    montar_kit: 'Montar Kit',
   };
-
   const hasSearch = String(searchTerm || '').trim().length > 0;
   const activeThemeKey = hasSearch ? 'Todos' : activeFilter;
   const theme = CATEGORY_THEMES[activeThemeKey] || CATEGORY_THEMES['Todos'];
@@ -2194,10 +2212,15 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
         .map(item => item.product);
     }
     if (activeFilter === 'Todos') return products;
+    if (activeFilter === 'kit_fixo') return products.filter(product => product.is_kit && product.kit_type === 'fixed');
     return products.filter(product => product.category === activeFilter);
   }, [products, searchTerm, hasSearch, activeFilter]);
 
   const handleCategoryClick = (category: string) => {
+    if (category === 'montar_kit') {
+      window.location.href = '/montar-kit.html';
+      return;
+    }
     onClearSearch();
     setActiveFilter(category);
   };
@@ -2338,6 +2361,10 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                   <div style={{ padding: '0 8px' }}>
                     {categories.map(category => {
                       const isActive = !hasSearch && activeFilter === category;
+                      const isKitEntry = category === 'kit_fixo' || category === 'montar_kit';
+                      const kitStyle = isKitEntry
+                        ? { color: '#DDAF34', fontWeight: 700, border: '1px solid rgba(221,175,52,0.35)' }
+                        : {};
                       return (
                         <button
                           key={category}
@@ -2347,9 +2374,11 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                             padding: '10px 14px', marginBottom: '2px',
                             transition: 'all 0.25s ease', cursor: 'pointer', borderRadius: '2px',
                             ...(isActive ? theme.btnActive : theme.btnInactive),
+                            ...kitStyle,
                           }}
                         >
                           {isActive && <span style={{ marginRight: '6px' }}>&gt;</span>}
+                          {category === 'montar_kit' && <span style={{ marginRight: '6px' }}>✦</span>}
                           {categoryLabels[category] || category}
                         </button>
                       );
