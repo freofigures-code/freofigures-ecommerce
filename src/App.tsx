@@ -2115,7 +2115,13 @@ const MobileCategoryDrawer = ({
               const isActive = !hasSearch && activeFilter === category;
               const isKitEntry = category === 'kit_fixo' || category === 'montar_kit';
               const kitStyle = isKitEntry
-                ? { color: '#DDAF34', fontWeight: 700, border: '1px solid rgba(221,175,52,0.35)' }
+                ? {
+                    color: '#0e0e0f',
+                    fontWeight: 800,
+                    background: 'linear-gradient(135deg, #e8c04a, #DDAF34)',
+                    border: '1px solid rgba(221,175,52,0.9)',
+                    boxShadow: '0 0 16px rgba(221,175,52,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+                  }
                 : {};
               return (
                 <button
@@ -2125,12 +2131,16 @@ const MobileCategoryDrawer = ({
                   style={{
                     ...(isActive ? theme.btnActive : theme.btnInactive),
                     ...kitStyle,
-                    display: 'flex', alignItems: 'center', gap: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px',
                   }}
                 >
-                  {isActive && <span>›</span>}
-                  {category === 'montar_kit' && <span>✦</span>}
-                  {categoryLabels[category] || category}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {isActive && !isKitEntry && <span>›</span>}
+                    {category === 'montar_kit' && <span>✦</span>}
+                    {category === 'kit_fixo' && <span>🎁</span>}
+                    {categoryLabels[category] || category}
+                  </span>
+                  {isKitEntry && <span style={{ fontSize: '11px', fontWeight: 700 }}>→</span>}
                 </button>
               );
             })}
@@ -2154,7 +2164,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
   const [isMobileCatOpen, setIsMobileCatOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const categories = ['Todos', 'games', 'religioso', 'keycaps', 'personalizado', 'lifestyle', 'outros', 'kit_fixo', 'montar_kit'];
+  const categories = ['Todos', 'kit_fixo', 'montar_kit', 'games', 'religioso', 'keycaps', 'personalizado', 'lifestyle', 'outros'];
 
   const categoryLabels: Record<string, string> = {
     Todos: 'Todos',
@@ -2363,26 +2373,46 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                       const isActive = !hasSearch && activeFilter === category;
                       const isKitEntry = category === 'kit_fixo' || category === 'montar_kit';
                       const kitStyle = isKitEntry
-                        ? { color: '#DDAF34', fontWeight: 700, border: '1px solid rgba(221,175,52,0.35)' }
+                        ? {
+                            color: '#0e0e0f',
+                            fontWeight: 800,
+                            background: isActive
+                              ? 'linear-gradient(135deg, #f5d76e, #DDAF34)'
+                              : 'linear-gradient(135deg, #e8c04a, #DDAF34)',
+                            border: '1px solid rgba(221,175,52,0.9)',
+                            boxShadow: '0 0 16px rgba(221,175,52,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+                            letterSpacing: '0.03em',
+                          }
                         : {};
                       return (
                         <button
                           key={category}
                           onClick={() => handleCategoryClick(category)}
                           style={{
-                            display: 'block', width: '100%', textAlign: 'left',
-                            padding: '10px 14px', marginBottom: '2px',
-                            transition: 'all 0.25s ease', cursor: 'pointer', borderRadius: '2px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            width: '100%', textAlign: 'left',
+                            padding: isKitEntry ? '13px 14px' : '10px 14px',
+                            marginBottom: isKitEntry ? '8px' : '2px',
+                            transition: 'all 0.2s ease', cursor: 'pointer', borderRadius: '4px',
                             ...(isActive ? theme.btnActive : theme.btnInactive),
                             ...kitStyle,
                           }}
+                          onMouseEnter={e => { if (isKitEntry) e.currentTarget.style.transform = 'scale(1.02)'; }}
+                          onMouseLeave={e => { if (isKitEntry) e.currentTarget.style.transform = 'scale(1)'; }}
                         >
-                          {isActive && <span style={{ marginRight: '6px' }}>&gt;</span>}
-                          {category === 'montar_kit' && <span style={{ marginRight: '6px' }}>✦</span>}
-                          {categoryLabels[category] || category}
+                          <span>
+                            {isActive && !isKitEntry && <span style={{ marginRight: '6px' }}>&gt;</span>}
+                            {category === 'montar_kit' && <span style={{ marginRight: '6px' }}>✦</span>}
+                            {category === 'kit_fixo' && <span style={{ marginRight: '6px' }}>🎁</span>}
+                            {categoryLabels[category] || category}
+                          </span>
+                          {isKitEntry && <span style={{ fontSize: '10px', fontWeight: 700 }}>→</span>}
                         </button>
                       );
                     })}
+                    {(categories.includes('kit_fixo') || categories.includes('montar_kit')) && (
+                      <div style={{ height: '1px', background: `${theme.accent}25`, margin: '4px 0 10px' }} />
+                    )}
                   </div>
                 </div>
               </div>
