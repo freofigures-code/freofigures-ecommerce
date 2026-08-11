@@ -1138,21 +1138,21 @@ const Navbar = ({
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
       isScrolled ? 'bg-black/90 backdrop-blur-md border-b border-freo-orange/20 py-3 md:py-4' : 'bg-transparent py-4 md:py-6'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 flex justify-between items-center">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 flex justify-between items-center gap-4 lg:gap-8">
         {/* Logo */}
-        <div className="flex items-center gap-2 md:gap-3 z-50 cursor-pointer" onClick={goHome}>
+        <div className="flex items-center gap-2 md:gap-3 z-50 cursor-pointer flex-shrink-0" onClick={goHome}>
           <img
             src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
             alt="Logo"
             className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]"
           />
-          <span className="font-display font-black text-xl md:text-2xl tracking-tighter uppercase">
+          <span className="font-display font-black text-xl md:text-2xl tracking-tighter uppercase whitespace-nowrap">
             Freo<span className="text-freo-orange font-light">Figures</span>
           </span>
         </div>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-8 font-body text-sm font-semibold tracking-widest uppercase text-freo-light">
+        <div className="hidden md:flex items-center gap-5 lg:gap-8 font-body text-sm font-semibold tracking-widest uppercase text-freo-light flex-shrink min-w-0 overflow-hidden whitespace-nowrap">
           {currentView === 'home' ? (
             <>
               <a href="#categorias" className="hover:text-freo-orange transition-colors">Categorias</a>
@@ -1170,11 +1170,11 @@ const Navbar = ({
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-4 lg:gap-6 flex-shrink-0 whitespace-nowrap">
           {user && (
-            <a href="/meus-pedidos.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded">
+            <a href="/meus-pedidos.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded whitespace-nowrap">
               <Box className="w-4 h-4" />
-              Meus Pedidos
+              <span className="hidden lg:inline">Meus Pedidos</span>
             </a>
           )}
           <button onClick={() => setIsSearchOpen(true)} className="text-freo-light hover:text-freo-orange transition-colors" aria-label="Pesquisar produto">
