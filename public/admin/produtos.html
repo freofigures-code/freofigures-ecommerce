@@ -157,6 +157,37 @@
     </div>
   </nav>
 
+  <!-- ══════ AJUSTE DE PREÇO EM MASSA ══════ -->
+  <div id="bulk-price-bar" class="hidden bg-freo-dark border-b border-freo-orange/20 py-3">
+    <div class="max-w-7xl mx-auto px-6 flex items-center gap-3 flex-wrap">
+      <span class="font-mono text-xs text-freo-orange uppercase tracking-widest flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v-2m0-8a3.75 3.75 0 000 8M12 20a8 8 0 100-16 8 8 0 000 16z"/></svg>
+        Ajustar preços em massa
+      </span>
+      <select id="bulk-op" class="fi py-2" style="width:110px">
+        <option value="add">Somar</option>
+        <option value="subtract">Subtrair</option>
+      </select>
+      <div class="flex items-center gap-1">
+        <span class="font-mono text-xs text-white/40">R$</span>
+        <input type="number" id="bulk-value" class="fi py-2" style="width:110px" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <select id="bulk-scope" class="fi py-2" style="width:170px">
+        <option value="all">Todos os produtos</option>
+        <option value="active">Somente ativos</option>
+        <option value="inactive">Somente inativos</option>
+      </select>
+      <label class="flex items-center gap-2 font-mono text-xs text-white/40 cursor-pointer select-none">
+        <input type="checkbox" id="bulk-include-variants" checked class="w-3.5 h-3.5">
+        Incluir preços de variantes
+      </label>
+      <button onclick="openBulkConfirm()" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-xs tracking-widest px-4 py-2 hover:bg-white transition-colors">
+        Aplicar
+      </button>
+      <span id="bulk-status" class="font-mono text-xs text-white/30"></span>
+    </div>
+  </div>
+
   <div id="page-loading" class="flex-1 flex items-center justify-center min-h-[60vh]">
     <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
   </div>
@@ -533,6 +564,7 @@
       return;
     }
     document.getElementById('admin-badge').classList.remove('hidden');
+    document.getElementById('bulk-price-bar').classList.remove('hidden');
     setViewMode('varejo');
     loadProducts();
   });
@@ -1254,6 +1286,124 @@
     toastTimer = setTimeout(function() { el.className = type || 'success'; }, 3200);
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // AJUSTE DE PREÇO EM MASSA
+  // Soma ou subtrai um valor fixo do preço base (price), do preço
+  // promocional (promotional_price, se existir) e, opcionalmente, do preço
+  // de cada opção de variante que tenha per_option_price ativo.
+  // Nunca deixa nenhum preço final ficar negativo (trava em 0).
+  // ─────────────────────────────────────────────────────────────────────────
+  function openBulkConfirm() {
+    var op = document.getElementById('bulk-op').value;
+    var rawVal = document.getElementById('bulk-value').value;
+    var val = parseFloat(rawVal);
+
+    if (rawVal === '' || isNaN(val) || val <= 0) {
+      showToast('Informe um valor válido maior que zero.', 'error');
+      return;
+    }
+
+    var scope = document.getElementById('bulk-scope').value;
+    var includeVariants = document.getElementById('bulk-include-variants').checked;
+
+    var scopeLabel = { all: 'TODOS os produtos', active: 'produtos ATIVOS', inactive: 'produtos INATIVOS' }[scope];
+    var opLabel = op === 'add' ? 'somar' : 'subtrair';
+
+    var count = allProducts.filter(function(p) {
+      if (scope === 'active') return !!p.is_active;
+      if (scope === 'inactive') return !p.is_active;
+      return true;
+    }).length;
+
+    document.getElementById('bulk-confirm-text').innerText =
+      'Você vai ' + opLabel + ' R$ ' + val.toFixed(2).replace('.', ',') +
+      ' em ' + count + ' produto(s) (' + scopeLabel + ')' +
+      (includeVariants ? ', incluindo preços de variantes' : ', SEM alterar preços de variantes') + '.';
+
+    document.getElementById('bulk-confirm-overlay').classList.remove('hidden');
+    document.getElementById('bulk-confirm-overlay').classList.add('flex');
+  }
+
+  function closeBulkConfirm() {
+    document.getElementById('bulk-confirm-overlay').classList.add('hidden');
+    document.getElementById('bulk-confirm-overlay').classList.remove('flex');
+  }
+
+  // Aplica o delta a um preço, nunca deixando resultado negativo.
+  function applyDelta(originalPrice, delta) {
+    var n = parseFloat(originalPrice);
+    if (isNaN(n)) return originalPrice;
+    var result = n + delta;
+    if (result < 0) result = 0;
+    return Math.round(result * 100) / 100;
+  }
+
+  async function runBulkPriceUpdate() {
+    var op = document.getElementById('bulk-op').value;
+    var val = parseFloat(document.getElementById('bulk-value').value);
+    var scope = document.getElementById('bulk-scope').value;
+    var includeVariants = document.getElementById('bulk-include-variants').checked;
+    var delta = op === 'add' ? val : -val;
+
+    var btn = document.getElementById('bulk-confirm-btn');
+    var statusEl = document.getElementById('bulk-status');
+    btn.disabled = true; btn.innerText = 'Aplicando...';
+
+    var targets = allProducts.filter(function(p) {
+      if (scope === 'active') return !!p.is_active;
+      if (scope === 'inactive') return !p.is_active;
+      return true;
+    });
+
+    var done = 0, errors = 0;
+
+    for (var i = 0; i < targets.length; i++) {
+      var p = targets[i];
+      statusEl.innerText = 'Atualizando ' + (i + 1) + '/' + targets.length + '...';
+
+      var newPrice = applyDelta(p.price, delta);
+      var updatePayload = { price: newPrice };
+
+      if (p.promotional_price != null && p.promotional_price !== '') {
+        updatePayload.promotional_price = applyDelta(p.promotional_price, delta);
+      }
+
+      if (includeVariants && Array.isArray(p.variants) && p.variants.length > 0) {
+        var newVariants = p.variants.map(function(v) {
+          if (!v.per_option_price || !Array.isArray(v.options)) return v;
+          var newOptions = v.options.map(function(o) {
+            if (o.price == null || isNaN(parseFloat(o.price))) return o;
+            return { name: o.name, price: applyDelta(o.price, delta) };
+          });
+          return { name: v.name, per_option_price: v.per_option_price, options: newOptions };
+        });
+        updatePayload.variants = newVariants;
+      }
+
+      try {
+        var r = await window.supabaseClient.from('products').update(updatePayload).eq('id', p.id);
+        if (r.error) throw r.error;
+        done++;
+      } catch (e) {
+        errors++;
+        console.error('Erro ao atualizar produto ' + p.id + ':', e);
+      }
+    }
+
+    btn.disabled = false; btn.innerText = 'Confirmar';
+    closeBulkConfirm();
+    document.getElementById('bulk-value').value = '';
+    statusEl.innerText = '';
+
+    if (errors === 0) {
+      showToast(done + ' produto(s) atualizado(s) com sucesso!', 'success');
+    } else {
+      showToast(done + ' atualizado(s), ' + errors + ' com erro. Veja o console.', 'error');
+    }
+
+    loadProducts();
+  }
+
     // ─── VÍDEO UPLOAD ─────────────────────────────────────────────────────────
     var currentVideoUrl = null; // URL final salva no banco
     
@@ -1414,6 +1564,23 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
           Importar todos
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAÇÃO DE AJUSTE EM MASSA -->
+  <div id="bulk-confirm-overlay" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+    <div class="bg-freo-dark border border-freo-orange/30 w-full max-w-md relative shadow-2xl">
+      <div class="px-6 py-5 border-b border-white/[0.07]">
+        <h3 class="font-display font-black uppercase text-lg text-white">Confirmar ajuste</h3>
+      </div>
+      <div class="px-6 py-5">
+        <p id="bulk-confirm-text" class="font-mono text-sm text-white/70 leading-relaxed"></p>
+        <p class="font-mono text-xs text-red-400/70 mt-3">Esta ação altera o banco de dados diretamente e não pode ser desfeita automaticamente.</p>
+      </div>
+      <div class="px-6 py-4 border-t border-white/[0.07] flex gap-3 justify-end">
+        <button onclick="closeBulkConfirm()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
+        <button onclick="runBulkPriceUpdate()" id="bulk-confirm-btn" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-5 py-2.5 hover:bg-white transition-colors">Confirmar</button>
       </div>
     </div>
   </div>
