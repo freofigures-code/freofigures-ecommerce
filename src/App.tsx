@@ -2368,7 +2368,14 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                       </button>
                     </div>
                   )}
-                  <div style={{ padding: '0 8px' }}>
+                  <div
+                    style={{
+                      padding: '0 8px',
+                      maxHeight: 'calc(100vh - 260px)',
+                      overflowY: 'auto',
+                      overscrollBehavior: 'contain',
+                    }}
+                  >
                     {categories.map(category => {
                       const isActive = !hasSearch && activeFilter === category;
                       const isKitEntry = category === 'kit_fixo' || category === 'montar_kit';
