@@ -1152,7 +1152,7 @@ const Navbar = ({
         </div>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-5 lg:gap-8 font-body text-sm font-semibold tracking-widest uppercase text-freo-light flex-shrink min-w-0 overflow-hidden whitespace-nowrap">
+        <div className="hidden lg:flex items-center gap-4 xl:gap-7 font-body text-xs xl:text-sm font-semibold tracking-widest uppercase text-freo-light whitespace-nowrap">
           {currentView === 'home' ? (
             <>
               <a href="#categorias" className="hover:text-freo-orange transition-colors">Categorias</a>
