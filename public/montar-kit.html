@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monte seu Kit | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#111111',
+            'freo-card': '#161616',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#DDAF34',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+
+    .kit-item-card {
+      background: #161616;
+      border: 1px solid rgba(255,255,255,.06);
+      cursor: pointer;
+      transition: border-color .15s, transform .1s, background .15s;
+      position: relative;
+    }
+    .kit-item-card:hover { border-color: rgba(221,175,52,.35); }
+    .kit-item-card.selected { border-color: #DDAF34; background: rgba(221,175,52,.06); }
+    .kit-item-card.disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
+    .kit-item-check {
+      position: absolute; top: 8px; right: 8px;
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,.25);
+      background: rgba(0,0,0,.5);
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .kit-item-card.selected .kit-item-check { background: #DDAF34; border-color: #DDAF34; }
+
+    #summary-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: #111111; border-top: 1px solid rgba(221,175,52,.2);
+      transform: translateY(100%); transition: transform .3s ease;
+    }
+    #summary-bar.show { transform: translateY(0); }
+
+    #toast {
+      position: fixed; bottom: 6rem; right: 2rem; z-index: 9999;
+      font-family: 'Space Grotesk', sans-serif; font-size: .875rem;
+      padding: .875rem 1.25rem; border-radius: 4px;
+      transform: translateY(120%); transition: transform .25s;
+      pointer-events: none; display: flex; align-items: center; gap: 8px;
+    }
+    #toast.show { transform: translateY(0); }
+    #toast.success { background: #1a2e1a; border: 1px solid rgba(34,197,94,.4); color: #86efac; }
+    #toast.error   { background: #2e1a1a; border: 1px solid rgba(239,68,68,.4); color: #fca5a5; }
+
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    .skeleton {
+      background: linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.04) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.6s infinite;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0A0A0A; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #DDAF34; }
+  </style>
+</head>
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col">
+
+  <!-- NAV -->
+  <nav class="bg-freo-dark/80 backdrop-blur-md border-b border-white/[0.06] py-4 sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-6 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3">
+        <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" class="w-9 h-9 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.4)]" onerror="this.style.display='none'">
+        <span class="font-display font-black text-xl tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
+      </a>
+      <a href="/" class="font-mono text-xs text-freo-light/40 hover:text-freo-orange transition-colors">← Voltar à loja</a>
+    </div>
+  </nav>
+
+  <!-- LOADING -->
+  <div id="page-loading" class="max-w-5xl mx-auto px-6 py-12 w-full flex-1">
+    <div class="skeleton h-10 w-2/3 mb-3"></div>
+    <div class="skeleton h-4 w-1/3 mb-10"></div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div class="skeleton aspect-square"></div>
+      <div class="skeleton aspect-square"></div>
+      <div class="skeleton aspect-square"></div>
+      <div class="skeleton aspect-square"></div>
+    </div>
+  </div>
+
+  <!-- NENHUM KIT CONFIGURÁVEL ATIVO -->
+  <div id="page-empty" class="hidden flex-1 flex items-center justify-center min-h-[60vh] px-6">
+    <div class="text-center">
+      <div class="text-6xl mb-4">🧩</div>
+      <h2 class="font-display font-bold text-2xl uppercase text-white/30 mb-3">Nenhum kit disponível no momento</h2>
+      <p class="font-mono text-sm text-white/20 mb-6">Volte em breve ou fale conosco pelo WhatsApp.</p>
+      <a href="/" class="inline-block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-white transition-colors">Ver catálogo</a>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO -->
+  <main id="page-content" class="hidden max-w-5xl mx-auto px-6 py-10 w-full flex-1 pb-32">
+    <div class="mb-8">
+      <span class="font-mono text-xs text-freo-orange uppercase tracking-widest">✦ Kit Configurável</span>
+      <h1 id="kit-title" class="font-display font-black text-3xl md:text-4xl uppercase tracking-tighter text-white mt-2"></h1>
+      <p id="kit-instructions" class="font-mono text-sm text-white/40 mt-2"></p>
+    </div>
+
+    <div id="kit-items-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+  </main>
+
+  <!-- BARRA DE RESUMO FIXA -->
+  <div id="summary-bar">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <div>
+        <p class="font-mono text-xs text-white/40 uppercase tracking-widest" id="summary-count">0 de 0 selecionados</p>
+        <div class="flex items-end gap-3">
+          <span id="summary-price-original" class="hidden font-mono text-sm text-white/30 line-through"></span>
+          <span id="summary-price-final" class="font-mono text-2xl font-bold text-freo-orange">R$ 0,00</span>
+        </div>
+      </div>
+      <button id="btn-add-kit" onclick="addKitToCart()" disabled
+        class="bg-freo-orange text-freo-black font-display font-black uppercase tracking-widest py-3.5 px-8 hover:bg-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+        Adicionar Kit ao Carrinho
+      </button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="/auth-listener.js"></script>
+
+  <script>
+    var kitProduct = null;
+    var eligibleItems = [];
+    var selectedIds = [];
+
+    var formatCurrency = function(v) {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(v) || 0);
+    };
+
+    var toastTimer;
+    function showToast(msg, type, duration) {
+      var el = document.getElementById('toast');
+      el.innerHTML = (type === 'success' ? '✅ ' : '❌ ') + msg;
+      el.className = 'show ' + (type || 'success');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() { el.className = type || 'success'; }, duration || 3000);
+    }
+
+    function getItemPrice(item) {
+      var hasPromo = item.promotional_price && parseFloat(item.promotional_price) < parseFloat(item.price);
+      return parseFloat(hasPromo ? item.promotional_price : item.price) || 0;
+    }
+
+    function applyKitDiscount(sum, discountType, discountValue) {
+      var dt = discountType || 'percent';
+      var dv = parseFloat(discountValue) || 0;
+      var result = dt === 'percent' ? sum * (1 - dv / 100) : sum - dv;
+      return Math.max(0, Math.round(result * 100) / 100);
+    }
+
+    function toggleItem(id) {
+      var idx = selectedIds.indexOf(id);
+      if (idx >= 0) {
+        selectedIds.splice(idx, 1);
+      } else {
+        if (selectedIds.length >= kitProduct.kit_slots) {
+          showToast('Você já escolheu o máximo de ' + kitProduct.kit_slots + ' itens. Desmarque um para trocar.', 'error');
+          return;
+        }
+        selectedIds.push(id);
+      }
+      renderGrid();
+      updateSummary();
+    }
+
+    function renderGrid() {
+      var grid = document.getElementById('kit-items-grid');
+      grid.innerHTML = eligibleItems.map(function(item) {
+        var isSelected = selectedIds.includes(item.id);
+        var isDisabled = !isSelected && selectedIds.length >= kitProduct.kit_slots;
+        var thumb = (item.images && item.images.length > 0) ? item.images[0] : null;
+        return '<div class="kit-item-card' + (isSelected ? ' selected' : '') + (isDisabled ? ' disabled' : '') + '" onclick="toggleItem(\'' + item.id + '\')">'
+          + '<div class="kit-item-check">' + (isSelected ? '<svg width="12" height="12" fill="none" stroke="#0A0A0A" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : '') + '</div>'
+          + '<div class="aspect-square bg-freo-black overflow-hidden">'
+          + (thumb ? '<img src="' + thumb + '" class="w-full h-full object-cover" alt="">' : '<div class="w-full h-full flex items-center justify-center text-white/10">—</div>')
+          + '</div>'
+          + '<div class="p-3">'
+          + '<p class="font-display font-bold text-xs uppercase text-white leading-tight line-clamp-2 mb-1">' + item.title + '</p>'
+          + '<span class="font-mono text-xs text-freo-orange">' + formatCurrency(getItemPrice(item)) + '</span>'
+          + '</div></div>';
+      }).join('');
+    }
+
+    function updateSummary() {
+      var count = selectedIds.length;
+      var slots = kitProduct.kit_slots;
+      document.getElementById('summary-count').innerText = count + ' de ' + slots + ' selecionados';
+
+      var sum = selectedIds.reduce(function(acc, id) {
+        var item = eligibleItems.find(function(x) { return x.id === id; });
+        return acc + (item ? getItemPrice(item) : 0);
+      }, 0);
+      var final = applyKitDiscount(sum, kitProduct.kit_discount_type, kitProduct.kit_discount_value);
+
+      var origEl = document.getElementById('summary-price-original');
+      if (sum > final && count > 0) {
+        origEl.classList.remove('hidden');
+        origEl.innerText = formatCurrency(sum);
+      } else {
+        origEl.classList.add('hidden');
+      }
+      document.getElementById('summary-price-final').innerText = formatCurrency(final);
+
+      var btn = document.getElementById('btn-add-kit');
+      btn.disabled = count !== slots;
+
+      document.getElementById('summary-bar').classList.toggle('show', count > 0);
+    }
+
+    async function addKitToCart() {
+      if (selectedIds.length !== kitProduct.kit_slots) return;
+
+      var btn = document.getElementById('btn-add-kit');
+      btn.disabled = true;
+      btn.innerText = 'Adicionando...';
+
+      var session = await window.supabaseClient.auth.getSession();
+      var s = session.data && session.data.session;
+
+      if (!s) {
+        var anonResult = await window.supabaseClient.auth.signInAnonymously();
+        if (anonResult.error || !anonResult.data || !anonResult.data.session) {
+          showToast('Erro ao adicionar ao carrinho. Tente novamente.', 'error');
+          btn.disabled = false;
+          btn.innerText = 'Adicionar Kit ao Carrinho';
+          return;
+        }
+        s = anonResult.data.session;
+        localStorage.setItem('freo_anon_user_id', s.user.id);
+      }
+
+      var selectedItems = selectedIds.map(function(id) { return eligibleItems.find(function(x) { return x.id === id; }); });
+      var sum = selectedItems.reduce(function(acc, item) { return acc + getItemPrice(item); }, 0);
+      var finalPrice = applyKitDiscount(sum, kitProduct.kit_discount_type, kitProduct.kit_discount_value);
+      var variantStr = 'Kit: ' + selectedItems.map(function(item) { return item.title; }).join(', ');
+      var thumb = selectedItems.length > 0 && selectedItems[0].images && selectedItems[0].images.length > 0
+        ? selectedItems[0].images[0]
+        : null;
+
+      try {
+        var r = await window.supabaseClient.from('cart_items').insert({
+          user_id: s.user.id,
+          product_id: String(kitProduct.id),
+          product_name: kitProduct.title,
+          quantity: 1,
+          price: finalPrice,
+          total_price: finalPrice,
+          image_url: thumb,
+          variant: variantStr
+        });
+        if (r.error) throw r.error;
+
+        showToast('Kit adicionado ao carrinho!', 'success');
+        setTimeout(function() { window.location.href = '/dashboard.html#cart-section'; }, 900);
+      } catch (err) {
+        console.error('Erro ao adicionar kit:', err);
+        showToast('Erro ao adicionar ao carrinho.', 'error');
+        btn.disabled = false;
+        btn.innerText = 'Adicionar Kit ao Carrinho';
+      }
+    }
+
+    async function init() {
+      try {
+        var kitRes = await window.supabaseClient
+          .from('products')
+          .select('*')
+          .eq('is_kit', true)
+          .eq('kit_type', 'configurable')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+
+        if (kitRes.error || !kitRes.data) {
+          document.getElementById('page-loading').classList.add('hidden');
+          document.getElementById('page-empty').classList.remove('hidden');
+          document.getElementById('page-empty').classList.add('flex');
+          return;
+        }
+
+        kitProduct = kitRes.data;
+
+        var relRes = await window.supabaseClient
+          .from('product_kit_items')
+          .select('child_product_id')
+          .eq('kit_product_id', kitProduct.id);
+
+        var childIds = (relRes.data || []).map(function(r) { return r.child_product_id; });
+        if (childIds.length === 0) {
+          document.getElementById('page-loading').classList.add('hidden');
+          document.getElementById('page-empty').classList.remove('hidden');
+          document.getElementById('page-empty').classList.add('flex');
+          return;
+        }
+
+        var itemsRes = await window.supabaseClient
+          .from('products')
+          .select('id, title, price, promotional_price, images')
+          .in('id', childIds)
+          .eq('is_active', true);
+
+        eligibleItems = itemsRes.data || [];
+
+        document.getElementById('kit-title').innerText = kitProduct.title || 'Monte seu Kit';
+        document.getElementById('kit-instructions').innerText =
+          'Escolha ' + kitProduct.kit_slots + ' de ' + eligibleItems.length + ' produtos disponíveis para montar seu kit com desconto.';
+
+        renderGrid();
+        updateSummary();
+
+        document.getElementById('page-loading').classList.add('hidden');
+        document.getElementById('page-content').classList.remove('hidden');
+
+      } catch (err) {
+        console.error('Erro ao carregar kit:', err);
+        document.getElementById('page-loading').classList.add('hidden');
+        document.getElementById('page-empty').classList.remove('hidden');
+        document.getElementById('page-empty').classList.add('flex');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
