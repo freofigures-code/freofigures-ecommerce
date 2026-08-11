@@ -149,6 +149,10 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
           Importar Shopee
         </button>
+        <button onclick="openKitModal(null)" class="flex items-center gap-2 border border-white/15 text-white/70 font-mono text-xs uppercase tracking-widest px-4 py-2 hover:border-freo-orange hover:text-freo-orange transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Novo Kit
+        </button>
         <button onclick="openForm(null)" class="flex items-center gap-2 bg-freo-orange text-freo-black font-display font-bold uppercase text-xs tracking-widest px-4 py-2 hover:bg-white transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           Novo Produto
@@ -251,8 +255,7 @@
         <button onclick="showTab('tab-images')" id="btn-tab-images" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Imagens</button>
         <button onclick="showTab('tab-variants')" id="btn-tab-variants" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Variantes</button>
         <button onclick="showTab('tab-seo')" id="btn-tab-seo" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">SEO</button>
-        <button onclick="showTab('tab-b2b')" id="btn-tab-b2b" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">B2B</button>
-        <button onclick="showTab('tab-kit')" id="btn-tab-kit" class="form-tab py-3 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Kit</button>
+        <button onclick="showTab('tab-b2b')" id="btn-tab-b2b" class="form-tab py-3 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">B2B</button>
       </div>
 
       <div class="flex-1 overflow-y-auto">
@@ -506,67 +509,7 @@
 
         </div>
 
-        <!-- ABA KIT -->
-        <div id="tab-kit" class="form-tab-content hidden p-6 space-y-5">
-
-          <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
-            <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <div class="font-mono text-xs text-white/40 leading-relaxed space-y-1">
-              <p><strong style="color:rgba(221,175,52,.7)">Kit Fixo</strong>: você escolhe os produtos e um desconto. O preço final é a soma dos itens menos o desconto — todos os itens entram automaticamente.</p>
-              <p><strong style="color:rgba(221,175,52,.7)">Kit Configurável</strong>: cliente escolhe N produtos dentre os elegíveis, na tela /montar-kit.html. Preço = soma dos escolhidos menos o desconto.</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="f-is-kit" class="sr-only peer" onchange="toggleIsKit()">
-              <div class="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-freo-orange transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-4 after:h-4 after:transition-transform peer-checked:after:translate-x-5"></div>
-            </label>
-            <span class="font-mono text-xs text-white/50 uppercase tracking-widest">Este produto é um Kit</span>
-          </div>
-
-          <div id="kit-config-wrap" class="hidden space-y-5">
-
-            <div>
-              <label class="fl">Tipo de kit</label>
-              <select id="f-kit-type" class="fi" onchange="renderKitConfigUI()">
-                <option value="fixed">Fixo — todos os itens entram, com desconto</option>
-                <option value="configurable">Configurável — cliente escolhe N itens, com desconto</option>
-              </select>
-            </div>
-
-            <div id="kit-slots-field" class="hidden">
-              <label class="fl">Quantos itens o cliente escolhe</label>
-              <input type="number" id="f-kit-slots" class="fi" min="1" placeholder="Ex: 3">
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="fl">Tipo de desconto</label>
-                <select id="f-kit-discount-type" class="fi">
-                  <option value="percent">Percentual (%)</option>
-                  <option value="fixed">Valor fixo (R$)</option>
-                </select>
-              </div>
-              <div>
-                <label class="fl">Valor do desconto</label>
-                <input type="number" id="f-kit-discount-value" class="fi" step="0.01" min="0" placeholder="0">
-              </div>
-            </div>
-
-            <div>
-              <label class="fl mb-2">Produtos elegíveis para este kit</label>
-              <div id="kit-items-picker" class="space-y-1 max-h-72 overflow-y-auto border border-white/[0.06] p-3"></div>
-              <p id="kit-items-count" class="font-mono text-xs text-white/20 mt-2"></p>
-            </div>
-
-            <div id="kit-preview-price" class="p-3 border border-freo-orange/20 bg-freo-orange/5 font-mono text-xs text-freo-orange"></div>
-
-          </div>
-
         </div>
-
-      </div>
 
       <!-- Footer -->
       <div class="border-t border-white/[0.07] px-6 py-4 flex items-center gap-3 flex-shrink-0 bg-freo-dark">
@@ -596,8 +539,6 @@
   var currentViewMode = 'varejo'; // 'varejo' | 'b2b'
   var currentTiers = []; // faixas de preço do produto em edição, formato: [{id, min_qty, max_qty, unit_price, _isNew}]
 
-  // Kit
-  var currentKitItems = []; // array de product_id elegíveis para o kit em edição
   /*
     Formato interno de currentVariants:
     [
@@ -765,19 +706,19 @@
       var hasPromo = p.promotional_price && p.promotional_price < p.price;
       var isQuoteOnly = p.sale_mode === 'quote_only';
       var b2bBadge = '';
-      if (currentViewMode === 'b2b') {
+      if (currentViewMode === 'b2b' && !p.is_kit) {
         b2bBadge = isQuoteOnly
           ? '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase b2b-badge-quote">Sob cotação</span>'
           : '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase" style="background:rgba(59,110,143,.15);color:#5A8FB0;border:1px solid rgba(59,110,143,.3)">Normal B2B</span>';
       }
-      return '<div class="product-card" onclick="openForm(\'' + p.id + '\')">'
+     return '<div class="product-card" onclick="' + (p.is_kit ? 'openKitModal' : 'openForm') + '(\'' + p.id + '\')">'
         + '<div class="relative aspect-square bg-freo-black overflow-hidden">'
         + (thumb ? '<img src="' + thumb + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">'
                  : '<div class="w-full h-full flex items-center justify-center"><svg class="w-12 h-12 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>')
         + b2bBadge
         + '<span class="absolute top-2 right-2 font-mono text-[9px] px-1.5 py-0.5 uppercase ' + (p.is_active ? 'badge-active' : 'badge-inactive') + '">' + (p.is_active ? 'Ativo' : 'Inativo') + '</span>'
+        + (p.is_kit ? '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase" style="background:rgba(221,175,52,.15);color:#DDAF34;border:1px solid rgba(221,175,52,.3)">Kit</span>' : '')
         + (imgs.length > 1 ? '<span class="absolute bottom-2 left-2 font-mono text-[9px] bg-black/60 text-white/60 px-1.5 py-0.5">' + imgs.length + ' fotos</span>' : '')
-        + '</div><div class="p-3">'
         + '<p class="font-display font-bold text-sm text-white leading-tight truncate mb-1">' + (p.title || 'Sem título') + '</p>'
         + (p.category ? '<p class="font-mono text-[10px] text-white/30 uppercase mb-2">' + p.category + '</p>' : '')
         + '<div class="flex items-end gap-2">'
@@ -846,25 +787,6 @@
       updateSaleModeHint();
       loadTiersForProduct(p.id);
 
-      currentKitItems = [];
-      document.getElementById('f-is-kit').checked = !!p.is_kit;
-      if (p.is_kit) {
-        document.getElementById('kit-config-wrap').classList.remove('hidden');
-        document.getElementById('f-kit-type').value = p.kit_type || 'fixed';
-        document.getElementById('f-kit-slots').value = p.kit_slots || '';
-        document.getElementById('f-kit-discount-type').value = p.kit_discount_type || 'percent';
-        document.getElementById('f-kit-discount-value').value = p.kit_discount_value || '';
-        renderKitConfigUI();
-        window.supabaseClient.from('product_kit_items').select('child_product_id').eq('kit_product_id', p.id).then(function(res) {
-          currentKitItems = (res.data || []).map(function(r) { return r.child_product_id; });
-          renderKitPicker();
-          updateKitPreviewPrice();
-        });
-      } else {
-        document.getElementById('kit-config-wrap').classList.add('hidden');
-        renderKitPicker();
-      }
-
       // Detecta se video_url é upload direto ou YouTube
       var savedVideo = p.video_url || '';
       if (savedVideo && !savedVideo.includes('youtube') && !savedVideo.includes('youtu.be') && !savedVideo.includes('vimeo')) {
@@ -893,14 +815,6 @@
 
       currentVideoUrl = null;
       renderVideoUI();
-
-      currentKitItems = [];
-      document.getElementById('f-is-kit').checked = false;
-      document.getElementById('kit-config-wrap').classList.add('hidden');
-      document.getElementById('f-kit-type').value = 'fixed';
-      document.getElementById('f-kit-slots').value = '';
-      document.getElementById('f-kit-discount-type').value = 'percent';
-      document.getElementById('f-kit-discount-value').value = '';
     }
     renderTagsUI(); renderImagesUI(); renderVariantsUI(); updateSEOPreview();
   }
@@ -1100,90 +1014,21 @@
       : 'Este produto mostrará a tabela de faixas de preço abaixo para clientes PJ.';
   }
 
+  document.getElementById('f-sale-mode').addEventListener('change', updateSaleModeHint);
+
   // ─────────────────────────────────────────────────────────────────────────
-  // KIT
+  // KIT (modal separado — ver seção "NOVO KIT" mais abaixo)
   // ─────────────────────────────────────────────────────────────────────────
-  function toggleIsKit() {
-    var checked = document.getElementById('f-is-kit').checked;
-    document.getElementById('kit-config-wrap').classList.toggle('hidden', !checked);
-    if (checked) { renderKitPicker(); renderKitConfigUI(); }
-  }
-
-  function renderKitConfigUI() {
-    var type = document.getElementById('f-kit-type').value;
-    document.getElementById('kit-slots-field').classList.toggle('hidden', type !== 'configurable');
-    updateKitPreviewPrice();
-  }
-
-  function renderKitPicker() {
-    var wrap = document.getElementById('kit-items-picker');
-    var options = allProducts.filter(function(p) {
-      return String(p.id) !== String(editingProductId) && !p.is_kit;
-    });
-    if (options.length === 0) {
-      wrap.innerHTML = '<p class="font-mono text-xs text-white/20 p-2">Nenhum outro produto cadastrado ainda.</p>';
-      return;
-    }
-    wrap.innerHTML = options.map(function(p) {
-      var checked = currentKitItems.includes(p.id) ? 'checked' : '';
-      return '<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04)">'
-        + '<input type="checkbox" value="' + p.id + '" ' + checked + ' onchange="toggleKitItem(\'' + p.id + '\', this.checked)">'
-        + '<span class="font-mono text-xs text-white/60 flex-1">' + escapeHTMLAdmin(p.title) + '</span>'
-        + '<span class="font-mono text-xs text-freo-orange flex-shrink-0">R$ ' + Number(p.price).toFixed(2).replace('.', ',') + '</span>'
-        + '</label>';
-    }).join('');
-    updateKitItemsCount();
-  }
-
-  function toggleKitItem(id, checked) {
-    if (checked && !currentKitItems.includes(id)) currentKitItems.push(id);
-    else if (!checked) currentKitItems = currentKitItems.filter(function(x) { return x !== id; });
-    updateKitItemsCount();
-    updateKitPreviewPrice();
-  }
-
-  function updateKitItemsCount() {
-    document.getElementById('kit-items-count').innerText = currentKitItems.length + ' produto(s) selecionado(s)';
-  }
-
-  function updateKitPreviewPrice() {
-    var previewEl = document.getElementById('kit-preview-price');
-    if (!previewEl) return;
-    var type = document.getElementById('f-kit-type').value;
-    var discountType = document.getElementById('f-kit-discount-type').value;
-    var discountValue = parseFloat(document.getElementById('f-kit-discount-value').value) || 0;
-
-    var selectedProducts = allProducts.filter(function(p) { return currentKitItems.includes(p.id); });
-    var slots = parseInt(document.getElementById('f-kit-slots').value) || selectedProducts.length;
-
-    var relevantProducts = type === 'configurable' ? selectedProducts.slice(0, slots) : selectedProducts;
-    var sum = relevantProducts.reduce(function(acc, p) {
-      var hasPromo = p.promotional_price && p.promotional_price < p.price;
-      return acc + Number(hasPromo ? p.promotional_price : p.price);
-    }, 0);
-
-    var final = discountType === 'percent' ? sum * (1 - discountValue / 100) : Math.max(0, sum - discountValue);
-
-    previewEl.innerText = type === 'configurable'
-      ? 'Prévia (assumindo ' + slots + ' item(ns) escolhido(s)): soma R$ ' + sum.toFixed(2).replace('.', ',') + ' → final R$ ' + final.toFixed(2).replace('.', ',')
-      : 'Preço final do kit: soma R$ ' + sum.toFixed(2).replace('.', ',') + ' → final R$ ' + final.toFixed(2).replace('.', ',');
-  }
-
-  document.getElementById('f-kit-discount-type').addEventListener('change', updateKitPreviewPrice);
-  document.getElementById('f-kit-discount-value').addEventListener('input', updateKitPreviewPrice);
-  document.getElementById('f-kit-slots').addEventListener('input', updateKitPreviewPrice);
-
-  async function saveKitItems(kitProductId) {
+  async function saveKitItems(kitProductId, itemIds) {
     await window.supabaseClient.from('product_kit_items').delete().eq('kit_product_id', kitProductId);
-    if (currentKitItems.length > 0) {
-      var rows = currentKitItems.map(function(childId) {
+    if (itemIds.length > 0) {
+      var rows = itemIds.map(function(childId) {
         return { kit_product_id: kitProductId, child_product_id: childId };
       });
       var r = await window.supabaseClient.from('product_kit_items').insert(rows);
       if (r.error) console.error('Erro ao salvar itens do kit:', r.error);
     }
   }
-  document.getElementById('f-sale-mode').addEventListener('change', updateSaleModeHint);
 
   async function loadTiersForProduct(productId) {
     document.getElementById('tiers-save-status').innerText = 'Carregando...';
@@ -1378,28 +1223,6 @@
         return { name: v.name.trim(), per_option_price: !!v.per_option_price, options: cleanOpts };
       });
 
-    var isKit = document.getElementById('f-is-kit').checked;
-    var kitType = isKit ? document.getElementById('f-kit-type').value : null;
-
-    if (isKit && kitType === 'configurable') {
-      var slots = parseInt(document.getElementById('f-kit-slots').value);
-      if (!slots || slots <= 0) {
-        showToast('Informe quantos itens o cliente deve escolher no kit configurável.', 'error');
-        showTab('tab-kit');
-        return false;
-      }
-      if (currentKitItems.length < slots) {
-        showToast('Você marcou menos produtos elegíveis do que os ' + slots + ' itens exigidos no kit.', 'error');
-        showTab('tab-kit');
-        return false;
-      }
-    }
-    if (isKit && currentKitItems.length === 0) {
-      showToast('Selecione ao menos um produto elegível para o kit.', 'error');
-      showTab('tab-kit');
-      return false;
-    }
-
     var payload = {
       title: title,
       description: document.getElementById('f-description').value.trim() || null,
@@ -1415,11 +1238,11 @@
       seo_description: document.getElementById('f-seo-desc').value.trim() || null,
       is_active: document.getElementById('f-active').checked,
       sale_mode: document.getElementById('f-sale-mode').value || 'normal',
-      is_kit: isKit,
-      kit_type: kitType,
-      kit_slots: (isKit && kitType === 'configurable') ? (parseInt(document.getElementById('f-kit-slots').value) || null) : null,
-      kit_discount_type: isKit ? document.getElementById('f-kit-discount-type').value : null,
-      kit_discount_value: isKit ? (parseFloat(document.getElementById('f-kit-discount-value').value) || 0) : null
+      is_kit: false,
+      kit_type: null,
+      kit_slots: null,
+      kit_discount_type: null,
+      kit_discount_value: null
     };
 
     try {
@@ -1433,10 +1256,6 @@
         document.getElementById('form-title').innerText = 'Editar Produto';
         document.getElementById('form-subtitle').innerText = 'ID: ' + editingProductId;
         document.getElementById('form-delete-btn').classList.remove('hidden');
-      }
-
-      if (isKit) {
-        await saveKitItems(editingProductId);
       }
 
       return true;
@@ -1714,6 +1533,272 @@
         }, 800);
       }
     }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // NOVO KIT — modal independente, fora do form de produto
+    // ─────────────────────────────────────────────────────────────────────
+    var editingKitId = null;
+    var kitSelectedItems = []; // [{id, title, price, promotional_price}]
+    var kitSearchDebounce = null;
+
+    function openKitModal(kitId) {
+      editingKitId = kitId;
+      kitSelectedItems = [];
+      document.getElementById('kit-modal-overlay').classList.remove('hidden');
+      document.getElementById('kit-modal-overlay').classList.add('flex');
+      document.getElementById('k-item-search').value = '';
+      document.getElementById('k-item-category').value = '';
+      document.getElementById('k-item-results').innerHTML = '';
+
+      if (kitId) {
+        var k = allProducts.find(function(x) { return String(x.id) === String(kitId) && x.is_kit; });
+        if (!k) { showToast('Kit não encontrado.', 'error'); closeKitModal(); return; }
+
+        document.getElementById('kit-modal-title').innerText = 'Editar Kit';
+        document.getElementById('kit-modal-delete-btn').classList.remove('hidden');
+        document.getElementById('k-title').value = k.title || '';
+        document.getElementById('k-description').value = k.description || '';
+        document.getElementById('k-type').value = k.kit_type || 'fixed';
+        document.getElementById('k-slots').value = k.kit_slots || '';
+        document.getElementById('k-discount-type').value = k.kit_discount_type || 'percent';
+        document.getElementById('k-discount-value').value = k.kit_discount_value || '';
+        document.getElementById('k-active').checked = k.is_active !== false;
+
+        window.supabaseClient.from('product_kit_items')
+          .select('child_product_id, products:child_product_id(id, title, price, promotional_price)')
+          .eq('kit_product_id', k.id)
+          .then(function(res) {
+            kitSelectedItems = (res.data || [])
+              .filter(function(r) { return r.products; })
+              .map(function(r) {
+                return { id: r.products.id, title: r.products.title, price: r.products.price, promotional_price: r.products.promotional_price };
+              });
+            renderKitSelectedList();
+            renderKitModalConfig();
+          });
+      } else {
+        document.getElementById('kit-modal-title').innerText = 'Novo Kit';
+        document.getElementById('kit-modal-delete-btn').classList.add('hidden');
+        document.getElementById('k-title').value = '';
+        document.getElementById('k-description').value = '';
+        document.getElementById('k-type').value = 'fixed';
+        document.getElementById('k-slots').value = '';
+        document.getElementById('k-discount-type').value = 'percent';
+        document.getElementById('k-discount-value').value = '';
+        document.getElementById('k-active').checked = true;
+        renderKitSelectedList();
+        renderKitModalConfig();
+      }
+      searchKitItems();
+    }
+
+    function closeKitModal() {
+      document.getElementById('kit-modal-overlay').classList.add('hidden');
+      document.getElementById('kit-modal-overlay').classList.remove('flex');
+      editingKitId = null;
+    }
+
+    function renderKitModalConfig() {
+      var type = document.getElementById('k-type').value;
+      document.getElementById('k-slots-field').classList.toggle('hidden', type !== 'configurable');
+      updateKitModalPreviewPrice();
+    }
+
+    // Busca no banco (ilike no título) + filtro de categoria, em tempo real
+    function onKitItemSearchInput() {
+      clearTimeout(kitSearchDebounce);
+      kitSearchDebounce = setTimeout(searchKitItems, 300);
+    }
+
+    async function searchKitItems() {
+      var term = document.getElementById('k-item-search').value.trim();
+      var category = document.getElementById('k-item-category').value;
+      var loadingEl = document.getElementById('k-item-loading');
+      var resultsEl = document.getElementById('k-item-results');
+
+      loadingEl.classList.remove('hidden');
+      try {
+        var query = window.supabaseClient
+          .from('products')
+          .select('id, title, price, promotional_price, images, category')
+          .eq('is_kit', false)
+          .order('title', { ascending: true })
+          .limit(40);
+
+        if (term) query = query.ilike('title', '%' + term + '%');
+        if (category) query = query.eq('category', category);
+        if (editingKitId) query = query.neq('id', editingKitId);
+
+        var r = await query;
+        if (r.error) throw r.error;
+        renderKitItemResults(r.data || []);
+      } catch (e) {
+        resultsEl.innerHTML = '<p class="font-mono text-xs text-red-400/60 p-2">Erro ao buscar produtos: ' + e.message + '</p>';
+      } finally {
+        loadingEl.classList.add('hidden');
+      }
+    }
+
+    function renderKitItemResults(products) {
+      var wrap = document.getElementById('k-item-results');
+      if (products.length === 0) {
+        wrap.innerHTML = '<p class="font-mono text-xs text-white/20 p-2">Nenhum produto encontrado.</p>';
+        return;
+      }
+      wrap.innerHTML = products.map(function(p) {
+        var checked = kitSelectedItems.some(function(x) { return String(x.id) === String(p.id); }) ? 'checked' : '';
+        return '<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04)">'
+          + '<input type="checkbox" value="' + p.id + '" ' + checked + ' onchange="toggleKitModalItem(\'' + p.id + '\', this.checked, ' + JSON.stringify(p.title).replace(/"/g, '&quot;') + ', ' + Number(p.price) + ', ' + (p.promotional_price != null ? Number(p.promotional_price) : 'null') + ')">'
+          + '<span class="font-mono text-xs text-white/60 flex-1">' + escapeHTMLAdmin(p.title) + (p.category ? ' <span style="color:rgba(255,255,255,.2)">· ' + escapeHTMLAdmin(p.category) + '</span>' : '') + '</span>'
+          + '<span class="font-mono text-xs text-freo-orange flex-shrink-0">R$ ' + Number(p.price).toFixed(2).replace('.', ',') + '</span>'
+          + '</label>';
+      }).join('');
+    }
+
+    function toggleKitModalItem(id, checked, title, price, promotionalPrice) {
+      if (checked) {
+        if (!kitSelectedItems.some(function(x) { return String(x.id) === String(id); })) {
+          kitSelectedItems.push({ id: id, title: title, price: price, promotional_price: promotionalPrice });
+        }
+      } else {
+        kitSelectedItems = kitSelectedItems.filter(function(x) { return String(x.id) !== String(id); });
+      }
+      renderKitSelectedList();
+      updateKitModalPreviewPrice();
+    }
+
+    function removeKitSelectedItem(id) {
+      kitSelectedItems = kitSelectedItems.filter(function(x) { return String(x.id) !== String(id); });
+      renderKitSelectedList();
+      updateKitModalPreviewPrice();
+      // Desmarca o checkbox correspondente se estiver visível nos resultados atuais
+      var cb = document.querySelector('#k-item-results input[value="' + id + '"]');
+      if (cb) cb.checked = false;
+    }
+
+    function renderKitSelectedList() {
+      var wrap = document.getElementById('k-selected-wrap');
+      var list = document.getElementById('k-selected-list');
+      document.getElementById('k-items-count').innerText = kitSelectedItems.length + ' produto(s) selecionado(s)';
+
+      if (kitSelectedItems.length === 0) {
+        wrap.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+      }
+      wrap.classList.remove('hidden');
+      list.innerHTML = kitSelectedItems.map(function(item) {
+        return '<span class="tag-pill">' + escapeHTMLAdmin(item.title)
+          + '<button onclick="removeKitSelectedItem(\'' + item.id + '\')" style="background:none;border:none;cursor:pointer;color:#DDAF34;font-size:14px;line-height:1;padding:0 0 0 2px">×</button></span>';
+      }).join('');
+    }
+
+    function updateKitModalPreviewPrice() {
+      var previewEl = document.getElementById('k-preview-price');
+      var type = document.getElementById('k-type').value;
+      var discountType = document.getElementById('k-discount-type').value;
+      var discountValue = parseFloat(document.getElementById('k-discount-value').value) || 0;
+
+      var slots = parseInt(document.getElementById('k-slots').value) || kitSelectedItems.length;
+      var relevant = type === 'configurable' ? kitSelectedItems.slice(0, slots) : kitSelectedItems;
+
+      var sum = relevant.reduce(function(acc, p) {
+        var hasPromo = p.promotional_price && p.promotional_price < p.price;
+        return acc + Number(hasPromo ? p.promotional_price : p.price);
+      }, 0);
+
+      var final = discountType === 'percent' ? sum * (1 - discountValue / 100) : Math.max(0, sum - discountValue);
+
+      previewEl.innerText = type === 'configurable'
+        ? 'Prévia (assumindo ' + slots + ' item(ns) escolhido(s)): soma R$ ' + sum.toFixed(2).replace('.', ',') + ' → final R$ ' + final.toFixed(2).replace('.', ',')
+        : 'Preço final do kit: soma R$ ' + sum.toFixed(2).replace('.', ',') + ' → final R$ ' + final.toFixed(2).replace('.', ',');
+    }
+
+    async function saveKit() {
+      var btn = document.getElementById('kit-modal-save-btn');
+      var title = document.getElementById('k-title').value.trim();
+      var type = document.getElementById('k-type').value;
+
+      if (!title) { showToast('Informe o nome do kit.', 'error'); return; }
+      if (kitSelectedItems.length === 0) { showToast('Selecione ao menos um produto para o kit.', 'error'); return; }
+
+      var slots = null;
+      if (type === 'configurable') {
+        slots = parseInt(document.getElementById('k-slots').value);
+        if (!slots || slots <= 0) { showToast('Informe quantos itens o cliente deve escolher.', 'error'); return; }
+        if (kitSelectedItems.length < slots) { showToast('Você selecionou menos produtos do que os ' + slots + ' itens exigidos.', 'error'); return; }
+      }
+
+      var firstItemImage = null; // kits usam a imagem do primeiro item selecionado, se existir
+      btn.innerText = 'Salvando...'; btn.disabled = true;
+
+      var payload = {
+        title: title,
+        description: document.getElementById('k-description').value.trim() || null,
+        price: 0,
+        promotional_price: null,
+        stock: 0,
+        category: null,
+        images: [],
+        tags: null,
+        video_url: null,
+        variants: [],
+        seo_title: null,
+        seo_description: null,
+        is_active: document.getElementById('k-active').checked,
+        sale_mode: 'normal',
+        is_kit: true,
+        kit_type: type,
+        kit_slots: type === 'configurable' ? slots : null,
+        kit_discount_type: document.getElementById('k-discount-type').value,
+        kit_discount_value: parseFloat(document.getElementById('k-discount-value').value) || 0
+      };
+
+      try {
+        var kitId = editingKitId;
+        if (kitId) {
+          var rUpd = await window.supabaseClient.from('products').update(payload).eq('id', kitId);
+          if (rUpd.error) throw rUpd.error;
+        } else {
+          var rIns = await window.supabaseClient.from('products').insert(payload).select().single();
+          if (rIns.error) throw rIns.error;
+          kitId = rIns.data.id;
+        }
+
+        await saveKitItems(kitId, kitSelectedItems.map(function(x) { return x.id; }));
+
+        showToast(editingKitId ? 'Kit atualizado!' : 'Kit criado!', 'success');
+        closeKitModal();
+        loadProducts();
+      } catch (e) {
+        console.error('saveKit error:', e);
+        showToast('Erro ao salvar kit: ' + (e.message || JSON.stringify(e)), 'error');
+      } finally {
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar Kit';
+        btn.disabled = false;
+      }
+    }
+
+    function confirmDeleteKit() {
+      if (!editingKitId) return;
+      var k = allProducts.find(function(x) { return String(x.id) === String(editingKitId); });
+      if (!confirm('Excluir o kit "' + (k ? k.title : 'este kit') + '"?\n\nEsta ação não pode ser desfeita.')) return;
+      deleteKit();
+    }
+
+    async function deleteKit() {
+      if (!editingKitId) return;
+      try {
+        await window.supabaseClient.from('product_kit_items').delete().eq('kit_product_id', editingKitId);
+        var r = await window.supabaseClient.from('products').delete().eq('id', editingKitId);
+        if (r.error) throw r.error;
+        showToast('Kit excluído.', 'success');
+        closeKitModal();
+        loadProducts();
+      } catch (e) {
+        showToast('Erro ao excluir kit: ' + e.message, 'error');
+      }
+    }
   </script>
 
   <!-- MODAL IMPORTAR SHOPEE -->
@@ -1787,6 +1872,123 @@
       <div class="px-6 py-4 border-t border-white/[0.07] flex gap-3 justify-end">
         <button onclick="closeBulkConfirm()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
         <button onclick="runBulkPriceUpdate()" id="bulk-confirm-btn" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-5 py-2.5 hover:bg-white transition-colors">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOVO KIT (separado do formulário de produto) -->
+  <div id="kit-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+    <div class="bg-freo-dark border border-white/[0.07] w-full max-w-3xl relative shadow-2xl flex flex-col" style="max-height:92vh">
+      <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-freo-orange to-transparent"></div>
+
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] flex-shrink-0">
+        <div>
+          <h2 id="kit-modal-title" class="font-display font-black uppercase text-xl text-white">Novo Kit</h2>
+          <p class="font-mono text-xs text-white/30 mt-0.5">Kits são produtos especiais que combinam outros produtos com desconto</p>
+        </div>
+        <button onclick="closeKitModal()" class="text-white/30 hover:text-white transition-colors p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
+
+        <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
+          <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <div class="font-mono text-xs text-white/40 leading-relaxed space-y-1">
+            <p><strong style="color:rgba(221,175,52,.7)">Kit Fixo</strong>: você escolhe os produtos e um desconto. O preço final é a soma dos itens menos o desconto — todos os itens entram automaticamente.</p>
+            <p><strong style="color:rgba(221,175,52,.7)">Kit Configurável</strong>: cliente escolhe N produtos dentre os elegíveis, na tela /montar-kit.html. Preço = soma dos escolhidos menos o desconto.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="fl">Nome do kit *</label>
+            <input type="text" id="k-title" class="fi" placeholder="Ex: Kit Colecionador Marvel">
+          </div>
+          <div>
+            <label class="fl">Tipo de kit</label>
+            <select id="k-type" class="fi" onchange="renderKitModalConfig()">
+              <option value="fixed">Fixo — todos os itens entram, com desconto</option>
+              <option value="configurable">Configurável — cliente escolhe N itens, com desconto</option>
+            </select>
+          </div>
+          <div id="k-slots-field" class="hidden">
+            <label class="fl">Quantos itens o cliente escolhe</label>
+            <input type="number" id="k-slots" class="fi" min="1" placeholder="Ex: 3">
+          </div>
+        </div>
+
+        <div>
+          <label class="fl">Descrição do kit</label>
+          <textarea id="k-description" class="fi" placeholder="Descreva o kit..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="fl">Tipo de desconto</label>
+            <select id="k-discount-type" class="fi" onchange="updateKitModalPreviewPrice()">
+              <option value="percent">Percentual (%)</option>
+              <option value="fixed">Valor fixo (R$)</option>
+            </select>
+          </div>
+          <div>
+            <label class="fl">Valor do desconto</label>
+            <input type="number" id="k-discount-value" class="fi" step="0.01" min="0" placeholder="0" oninput="updateKitModalPreviewPrice()">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-1">
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="k-active" class="sr-only peer" checked>
+            <div class="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-freo-orange transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-4 after:h-4 after:transition-transform peer-checked:after:translate-x-5"></div>
+          </label>
+          <span class="font-mono text-xs text-white/50 uppercase tracking-widest">Kit ativo (visível na loja)</span>
+        </div>
+
+        <div class="pt-4 border-t border-white/[0.06]">
+          <label class="fl mb-2">Selecionar produtos elegíveis para este kit</label>
+
+          <div class="flex gap-2 mb-3">
+            <div class="relative flex-1">
+              <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+              <input type="text" id="k-item-search" class="fi pl-9 py-2" placeholder="Buscar produto pelo nome..." oninput="onKitItemSearchInput()">
+            </div>
+            <select id="k-item-category" class="fi py-2" style="width:190px" onchange="searchKitItems()">
+              <option value="">Todas as categorias</option>
+              <option value="religioso">Religioso</option>
+              <option value="games">Games</option>
+              <option value="anime">Anime</option>
+              <option value="filmes">Filmes / Séries</option>
+              <option value="keycaps">Keycaps</option>
+              <option value="personalizado">Personalizado</option>
+              <option value="lifestyle">Lifestyle</option>
+              <option value="outros">Outros</option>
+            </select>
+          </div>
+
+          <div id="k-selected-wrap" class="hidden mb-3">
+            <p class="font-mono text-[10px] text-white/25 uppercase tracking-widest mb-1.5">Selecionados</p>
+            <div id="k-selected-list" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <div id="k-item-results" class="space-y-1 max-h-64 overflow-y-auto border border-white/[0.06] p-3"></div>
+          <p id="k-item-loading" class="hidden font-mono text-xs text-white/20 mt-2">Buscando...</p>
+          <p id="k-items-count" class="font-mono text-xs text-white/20 mt-2"></p>
+        </div>
+
+        <div id="k-preview-price" class="p-3 border border-freo-orange/20 bg-freo-orange/5 font-mono text-xs text-freo-orange"></div>
+
+      </div>
+
+      <div class="border-t border-white/[0.07] px-6 py-4 flex items-center gap-3 flex-shrink-0 bg-freo-dark">
+        <button id="kit-modal-delete-btn" onclick="confirmDeleteKit()" class="hidden text-xs font-mono text-red-500/50 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 transition-colors uppercase tracking-widest">Excluir kit</button>
+        <div class="flex-1"></div>
+        <button onclick="closeKitModal()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
+        <button onclick="saveKit()" id="kit-modal-save-btn" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-6 py-2.5 hover:bg-white transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Salvar Kit
+        </button>
       </div>
     </div>
   </div>
