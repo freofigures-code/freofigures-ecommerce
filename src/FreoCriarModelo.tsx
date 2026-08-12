@@ -16,6 +16,7 @@ import { Sparkles, RefreshCw, ArrowRight, Box, DollarSign, AlertTriangle } from 
 
 const WEBHOOK_GERAR_IMAGEM = "https://n8nwebhook.solviaoficial.com/webhook/GERAR_IMAGEM";
 const WEBHOOK_GERAR_MODELO = "https://n8nwebhook.solviaoficial.com/webhook/GERAR_modelo";
+const WEBHOOK_REFAZER_IMAGEM = "https://n8nwebhook.solviaoficial.com/webhook/refazer_imagem";
 
 // Timeout generoso: a Tripo sozinha pode levar 10-120s, mais o tempo da OpenAI
 // antes disso. 240s cobre folga de sobra sem deixar a requisição pendurada
@@ -67,6 +68,30 @@ function extractModelUrl(json: GerarModeloResponse): string | null {
     data.glb_url ??
     data.glbUrl ??
     data.url ??
+    null
+  );
+}
+
+type RefazerImagemResponse = {
+  success: boolean;
+  data?: Record<string, any>;
+  error?: string;
+  message?: string;
+};
+
+/**
+ * Extrai a URL da nova imagem gerada pelo webhook refazer_imagem.
+ * AJUSTAR AQUI quando o formato real for confirmado — trocar por:
+ *   return json?.data?.NOME_EXATO_DO_CAMPO ?? null;
+ */
+function extractRefinedImageUrl(json: RefazerImagemResponse): string | null {
+  const data = json?.data;
+  if (!data) return null;
+  return (
+    data.image_url ??
+    data.imageUrl ??
+    data.url ??
+    data.image ??
     null
   );
 }
@@ -136,7 +161,9 @@ type FlowStep =
   | "loading-image"
   | "image-ready"
   | "loading-model"
-  | "model-ready";
+  | "model-ready"
+  | "refine-question"
+  | "loading-refine";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MODEL VIEWER (carrega <model-viewer> do Google via CDN, sem npm install)
@@ -194,6 +221,11 @@ export default function FreoCriarModelo() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [modelUrl, setModelUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Texto do que o usuário quer mudar na imagem já gerada, e de qual tela ele
+  // veio ("image-ready" ou "model-ready") para poder devolvê-lo lá em caso de erro.
+  const [refineText, setRefineText] = useState("");
+  const [refineOrigin, setRefineOrigin] = useState<"image-ready" | "model-ready">("image-ready");
 
   const modelViewerReady = useModelViewerScript();
   const abortRef = useRef<AbortController | null>(null);
@@ -325,6 +357,64 @@ export default function FreoCriarModelo() {
         setErrorMessage(error?.message || "Erro de conexão ao gerar o modelo 3D.");
       }
       setStep("image-ready");
+    }
+  };
+
+  // ── Enviar pedido de mudança na imagem já gerada ──────────────────────────
+  // Único ponto que envia dados ao webhook refazer_imagem. Envia a imagem
+  // atual (imageUrl), o prompt original combinado (promptText) e o texto do
+  // que o usuário quer mudar (refineText). Ao voltar, substitui imageUrl pela
+  // nova imagem e leva o usuário para "image-ready".
+  const handleEnviarRefinamento = async () => {
+    const mudanca = refineText.trim();
+    if (!mudanca || !imageUrl) return;
+
+    setErrorMessage(null);
+    setStep("loading-refine");
+
+    try {
+      const response = await fetchWithTimeout(
+        WEBHOOK_REFAZER_IMAGEM,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image_url: imageUrl,
+            prompt: promptText.trim(),
+            mudanca,
+          }),
+        },
+        WEBHOOK_TIMEOUT_MS
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro do servidor (${response.status})`);
+      }
+
+      const json: RefazerImagemResponse = await response.json();
+
+      if (!json.success) {
+        throw new Error(json.error || json.message || "Não foi possível refazer a imagem.");
+      }
+
+      const url = extractRefinedImageUrl(json);
+      if (!url) {
+        throw new Error(
+          "A imagem foi gerada mas a URL não foi encontrada na resposta. Verifique o formato retornado pelo webhook refazer_imagem (campo esperado em data.image_url)."
+        );
+      }
+
+      setImageUrl(url);
+      setModelUrl(null);
+      setRefineText("");
+      setStep("image-ready");
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        setErrorMessage("A geração da nova imagem demorou demais e foi cancelada. Tente novamente.");
+      } else {
+        setErrorMessage(error?.message || "Erro de conexão ao refazer a imagem.");
+      }
+      setStep("refine-question");
     }
   };
 
@@ -686,7 +776,7 @@ export default function FreoCriarModelo() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
-                    onClick={handleRefazerImagem}
+                    onClick={() => { setRefineOrigin("image-ready"); setRefineText(""); setStep("refine-question"); }}
                     className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
                   >
                     <RefreshCw className="w-4 h-4" />
@@ -768,7 +858,7 @@ export default function FreoCriarModelo() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
-                    onClick={handleRefazerImagem}
+                    onClick={() => { setRefineOrigin("model-ready"); setRefineText(""); setStep("refine-question"); }}
                     className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
                   >
                     <RefreshCw className="w-4 h-4" />
@@ -782,6 +872,89 @@ export default function FreoCriarModelo() {
                     Ver Preço
                   </button>
                 </div>
+              </motion.div>
+            )}
+
+            {/* ── PERGUNTA DE REFINAMENTO: O QUE VOCÊ DESEJA MUDAR? ─────── */}
+            {step === "refine-question" && imageUrl && (
+              <motion.div
+                key="refine-question"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.35 }}
+              >
+                <div className="text-center mb-6">
+                  <h2 className="font-display font-black text-2xl md:text-3xl uppercase tracking-tighter mb-2">
+                    O que você deseja <span className="text-freo-orange">mudar?</span>
+                  </h2>
+                  <p className="text-freo-light/50 font-body text-sm">
+                    Descreva o ajuste na imagem atual, ou refaça tudo do zero.
+                  </p>
+                </div>
+
+                <div className="bg-[#111111] border border-white/[0.07] p-3 mb-5">
+                  <div className="aspect-square w-full bg-[#0A0A0A] overflow-hidden">
+                    <img
+                      src={imageUrl}
+                      alt="Imagem atual"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-[#111111] border border-white/[0.07] p-5 md:p-6">
+                  <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                    O que você deseja mudar
+                  </label>
+                  <textarea
+                    value={refineText}
+                    onChange={event => setRefineText(event.target.value)}
+                    placeholder="Ex: deixar a roupa azul, remover a espada, cabeça um pouco maior..."
+                    rows={4}
+                    className="w-full bg-[#0A0A0A] border border-white/[0.08] text-freo-light px-4 py-3 font-body text-sm outline-none focus:border-freo-orange transition-colors resize-none placeholder:text-white/20"
+                  />
+                  <button
+                    onClick={handleEnviarRefinamento}
+                    disabled={!refineText.trim()}
+                    className="w-full mt-4 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3.5 hover:bg-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.99]"
+                  >
+                    Enviar
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleRefazerImagem}
+                    className="w-full mt-3 flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Refazer totalmente o modelo
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── LOADING: REFAZENDO IMAGEM COM AJUSTE ──────────────────── */}
+            {step === "loading-refine" && (
+              <motion.div
+                key="loading-refine"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                className="flex flex-col items-center justify-center text-center py-20"
+              >
+                {imageUrl && (
+                  <div className="w-28 h-28 mb-6 border border-white/10 bg-[#111111] overflow-hidden opacity-60">
+                    <img src={imageUrl} alt="Imagem atual" className="w-full h-full object-contain" />
+                  </div>
+                )}
+                <div className="w-14 h-14 border-2 border-freo-orange border-t-transparent rounded-full animate-spin mb-6" />
+                <p className="font-display font-bold text-lg uppercase tracking-wide text-white mb-2">
+                  Aplicando a mudança
+                </p>
+                <p className="font-mono text-sm text-freo-orange fcm-pulse">
+                  Isso pode levar até 1 minuto...
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
