@@ -128,7 +128,15 @@ function useRotatingMessages(messages: string[], active: boolean, intervalMs = 3
 // TIPOS DE ESTADO DO FLUXO
 // ─────────────────────────────────────────────────────────────────────────────
 
-type FlowStep = "prompt" | "loading-image" | "image-ready" | "loading-model" | "model-ready";
+type FlowStep =
+  | "question-1"
+  | "question-2"
+  | "question-3"
+  | "question-4"
+  | "loading-image"
+  | "image-ready"
+  | "loading-model"
+  | "model-ready";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MODEL VIEWER (carrega <model-viewer> do Google via CDN, sem npm install)
@@ -171,7 +179,17 @@ function useModelViewerScript() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function FreoCriarModelo() {
-  const [step, setStep] = useState<FlowStep>("prompt");
+  const [step, setStep] = useState<FlowStep>("question-1");
+
+  // Respostas das 4 perguntas fixas. Nada disso é enviado individualmente —
+  // só são combinadas em um único texto no momento em que a pergunta 4 é
+  // confirmada (handleFinalizarPerguntas), que é quem dispara handleGerarImagem.
+  const [answerSubject, setAnswerSubject] = useState("");       // O que transformar em figure
+  const [answerStyle, setAnswerStyle] = useState("");            // Estilo da figure
+  const [answerPose, setAnswerPose] = useState("");               // Pose
+  const [answerOutfit, setAnswerOutfit] = useState("");           // Roupa/acessórios/cores (opcional)
+  const [answerNotes, setAnswerNotes] = useState("");             // Observações extras (opcional)
+
   const [promptText, setPromptText] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [modelUrl, setModelUrl] = useState<string | null>(null);
@@ -189,9 +207,36 @@ export default function FreoCriarModelo() {
     };
   }, []);
 
-  // ── Passo 1 → 2: gerar imagem ─────────────────────────────────────────────
-  const handleGerarImagem = async () => {
-    const clean = promptText.trim();
+  // ── Monta o prompt final combinando as 4 respostas e dispara a geração ───
+  // Chamada SOMENTE ao confirmar a pergunta 4. É o único ponto que aciona o
+  // envio ao webhook GERAR_IMAGEM — nenhuma resposta é enviada isoladamente.
+  const handleFinalizarPerguntas = () => {
+    const partes: string[] = [];
+
+    partes.push(`Sujeito: ${answerSubject.trim()}`);
+    partes.push(`Estilo: ${answerStyle.trim()}`);
+    partes.push(`Pose: ${answerPose.trim()}`);
+
+    if (answerOutfit.trim()) {
+      partes.push(`Roupa/acessórios/cores: ${answerOutfit.trim()}`);
+    }
+    if (answerNotes.trim()) {
+      partes.push(`Observações extras: ${answerNotes.trim()}`);
+    }
+
+    const promptFinal = partes.join(". ");
+    setPromptText(promptFinal);
+
+    // handleGerarImagem lê de promptText via closure teria valor antigo (state
+    // assíncrono), então chamamos a geração passando o texto explicitamente.
+    handleGerarImagem(promptFinal);
+  };
+
+  // ── Última etapa das perguntas → gerar imagem ─────────────────────────────
+  // Recebe o prompt combinado como parâmetro (não lê de promptText no state,
+  // que ainda estaria desatualizado por causa da assincronia do setState).
+  const handleGerarImagem = async (promptFinal: string) => {
+    const clean = promptFinal.trim();
     if (!clean) return;
 
     setErrorMessage(null);
@@ -207,7 +252,6 @@ export default function FreoCriarModelo() {
         },
         WEBHOOK_TIMEOUT_MS
       );
-
       if (!response.ok) {
         throw new Error(`Erro do servidor (${response.status})`);
       }
@@ -233,7 +277,7 @@ export default function FreoCriarModelo() {
       } else {
         setErrorMessage(error?.message || "Erro de conexão ao gerar a imagem.");
       }
-      setStep("prompt");
+      setStep("question-4");
     }
   };
 
@@ -289,7 +333,13 @@ export default function FreoCriarModelo() {
     setImageUrl(null);
     setModelUrl(null);
     setErrorMessage(null);
-    setStep("prompt");
+    setPromptText("");
+    setAnswerSubject("");
+    setAnswerStyle("");
+    setAnswerPose("");
+    setAnswerOutfit("");
+    setAnswerNotes("");
+    setStep("question-1");
   };
 
   // ── Ver preço (placeholder — comportamento futuro a definir) ─────────────
@@ -358,10 +408,11 @@ export default function FreoCriarModelo() {
           </AnimatePresence>
 
           <AnimatePresence mode="wait">
-            {/* ── ETAPA 1: PROMPT ────────────────────────────────────────── */}
-            {step === "prompt" && (
+
+            {/* ── PERGUNTA 1: O QUE TRANSFORMAR EM FIGURE ───────────────── */}
+            {step === "question-1" && (
               <motion.div
-                key="prompt"
+                key="question-1"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -16 }}
@@ -371,36 +422,216 @@ export default function FreoCriarModelo() {
                   <div className="inline-flex items-center gap-2 border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5 mb-5">
                     <Sparkles className="w-3.5 h-3.5 text-freo-orange" />
                     <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">
-                      Gerado por IA
+                      Passo 1 de 4
                     </span>
                   </div>
                   <h1 className="font-display font-black text-3xl md:text-5xl uppercase tracking-tighter leading-[0.95] mb-3">
-                    Descreva o que <span className="text-freo-orange">você imagina</span>
+                    O que você quer <span className="text-freo-orange">transformar em figure?</span>
                   </h1>
                   <p className="text-freo-light/50 font-body text-sm md:text-base max-w-lg mx-auto">
-                    Escreva com detalhes: o que é, estilo, cores, pose. Quanto mais específico, melhor o resultado.
+                    Ex.: "meu cachorro", "um guerreiro medieval", "um personagem inspirado em anime"
                   </p>
                 </div>
 
                 <div className="bg-[#111111] border border-white/[0.07] p-5 md:p-6">
                   <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
-                    Sua descrição
+                    Sua resposta
                   </label>
                   <textarea
-                    value={promptText}
-                    onChange={event => setPromptText(event.target.value)}
-                    placeholder="Ex: um dragão vermelho com asas abertas, estilo cartoon, em posição de ataque..."
-                    rows={5}
+                    value={answerSubject}
+                    onChange={event => setAnswerSubject(event.target.value)}
+                    placeholder="Ex: meu cachorro, um guerreiro medieval..."
+                    rows={3}
                     className="w-full bg-[#0A0A0A] border border-white/[0.08] text-freo-light px-4 py-3 font-body text-sm outline-none focus:border-freo-orange transition-colors resize-none placeholder:text-white/20"
                   />
                   <button
-                    onClick={handleGerarImagem}
-                    disabled={!promptText.trim()}
+                    onClick={() => setStep("question-2")}
+                    disabled={!answerSubject.trim()}
                     className="w-full mt-4 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3.5 hover:bg-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.99]"
                   >
-                    Gerar Imagem
+                    Próximo
                     <ArrowRight className="w-4 h-4" />
                   </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── PERGUNTA 2: ESTILO DA FIGURE ──────────────────────────── */}
+            {step === "question-2" && (
+              <motion.div
+                key="question-2"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.35 }}
+              >
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center gap-2 border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5 mb-5">
+                    <Sparkles className="w-3.5 h-3.5 text-freo-orange" />
+                    <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">
+                      Passo 2 de 4
+                    </span>
+                  </div>
+                  <h1 className="font-display font-black text-3xl md:text-5xl uppercase tracking-tighter leading-[0.95] mb-3">
+                    Qual <span className="text-freo-orange">estilo da figure?</span>
+                  </h1>
+                  <p className="text-freo-light/50 font-body text-sm md:text-base max-w-lg mx-auto">
+                    Ex.: "fofa", "colecionável premium", "anime", "realista estilizada"
+                  </p>
+                </div>
+
+                <div className="bg-[#111111] border border-white/[0.07] p-5 md:p-6">
+                  <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                    Sua resposta
+                  </label>
+                  <textarea
+                    value={answerStyle}
+                    onChange={event => setAnswerStyle(event.target.value)}
+                    placeholder="Ex: fofa, colecionável premium, anime..."
+                    rows={3}
+                    className="w-full bg-[#0A0A0A] border border-white/[0.08] text-freo-light px-4 py-3 font-body text-sm outline-none focus:border-freo-orange transition-colors resize-none placeholder:text-white/20"
+                  />
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button
+                      onClick={() => setStep("question-1")}
+                      className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
+                    >
+                      Voltar
+                    </button>
+                    <button
+                      onClick={() => setStep("question-3")}
+                      disabled={!answerStyle.trim()}
+                      className="bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.99]"
+                    >
+                      Próximo
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── PERGUNTA 3: POSE ──────────────────────────────────────── */}
+            {step === "question-3" && (
+              <motion.div
+                key="question-3"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.35 }}
+              >
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center gap-2 border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5 mb-5">
+                    <Sparkles className="w-3.5 h-3.5 text-freo-orange" />
+                    <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">
+                      Passo 3 de 4
+                    </span>
+                  </div>
+                  <h1 className="font-display font-black text-3xl md:text-5xl uppercase tracking-tighter leading-[0.95] mb-3">
+                    Qual <span className="text-freo-orange">pose?</span>
+                  </h1>
+                  <p className="text-freo-light/50 font-body text-sm md:text-base max-w-lg mx-auto">
+                    Ex.: "em pé", "pose de ação", "braços cruzados", "segurando espada"
+                  </p>
+                </div>
+
+                <div className="bg-[#111111] border border-white/[0.07] p-5 md:p-6">
+                  <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                    Sua resposta
+                  </label>
+                  <textarea
+                    value={answerPose}
+                    onChange={event => setAnswerPose(event.target.value)}
+                    placeholder="Ex: em pé, pose de ação, braços cruzados..."
+                    rows={3}
+                    className="w-full bg-[#0A0A0A] border border-white/[0.08] text-freo-light px-4 py-3 font-body text-sm outline-none focus:border-freo-orange transition-colors resize-none placeholder:text-white/20"
+                  />
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button
+                      onClick={() => setStep("question-2")}
+                      className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
+                    >
+                      Voltar
+                    </button>
+                    <button
+                      onClick={() => setStep("question-4")}
+                      disabled={!answerPose.trim()}
+                      className="bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.99]"
+                    >
+                      Próximo
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── PERGUNTA 4: ROUPA/ACESSÓRIOS/CORES + OBSERVAÇÕES (OPCIONAIS) ── */}
+            {step === "question-4" && (
+              <motion.div
+                key="question-4"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.35 }}
+              >
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center gap-2 border border-freo-orange/20 bg-freo-orange/5 px-3 py-1.5 mb-5">
+                    <Sparkles className="w-3.5 h-3.5 text-freo-orange" />
+                    <span className="font-mono text-[10px] text-freo-orange uppercase tracking-[0.18em]">
+                      Passo 4 de 4
+                    </span>
+                  </div>
+                  <h1 className="font-display font-black text-3xl md:text-5xl uppercase tracking-tighter leading-[0.95] mb-3">
+                    Últimos <span className="text-freo-orange">detalhes</span>
+                  </h1>
+                  <p className="text-freo-light/50 font-body text-sm md:text-base max-w-lg mx-auto">
+                    Ambos os campos abaixo são opcionais — pode enviar em branco.
+                  </p>
+                </div>
+
+                <div className="bg-[#111111] border border-white/[0.07] p-5 md:p-6 space-y-5">
+                  <div>
+                    <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                      Roupa / acessórios / cores (opcional)
+                    </label>
+                    <textarea
+                      value={answerOutfit}
+                      onChange={event => setAnswerOutfit(event.target.value)}
+                      placeholder="Ex: roupa preta com detalhes dourados, espada nas costas"
+                      rows={3}
+                      className="w-full bg-[#0A0A0A] border border-white/[0.08] text-freo-light px-4 py-3 font-body text-sm outline-none focus:border-freo-orange transition-colors resize-none placeholder:text-white/20"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                      Observações extras (opcional)
+                    </label>
+                    <textarea
+                      value={answerNotes}
+                      onChange={event => setAnswerNotes(event.target.value)}
+                      placeholder='Ex: "quero cabeça levemente maior", "base simples", "sem cenário"'
+                      rows={3}
+                      className="w-full bg-[#0A0A0A] border border-white/[0.08] text-freo-light px-4 py-3 font-body text-sm outline-none focus:border-freo-orange transition-colors resize-none placeholder:text-white/20"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setStep("question-3")}
+                      className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
+                    >
+                      Voltar
+                    </button>
+                    <button
+                      onClick={handleFinalizarPerguntas}
+                      className="bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors flex items-center justify-center gap-2 active:scale-[0.99]"
+                    >
+                      Gerar Imagem
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
