@@ -576,6 +576,11 @@ export default function FreoCriarModelo() {
     setErrorMessage(null);
   };
 
+  // ── Voltar ao menu principal do site ──────────────────────────────────────
+  const handleVoltarAoMenu = () => {
+    window.location.href = "https://freofigures.com.br";
+  };
+
   return (
     <div className="min-h-screen bg-freo-black text-freo-light font-body antialiased flex flex-col">
       <style>{`
@@ -600,21 +605,26 @@ export default function FreoCriarModelo() {
       {/* Header simples */}
       <header className="border-b border-white/[0.07] bg-[#0d0d0d] py-4">
         <div className="max-w-4xl mx-auto px-5 flex items-center gap-3">
-          <img
-            src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
-            alt="Logo"
-            className="w-9 h-9 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_8px_rgba(221,175,52,0.4)]"
-            onError={(event) => { (event.target as HTMLImageElement).style.display = "none"; }}
-          />
-          <span className="font-display font-black text-xl tracking-tighter uppercase">
-            Freo<span className="text-freo-orange font-light">Figures</span>
-          </span>
+          <button
+            onClick={handleVoltarAoMenu}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            aria-label="Voltar ao menu principal do site"
+          >
+            <img
+              src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
+              alt="Logo"
+              className="w-9 h-9 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_8px_rgba(221,175,52,0.4)]"
+              onError={(event) => { (event.target as HTMLImageElement).style.display = "none"; }}
+            />
+            <span className="font-display font-black text-xl tracking-tighter uppercase">
+              Freo<span className="text-freo-orange font-light">Figures</span>
+            </span>
+          </button>
           <span className="ml-auto font-mono text-[10px] text-freo-orange border border-freo-orange/30 bg-freo-orange/8 px-3 py-1 uppercase tracking-widest">
             Criar Modelo 3D
           </span>
         </div>
       </header>
-
       <main className="flex-1 fcm-grid-bg relative">
         <div className="max-w-2xl mx-auto px-5 py-14 md:py-20">
 
