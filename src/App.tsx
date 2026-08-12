@@ -15,6 +15,7 @@ import {
   Filter,
   ChevronDown,
   ArrowLeft,
+  Sparkles,
 } from 'lucide-react';
   import FreoChat from './FreoChat';
   import FreoCupom from './FreoCupom';
@@ -1176,6 +1177,10 @@ const Navbar = ({
 
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center gap-3 xl:gap-6 flex-shrink-0 whitespace-nowrap">
+          <a href="/criar-modelo.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded whitespace-nowrap">
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden lg:inline">Criar Modelo 3D</span>
+          </a>
           {user && (
             <a href="/meus-pedidos.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded whitespace-nowrap">
               <Box className="w-4 h-4" />
@@ -1285,6 +1290,14 @@ const Navbar = ({
             </div>
 
             <div className="p-6 border-t border-white/10 space-y-3">
+              
+                href="/criar-modelo.html"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 text-freo-orange border border-freo-orange/30 px-5 py-3.5 rounded bg-freo-orange/10 font-display font-bold uppercase tracking-wide text-sm"
+              >
+                <Sparkles className="w-5 h-5" />
+                Criar Modelo 3D
+              </a>
               {user && (
                 <a href="/meus-pedidos.html" className="flex items-center gap-3 text-freo-orange border border-freo-orange/30 px-5 py-3.5 rounded bg-freo-orange/10 font-display font-bold uppercase tracking-wide text-sm">
                   <Box className="w-5 h-5" />
