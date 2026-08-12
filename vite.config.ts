@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
         input: {
           main: path.resolve(__dirname, 'index.html'),
           b2b: path.resolve(__dirname, 'b2b.html'),
+          criarModelo: path.resolve(__dirname, 'criar-modelo.html'),
         },
       },
     },
