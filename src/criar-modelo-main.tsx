@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import FreoCriarModelo from "./FreoCriarModelo";
-import "./index.css"; // ajuste este import para o arquivo CSS global real do seu projeto (o que contém as diretivas do Tailwind)
+import "./index.css";
 
 const container = document.getElementById("root");
 if (!container) {
