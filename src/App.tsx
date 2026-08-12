@@ -1290,8 +1290,8 @@ const Navbar = ({
             </div>
 
             <div className="p-6 border-t border-white/10 space-y-3">
-              
-                href="/criar-modelo.html"
+              <a
+               href="/criar-modelo.html"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 text-freo-orange border border-freo-orange/30 px-5 py-3.5 rounded bg-freo-orange/10 font-display font-bold uppercase tracking-wide text-sm"
               >
