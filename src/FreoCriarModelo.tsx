@@ -18,6 +18,7 @@ const WEBHOOK_GERAR_IMAGEM = "https://n8nwebhook.solviaoficial.com/webhook/GERAR
 const WEBHOOK_GERAR_MODELO = "https://n8nwebhook.solviaoficial.com/webhook/GERAR_modelo";
 const WEBHOOK_REFAZER_IMAGEM = "https://n8nwebhook.solviaoficial.com/webhook/refazer_imagem";
 const WEBHOOK_GERAR_MODELO_IMAGEM = "https://n8nwebhook.solviaoficial.com/webhook/gerar_modelo_imagem";
+const WEBHOOK_GERAR_GCODE = "https://n8nwebhook.solviaoficial.com/webhook/gerar_gcode";
 
 // Timeout generoso: a Tripo sozinha pode levar 10-120s, mais o tempo da OpenAI
 // antes disso. 240s cobre folga de sobra sem deixar a requisição pendurada
@@ -122,6 +123,47 @@ function extractModelUrlFromUpload(json: GerarModeloImagemResponse): string | nu
   );
 }
 
+type GerarGcodeResponse = {
+  success: boolean;
+  data?: Record<string, any>;
+  error?: string;
+  message?: string;
+};
+
+/**
+ * Extrai o preço (em número) da resposta do webhook gerar_gcode.
+ * AJUSTAR AQUI quando o formato real for confirmado — trocar por:
+ *   return json?.data?.NOME_EXATO_DO_CAMPO ?? null;
+ *
+ * Aceita tanto número quanto string numérica (ex.: "42.90" ou "42,90"),
+ * pois não sabemos ainda se o n8n devolve number ou string.
+ */
+function extractPrice(json: GerarGcodeResponse): number | null {
+  const data = json?.data;
+  if (!data) return null;
+
+  const raw =
+    data.price ??
+    data.preco ??
+    data.preço ??
+    data.valor ??
+    data.total ??
+    data.amount ??
+    null;
+
+  if (raw === null || raw === undefined) return null;
+
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+
+  if (typeof raw === "string") {
+    const normalizado = raw.trim().replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "");
+    const numero = parseFloat(normalizado);
+    return Number.isFinite(numero) ? numero : null;
+  }
+
+  return null;
+}
+
 /**
  * Converte um File em base64 puro (sem o prefixo "data:...;base64,").
  */
@@ -174,6 +216,13 @@ const MODEL_LOADING_MESSAGES = [
   "Quase lá, só mais um pouco...",
 ];
 
+const GCODE_LOADING_MESSAGES = [
+  "Fatiando seu modelo...",
+  "Calculando o preço da peça...",
+  "Analisando o volume de material...",
+  "Quase lá...",
+];
+
 function useRotatingMessages(messages: string[], active: boolean, intervalMs = 3200) {
   const [index, setIndex] = useState(0);
 
@@ -207,6 +256,8 @@ type FlowStep =
   | "image-ready"
   | "loading-model"
   | "model-ready"
+  | "loading-gcode"
+  | "price-ready"
   | "refine-question"
   | "loading-refine";
 
@@ -267,6 +318,9 @@ export default function FreoCriarModelo() {
   const [modelUrl, setModelUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Preço retornado pelo webhook gerar_gcode após o fatiamento do modelo 3D.
+  const [price, setPrice] = useState<number | null>(null);
+
   // Texto do que o usuário quer mudar na imagem já gerada, e de qual tela ele
   // veio ("image-ready" ou "model-ready") para poder devolvê-lo lá em caso de erro.
   const [refineText, setRefineText] = useState("");
@@ -285,6 +339,7 @@ export default function FreoCriarModelo() {
     MODEL_LOADING_MESSAGES,
     step === "loading-model" || step === "loading-model-from-upload"
   );
+  const gcodeLoadingMessage = useRotatingMessages(GCODE_LOADING_MESSAGES, step === "loading-gcode");
 
   useEffect(() => {
     return () => {
@@ -421,6 +476,57 @@ export default function FreoCriarModelo() {
     }
   };
 
+  // ── Fatiar o modelo 3D e obter o preço ────────────────────────────────────
+  // Único ponto que envia dados ao webhook gerar_gcode. Envia a URL do modelo
+  // 3D (modelUrl) já gerado. A resposta deve trazer o preço calculado após o
+  // fatiamento (contrato genérico {success, data: {...}}, mesmo usado nos
+  // demais webhooks — ver extractPrice para o nome exato do campo aceito).
+  const handleFatiarModelo = async () => {
+    if (!modelUrl) return;
+
+    setErrorMessage(null);
+    setStep("loading-gcode");
+
+    try {
+      const response = await fetchWithTimeout(
+        WEBHOOK_GERAR_GCODE,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model_url: modelUrl }),
+        },
+        WEBHOOK_TIMEOUT_MS
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro do servidor (${response.status})`);
+      }
+
+      const json: GerarGcodeResponse = await response.json();
+
+      if (!json.success) {
+        throw new Error(json.error || json.message || "Não foi possível fatiar o modelo e calcular o preço.");
+      }
+
+      const valor = extractPrice(json);
+      if (valor === null) {
+        throw new Error(
+          "O modelo foi fatiado mas o preço não foi encontrado na resposta. Verifique o formato retornado pelo webhook gerar_gcode (campo esperado em data.price)."
+        );
+      }
+
+      setPrice(valor);
+      setStep("price-ready");
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        setErrorMessage("O fatiamento do modelo demorou demais e foi cancelado. Tente novamente.");
+      } else {
+        setErrorMessage(error?.message || "Erro de conexão ao fatiar o modelo e calcular o preço.");
+      }
+      setStep("model-ready");
+    }
+  };
+
   // ── Enviar pedido de mudança na imagem já gerada ──────────────────────────
   // Único ponto que envia dados ao webhook refazer_imagem. Envia a imagem
   // atual (imageUrl), o prompt original combinado (promptText) e o texto do
@@ -541,6 +647,7 @@ export default function FreoCriarModelo() {
   const handleRefazerImagem = () => {
     setImageUrl(null);
     setModelUrl(null);
+    setPrice(null);
     setErrorMessage(null);
     setPromptText("");
     setAnswerSubject("");
@@ -554,11 +661,13 @@ export default function FreoCriarModelo() {
     setStep("start");
   };
 
-  // ── Ver preço (placeholder — comportamento futuro a definir) ─────────────
-  const handleVerPreco = () => {
-    // Por enquanto, apenas placeholder. Fluxo de preço não faz parte deste escopo.
+  // ── Ir para pagamento (chamado após o preço já estar na tela) ────────────
+  const handleIrParaPagamento = () => {
+    const precoFormatado = price !== null
+      ? price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+      : "";
     window.location.href = "https://wa.me/5511946454111?text=" + encodeURIComponent(
-      "Olá! Gerei um modelo 3D personalizado no site e gostaria de saber o preço."
+      `Olá! Gerei um modelo 3D personalizado no site${precoFormatado ? ` no valor de ${precoFormatado}` : ""} e gostaria de seguir para o pagamento.`
     );
   };
 
@@ -1161,11 +1270,98 @@ export default function FreoCriarModelo() {
                     Refazer Imagem
                   </button>
                   <button
-                    onClick={handleVerPreco}
+                    onClick={handleFatiarModelo}
                     className="flex items-center justify-center gap-2 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors active:scale-[0.99]"
                   >
                     <DollarSign className="w-4 h-4" />
                     Ver Preço
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── LOADING: FATIANDO MODELO E CALCULANDO PREÇO ───────────── */}
+            {step === "loading-gcode" && (
+              <motion.div
+                key="loading-gcode"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                className="flex flex-col items-center justify-center text-center py-20"
+              >
+                <div className="w-14 h-14 border-2 border-freo-orange border-t-transparent rounded-full animate-spin mb-6" />
+                <p className="font-display font-bold text-lg uppercase tracking-wide text-white mb-2">
+                  Calculando o preço
+                </p>
+                <p className="font-mono text-sm text-freo-orange fcm-pulse">
+                  {gcodeLoadingMessage}
+                </p>
+              </motion.div>
+            )}
+
+            {/* ── ETAPA 4: PREÇO PRONTO ─────────────────────────────────── */}
+            {step === "price-ready" && price !== null && (
+              <motion.div
+                key="price-ready"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.35 }}
+              >
+                <div className="text-center mb-6">
+                  <h2 className="font-display font-black text-2xl md:text-3xl uppercase tracking-tighter mb-2">
+                    Preço da sua <span className="text-freo-orange">peça</span>
+                  </h2>
+                  <p className="text-freo-light/50 font-body text-sm">
+                    Valor calculado após o fatiamento do modelo 3D.
+                  </p>
+                </div>
+
+                {modelUrl && (
+                  <div className="bg-[#111111] border border-white/[0.07] p-3 mb-5">
+                    <div className="aspect-square w-full bg-[#0A0A0A] overflow-hidden">
+                      {modelViewerReady ? (
+                        // @ts-ignore — custom element do Google, sem tipos React
+                        <model-viewer
+                          src={modelUrl}
+                          camera-controls
+                          auto-rotate
+                          shadow-intensity="1"
+                          exposure="1"
+                          style={{ width: "100%", height: "100%" }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-10 h-10 border-2 border-freo-orange border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-[#111111] border border-freo-orange/30 p-6 mb-5 text-center">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                    Preço estimado
+                  </p>
+                  <p className="font-display font-black text-4xl md:text-5xl text-freo-orange tracking-tighter">
+                    {price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setStep("model-ready")}
+                    className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    onClick={handleIrParaPagamento}
+                    className="flex items-center justify-center gap-2 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors active:scale-[0.99]"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    Seguir para Pagamento
                   </button>
                 </div>
               </motion.div>
