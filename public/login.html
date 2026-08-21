@@ -215,6 +215,27 @@
   <script src="/auth-listener.js"></script>
 
   <script>
+    function safeReturnPath(value) {
+      if (!value || typeof value !== 'string') return null;
+      try {
+        const decoded = value.trim();
+        if (!decoded.startsWith('/') || decoded.startsWith('//')) return null;
+        const parsed = new URL(decoded, window.location.origin);
+        if (parsed.origin !== window.location.origin || parsed.pathname.includes('/login')) return null;
+        return parsed.pathname + parsed.search + parsed.hash;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    const loginParams = new URLSearchParams(window.location.search);
+    const requestedReturn = safeReturnPath(loginParams.get('return')) || safeReturnPath(localStorage.getItem('freo_auth_return'));
+    if (requestedReturn) localStorage.setItem('freo_auth_return', requestedReturn);
+
+    // Mantém o destino original também se o usuário precisar criar uma conta antes de entrar.
+    const signupLink = document.querySelector('a[href="/cadastro.html"]');
+    if (signupLink && requestedReturn) signupLink.setAttribute('href', '/cadastro.html?return=' + encodeURIComponent(requestedReturn));
+
     // ── Mostra badge se tiver item pendente no carrinho ──
     (function() {
       try {
@@ -308,6 +329,7 @@
     // ── Login com Google ──
     async function loginComGoogle() {
       if (!checkbox.checked) { alertTerms(); return; }
+      if (requestedReturn) localStorage.setItem('freo_auth_return', requestedReturn);
       try {
         const { error } = await window.supabaseClient.auth.signInWithOAuth({
           provider: 'google',
@@ -385,9 +407,12 @@ if (anonUserId && data.user && anonUserId !== data.user.id) {
 const temPendente = localStorage.getItem('freo_pending_cart');
 if (temPendente) {
   await processarCarrinhoPendente(data.user.id);
-  window.location.href = '/?carrinho=1';
+  localStorage.removeItem('freo_auth_return');
+  window.location.replace('/?carrinho=1');
 } else {
-  window.location.href = '/dashboard.html';
+  const returnPath = safeReturnPath(localStorage.getItem('freo_auth_return')) || requestedReturn;
+  localStorage.removeItem('freo_auth_return');
+  window.location.replace(returnPath || '/dashboard.html');
 }
 
       } catch (err) {
