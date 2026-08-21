@@ -54,6 +54,19 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    function safeReturnPath(value) {
+      if (!value || typeof value !== 'string') return null;
+      try {
+        const decoded = value.trim();
+        if (!decoded.startsWith('/') || decoded.startsWith('//')) return null;
+        const parsed = new URL(decoded, window.location.origin);
+        if (parsed.origin !== window.location.origin || parsed.pathname.includes('/login')) return null;
+        return parsed.pathname + parsed.search + parsed.hash;
+      } catch (_) {
+        return null;
+      }
+    }
+
     function showSuccess() {
       document.getElementById('status-title').innerText   = 'Sucesso!';
       document.getElementById('status-message').classList.add('hidden');
@@ -124,9 +137,12 @@
         const temPendente = localStorage.getItem('freo_pending_cart');
         if (temPendente) {
           await processarCarrinhoPendente(session.user.id);
-          setTimeout(() => { window.location.href = '/?carrinho=1'; }, 1200);
+          localStorage.removeItem('freo_auth_return');
+          setTimeout(() => { window.location.replace('/?carrinho=1'); }, 1200);
         } else {
-          setTimeout(() => { window.location.href = '/dashboard.html'; }, 1500);
+          const returnPath = safeReturnPath(localStorage.getItem('freo_auth_return'));
+          localStorage.removeItem('freo_auth_return');
+          setTimeout(() => { window.location.replace(returnPath || '/dashboard.html'); }, 1200);
         }
 
       } catch (err) {
