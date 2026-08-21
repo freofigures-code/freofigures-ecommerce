@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => {
           main: path.resolve(__dirname, 'index.html'),
           b2b: path.resolve(__dirname, 'b2b.html'),
           criarModelo: path.resolve(__dirname, 'criar-modelo.html'),
+          minhasCriacoes: path.resolve(__dirname, 'minhas-criacoes.html'),
         },
       },
     },
