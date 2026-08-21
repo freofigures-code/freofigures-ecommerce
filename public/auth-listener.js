@@ -18,7 +18,7 @@
   if (!db) {
     console.error("❌ Supabase SDK não encontrado.");
     var p = window.location.pathname;
-    if (['dashboard', 'meus-pedidos', 'checkout', 'admin'].some(function(x) {
+    if (['dashboard', 'meus-pedidos', 'checkout', 'admin', 'criar-modelo', 'minhas-criacoes'].some(function(x) {
       return p.includes(x);
     })) {
       window.location.href = '/login.html';
@@ -31,6 +31,8 @@
     return p.includes('dashboard')
       || p.includes('meus-pedidos')
       || p.includes('checkout')
+      || p.includes('criar-modelo')
+      || p.includes('minhas-criacoes')
       || p.includes('admin');
   }
 
@@ -40,6 +42,31 @@
 
   function isLogin() {
     return window.location.pathname.includes('login');
+  }
+
+  function safeReturnPath(value) {
+    if (!value || typeof value !== 'string') return null;
+    try {
+      var decoded = value.trim();
+      if (!decoded.startsWith('/') || decoded.startsWith('//')) return null;
+      var parsed = new URL(decoded, window.location.origin);
+      if (parsed.origin !== window.location.origin) return null;
+      if (parsed.pathname.includes('/login')) return null;
+      return parsed.pathname + parsed.search + parsed.hash;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function requestedReturnPath() {
+    var params = new URLSearchParams(window.location.search);
+    return safeReturnPath(params.get('return')) || safeReturnPath(localStorage.getItem('freo_auth_return'));
+  }
+
+  function redirectToLoginWithReturn() {
+    var current = window.location.pathname + window.location.search + window.location.hash;
+    localStorage.setItem('freo_auth_return', current);
+    window.location.replace('/login.html?return=' + encodeURIComponent(current));
   }
 
   function el(id) {
@@ -143,6 +170,11 @@
     if (el('my-orders-btn')) {
       el('my-orders-btn').classList.remove('hidden');
       el('my-orders-btn').classList.add('flex');
+    }
+
+    if (el('my-generations-btn')) {
+      el('my-generations-btn').classList.remove('hidden');
+      el('my-generations-btn').classList.add('flex');
     }
 
     var name = (profile && (profile.full_name || profile.name))
@@ -287,7 +319,7 @@
 
       if (!session) {
         console.log('⚪ Sem sessão.');
-        if (isProtected()) window.location.href = '/login.html';
+        if (isProtected()) { redirectToLoginWithReturn(); return; }
         window.dispatchEvent(new CustomEvent('auth-not-logged-in'));
         return;
       }
@@ -299,13 +331,16 @@
       // Usuário já logado chegou na página de login com item pendente.
       // Processamos o carrinho aqui mesmo e redirecionamos.
       if (isLogin()) {
+        var returnPath = requestedReturnPath();
         var pending = localStorage.getItem('freo_pending_cart');
         if (pending) {
           console.log('🛒 Usuário logado com item pendente — processando...');
           await processarCarrinhoPendente(user.id);
-          window.location.href = '/dashboard.html#cart-section';
+          localStorage.removeItem('freo_auth_return');
+          window.location.replace('/dashboard.html#cart-section');
         } else {
-          window.location.href = '/dashboard.html';
+          localStorage.removeItem('freo_auth_return');
+          window.location.replace(returnPath || '/dashboard.html');
         }
         return;
       }
@@ -365,7 +400,7 @@
   // ── onAuthStateChange ─────────────────────────────────────────
   db.auth.onAuthStateChange(function(event, session) {
     if (event === 'SIGNED_OUT') {
-      if (isProtected()) window.location.href = '/login.html';
+      if (isProtected()) { redirectToLoginWithReturn(); return; }
       return;
     }
     // Na página de login o init() já cuida de tudo — não interferir
