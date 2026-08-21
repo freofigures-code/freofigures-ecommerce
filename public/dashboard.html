@@ -493,6 +493,11 @@
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
           Meus Pedidos
         </a>
+        <a href="/minhas-criacoes.html" id="my-generations-btn"
+          class="hidden items-center gap-2 text-xs font-mono text-white/50 border border-white/10 px-3 py-1.5 hover:text-freo-orange hover:border-freo-orange/30 transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l8 4.5v9L12 20l-8-4.5v-9L12 2zm0 0v9m8-4.5l-8 4.5m-8-4.5l8 4.5"/></svg>
+          Minhas Criações 3D
+        </a>
         <button id="logout-btn" class="hidden text-xs font-mono text-white/30 border border-white/[0.07] px-3 py-1.5 hover:text-white hover:border-white/20 transition-colors">Sair</button>
       </div>
     </div>
@@ -722,6 +727,31 @@
 
         <!-- ─────────────────── LEFT COLUMN ──────────────────── -->
         <div class="lg:col-span-2 space-y-5">
+
+          <!-- Minhas Criações 3D -->
+          <div id="generations-section" class="dash-card corner-tl corner-br fade-up fade-up-d1">
+            <div class="card-scan"></div>
+            <div class="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.06] gap-4">
+              <div class="section-title">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l8 4.5v9L12 20l-8-4.5v-9L12 2zm0 0v9m8-4.5l-8 4.5m-8-4.5l8 4.5"/></svg>
+                Minhas Criações 3D
+              </div>
+              <span id="generations-summary-count" class="font-mono text-xs bg-white/[0.06] border border-white/[0.08] px-3 py-1">—</span>
+            </div>
+            <div class="p-5">
+              <p class="font-mono text-[11px] text-white/35 leading-relaxed mb-4">As criações feitas no site e no aplicativo usam a mesma conta e ficam salvas no Supabase.</p>
+              <div id="generations-summary-loading" class="space-y-2">
+                <div class="skeleton h-10 w-full"></div>
+                <div class="skeleton h-10 w-4/5"></div>
+              </div>
+              <div id="generations-summary-list" class="hidden space-y-2"></div>
+              <div id="generations-summary-empty" class="hidden border border-white/[0.06] bg-black/20 p-4 text-center font-mono text-xs text-white/30">Nenhuma criação 3D ainda.</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <a href="/minhas-criacoes.html" class="btn-outline text-center py-3">Ver minhas criações</a>
+                <a href="/criar-modelo.html" class="btn-gold text-center py-3 text-xs">Criar novo modelo 3D</a>
+              </div>
+            </div>
+          </div>
 
           <!-- Cart section -->
           <div id="cart-section" class="dash-card corner-tl corner-br scroll-mt-28 fade-up fade-up-d1">
@@ -1061,6 +1091,11 @@
     document.getElementById('user-content').classList.remove('hidden');
     document.getElementById('my-orders-btn').classList.remove('hidden');
     document.getElementById('my-orders-btn').classList.add('flex');
+    var generationsBtn = document.getElementById('my-generations-btn');
+    if (generationsBtn) {
+      generationsBtn.classList.remove('hidden');
+      generationsBtn.classList.add('flex');
+    }
     document.getElementById('logout-btn').classList.remove('hidden');
 
     var name = (profile && (profile.full_name || profile.name)) || user.email.split('@')[0];
@@ -1092,6 +1127,9 @@
     // Load recent orders & stats
     loadRecentOrders(user.id);
 
+    // Load 3D creations saved to the same Supabase user used by the app.
+    loadGenerationSummary(user.id);
+
     // Load suggested products
     loadSuggestedProducts();
 
@@ -1106,6 +1144,83 @@
           setTimeout(function() { cs.style.boxShadow = ''; }, 2000);
         }
       }, 400);
+    }
+  }
+
+  // ── Minhas Criações 3D (client) ───────────────────────────────
+  async function loadGenerationSummary(userId) {
+    var loading = document.getElementById('generations-summary-loading');
+    var list = document.getElementById('generations-summary-list');
+    var empty = document.getElementById('generations-summary-empty');
+    var countEl = document.getElementById('generations-summary-count');
+    if (!loading || !list || !empty || !countEl) return;
+
+    function statusLabel(status) {
+      if (status === 'queued') return 'Na fila';
+      if (status === 'generating_image') return 'Gerando imagem';
+      if (status === 'image_ready') return 'Imagem pronta';
+      if (status === 'refining_image') return 'Refazendo imagem';
+      if (status === 'generating_model') return 'Gerando 3D e preço';
+      if (status === 'completed') return 'Modelo 3D pronto';
+      if (status === 'failed') return 'Falhou';
+      return status || 'Processando';
+    }
+
+    try {
+      var result = await window.supabaseClient
+        .from('generation_jobs')
+        .select('id,title,status,progress,created_at', { count: 'exact' })
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (result.error) throw result.error;
+
+      var rows = result.data || [];
+      countEl.innerText = String(result.count == null ? rows.length : result.count);
+      loading.classList.add('hidden');
+
+      if (!rows.length) {
+        list.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      list.classList.remove('hidden');
+      list.replaceChildren();
+
+      rows.forEach(function(row) {
+        var link = document.createElement('a');
+        link.href = '/minhas-criacoes.html?id=' + encodeURIComponent(row.id);
+        link.className = 'flex items-center justify-between gap-4 border border-white/[0.06] bg-black/20 px-3 py-3 hover:border-freo-orange/30 transition-colors';
+
+        var left = document.createElement('div');
+        left.className = 'min-w-0';
+        var title = document.createElement('div');
+        title.className = 'font-display font-bold text-sm text-white truncate';
+        title.textContent = row.title || 'Modelo 3D personalizado';
+        var date = document.createElement('div');
+        date.className = 'font-mono text-[9px] text-white/25 mt-1';
+        var parsed = new Date(row.created_at);
+        date.textContent = Number.isNaN(parsed.getTime()) ? String(row.created_at || '') : parsed.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        left.appendChild(title);
+        left.appendChild(date);
+
+        var status = document.createElement('div');
+        status.className = 'font-mono text-[9px] uppercase tracking-widest text-freo-orange text-right shrink-0';
+        status.textContent = statusLabel(row.status) + (row.status === 'generating_model' && Number.isFinite(Number(row.progress)) ? ' · ' + Math.round(Number(row.progress)) + '%' : '');
+
+        link.appendChild(left);
+        link.appendChild(status);
+        list.appendChild(link);
+      });
+    } catch (error) {
+      console.warn('Não foi possível carregar Minhas Criações 3D:', error);
+      loading.classList.add('hidden');
+      list.classList.add('hidden');
+      empty.classList.remove('hidden');
+      empty.textContent = 'Não foi possível carregar suas criações agora.';
+      countEl.innerText = '—';
     }
   }
 
