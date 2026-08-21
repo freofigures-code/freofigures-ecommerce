@@ -1,226 +1,46 @@
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Sparkles, RefreshCw, ArrowRight, Box, DollarSign, AlertTriangle } from "lucide-react";
+import {
+  MAX_GENERATION_UPLOAD_BYTES,
+  createGenerationImageUrl,
+  createGenerationModelUrl,
+  createPromptGeneration,
+  createUploadGeneration,
+  getAuthenticatedUser,
+  getGeneration,
+  isGenerationBusy,
+  requestGenerationPrice,
+  startImageRefinement,
+  startModelGeneration,
+  subscribeToGeneration,
+  validateGenerationUpload,
+  type GenerationJob,
+} from "./generations";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONTRATO DE INTEGRAÇÃO — ÚNICO LUGAR QUE PRECISA MUDAR QUANDO VOCÊ CONFIRMAR
-// O FORMATO REAL DE RESPOSTA DOS WEBHOOKS DO N8N.
-//
-// Hoje o formato é genérico: {success: boolean, data: {...}}. O que NÃO
-// sabemos ainda é o nome exato do campo dentro de "data" que traz a URL da
-// imagem e a URL do modelo 3D (.glb). Os extractors abaixo tentam múltiplos
-// nomes de campo comuns como fallback, mas o certo é você confirmar o nome
-// exato assim que testar o webhook, e simplificar a função para um único
-// `return json.data.NOME_EXATO_DO_CAMPO`.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const WEBHOOK_GERAR_IMAGEM = "https://n8nwebhook.solviaoficial.com/webhook/GERAR_IMAGEM";
-const WEBHOOK_GERAR_MODELO = "https://n8nwebhook.solviaoficial.com/webhook/GERAR_modelo";
-const WEBHOOK_REFAZER_IMAGEM = "https://n8nwebhook.solviaoficial.com/webhook/refazer_imagem";
-const WEBHOOK_GERAR_MODELO_IMAGEM = "https://n8nwebhook.solviaoficial.com/webhook/gerar_modelo_imagem";
-const WEBHOOK_GERAR_GCODE = "https://n8nwebhook.solviaoficial.com/webhook/gerar_gcode";
-
-// Timeout generoso: a Tripo sozinha pode levar 10-120s, mais o tempo da OpenAI
-// antes disso. 240s cobre folga de sobra sem deixar a requisição pendurada
-// para sempre se o n8n cair.
-const WEBHOOK_TIMEOUT_MS = 240_000;
-
-type GerarImagemResponse = {
-  success: boolean;
-  data?: Record<string, any>;
-  error?: string;
-  message?: string;
-};
-
-type GerarModeloResponse = {
-  success: boolean;
-  data?: Record<string, any>;
-  error?: string;
-  message?: string;
-};
-
-/**
- * Extrai a URL da imagem gerada da resposta do webhook GERAR_IMAGEM.
- * AJUSTAR AQUI quando o formato real for confirmado — trocar por:
- *   return json?.data?.NOME_EXATO_DO_CAMPO ?? null;
- */
-function extractImageUrl(json: GerarImagemResponse): string | null {
-  const data = json?.data;
-  if (!data) return null;
-  return (
-    data.image_url ??
-    data.imageUrl ??
-    data.url ??
-    data.image ??
-    null
-  );
-}
-
-/**
- * Extrai a URL do modelo 3D (.glb) da resposta do webhook GERAR_MODELO.
- * AJUSTAR AQUI quando o formato real for confirmado — trocar por:
- *   return json?.data?.NOME_EXATO_DO_CAMPO ?? null;
- */
-function extractModelUrl(json: GerarModeloResponse): string | null {
-  const data = json?.data;
-  if (!data) return null;
-  return (
-    data.model_url ??
-    data.modelUrl ??
-    data.glb_url ??
-    data.glbUrl ??
-    data.url ??
-    null
-  );
-}
-
-type RefazerImagemResponse = {
-  success: boolean;
-  data?: Record<string, any>;
-  error?: string;
-  message?: string;
-};
-
-/**
- * Extrai a URL da nova imagem gerada pelo webhook refazer_imagem.
- * AJUSTAR AQUI quando o formato real for confirmado — trocar por:
- *   return json?.data?.NOME_EXATO_DO_CAMPO ?? null;
- */
-function extractRefinedImageUrl(json: RefazerImagemResponse): string | null {
-  const data = json?.data;
-  if (!data) return null;
-  return (
-    data.image_url ??
-    data.imageUrl ??
-    data.url ??
-    data.image ??
-    null
-  );
-}
-
-type GerarModeloImagemResponse = {
-  success: boolean;
-  data?: Record<string, any>;
-  error?: string;
-  message?: string;
-};
-
-/**
- * Extrai a URL do modelo 3D (.glb) da resposta do webhook gerar_modelo_imagem.
- * AJUSTAR AQUI quando o formato real for confirmado — trocar por:
- *   return json?.data?.NOME_EXATO_DO_CAMPO ?? null;
- */
-function extractModelUrlFromUpload(json: GerarModeloImagemResponse): string | null {
-  const data = json?.data;
-  if (!data) return null;
-  return (
-    data.model_url ??
-    data.modelUrl ??
-    data.glb_url ??
-    data.glbUrl ??
-    data.url ??
-    null
-  );
-}
-
-type GerarGcodeResponse = {
-  success: boolean;
-  data?: Record<string, any>;
-  error?: string;
-  message?: string;
-};
-
-/**
- * Extrai o preço (em número) da resposta do webhook gerar_gcode.
- * AJUSTAR AQUI quando o formato real for confirmado — trocar por:
- *   return json?.data?.NOME_EXATO_DO_CAMPO ?? null;
- *
- * Aceita tanto número quanto string numérica (ex.: "42.90" ou "42,90"),
- * pois não sabemos ainda se o n8n devolve number ou string.
- */
-function extractPrice(json: GerarGcodeResponse): number | null {
-  const data = json?.data;
-  if (!data) return null;
-
-  const raw =
-    data.price ??
-    data.preco ??
-    data.preço ??
-    data.valor ??
-    data.total ??
-    data.amount ??
-    null;
-
-  if (raw === null || raw === undefined) return null;
-
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-
-  if (typeof raw === "string") {
-    const normalizado = raw.trim().replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "");
-    const numero = parseFloat(normalizado);
-    return Number.isFinite(numero) ? numero : null;
-  }
-
-  return null;
-}
-
-/**
- * Converte um File em base64 puro (sem o prefixo "data:...;base64,").
- */
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64 = result.split(",")[1] ?? "";
-      resolve(base64);
-    };
-    reader.onerror = () => reject(new Error("Não foi possível ler o arquivo de imagem."));
-    reader.readAsDataURL(file);
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FETCH COM TIMEOUT
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
-    return response;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MENSAGENS ROTATIVAS DE LOADING (sem barra de progresso falsa)
-// ─────────────────────────────────────────────────────────────────────────────
+const ACTIVE_GENERATION_KEY = "freo_active_generation_id";
 
 const IMAGE_LOADING_MESSAGES = [
+  "Sua solicitação já está no servidor...",
   "Desenhando sua imagem...",
   "Interpretando sua ideia...",
   "Aplicando os detalhes...",
-  "Isso pode levar até 1 minuto...",
-  "Quase lá...",
+  "Você pode fechar esta página; a criação continuará salva na sua conta...",
 ];
 
 const MODEL_LOADING_MESSAGES = [
+  "Sua solicitação já está no servidor...",
   "Transformando em 3D...",
   "Esculpindo camada por camada...",
-  "Calculando a geometria do modelo...",
-  "Isso pode levar até 2 minutos...",
-  "A Tripo está processando seu modelo...",
-  "Quase lá, só mais um pouco...",
+  "Preparando o arquivo para impressão...",
+  "Fatiando e calculando o preço...",
+  "Você pode fechar esta página; o processamento continua no servidor...",
 ];
 
 const GCODE_LOADING_MESSAGES = [
-  "Fatiando seu modelo...",
-  "Calculando o preço da peça...",
-  "Analisando o volume de material...",
-  "Quase lá...",
+  "Consultando o preço calculado pelo servidor...",
+  "Validando os dados do fatiamento...",
+  "Carregando o valor final...",
 ];
 
 function useRotatingMessages(messages: string[], active: boolean, intervalMs = 3200) {
@@ -229,20 +49,16 @@ function useRotatingMessages(messages: string[], active: boolean, intervalMs = 3
   useEffect(() => {
     if (!active) {
       setIndex(0);
-      return;
+      return undefined;
     }
-    const timer = setInterval(() => {
+    const timer = window.setInterval(() => {
       setIndex(previous => (previous + 1) % messages.length);
     }, intervalMs);
-    return () => clearInterval(timer);
-  }, [active, messages, intervalMs]);
+    return () => window.clearInterval(timer);
+  }, [active, intervalMs, messages]);
 
-  return messages[index];
+  return messages[index] ?? messages[0] ?? "";
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TIPOS DE ESTADO DO FLUXO
-// ─────────────────────────────────────────────────────────────────────────────
 
 type FlowStep =
   | "start"
@@ -261,9 +77,26 @@ type FlowStep =
   | "refine-question"
   | "loading-refine";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MODEL VIEWER (carrega <model-viewer> do Google via CDN, sem npm install)
-// ─────────────────────────────────────────────────────────────────────────────
+function stepFromJob(job: GenerationJob): FlowStep {
+  if (job.status === "completed") return "model-ready";
+  if (job.status === "image_ready") return "image-ready";
+  if (job.status === "generating_image") return "loading-image";
+  if (job.status === "refining_image") return "loading-refine";
+  if (job.status === "generating_model") {
+    return job.source_type === "upload" ? "loading-model-from-upload" : "loading-model";
+  }
+  if (job.status === "queued") {
+    if (job.active_operation === "generate_image") return "loading-image";
+    if (job.active_operation === "refine_image") return "loading-refine";
+    if (job.active_operation === "generate_model_from_upload") return "loading-model-from-upload";
+    if (job.active_operation === "generate_model") return "loading-model";
+  }
+  if (job.status === "failed") {
+    if (job.image_path) return "image-ready";
+    return job.source_type === "upload" ? "upload-image" : "question-4";
+  }
+  return "start";
+}
 
 let modelViewerScriptLoaded = false;
 
@@ -273,15 +106,16 @@ function useModelViewerScript() {
   useEffect(() => {
     if (modelViewerScriptLoaded) {
       setReady(true);
-      return;
+      return undefined;
     }
-    const existing = document.querySelector('script[data-model-viewer]');
+    const existing = document.querySelector('script[data-model-viewer]') as HTMLScriptElement | null;
     if (existing) {
-      existing.addEventListener("load", () => {
+      const onLoad = () => {
         modelViewerScriptLoaded = true;
         setReady(true);
-      });
-      return;
+      };
+      existing.addEventListener("load", onLoad);
+      return () => existing.removeEventListener("load", onLoad);
     }
     const script = document.createElement("script");
     script.type = "module";
@@ -292,359 +126,313 @@ function useModelViewerScript() {
       setReady(true);
     };
     document.head.appendChild(script);
+    return undefined;
   }, []);
 
   return ready;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTE PRINCIPAL
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function FreoCriarModelo() {
+  const mountedRef = useRef(true);
+  const currentJobIdRef = useRef<string | null>(null);
+  const applyingJobRef = useRef(0);
+
   const [step, setStep] = useState<FlowStep>("start");
-
-  // Respostas das 4 perguntas fixas. Nada disso é enviado individualmente —
-  // só são combinadas em um único texto no momento em que a pergunta 4 é
-  // confirmada (handleFinalizarPerguntas), que é quem dispara handleGerarImagem.
-  const [answerSubject, setAnswerSubject] = useState("");       // O que transformar em figure
-  const [answerStyle, setAnswerStyle] = useState("");            // Estilo da figure
-  const [answerPose, setAnswerPose] = useState("");               // Pose
-  const [answerOutfit, setAnswerOutfit] = useState("");           // Roupa/acessórios/cores (opcional)
-  const [answerNotes, setAnswerNotes] = useState("");             // Observações extras (opcional)
-
+  const [answerSubject, setAnswerSubject] = useState("");
+  const [answerStyle, setAnswerStyle] = useState("");
+  const [answerPose, setAnswerPose] = useState("");
+  const [answerOutfit, setAnswerOutfit] = useState("");
+  const [answerNotes, setAnswerNotes] = useState("");
   const [promptText, setPromptText] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [modelUrl, setModelUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Preço retornado pelo webhook gerar_gcode após o fatiamento do modelo 3D.
   const [price, setPrice] = useState<number | null>(null);
-
-  // Texto do que o usuário quer mudar na imagem já gerada, e de qual tela ele
-  // veio ("image-ready" ou "model-ready") para poder devolvê-lo lá em caso de erro.
   const [refineText, setRefineText] = useState("");
-  const [refineOrigin, setRefineOrigin] = useState<"image-ready" | "model-ready">("image-ready");
-
-  // Imagem enviada pelo próprio usuário (fluxo alternativo: pula as perguntas
-  // e as etapas de geração de imagem, vai direto pro modelo 3D).
+  const [, setRefineOrigin] = useState<"image-ready" | "model-ready">("image-ready");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState<string | null>(null);
+  const [currentJob, setCurrentJob] = useState<GenerationJob | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [restoring, setRestoring] = useState(true);
 
   const modelViewerReady = useModelViewerScript();
-  const abortRef = useRef<AbortController | null>(null);
-
-  const imageLoadingMessage = useRotatingMessages(IMAGE_LOADING_MESSAGES, step === "loading-image");
+  const imageLoadingMessage = useRotatingMessages(
+    IMAGE_LOADING_MESSAGES,
+    step === "loading-image" || step === "loading-refine",
+  );
   const modelLoadingMessage = useRotatingMessages(
     MODEL_LOADING_MESSAGES,
-    step === "loading-model" || step === "loading-model-from-upload"
+    step === "loading-model" || step === "loading-model-from-upload",
   );
   const gcodeLoadingMessage = useRotatingMessages(GCODE_LOADING_MESSAGES, step === "loading-gcode");
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
-      abortRef.current?.abort();
+      mountedRef.current = false;
     };
   }, []);
 
   useEffect(() => {
     return () => {
-      if (uploadedPreviewUrl) {
-        URL.revokeObjectURL(uploadedPreviewUrl);
-      }
+      if (uploadedPreviewUrl) URL.revokeObjectURL(uploadedPreviewUrl);
     };
   }, [uploadedPreviewUrl]);
 
-  // ── Monta o prompt final combinando as 4 respostas e dispara a geração ───
-  // Chamada SOMENTE ao confirmar a pergunta 4. É o único ponto que aciona o
-  // envio ao webhook GERAR_IMAGEM — nenhuma resposta é enviada isoladamente.
-  const handleFinalizarPerguntas = () => {
-    const partes: string[] = [];
+  const redirectToLogin = useCallback(() => {
+    const returnTo = window.location.pathname + window.location.search;
+    window.location.href = `/login.html?return=${encodeURIComponent(returnTo)}`;
+  }, []);
 
-    partes.push(`Sujeito: ${answerSubject.trim()}`);
-    partes.push(`Estilo: ${answerStyle.trim()}`);
-    partes.push(`Pose: ${answerPose.trim()}`);
-
-    if (answerOutfit.trim()) {
-      partes.push(`Roupa/acessórios/cores: ${answerOutfit.trim()}`);
+  const requireAccount = useCallback(async (): Promise<any | null> => {
+    try {
+      return await getAuthenticatedUser();
+    } catch {
+      redirectToLogin();
+      return null;
     }
-    if (answerNotes.trim()) {
-      partes.push(`Observações extras: ${answerNotes.trim()}`);
+  }, [redirectToLogin]);
+
+  const applyJob = useCallback(async (job: GenerationJob) => {
+    const applyVersion = ++applyingJobRef.current;
+    const sameJob = currentJobIdRef.current === job.id;
+    currentJobIdRef.current = job.id;
+    localStorage.setItem(ACTIVE_GENERATION_KEY, job.id);
+    if (!mountedRef.current) return;
+
+    setCurrentJob(job);
+    setPromptText(job.prompt ?? "");
+    if (!sameJob || job.status !== "completed") setPrice(null);
+    setStep(current => sameJob && job.status === "completed" && current === "price-ready" ? current : stepFromJob(job));
+
+    if (job.status === "failed") {
+      setErrorMessage(job.error_message || "Não foi possível concluir a geração.");
+    } else {
+      setErrorMessage(null);
     }
 
+    let nextImageUrl: string | null = null;
+    if (job.image_path) {
+      try {
+        nextImageUrl = await createGenerationImageUrl(job.image_path, 24 * 60 * 60);
+      } catch (error) {
+        if (mountedRef.current && currentJobIdRef.current === job.id) {
+          setErrorMessage(error instanceof Error ? error.message : "Não foi possível abrir a imagem salva.");
+        }
+      }
+    }
+
+    let nextModelUrl: string | null = null;
+    if (job.status === "completed") {
+      if (job.model_path) {
+        try {
+          nextModelUrl = await createGenerationModelUrl(job.model_path, 60 * 60);
+        } catch (error) {
+          if (mountedRef.current && currentJobIdRef.current === job.id) {
+            setErrorMessage(error instanceof Error ? error.message : "Não foi possível abrir o modelo 3D salvo.");
+          }
+        }
+      } else if (job.model_url) {
+        nextModelUrl = job.model_url;
+      }
+    }
+
+    if (!mountedRef.current || currentJobIdRef.current !== job.id || applyVersion !== applyingJobRef.current) return;
+    setImageUrl(nextImageUrl);
+    setModelUrl(nextModelUrl);
+  }, []);
+
+  const restoreJob = useCallback(async (generationId: string, showLoader = false) => {
+    const cleanId = generationId.trim();
+    if (!cleanId) return;
+    if (showLoader) setRestoring(true);
+    try {
+      const job = await getGeneration(cleanId);
+      await applyJob(job);
+    } catch (error) {
+      if (!mountedRef.current) return;
+      localStorage.removeItem(ACTIVE_GENERATION_KEY);
+      currentJobIdRef.current = null;
+      setCurrentJob(null);
+      setErrorMessage(error instanceof Error ? error.message : "Não foi possível recuperar a geração.");
+      setStep("start");
+    } finally {
+      if (mountedRef.current && showLoader) setRestoring(false);
+    }
+  }, [applyJob]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const bootstrap = async () => {
+      try {
+        await getAuthenticatedUser();
+      } catch {
+        if (!cancelled) redirectToLogin();
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const explicit = params.get("id")?.trim() || "";
+      const saved = explicit ? "" : (localStorage.getItem(ACTIVE_GENERATION_KEY)?.trim() || "");
+      const generationId = explicit || saved;
+      if (generationId && !cancelled) {
+        await restoreJob(generationId, false);
+      }
+      if (!cancelled && mountedRef.current) setRestoring(false);
+    };
+    void bootstrap();
+    return () => {
+      cancelled = true;
+    };
+  }, [redirectToLogin, restoreJob]);
+
+  useEffect(() => {
+    if (!currentJob?.id) return undefined;
+    const generationId = currentJob.id;
+    const unsubscribe = subscribeToGeneration(
+      generationId,
+      nextJob => { void applyJob(nextJob); },
+      () => undefined,
+    );
+
+    const poll = isGenerationBusy(currentJob)
+      ? window.setInterval(() => {
+          if (currentJobIdRef.current === generationId) {
+            void restoreJob(generationId, false);
+          }
+        }, 10_000)
+      : null;
+
+    const onFocus = () => {
+      if (currentJobIdRef.current === generationId) {
+        void restoreJob(generationId, false);
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+
+    return () => {
+      unsubscribe();
+      if (poll !== null) window.clearInterval(poll);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [applyJob, currentJob?.id, currentJob?.status, restoreJob]);
+
+  const handleFinalizarPerguntas = async () => {
+    if (submitting || !(await requireAccount())) return;
+
+    const partes = [
+      `Sujeito: ${answerSubject.trim()}`,
+      `Estilo: ${answerStyle.trim()}`,
+      `Pose: ${answerPose.trim()}`,
+    ];
+    if (answerOutfit.trim()) partes.push(`Roupa/acessórios/cores: ${answerOutfit.trim()}`);
+    if (answerNotes.trim()) partes.push(`Observações extras: ${answerNotes.trim()}`);
     const promptFinal = partes.join(". ");
+
     setPromptText(promptFinal);
-
-    // handleGerarImagem lê de promptText via closure teria valor antigo (state
-    // assíncrono), então chamamos a geração passando o texto explicitamente.
-    handleGerarImagem(promptFinal);
-  };
-
-  // ── Última etapa das perguntas → gerar imagem ─────────────────────────────
-  // Recebe o prompt combinado como parâmetro (não lê de promptText no state,
-  // que ainda estaria desatualizado por causa da assincronia do setState).
-  const handleGerarImagem = async (promptFinal: string) => {
-    const clean = promptFinal.trim();
-    if (!clean) return;
-
+    setPrice(null);
     setErrorMessage(null);
     setStep("loading-image");
+    setSubmitting(true);
 
     try {
-      const response = await fetchWithTimeout(
-        WEBHOOK_GERAR_IMAGEM,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: clean }),
-        },
-        WEBHOOK_TIMEOUT_MS
-      );
-      if (!response.ok) {
-        throw new Error(`Erro do servidor (${response.status})`);
-      }
-
-      const json: GerarImagemResponse = await response.json();
-
-      if (!json.success) {
-        throw new Error(json.error || json.message || "Não foi possível gerar a imagem.");
-      }
-
-      const url = extractImageUrl(json);
-      if (!url) {
-        throw new Error(
-          "A imagem foi gerada mas a URL não foi encontrada na resposta. Verifique o formato retornado pelo webhook GERAR_IMAGEM (campo esperado em data.image_url)."
-        );
-      }
-
-      setImageUrl(url);
-      setStep("image-ready");
-    } catch (error: any) {
-      if (error?.name === "AbortError") {
-        setErrorMessage("A geração da imagem demorou demais e foi cancelada. Tente novamente.");
-      } else {
-        setErrorMessage(error?.message || "Erro de conexão ao gerar a imagem.");
-      }
+      const job = await createPromptGeneration(promptFinal, answerSubject.trim());
+      await applyJob(job);
+    } catch (error) {
+      if (!mountedRef.current) return;
+      setErrorMessage(error instanceof Error ? error.message : "Não foi possível iniciar a geração da imagem.");
       setStep("question-4");
+    } finally {
+      if (mountedRef.current) setSubmitting(false);
     }
   };
 
-  // ── Passo 2 → 3: gerar modelo 3D ──────────────────────────────────────────
   const handleGerarModelo = async () => {
-    if (!imageUrl) return;
-
+    if (submitting || !currentJob || !imageUrl || !(await requireAccount())) return;
+    setPrice(null);
     setErrorMessage(null);
     setStep("loading-model");
+    setSubmitting(true);
 
     try {
-      const response = await fetchWithTimeout(
-        WEBHOOK_GERAR_MODELO,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image_url: imageUrl, prompt: promptText.trim() }),
-        },
-        WEBHOOK_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        throw new Error(`Erro do servidor (${response.status})`);
-      }
-
-      const json: GerarModeloResponse = await response.json();
-
-      if (!json.success) {
-        throw new Error(json.error || json.message || "Não foi possível gerar o modelo 3D.");
-      }
-
-      const url = extractModelUrl(json);
-      if (!url) {
-        throw new Error(
-          "O modelo foi gerado mas a URL não foi encontrada na resposta. Verifique o formato retornado pelo webhook GERAR_modelo (campo esperado em data.model_url)."
-        );
-      }
-
-      setModelUrl(url);
-      setStep("model-ready");
-    } catch (error: any) {
-      if (error?.name === "AbortError") {
-        setErrorMessage("A geração do modelo demorou demais e foi cancelada. Tente novamente.");
-      } else {
-        setErrorMessage(error?.message || "Erro de conexão ao gerar o modelo 3D.");
-      }
+      const job = await startModelGeneration(currentJob.id);
+      await applyJob(job);
+    } catch (error) {
+      if (!mountedRef.current) return;
+      setErrorMessage(error instanceof Error ? error.message : "Não foi possível iniciar a geração do modelo 3D.");
       setStep("image-ready");
+    } finally {
+      if (mountedRef.current) setSubmitting(false);
     }
   };
 
-  // ── Fatiar o modelo 3D e obter o preço ────────────────────────────────────
-  // Único ponto que envia dados ao webhook gerar_gcode. Envia a URL do modelo
-  // 3D (modelUrl) já gerado. A resposta deve trazer o preço calculado após o
-  // fatiamento (contrato genérico {success, data: {...}}, mesmo usado nos
-  // demais webhooks — ver extractPrice para o nome exato do campo aceito).
   const handleFatiarModelo = async () => {
-    if (!modelUrl) return;
-
+    if (submitting || !currentJob || !modelUrl || !(await requireAccount())) return;
     setErrorMessage(null);
     setStep("loading-gcode");
+    setSubmitting(true);
 
     try {
-      const response = await fetchWithTimeout(
-        WEBHOOK_GERAR_GCODE,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model_url: modelUrl }),
-        },
-        WEBHOOK_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        throw new Error(`Erro do servidor (${response.status})`);
-      }
-
-      const json: GerarGcodeResponse = await response.json();
-
-      if (!json.success) {
-        throw new Error(json.error || json.message || "Não foi possível fatiar o modelo e calcular o preço.");
-      }
-
-      const valor = extractPrice(json);
-      if (valor === null) {
-        throw new Error(
-          "O modelo foi fatiado mas o preço não foi encontrado na resposta. Verifique o formato retornado pelo webhook gerar_gcode (campo esperado em data.price)."
-        );
-      }
-
-      setPrice(valor);
+      const quote = await requestGenerationPrice(currentJob.id);
+      if (!mountedRef.current) return;
+      setPrice(quote.valor_final);
       setStep("price-ready");
-    } catch (error: any) {
-      if (error?.name === "AbortError") {
-        setErrorMessage("O fatiamento do modelo demorou demais e foi cancelado. Tente novamente.");
-      } else {
-        setErrorMessage(error?.message || "Erro de conexão ao fatiar o modelo e calcular o preço.");
-      }
+    } catch (error) {
+      if (!mountedRef.current) return;
+      setErrorMessage(error instanceof Error ? error.message : "Não foi possível consultar o preço calculado.");
       setStep("model-ready");
+    } finally {
+      if (mountedRef.current) setSubmitting(false);
     }
   };
 
-  // ── Enviar pedido de mudança na imagem já gerada ──────────────────────────
-  // Único ponto que envia dados ao webhook refazer_imagem. Envia a imagem
-  // atual (imageUrl), o prompt original combinado (promptText) e o texto do
-  // que o usuário quer mudar (refineText). Ao voltar, substitui imageUrl pela
-  // nova imagem e leva o usuário para "image-ready".
   const handleEnviarRefinamento = async () => {
     const mudanca = refineText.trim();
-    if (!mudanca || !imageUrl) return;
-
+    if (submitting || !mudanca || !currentJob || !imageUrl || !(await requireAccount())) return;
+    setPrice(null);
     setErrorMessage(null);
     setStep("loading-refine");
+    setSubmitting(true);
 
     try {
-      const response = await fetchWithTimeout(
-        WEBHOOK_REFAZER_IMAGEM,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image_url: imageUrl,
-            prompt: promptText.trim(),
-            mudanca,
-          }),
-        },
-        WEBHOOK_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        throw new Error(`Erro do servidor (${response.status})`);
-      }
-
-      const json: RefazerImagemResponse = await response.json();
-
-      if (!json.success) {
-        throw new Error(json.error || json.message || "Não foi possível refazer a imagem.");
-      }
-
-      const url = extractRefinedImageUrl(json);
-      if (!url) {
-        throw new Error(
-          "A imagem foi gerada mas a URL não foi encontrada na resposta. Verifique o formato retornado pelo webhook refazer_imagem (campo esperado em data.image_url)."
-        );
-      }
-
-      setImageUrl(url);
-      setModelUrl(null);
+      const job = await startImageRefinement(currentJob.id, mudanca);
       setRefineText("");
-      setStep("image-ready");
-    } catch (error: any) {
-      if (error?.name === "AbortError") {
-        setErrorMessage("A geração da nova imagem demorou demais e foi cancelada. Tente novamente.");
-      } else {
-        setErrorMessage(error?.message || "Erro de conexão ao refazer a imagem.");
-      }
+      await applyJob(job);
+    } catch (error) {
+      if (!mountedRef.current) return;
+      setErrorMessage(error instanceof Error ? error.message : "Não foi possível solicitar a alteração da imagem.");
       setStep("refine-question");
+    } finally {
+      if (mountedRef.current) setSubmitting(false);
     }
   };
 
-  // ── Fluxo alternativo: usuário envia a própria imagem → gera modelo 3D direto ──
-  // Único ponto que envia dados ao webhook gerar_modelo_imagem. A imagem é
-  // convertida para base64 e enviada dentro do JSON, junto com nome e tipo do
-  // arquivo. A resposta já deve trazer o modelo 3D pronto (mesmo contrato de
-  // dado usado em GERAR_modelo: data.model_url).
   const handleEnviarImagemPropria = async () => {
-    if (!uploadedFile) return;
-
+    if (submitting || !uploadedFile || !(await requireAccount())) return;
+    setPrice(null);
     setErrorMessage(null);
     setStep("loading-model-from-upload");
+    setSubmitting(true);
 
     try {
-      const imageBase64 = await fileToBase64(uploadedFile);
-
-      const response = await fetchWithTimeout(
-        WEBHOOK_GERAR_MODELO_IMAGEM,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            image_base64: imageBase64,
-            image_name: uploadedFile.name,
-            image_type: uploadedFile.type,
-          }),
-        },
-        WEBHOOK_TIMEOUT_MS
-      );
-
-      if (!response.ok) {
-        throw new Error(`Erro do servidor (${response.status})`);
-      }
-
-      const json: GerarModeloImagemResponse = await response.json();
-
-      if (!json.success) {
-        throw new Error(json.error || json.message || "Não foi possível gerar o modelo 3D a partir da imagem.");
-      }
-
-      const url = extractModelUrlFromUpload(json);
-      if (!url) {
-        throw new Error(
-          "O modelo foi gerado mas a URL não foi encontrada na resposta. Verifique o formato retornado pelo webhook gerar_modelo_imagem (campo esperado em data.model_url)."
-        );
-      }
-
-      setImageUrl(uploadedPreviewUrl);
-      setModelUrl(url);
-      setStep("model-ready");
-    } catch (error: any) {
-      if (error?.name === "AbortError") {
-        setErrorMessage("A geração do modelo demorou demais e foi cancelada. Tente novamente.");
-      } else {
-        setErrorMessage(error?.message || "Erro de conexão ao gerar o modelo 3D a partir da imagem.");
-      }
+      const job = await createUploadGeneration(uploadedFile);
+      await applyJob(job);
+    } catch (error) {
+      if (!mountedRef.current) return;
+      setErrorMessage(error instanceof Error ? error.message : "Não foi possível enviar a imagem e iniciar o modelo 3D.");
       setStep("upload-image");
+    } finally {
+      if (mountedRef.current) setSubmitting(false);
     }
   };
 
-  // ── Refazer imagem (volta pro início a partir de qualquer etapa) ─────────
   const handleRefazerImagem = () => {
+    currentJobIdRef.current = null;
+    localStorage.removeItem(ACTIVE_GENERATION_KEY);
+    setCurrentJob(null);
     setImageUrl(null);
     setModelUrl(null);
     setPrice(null);
@@ -657,39 +445,56 @@ export default function FreoCriarModelo() {
     setAnswerNotes("");
     setRefineText("");
     setUploadedFile(null);
+    if (uploadedPreviewUrl) URL.revokeObjectURL(uploadedPreviewUrl);
     setUploadedPreviewUrl(null);
     setStep("start");
+    window.history.replaceState({}, "", "/criar-modelo.html");
   };
 
-  // ── Ir para pagamento (chamado após o preço já estar na tela) ────────────
   const handleIrParaPagamento = () => {
     const precoFormatado = price !== null
       ? price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
       : "";
+    const generationId = currentJob?.id ? ` ID da criação: ${currentJob.id}.` : "";
     window.location.href = "https://wa.me/5511946454111?text=" + encodeURIComponent(
-      `Olá! Gerei um modelo 3D personalizado no site${precoFormatado ? ` no valor de ${precoFormatado}` : ""} e gostaria de seguir para o pagamento.`
+      `Olá! Gerei um modelo 3D personalizado no site${precoFormatado ? ` no valor de ${precoFormatado}` : ""}.${generationId} Gostaria de seguir para o pagamento.`
     );
   };
 
-  // ── Seleção de arquivo local no fluxo de upload ───────────────────────────
-  const handleSelecionarArquivo = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelecionarArquivo = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (uploadedPreviewUrl) {
-      URL.revokeObjectURL(uploadedPreviewUrl);
+    try {
+      await validateGenerationUpload(file);
+      if (uploadedPreviewUrl) URL.revokeObjectURL(uploadedPreviewUrl);
+      setUploadedFile(file);
+      setUploadedPreviewUrl(URL.createObjectURL(file));
+      setErrorMessage(null);
+    } catch (error) {
+      event.target.value = "";
+      setUploadedFile(null);
+      if (uploadedPreviewUrl) URL.revokeObjectURL(uploadedPreviewUrl);
+      setUploadedPreviewUrl(null);
+      setErrorMessage(error instanceof Error ? error.message : `A imagem deve ser PNG/JPEG e ter no máximo ${MAX_GENERATION_UPLOAD_BYTES / (1024 * 1024)} MB.`);
     }
-
-    setUploadedFile(file);
-    setUploadedPreviewUrl(URL.createObjectURL(file));
-    setErrorMessage(null);
   };
 
-  // ── Voltar ao menu principal do site ──────────────────────────────────────
   const handleVoltarAoMenu = () => {
     window.location.href = "https://freofigures.com.br";
   };
 
+  if (restoring) {
+    return (
+      <div className="min-h-screen bg-freo-black text-freo-light font-body flex items-center justify-center px-5">
+        <div className="text-center">
+          <div className="w-14 h-14 border-2 border-freo-orange border-t-transparent rounded-full animate-spin mx-auto mb-6" />
+          <p className="font-display font-bold text-lg uppercase tracking-wide text-white mb-2">Recuperando sua criação</p>
+          <p className="font-mono text-sm text-freo-orange">Consultando o status salvo no Supabase...</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-freo-black text-freo-light font-body antialiased flex flex-col">
       <style>{`
@@ -729,9 +534,17 @@ export default function FreoCriarModelo() {
               Freo<span className="text-freo-orange font-light">Figures</span>
             </span>
           </button>
-          <span className="ml-auto font-mono text-[10px] text-freo-orange border border-freo-orange/30 bg-freo-orange/8 px-3 py-1 uppercase tracking-widest">
-            Criar Modelo 3D
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => { window.location.href = "/minhas-criacoes.html"; }}
+              className="font-mono text-[10px] text-white/50 border border-white/10 px-3 py-1.5 uppercase tracking-widest hover:text-freo-orange hover:border-freo-orange/30 transition-colors"
+            >
+              Minhas Criações
+            </button>
+            <span className="hidden sm:inline font-mono text-[10px] text-freo-orange border border-freo-orange/30 bg-freo-orange/8 px-3 py-1 uppercase tracking-widest">
+              Criar Modelo 3D
+            </span>
+          </div>
         </div>
       </header>
       <main className="flex-1 fcm-grid-bg relative">
@@ -776,6 +589,10 @@ export default function FreoCriarModelo() {
                   <p className="text-freo-light/50 font-body text-sm md:text-base max-w-lg mx-auto">
                     Responda algumas perguntas para gerar sua imagem do zero, ou envie uma imagem sua para virar modelo 3D direto.
                   </p>
+                </div>
+
+                <div className="mb-4 border border-freo-orange/20 bg-freo-orange/5 px-4 py-3 font-mono text-[11px] text-white/45 leading-relaxed">
+                  Tudo fica vinculado à sua conta: você pode fechar esta página durante o processamento e acompanhar depois em <button onClick={() => { window.location.href = "/minhas-criacoes.html"; }} className="text-freo-orange hover:underline">Minhas Criações 3D</button>.
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1195,6 +1012,12 @@ export default function FreoCriarModelo() {
                     Gerar Modelo 3D
                   </button>
                 </div>
+                <button
+                  onClick={() => { window.location.href = `/minhas-criacoes.html?id=${encodeURIComponent(currentJob?.id ?? "")}`; }}
+                  className="w-full mt-3 flex items-center justify-center gap-2 border border-white/10 text-white/60 font-display font-bold uppercase tracking-widest px-6 py-3 hover:border-freo-orange/30 hover:text-freo-orange transition-all"
+                >
+                  Ver em Minhas Criações 3D
+                </button>
               </motion.div>
             )}
 
@@ -1277,6 +1100,12 @@ export default function FreoCriarModelo() {
                     Ver Preço
                   </button>
                 </div>
+                <button
+                  onClick={() => { window.location.href = `/minhas-criacoes.html?id=${encodeURIComponent(currentJob?.id ?? "")}`; }}
+                  className="w-full mt-3 flex items-center justify-center gap-2 border border-white/10 text-white/60 font-display font-bold uppercase tracking-widest px-6 py-3 hover:border-freo-orange/30 hover:text-freo-orange transition-all"
+                >
+                  Ver em Minhas Criações 3D
+                </button>
               </motion.div>
             )}
 
@@ -1364,6 +1193,12 @@ export default function FreoCriarModelo() {
                     Seguir para Pagamento
                   </button>
                 </div>
+                <button
+                  onClick={() => { window.location.href = `/minhas-criacoes.html?id=${encodeURIComponent(currentJob?.id ?? "")}`; }}
+                  className="w-full mt-3 flex items-center justify-center gap-2 border border-white/10 text-white/60 font-display font-bold uppercase tracking-widest px-6 py-3 hover:border-freo-orange/30 hover:text-freo-orange transition-all"
+                >
+                  Ver em Minhas Criações 3D
+                </button>
               </motion.div>
             )}
 
