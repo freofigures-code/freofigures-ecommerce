@@ -451,14 +451,41 @@ export default function FreoCriarModelo() {
     window.history.replaceState({}, "", "/criar-modelo.html");
   };
 
-  const handleIrParaPagamento = () => {
-    const precoFormatado = price !== null
-      ? price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-      : "";
-    const generationId = currentJob?.id ? ` ID da criação: ${currentJob.id}.` : "";
-    window.location.href = "https://wa.me/5511946454111?text=" + encodeURIComponent(
-      `Olá! Gerei um modelo 3D personalizado no site${precoFormatado ? ` no valor de ${precoFormatado}` : ""}.${generationId} Gostaria de seguir para o pagamento.`
-    );
+  const handleIrParaPagamento = async () => {
+    if (submitting || !currentJob?.id || price === null) return;
+
+    const user = await requireAccount();
+    if (!user) return;
+
+    setErrorMessage(null);
+    setSubmitting(true);
+
+    try {
+      // Revalida o preço no backend imediatamente antes de abrir o checkout.
+      // O checkout faz a mesma validação novamente e NÃO confia em preço vindo da URL/client.
+      const quote = await requestGenerationPrice(currentJob.id);
+      if (!mountedRef.current) return;
+
+      const valorServidor = Number(quote.valor_final);
+      if (!Number.isFinite(valorServidor) || valorServidor <= 0) {
+        throw new Error("O servidor não retornou um preço válido para esta criação.");
+      }
+
+      setPrice(valorServidor);
+
+      window.location.href =
+        `/checkout.html?custom=1&generation_id=${encodeURIComponent(currentJob.id)}`;
+    } catch (error) {
+      if (!mountedRef.current) return;
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível abrir o checkout desta criação."
+      );
+      setStep("price-ready");
+    } finally {
+      if (mountedRef.current) setSubmitting(false);
+    }
   };
 
   const handleSelecionarArquivo = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1187,10 +1214,11 @@ export default function FreoCriarModelo() {
                   </button>
                   <button
                     onClick={handleIrParaPagamento}
-                    className="flex items-center justify-center gap-2 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors active:scale-[0.99]"
+                    disabled={submitting}
+                    className="flex items-center justify-center gap-2 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <DollarSign className="w-4 h-4" />
-                    Seguir para Pagamento
+                    {submitting ? "Abrindo Checkout..." : "Seguir para Checkout"}
                   </button>
                 </div>
                 <button
