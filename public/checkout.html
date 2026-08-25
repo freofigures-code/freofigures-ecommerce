@@ -637,6 +637,8 @@
     var subtotalAmount = 0;
     var freteAmount = 0;
     var cartItemsData = [];
+    var customCheckoutMode = false;
+    var customGenerationId = null;
     var currentUser = null;
     var currentProfile = null;
     var selectedShipping = null;
@@ -901,6 +903,154 @@ async function salvarDadosPessoais() {
       document.getElementById('cart-empty-state').classList.add('hidden');
     }
 
+    function showCheckoutError(message) {
+      var state = document.getElementById('cart-empty-state');
+      document.getElementById('page-loading').classList.add('hidden');
+      document.getElementById('checkout-main').classList.add('hidden');
+      state.classList.remove('hidden');
+      state.classList.add('flex');
+      state.innerHTML =
+        '<div class="text-center max-w-lg px-6">'
+        + '<div class="text-5xl mb-4">⚠️</div>'
+        + '<p class="font-display font-bold text-xl text-white uppercase mb-3">Não foi possível abrir o checkout</p>'
+        + '<p class="font-mono text-sm text-red-400 mb-5">' + escapeHtml(message || 'Erro desconhecido.') + '</p>'
+        + '<a href="/minhas-criacoes.html" class="inline-block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-white transition-colors">Voltar para Minhas Criações</a>'
+        + '</div>';
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function(char) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        }[char];
+      });
+    }
+
+    function safeHttpUrl(value) {
+      if (typeof value !== 'string' || !value.trim()) return '';
+      try {
+        var parsed = new URL(value.trim(), window.location.origin);
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+        return parsed.href;
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function buildOrderItems() {
+      return cartItemsData.map(function(item) {
+        return {
+          product_id: item.product_id,
+          product_name: item.product_name || item.name || 'Produto',
+          quantity: item.quantity || 1,
+          price: Number(item.price) || 0,
+          image_url: item.image_url || null,
+          variant: item.variant || null,
+          generation_id: item.generation_id || null,
+          custom_product: item.custom_product === true
+        };
+      });
+    }
+
+    async function carregarItemPersonalizado(generationId) {
+      if (!currentUser || !currentUser.id) {
+        throw new Error('Sessão do usuário não encontrada.');
+      }
+
+      var cleanId = String(generationId || '').trim();
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cleanId)) {
+        throw new Error('ID da criação personalizada é inválido.');
+      }
+
+      // O preço é buscado novamente na Edge Function autenticada.
+      // Nada vindo da URL/localStorage é usado como preço do produto.
+      var quoteResult = await window.supabaseClient.functions.invoke('generation-price-quote', {
+        body: { generation_id: cleanId }
+      });
+
+      if (quoteResult.error) {
+        throw quoteResult.error;
+      }
+
+      var quote = quoteResult.data;
+      if (!quote || typeof quote !== 'object' || quote.success !== true) {
+        throw new Error(
+          quote && typeof quote.error === 'string' && quote.error.trim()
+            ? quote.error.trim()
+            : 'A criação ainda não possui um preço disponível.'
+        );
+      }
+
+      var valor = Number(quote.valor_final);
+      if (!Number.isFinite(valor) || valor <= 0) {
+        throw new Error('O backend não retornou um valor_final válido.');
+      }
+
+      var serverGenerationId =
+        typeof quote.generation_id === 'string' && quote.generation_id.trim()
+          ? quote.generation_id.trim()
+          : cleanId;
+
+      if (serverGenerationId !== cleanId) {
+        throw new Error('A Edge Function retornou uma criação diferente da solicitada.');
+      }
+
+      var title =
+        typeof quote.title === 'string' && quote.title.trim()
+          ? quote.title.trim()
+          : 'Modelo 3D personalizado';
+
+      var imageUrl = safeHttpUrl(quote.image_url);
+
+      // Fallback da imagem: usa somente a geração do usuário autenticado.
+      if (!imageUrl) {
+        var jobResult = await window.supabaseClient
+          .from('generation_jobs')
+          .select('id,user_id,image_path,title')
+          .eq('id', cleanId)
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (jobResult.error || !jobResult.data) {
+          throw new Error('Não foi possível localizar a imagem desta criação.');
+        }
+
+        if (jobResult.data.image_path) {
+          var signedResult = await window.supabaseClient.storage
+            .from('generations')
+            .createSignedUrl(jobResult.data.image_path, 60 * 60);
+
+          if (!signedResult.error && signedResult.data && signedResult.data.signedUrl) {
+            imageUrl = safeHttpUrl(signedResult.data.signedUrl);
+          }
+        }
+
+        if ((!title || title === 'Modelo 3D personalizado') && jobResult.data.title) {
+          title = String(jobResult.data.title);
+        }
+      }
+
+      if (!imageUrl) {
+        throw new Error('A criação possui preço, mas a imagem personalizada não pôde ser carregada.');
+      }
+
+      return {
+        id: 'custom-' + cleanId,
+        product_id: 'custom-' + cleanId,
+        product_name: 'Modelo 3D personalizado — ' + title,
+        quantity: 1,
+        price: Number(valor.toFixed(2)),
+        image_url: imageUrl,
+        variant: 'Personalizado | 15 cm',
+        generation_id: cleanId,
+        custom_product: true
+      };
+    }
+
     function maskCEP(input) {
       var v = input.value.replace(/\D/g, '').substring(0, 8);
       if (v.length > 5) v = v.substring(0, 5) + '-' + v.substring(5);
@@ -1033,6 +1183,8 @@ async function salvarDadosPessoais() {
         var price = parseFloat(item.price) || 0;
         var qty = parseInt(item.quantity, 10) || 1;
         var subtotal = price * qty;
+        var itemName = escapeHtml(item.product_name || item.name || 'Produto');
+        var itemImage = safeHttpUrl(item.image_url);
 
         subtotalAmount += subtotal;
 
@@ -1041,17 +1193,17 @@ async function salvarDadosPessoais() {
         if (item.variant) {
           variantHTML = '<div class="flex flex-wrap gap-1 mt-1">'
             + String(item.variant).split('|').map(function(v) {
-              return '<span class="variant-tag">' + v.trim() + '</span>';
+              return '<span class="variant-tag">' + escapeHtml(v.trim()) + '</span>';
             }).join('')
             + '</div>';
         }
 
         return '<div class="flex items-start gap-3 p-3 bg-white/5 border border-white/5 rounded-lg">'
           + '<div class="w-14 h-14 bg-freo-black rounded flex-shrink-0 overflow-hidden">'
-          + (item.image_url ? '<img src="' + item.image_url + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">' : '')
+          + (itemImage ? '<img src="' + escapeHtml(itemImage) + '" alt="' + itemName + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">' : '')
           + '</div>'
           + '<div class="flex-1 min-w-0">'
-          + '<p class="font-display font-bold text-sm text-white leading-tight">' + (item.product_name || item.name || 'Produto') + '</p>'
+          + '<p class="font-display font-bold text-sm text-white leading-tight">' + itemName + '</p>'
           + variantHTML
           + '<p class="font-mono text-xs text-white/40 mt-1">Qtd: ' + qty + ' × ' + formatCurrency(price) + '</p>'
           + '</div>'
@@ -1585,16 +1737,7 @@ async function salvarDadosPessoais() {
               federal_unit:   selectedAddress ? selectedAddress.state        : ''
             }
           },
-          items: cartItemsData.map(function(item) {
-            return {
-              product_id:   item.product_id,
-              product_name: item.product_name,
-              quantity:     item.quantity || 1,
-              price:        item.price,
-              image_url:    item.image_url,
-              variant:      item.variant || null
-            };
-          })
+          items: buildOrderItems()
         };
     
         var orderResult = await window.supabaseClient
@@ -1633,7 +1776,9 @@ async function salvarDadosPessoais() {
         if (data.status === 'approved') updateData.status = 'pago';
     
         await window.supabaseClient.from('orders').update(updateData).eq('id', orderId).eq('user_id', userId);
-        await window.supabaseClient.from('cart_items').delete().eq('user_id', userId);
+        if (!customCheckoutMode) {
+          await window.supabaseClient.from('cart_items').delete().eq('user_id', userId);
+        }
         await consumirCupomAposPayment(orderId);
     
         cartItemsData.forEach(function(item) {
@@ -1841,16 +1986,7 @@ async function salvarDadosPessoais() {
                 }
               },
 
-              items: cartItemsData.map(function(item) {
-                return {
-                  product_id:   item.product_id,
-                  product_name: item.product_name,
-                  quantity:     item.quantity || 1,
-                  price:        item.price,
-                  image_url:    item.image_url,
-                  variant:      item.variant || null
-                };
-              })
+              items: buildOrderItems()
             });
 
             var totalFinalOrder = Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount;
@@ -1876,16 +2012,7 @@ async function salvarDadosPessoais() {
                 user_id: userId,
                 status: 'pendente',
                 total: totalFinalOrder,
-                items: cartItemsData.map(function(item) {
-                  return {
-                    product_id:   item.product_id,
-                    product_name: item.product_name,
-                    quantity:     item.quantity || 1,
-                    price:        item.price,
-                    image_url:    item.image_url,
-                    variant:      item.variant || null
-                  };
-                }),
+                items: buildOrderItems(),
 
                 frete_valor: selectedShipping ? selectedShipping.price : 0,
                 frete_nome: freteNomeCompleto,
@@ -1949,13 +2076,15 @@ async function salvarDadosPessoais() {
                       if (r.error) console.error('Erro update order:', r.error);
                     });
 
-                  window.supabaseClient
-                    .from('cart_items')
-                    .delete()
-                    .eq('user_id', userId)
-                    .then(function(r) {
-                      if (r.error) console.error('Erro limpar carrinho:', r.error);
-                    });
+                  if (!customCheckoutMode) {
+                    window.supabaseClient
+                      .from('cart_items')
+                      .delete()
+                      .eq('user_id', userId)
+                      .then(function(r) {
+                        if (r.error) console.error('Erro limpar carrinho:', r.error);
+                      });
+                  }
                   consumirCupomAposPayment(orderId);
 
                   cartItemsData.forEach(function(item) {
@@ -2093,12 +2222,22 @@ async function salvarDadosPessoais() {
       currentProfile.phone = metadata.phone || metadata.telefone || '';
     }
 
-    var cartResult = await window.supabaseClient
-      .from('cart_items')
-      .select('*')
-      .eq('user_id', currentUser.id);
+    customGenerationId = urlParams.get('generation_id')?.trim() || null;
+    customCheckoutMode = urlParams.get('custom') === '1' && Boolean(customGenerationId);
 
-    cartItemsData = cartResult.data || [];
+    if (customCheckoutMode) {
+      // Checkout dedicado da criação personalizada.
+      // O preço e a imagem são buscados no backend usando a sessão atual.
+      cartItemsData = [await carregarItemPersonalizado(customGenerationId)];
+    } else {
+      var cartResult = await window.supabaseClient
+        .from('cart_items')
+        .select('*')
+        .eq('user_id', currentUser.id);
+
+      if (cartResult.error) throw cartResult.error;
+      cartItemsData = cartResult.data || [];
+    }
 
     if (cartItemsData.length === 0) {
       showEmpty();
@@ -2121,7 +2260,11 @@ async function salvarDadosPessoais() {
     }
   } catch (err) {
     console.error('Erro checkout:', err);
-    showEmpty();
+    if (customCheckoutMode) {
+      showCheckoutError(err instanceof Error ? err.message : String(err || 'Erro desconhecido.'));
+    } else {
+      showEmpty();
+    }
   }
 }
 
