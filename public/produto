@@ -1379,38 +1379,50 @@
       return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
     }
 
+    function reviewEscape(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function reviewMediaUrl(value) {
+      try {
+        var url = new URL(value);
+        return url.protocol === 'https:' ? url.href : '';
+      } catch (_) { return ''; }
+    }
+
     // ── Renderiza um card ────────────────────────────────────────
     function reviewCardHTML(r) {
       var mediaHTML = '';
       if (r.media_urls && r.media_urls.length > 0) {
         mediaHTML = '<div class="review-media-grid">';
         r.media_urls.forEach(function(url) {
+          url = reviewMediaUrl(url);
+          if (!url) return;
           var isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(url);
           if (isVideo) {
-            mediaHTML += '<div class="review-video-thumb" onclick="openLightbox(\'' + url + '\',\'video\')">'
+            mediaHTML += '<div class="review-video-thumb" data-media-url="' + reviewEscape(url) + '" onclick="openLightbox(this.dataset.mediaUrl,\'video\')">'
               + '<svg style="width:22px;height:22px;color:#DDAF34" fill="currentColor" viewBox="0 0 20 20"><path d="M8 5v10l8-5-8-5z"/></svg>'
               + '</div>';
           } else {
-            mediaHTML += '<img class="review-media-thumb" src="' + url + '" alt="foto da avaliação" loading="lazy" onclick="openLightbox(\'' + url + '\',\'image\')">';
+            mediaHTML += '<img class="review-media-thumb" src="' + reviewEscape(url) + '" alt="foto da avaliação" loading="lazy" onclick="openLightbox(this.src,\'image\')">';
           }
         });
         mediaHTML += '</div>';
       }
 
-      var verifiedLabel = r.is_artificial
-        ? '<span class="verified-badge"><svg style="width:9px;height:9px" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Compra verificada</span>'
-        : '<span class="verified-badge"><svg style="width:9px;height:9px" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Compra verificada</span>';
+      var verifiedLabel = '<span class="verified-badge"><svg style="width:9px;height:9px" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Compra verificada</span>';
 
-      var avatarSrc = r.reviewer_avatar
-        ? r.reviewer_avatar
-        : 'https://api.dicebear.com/7.x/thumbs/svg?seed=' + encodeURIComponent(r.reviewer_name || 'user') + '&backgroundColor=333333';
+      var avatarSrc = reviewMediaUrl(r.reviewer_avatar) ||
+        'https://api.dicebear.com/7.x/thumbs/svg?seed=' + encodeURIComponent(r.reviewer_name || 'user') + '&backgroundColor=333333';
 
       return '<div class="review-card">'
         + '<div style="display:flex;align-items:flex-start;gap:12px">'
-        + '<img class="review-avatar" src="' + avatarSrc + '" alt="' + (r.reviewer_name||'') + '" onerror="this.src=\'https://api.dicebear.com/7.x/thumbs/svg?seed=user&backgroundColor=333333\'">'
+        + '<img class="review-avatar" src="' + reviewEscape(avatarSrc) + '" alt="' + reviewEscape(r.reviewer_name) + '">'
         + '<div style="flex:1;min-width:0">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-        + '<span class="review-name">' + (r.reviewer_name || 'Anônimo') + '</span>'
+        + '<span class="review-name">' + reviewEscape(r.reviewer_name || 'Anônimo') + '</span>'
         + verifiedLabel
         + '</div>'
         + '<div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap">'
@@ -1419,7 +1431,7 @@
         + '</div>'
         + '</div>'
         + '</div>'
-        + '<p class="review-text">' + (r.comment || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>'
+        + '<p class="review-text">' + reviewEscape(r.comment) + '</p>'
         + mediaHTML
         + '</div>';
     }
@@ -1462,11 +1474,12 @@
         .from('product_reviews')
         .select('*')
         .eq('product_id', String(productId))
+        .eq('is_artificial', false)
         .order('created_at', { ascending: false });
 
       if (result.error) { console.error('Erro ao carregar avaliações:', result.error); return; }
 
-      allReviews = result.data || [];
+      allReviews = (result.data || []).filter(function(r) { return r.is_artificial === false; });
       reviewPage = 1;
 
       // Resumo
@@ -1501,39 +1514,20 @@
     async function checkVerifiedBuyer(productId) {
       var sessionRes = await window.supabaseClient.auth.getSession();
       var session = sessionRes.data && sessionRes.data.session;
-      if (!session) return { loggedIn: false, verified: false };
+      if (sessionRes.error || !session || session.user.is_anonymous) return { loggedIn: false, verified: false };
 
-      // Checa se já avaliou
-      var existingRes = await window.supabaseClient
-        .from('product_reviews')
-        .select('id')
-        .eq('product_id', String(productId))
-        .eq('user_id', session.user.id)
-        .eq('is_artificial', false)
-        .maybeSingle();
-
-      if (existingRes.data) return { loggedIn: true, verified: false, alreadyReviewed: true };
-
-      // Checa pedido entregue
-      var ordersRes = await window.supabaseClient
-        .from('orders')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .ilike('status', '%entregue%')
-        .limit(50);
-
-      if (ordersRes.error || !ordersRes.data || ordersRes.data.length === 0) {
-        return { loggedIn: true, verified: false };
-      }
-
-      // Verifica se algum pedido contém o produto
-      var hasProduct = ordersRes.data.some(function(o) {
-        if (!o.items) return false;
-        var itemsStr = typeof o.items === 'string' ? o.items : JSON.stringify(o.items);
-        return itemsStr.includes(String(productId));
+      // O banco valida auth.uid(), o status entregue e o product_id exato.
+      // A mesma regra protege INSERTs diretos, além do formulário.
+      var result = await window.supabaseClient.rpc('product_review_eligibility', {
+        p_product_id: String(productId)
       });
-
-      return { loggedIn: true, verified: hasProduct, user: session.user };
+      return {
+        loggedIn: true,
+        verified: !result.error && result.data === 'eligible',
+        alreadyReviewed: !result.error && result.data === 'already_reviewed',
+        unavailable: !!result.error,
+        user: session.user
+      };
     }
 
     // ── Renderiza área do formulário ─────────────────────────────
@@ -1542,6 +1536,11 @@
       if (!area) return;
 
       var check = await checkVerifiedBuyer(productId);
+
+      if (check.unavailable) {
+        area.innerHTML = '<div class="review-locked">Não foi possível verificar sua compra agora. Tente novamente em instantes.</div>';
+        return;
+      }
 
       if (!check.loggedIn) {
         area.innerHTML = '<div class="review-locked">'
@@ -1694,9 +1693,18 @@
       if (msgEl) { msgEl.style.color = 'rgba(245,245,245,0.4)'; msgEl.textContent = 'Aguarde...'; }
 
       try {
-        var sessionRes = await window.supabaseClient.auth.getSession();
-        var session    = sessionRes.data && sessionRes.data.session;
-        if (!session) throw new Error('Sem sessão');
+        var buyer = await checkVerifiedBuyer(reviewProductId);
+        if (!buyer.verified) {
+          var denied = new Error(buyer.alreadyReviewed ? 'Você já avaliou este produto.' :
+            buyer.unavailable ? 'Não foi possível verificar sua compra. Tente novamente.' :
+            'Somente quem comprou e recebeu este produto pode avaliar.');
+          denied.reviewAccess = true;
+          throw denied;
+        }
+        var session = { user: buyer.user };
+        if (!Number.isInteger(selectedRating) || selectedRating < 1 || selectedRating > 5) {
+          throw new Error('Nota inválida');
+        }
 
         // Nome do usuário
         var uMeta = session.user.user_metadata || {};
@@ -1733,6 +1741,8 @@
       } catch(err) {
         console.error('Erro ao publicar avaliação:', err);
         var errMsg = 'Erro ao publicar.';
+        if (err.reviewAccess) errMsg = err.message;
+        if (err.code === '23505') errMsg = 'Você já avaliou este produto.';
         if (err.message && err.message.includes('violates row-level security')) {
           errMsg = 'Somente clientes com pedido entregue podem avaliar.';
         }
@@ -1743,6 +1753,9 @@
 
     // ── Lightbox ─────────────────────────────────────────────────
     function openLightbox(url, type) {
+      url = reviewMediaUrl(url);
+      if (!url) return;
+      url = reviewEscape(url);
       var lb      = document.getElementById('review-lightbox');
       var content = document.getElementById('lightbox-content');
       lb.classList.add('open');

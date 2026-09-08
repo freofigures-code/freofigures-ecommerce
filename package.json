@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "node --test seo/seo.test.mjs"
+    "test": "node --test seo/seo.test.mjs tests/product-reviews.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
