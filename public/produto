@@ -272,7 +272,7 @@
 
   <!-- NAV -->
   <nav class="bg-freo-dark/80 backdrop-blur-md border-b border-white/[0.06] py-4 sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-6 flex flex-wrap gap-3 items-center justify-between">
       <a href="/" class="flex items-center gap-3">
         <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" class="w-9 h-9 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.4)]" onerror="this.style.display='none'">
         <span class="font-display font-black text-xl tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
@@ -735,6 +735,29 @@
       selectedVariants = {};
 
       document.title = (p.title || 'Produto') + ' | FreoFigures';
+      // Keep the server's public metadata consistent with the refreshed catalog.
+      var seoData = document.getElementById('product-structured-data');
+      if (seoData) {
+        try {
+          var seoProduct = JSON.parse(seoData.textContent);
+          seoProduct.name = p.title || 'Produto';
+          seoProduct.description = String(p.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+          if (seoProduct.offers && seoProduct.offers['@type'] === 'Offer') {
+            seoProduct.offers.price = getBasePrice().toFixed(2);
+            seoProduct.offers.availability = (p.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+          }
+          if (seoProduct.offers && seoProduct.offers['@type'] === 'AggregateOffer') {
+            var seoVariants = (Array.isArray(p.variants) ? p.variants : []).filter(function(v) { return v.name && v.per_option_price && Array.isArray(v.options) && v.options.length; });
+            var seoPrices = seoVariants.length === 1 ? seoVariants[0].options.map(function(o) { return typeof o === 'object' && o.price != null ? Number(o.price) : getBasePrice(); }) : [];
+            if (seoPrices.length && seoPrices.every(function(value) { return Number.isFinite(value) && value > 0; })) {
+              seoProduct.offers.lowPrice = Math.min.apply(null, seoPrices).toFixed(2);
+              seoProduct.offers.highPrice = Math.max.apply(null, seoPrices).toFixed(2);
+              seoProduct.offers.offerCount = seoPrices.length;
+            } else delete seoProduct.offers;
+          }
+          seoData.textContent = JSON.stringify(seoProduct).replace(/</g, '\\u003c');
+        } catch (_) { /* Metadata must never interrupt product rendering. */ }
+      }
 
       if (p.is_kit && p.kit_type === 'fixed') {
         await loadKitFixedItems(p.id);
@@ -949,6 +972,7 @@
 
       document.getElementById('page-loading').classList.add('hidden');
       document.getElementById('page-content').classList.remove('hidden');
+      document.getElementById('seo-product-summary')?.remove();
     }
     var galleryItems = [];
     var galleryIndex = 0;
@@ -1229,6 +1253,8 @@
           .single();
 
         if (result.error || !result.data) {
+          document.getElementById('seo-product-summary')?.remove();
+          document.getElementById('product-structured-data')?.remove();
           document.getElementById('page-loading').classList.add('hidden');
           document.getElementById('page-notfound').classList.remove('hidden');
           document.getElementById('page-notfound').classList.add('flex');

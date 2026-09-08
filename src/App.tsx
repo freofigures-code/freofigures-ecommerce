@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { updateStoreLocation } from './seo';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShoppingCart,
@@ -336,7 +337,7 @@ function CookieBanner() {
             <p className="ff-title">Sua privacidade importa para nós</p>
             <p className="ff-text">
               Usamos cookies essenciais para o site funcionar e, com sua permissão, cookies analíticos e de marketing.
-              Veja nossa <a href="/public/politicas.html" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.
+              Veja nossa <a href="/politicas.html" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.
             </p>
           </div>
 
@@ -1697,7 +1698,7 @@ const Categories = ({ setCurrentView, setFilter }: any) => {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {cats.map((cat, index) => (
-          <div key={cat.slug} onClick={() => handleCatClick(cat.slug)} className="group relative aspect-[3/4] md:h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5 active:scale-98">
+          <a key={cat.slug} href={`/?categoria=${encodeURIComponent(cat.slug)}`} className="group relative aspect-[3/4] md:h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5 active:scale-98">
             <img src={cat.img} alt={cat.name} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 grayscale group-hover:grayscale-0" />
             <div className="absolute inset-0 bg-gradient-to-t from-freo-black via-freo-black/50 to-transparent" />
             <div className="absolute bottom-0 left-0 p-4 md:p-6 w-full">
@@ -1705,7 +1706,7 @@ const Categories = ({ setCurrentView, setFilter }: any) => {
               <h3 className="text-base md:text-2xl font-display font-bold uppercase tracking-wide mb-1 leading-tight">{cat.name}</h3>
               <p className="text-xs md:text-sm text-freo-light/70 font-body hidden md:block opacity-0 group-hover:opacity-100 transition-opacity delay-150">{cat.desc}</p>
             </div>
-          </div>
+          </a>
         ))}
       </div>
     </section>
@@ -1725,11 +1726,10 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
 
   const goToProduct = () => {
     trackEvent('product_click', String(product.id), product.title);
-    window.location.href = `/produto?id=${product.id}`;
   };
   return (
     <div className={`group flex flex-col ${compact ? '' : 'bg-freo-dark border border-white/5 hover:border-freo-orange/50 transition-colors'}`}>
-      <div
+      <a href={`/produto?id=${encodeURIComponent(product.id)}`}
         className={`relative ${compact ? 'aspect-square' : 'aspect-square bg-freo-black'} overflow-hidden ${compact ? 'border border-white/5 group-hover:border-freo-orange/50 transition-colors' : ''} mb-3 md:mb-4 cursor-pointer`}
         onClick={goToProduct}
       >
@@ -1745,14 +1745,13 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
           <div className="w-full h-full flex items-center justify-center bg-freo-dark"><Box className="w-12 h-12 text-white/10" /></div>
         )}
         {!compact && <div className="absolute inset-0 bg-freo-orange/20 opacity-0 group-hover:opacity-100 mix-blend-overlay transition-opacity duration-300" />}
-      </div>
+      </a>
       <div className={`flex flex-col flex-grow ${compact ? '' : 'p-3 md:p-5'}`}>
         <span className="text-freo-orange text-[9px] md:text-[10px] font-mono uppercase mb-1 tracking-wider">{product.category || 'Geral'}</span>
         <h3
           className="font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors cursor-pointer text-sm md:text-lg line-clamp-2"
-          onClick={goToProduct}
         >
-          {product.title}
+          <a href={`/produto?id=${encodeURIComponent(product.id)}`} onClick={goToProduct}>{product.title}</a>
         </h3>
         <div className="mt-auto flex flex-col gap-2 md:gap-3">
           <div className="flex items-end gap-2">
@@ -1978,10 +1977,10 @@ const Footer = () => (
         <div>
           <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Loja</h4>
           <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
-            <li><a href="#" className="hover:text-white transition-colors">Action Figures</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Artigos Religiosos</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Utensílios & Casa</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Decoração</a></li>
+            <li><a href="/?categoria=games" className="hover:text-white transition-colors">Action Figures</a></li>
+            <li><a href="/?categoria=religioso" className="hover:text-white transition-colors">Artigos Religiosos</a></li>
+            <li><a href="/?categoria=lifestyle" className="hover:text-white transition-colors">Utensílios &amp; Casa</a></li>
+            <li><a href="/?categoria=outros" className="hover:text-white transition-colors">Decoração</a></li>
             <li>
               <a
                 href="https://wa.me/5511946454111?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20sob%20medida!"
@@ -2003,11 +2002,11 @@ const Footer = () => (
               {/* ── FAQ corrigido — link simples, sem tag <a> duplicada ── */}
               <a href="/faq.html" className="hover:text-white transition-colors">FAQ</a>
             </li>
-            <li><a href="/politica-de-envio" className="hover:text-white transition-colors">Envio e Prazos</a></li>
+            <li><a href="/politicas.html#envio" className="hover:text-white transition-colors">Envio e Prazos</a></li>
             <li>
-              <a href="/trocas-e-devolucoes.html" className="hover:text-white transition-colors">Trocas e Devoluções</a>
+              <a href="/politicas.html#trocas" className="hover:text-white transition-colors">Trocas e Devoluções</a>
             </li>
-            <li><a href="#" className="hover:text-white transition-colors">Cuidados com a Peça</a></li>
+            <li><a href="/faq.html" className="hover:text-white transition-colors">Cuidados com a Peça</a></li>
             <li>
               <a
                 href="https://wa.me/5511946454111?text=Olá,%20vim%20pelo%20site%20da%20FreoFigures!"
@@ -2062,9 +2061,9 @@ const Footer = () => (
         <div className="text-center md:text-left">&copy; {new Date().getFullYear()} FREO FIGURES. TODOS OS DIREITOS RESERVADOS.</div>
         <div className="flex flex-wrap justify-center gap-4">
           {/* ── Links do rodapé atualizados para /public/ ── */}
-          <a href="/public/termos-de-uso.html" className="hover:text-white transition-colors">TERMOS DE USO</a>
-          <a href="/public/politicas.html" className="hover:text-white transition-colors">PRIVACIDADE</a>
-          <a href="/public/trocas-e-devolucoes.html" className="hover:text-white transition-colors">TROCAS E DEVOLUÇÕES</a>
+          <a href="/politicas.html#termos" className="hover:text-white transition-colors">TERMOS DE USO</a>
+          <a href="/politicas.html" className="hover:text-white transition-colors">PRIVACIDADE</a>
+          <a href="/politicas.html#trocas" className="hover:text-white transition-colors">TROCAS E DEVOLUÇÕES</a>
         </div>
       </div>
 
@@ -2245,6 +2244,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
       return;
     }
     onClearSearch();
+    updateStoreLocation(category);
     setActiveFilter(category);
   };
 
@@ -2842,12 +2842,15 @@ const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem, us
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'shop'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'shop'>(() => new URLSearchParams(window.location.search).has('categoria') ? 'shop' : 'home');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [activeFilter, setActiveFilter] = useState('Todos');
+  const [activeFilter, setActiveFilter] = useState(() => new URLSearchParams(window.location.search).get('categoria') || 'Todos');
+  useEffect(() => {
+    updateStoreLocation(currentView === 'shop' ? activeFilter : undefined);
+  }, [currentView, activeFilter]);
   const [searchTerm, setSearchTerm] = useState('');
   const [cupomCode, setCupomCode] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2865,13 +2868,14 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const temCarrinhoPendente = params.get('carrinho') === '1';
     if (temCarrinhoPendente) {
-      window.history.replaceState({}, '', '/');
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('carrinho');
+      window.history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
     }
     const categoriaParam = params.get('categoria');
     if (categoriaParam) {
       setActiveFilter(categoriaParam);
       setCurrentView('shop');
-      window.history.replaceState({}, '', '/');
     }
     const handleAuthData = (event: any) => {
       setUser(event.detail.user);
@@ -3037,6 +3041,7 @@ export default function App() {
         onSearchSubmit={handleSearchSubmit}
         onSearchClear={handleSearchClear}
       />
+      {currentView === 'home' && <h1 className="sr-only">FreoFigures — Arte em Impressão 3D</h1>}
       {currentView === 'home' ? (
         <HomeView setCurrentView={setCurrentView} addToCart={addToCart} setFilter={handleFilterChange} />
       ) : (
