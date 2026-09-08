@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Políticas — Freo Figures</title>
+  <meta name="description" content="Consulte as políticas de privacidade, envio, trocas e devoluções e os termos de uso da FreoFigures.">
+  <link rel="canonical" href="https://www.freofigures.com.br/politicas.html">
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -994,6 +996,7 @@
 
 <script>
   function showPage(id, el) {
+    if (!document.getElementById('page-' + id)) return;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
@@ -1010,7 +1013,17 @@
       });
     }
     window.scrollTo(0, 0);
+    window.history.replaceState({}, '', window.location.pathname + window.location.search + '#' + id);
   }
+  function openPolicyFromHash() {
+    var id = window.location.hash.slice(1);
+    if (['privacidade', 'termos', 'trocas', 'envio', 'juridico'].includes(id)) {
+      var item = Array.from(document.querySelectorAll('.nav-item')).find(function(el) { return (el.getAttribute('onclick') || '').includes("'" + id + "'"); });
+      showPage(id, item);
+    }
+  }
+  openPolicyFromHash();
+  window.addEventListener('hashchange', openPolicyFromHash);
 </script>
 </body>
 </html>
