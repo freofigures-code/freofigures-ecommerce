@@ -44,7 +44,7 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
     window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
-  <link rel="stylesheet" href="/produto-apple.css?v=3">
+  <link rel="stylesheet" href="/produto-apple.css?v=4">
 </head>
 <body>
   <a class="skip-link" href="#configurar">Ir para as opções de compra</a>
@@ -79,7 +79,6 @@
         </div>
         <div class="gallery-toolbar"><div class="tone-switch" role="group" aria-label="Fundo da galeria"><button data-tone="light" type="button" aria-pressed="false"><i class="tone-light"></i>Claro</button><button data-tone="dark" type="button" aria-pressed="true"><i class="tone-dark"></i>Grafite</button></div><span class="gallery-instruction">Deslize. Descubra. Aproxime.</span></div>
         <div id="thumbs-grid" class="thumbs-grid" aria-label="Escolha uma foto ou vídeo"></div>
-        <p class="gallery-note">O fundo muda a apresentação da foto, não a cor do produto.</p>
       </section>
 
       <section id="configurar" class="product-panel" aria-labelledby="product-title">
