@@ -271,6 +271,29 @@ function createMedia(item, large) {
     video.setAttribute('aria-label', 'Vídeo do produto');
     return video;
 }
+function syncGalleryPanel(media) {
+    var stage = document.querySelector('.media-stage');
+    if (!stage)
+        return;
+    var apply = function (width, height) { var ratio = Number(width) / Number(height); if (!Number.isFinite(ratio) || ratio <= 0)
+        return; stage.style.setProperty('--gallery-ratio', ratio.toFixed(4)); };
+    if (media.tagName === 'IMG') {
+        var ready = function () { apply(media.naturalWidth, media.naturalHeight); };
+        if (media.complete && media.naturalWidth)
+            ready();
+        else
+            media.addEventListener('load', ready, { once: true });
+    }
+    else if (media.tagName === 'VIDEO') {
+        var metadata = function () { apply(media.videoWidth, media.videoHeight); };
+        if (media.videoWidth && media.videoHeight)
+            metadata();
+        else
+            media.addEventListener('loadedmetadata', metadata, { once: true });
+    }
+    else if (media.tagName === 'IFRAME')
+        apply(16, 9);
+}
 function renderGalleryItem(index) {
     var wrap = el('gallery-media');
     wrap.replaceChildren();
@@ -294,6 +317,7 @@ function renderGalleryItem(index) {
     }
     else
         wrap.append(media);
+    syncGalleryPanel(media);
     media.classList.add('media-enter');
     el('open-gallery').hidden = false;
     text('gallery-count', String(galleryIndex + 1).padStart(2, '0') + ' / ' + String(galleryItems.length).padStart(2, '0'));
