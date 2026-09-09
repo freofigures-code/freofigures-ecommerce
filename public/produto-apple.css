@@ -2560,7 +2560,7 @@ dialog[open] {
   }
 }
 
-/* V4 — caixa com profundidade e mídia dimensionada dentro do visor. */
+/* V5 — a foto preenche o visor da caixa, mesmo com formatos diferentes. */
 
 .media-stage {
   --stage-bg: #e2e5dd;
@@ -2658,11 +2658,12 @@ dialog[open] {
   height: 100%;
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
 }
 
 .gallery-media img {
-  transform: translate(var(--move-x, 0px), var(--move-y, 0px)) scale(.97);
+  transform: translate(var(--move-x, 0px), var(--move-y, 0px));
   filter: drop-shadow(0 8px 8px #00000028);
   transition: transform .65s var(--ease);
 }
