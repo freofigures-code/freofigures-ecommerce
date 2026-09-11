@@ -224,12 +224,19 @@ var BRAZIL_REGIONS = {
     Sudeste: ['ES', 'MG', 'RJ', 'SP'],
     Sul: ['PR', 'RS', 'SC']
 };
+var BRAZIL_UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+function hasSameUfs(first, second) {
+    var expected = second.slice().sort();
+    return first.length === expected.length && first.every(function (uf, index) { return uf === expected[index]; });
+}
 function shippingScope(ufList) {
     if (!Array.isArray(ufList) || !ufList.length)
         return 'todo o Brasil';
-    var ufs = ufList.map(function (uf) { return String(uf).trim().toUpperCase(); }).filter(Boolean).sort();
+    var ufs = Array.from(new Set(ufList.map(function (uf) { return String(uf).trim().toUpperCase(); }).filter(Boolean))).sort();
+    if (hasSameUfs(ufs, BRAZIL_UFS))
+        return 'todo o Brasil';
     var region = Object.keys(BRAZIL_REGIONS).find(function (name) {
-        return BRAZIL_REGIONS[name].slice().sort().join(',') === ufs.join(',');
+        return hasSameUfs(ufs, BRAZIL_REGIONS[name]);
     });
     return region || ufs.join(', ');
 }
