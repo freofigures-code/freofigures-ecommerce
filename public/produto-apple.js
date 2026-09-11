@@ -217,6 +217,78 @@ function renderStock() {
     text('estoque-badge', maxStock === 0 ? 'Esgotado' : maxStock <= 5 ? (maxStock === 1 ? 'Última peça disponível' : maxStock + ' peças disponíveis') : 'Disponível na coleção');
     el('out-of-stock-alert').classList.toggle('hidden', maxStock > 0);
 }
+var BRAZIL_REGIONS = {
+    Norte: ['AC', 'AP', 'AM', 'PA', 'RO', 'RR', 'TO'],
+    Nordeste: ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'],
+    'Centro-Oeste': ['DF', 'GO', 'MT', 'MS'],
+    Sudeste: ['ES', 'MG', 'RJ', 'SP'],
+    Sul: ['PR', 'RS', 'SC']
+};
+function shippingScope(ufList) {
+    if (!Array.isArray(ufList) || !ufList.length)
+        return 'todo o Brasil';
+    var ufs = ufList.map(function (uf) { return String(uf).trim().toUpperCase(); }).filter(Boolean).sort();
+    var region = Object.keys(BRAZIL_REGIONS).find(function (name) {
+        return BRAZIL_REGIONS[name].slice().sort().join(',') === ufs.join(',');
+    });
+    return region || ufs.join(', ');
+}
+function shippingOfferCopy(rule) {
+    var freeMinimum = rule.min_order_value_free;
+    if (freeMinimum !== null && freeMinimum !== undefined) {
+        var minimum = Number(freeMinimum) || 0;
+        return {
+            title: 'Frete grátis',
+            detail: 'para ' + shippingScope(rule.uf_list) + (minimum > 0 ? ' em compras a partir de ' + formatCurrency(minimum) : '')
+        };
+    }
+    if (rule.subsidy_type === 'percent' && Number(rule.subsidy_value) > 0)
+        return { title: Number(rule.subsidy_value) + '% OFF no frete', detail: 'para ' + shippingScope(rule.uf_list) };
+    if (rule.subsidy_type === 'fixed' && Number(rule.subsidy_value) > 0)
+        return { title: formatCurrency(rule.subsidy_value) + ' OFF no frete', detail: 'para ' + shippingScope(rule.uf_list) };
+    return null;
+}
+function renderShippingPromotion(rules) {
+    var container = el('shipping-promo');
+    if (!container)
+        return;
+    container.replaceChildren();
+    var offers = (rules || []).map(shippingOfferCopy).filter(Boolean).slice(0, 2);
+    if (!offers.length) {
+        container.hidden = true;
+        return;
+    }
+    offers.forEach(function (offer) {
+        var item = document.createElement('div');
+        item.className = 'shipping-promo-item';
+        var icon = document.createElement('span');
+        icon.className = 'shipping-promo-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = '✦';
+        var copy = document.createElement('p');
+        var title = document.createElement('strong');
+        title.textContent = offer.title;
+        var detail = document.createElement('span');
+        detail.textContent = offer.detail;
+        copy.append(title, detail);
+        item.append(icon, copy);
+        container.append(item);
+    });
+    var note = document.createElement('small');
+    note.textContent = 'Confirme seu CEP no checkout.';
+    container.append(note);
+    container.hidden = false;
+}
+async function loadShippingPromotion() {
+    try {
+        var result = await window.supabaseClient.from('shipping_promotions').select('uf_list,min_order_value_free,subsidy_type,subsidy_value').eq('is_active', true);
+        if (!result.error)
+            renderShippingPromotion(result.data);
+    }
+    catch (_) {
+        // O produto continua disponível mesmo quando a promoção de frete não puder ser consultada.
+    }
+}
 function renderDescription(p) {
     var lines = String(p.description || '').split(/\n+/).map(function (s) { return s.trim(); }).filter(Boolean), container = el('product-description');
     container.innerHTML = '';
@@ -405,6 +477,7 @@ async function renderProduct(p) {
     el('page-content').classList.remove('hidden');
     setupStickyBuyBar();
     window.trackEvent('page_view', String(p.id), p.title);
+    Promise.resolve(loadShippingPromotion()).catch(function () { });
     Promise.resolve(loadReviews(p.id)).catch(function () { text('product-rating-summary', 'Avaliações indisponíveis'); });
     Promise.resolve(loadRelatedProducts(p.id, p.category)).catch(function () { el('related-section').classList.add('hidden'); });
 }

@@ -44,7 +44,7 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
     window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
-  <link rel="stylesheet" href="/produto-apple.css?v=6">
+  <link rel="stylesheet" href="/produto-apple.css?v=7">
 </head>
 <body>
   <a class="skip-link" href="#configurar">Ir para as opções de compra</a>
@@ -93,7 +93,7 @@
 
         <div class="selection-receipt" id="selection-receipt"><div class="receipt-heading"><span>SUA ESCOLHA</span><span id="selection-state">Vamos configurar</span></div><div id="selection-chips" class="selection-chips"></div><div class="receipt-total"><span>Subtotal <small id="summary-quantity">1 peça</small></span><strong id="summary-total" aria-live="polite"></strong></div></div>
         <div id="out-of-stock-alert" class="hidden stock-alert"><strong>Esta peça está esgotada.</strong><p>Consulte a disponibilidade com a FreoFigures.</p><a href="https://wa.me/5511961789176" target="_blank" rel="noopener noreferrer">Falar no WhatsApp ↗</a></div>
-        <div class="purchase-actions"><button id="btn-buynow" type="button" class="button button-primary">Quero essa peça <span aria-hidden="true">↗</span></button><button id="btn-cart" type="button" class="button button-secondary">Adicionar à sacola <span aria-hidden="true">+</span></button><p id="purchase-message" class="purchase-message" role="status" aria-live="polite"></p><p class="checkout-note">Frete, prazo e formas de pagamento na próxima etapa.</p></div>
+        <div class="purchase-actions"><section id="shipping-promo" class="shipping-promo" hidden aria-live="polite" aria-label="Benefício de frete"></section><button id="btn-buynow" type="button" class="button button-primary">Quero essa peça <span aria-hidden="true">↗</span></button><button id="btn-cart" type="button" class="button button-secondary">Adicionar à sacola <span aria-hidden="true">+</span></button><p id="purchase-message" class="purchase-message" role="status" aria-live="polite"></p><p class="checkout-note">Frete, prazo e formas de pagamento na próxima etapa.</p></div>
         <div class="help-row"><span>Ficou alguma dúvida?</span><a href="https://wa.me/5511961789176" target="_blank" rel="noopener noreferrer">Converse com a gente ↗</a></div>
         <a class="shopee-link" href="https://shopee.com.br/shop/735981690" target="_blank" rel="noopener noreferrer">Também estamos na Shopee ↗</a>
       </section>
@@ -122,6 +122,6 @@
   <div id="toast" role="status" aria-live="polite"></div>
   <div id="sticky-buy-bar" class="sticky-buy-bar" hidden><div class="sticky-buy-inner"><div class="sticky-product-copy"><strong id="sticky-product-title"></strong><span id="sticky-selection"></span></div><strong id="sticky-price"></strong><button id="sticky-buy-button" type="button">Escolher opções ↗</button></div></div>
   <script src="/auth-listener.js"></script>
-  <script src="/produto-apple.js?v=2"></script>
+  <script src="/produto-apple.js?v=3"></script>
 </body>
 </html>

@@ -1032,6 +1032,79 @@ section {
   margin-top: 15px;
 }
 
+.shipping-promo {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 14px;
+  padding: 13px 15px 11px;
+  border: 1px solid #dcbf5a66;
+  border-radius: 10px;
+  background: linear-gradient(110deg,#d9af351c,#a8c99010);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.shipping-promo:before {
+  content: '';
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  right: -40px;
+  top: -58px;
+  border-radius: 50%;
+  background: #e9c97216;
+  pointer-events: none;
+}
+
+.shipping-promo-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shipping-promo-item + .shipping-promo-item {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid #dcbf5a2b;
+}
+
+.shipping-promo-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #202515;
+  font-size: 14px;
+}
+
+.shipping-promo p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 5px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.shipping-promo strong {
+  color: #f4d986;
+  font-weight: 600;
+}
+
+.shipping-promo p span,
+.shipping-promo small {
+  color: var(--muted);
+}
+
+.shipping-promo small {
+  display: block;
+  position: relative;
+  margin: 8px 0 0 35px;
+  font-size: 11px;
+}
+
 .button {
   display: flex;
   align-items: center;
