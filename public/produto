@@ -44,7 +44,7 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
     window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
-  <link rel="stylesheet" href="/produto-apple.css?v=7">
+  <link rel="stylesheet" href="/produto-apple.css?v=8">
 </head>
 <body>
   <a class="skip-link" href="#configurar">Ir para as opções de compra</a>
@@ -86,6 +86,7 @@
         <h1 id="product-title"></h1><div id="product-tags" class="product-tags"></div>
         <div class="price-line"><span id="price-main"></span><span id="price-promo" class="hidden"><s id="price-original"></s></span><span id="price-discount-badge" class="hidden discount-badge">−<span id="price-discount-pct"></span>%</span></div>
         <p class="price-caption" id="price-caption">Valor por peça · frete calculado no checkout</p><div id="estoque-badge" class="stock-badge"></div>
+        <section id="kit-purchase-card" class="kit-purchase-card hidden" aria-labelledby="kit-purchase-title"><div class="kit-purchase-head"><span>✦ KIT EXCLUSIVO</span><strong id="kit-purchase-savings"></strong></div><h2 id="kit-purchase-title">A coleção completa, em uma escolha.</h2><p id="kit-purchase-price" class="kit-purchase-price"></p><div id="kit-purchase-items" class="kit-purchase-items" aria-label="Itens incluídos neste kit"></div></section>
 
         <div id="configuration-heading" class="configuration-heading"><h2>Do seu jeito.</h2><span id="configuration-progress" aria-live="polite"></span></div>
         <div id="variants-section" class="variants-section"></div>
@@ -122,6 +123,6 @@
   <div id="toast" role="status" aria-live="polite"></div>
   <div id="sticky-buy-bar" class="sticky-buy-bar" hidden><div class="sticky-buy-inner"><div class="sticky-product-copy"><strong id="sticky-product-title"></strong><span id="sticky-selection"></span></div><strong id="sticky-price"></strong><button id="sticky-buy-button" type="button">Escolher opções ↗</button></div></div>
   <script src="/auth-listener.js"></script>
-  <script src="/produto-apple.js?v=3"></script>
+  <script src="/produto-apple.js?v=4"></script>
 </body>
 </html>

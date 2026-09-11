@@ -707,6 +707,115 @@ section {
   color: #efa394;
 }
 
+.kit-purchase-card {
+  position: relative;
+  overflow: hidden;
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid #b9a05375;
+  border-radius: 12px;
+  background: linear-gradient(125deg,#302b1e,#1a1e18 63%);
+}
+
+.kit-purchase-card:after {
+  content: 'KIT';
+  position: absolute;
+  right: -7px;
+  bottom: -31px;
+  color: #e9c97212;
+  font: 900 88px/1 Outfit,sans-serif;
+  letter-spacing: -.08em;
+  pointer-events: none;
+}
+
+.kit-purchase-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: .12em;
+}
+
+.kit-purchase-head strong {
+  border: 1px solid #d1ba6952;
+  border-radius: 999px;
+  padding: 2px 7px;
+  color: var(--green);
+  font-size: 10px;
+  letter-spacing: .02em;
+}
+
+.kit-purchase-card h2 {
+  position: relative;
+  z-index: 1;
+  margin: 11px 0 4px;
+  max-width: 290px;
+  font-size: 22px;
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -.035em;
+}
+
+.kit-purchase-price {
+  position: relative;
+  z-index: 1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.kit-purchase-price s {
+  color: #aaa898;
+}
+
+.kit-purchase-price strong {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.kit-purchase-items {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.kit-purchase-item {
+  min-width: 0;
+}
+
+.kit-purchase-item img,
+.kit-purchase-item .kit-item-empty {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid #e9c9722e;
+  border-radius: 6px;
+  background: #11150f;
+  object-fit: cover;
+}
+
+.kit-item-empty {
+  display: grid;
+  place-items: center;
+  color: var(--gold);
+  font-size: 16px;
+}
+
+.kit-purchase-item span {
+  display: block;
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .configuration-heading {
   margin: 30px 0 15px;
   padding-top: 23px;

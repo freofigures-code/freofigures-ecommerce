@@ -57,6 +57,24 @@
     }
     .kit-item-card.selected .kit-item-check { background: #DDAF34; border-color: #DDAF34; }
 
+    body { background: radial-gradient(circle at 84% 8%, rgba(221,175,52,.14), transparent 26rem), #0a0a0a; }
+    .kit-studio { position:relative; overflow:hidden; border:1px solid rgba(221,175,52,.25); background:linear-gradient(130deg,rgba(221,175,52,.12),rgba(20,20,20,.88) 57%); }
+    .kit-studio:after { content:'KIT'; position:absolute; right:-16px; bottom:-58px; color:rgba(221,175,52,.055); font:900 12rem/1 'Outfit',sans-serif; letter-spacing:-.12em; pointer-events:none; }
+    .kit-cover-art { position:relative; aspect-ratio:1; overflow:hidden; border:1px solid rgba(221,175,52,.28); background:#101010; box-shadow:14px 14px 0 rgba(221,175,52,.08); }
+    .kit-cover-art img { width:100%; height:100%; object-fit:cover; }
+    .kit-cover-auto { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px; width:100%; height:100%; background:rgba(221,175,52,.2); }
+    .kit-cover-auto img { min-width:0; height:100%; object-fit:cover; }
+    .kit-benefit { display:inline-flex; align-items:center; gap:8px; border:1px solid rgba(221,175,52,.35); color:#DDAF34; font-family:'Space Grotesk',sans-serif; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; padding:.4rem .6rem; }
+    .kit-price-panel { position:relative; z-index:1; display:grid; grid-template-columns:1fr 1fr; gap:1px; margin-top:1.25rem; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.08); }
+    .kit-price-panel > div { background:rgba(10,10,10,.72); padding:.8rem 1rem; }
+    .kit-price-panel small { display:block; color:rgba(255,255,255,.38); font-family:ui-monospace,monospace; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; }
+    .kit-price-panel strong { display:block; margin-top:.25rem; color:#fff; font-family:'Outfit',sans-serif; font-size:1.18rem; }
+    .kit-price-panel .kit-price-final strong { color:#DDAF34; }
+    .kit-selection-heading { display:flex; justify-content:space-between; align-items:end; gap:1rem; margin:2.6rem 0 1rem; }
+    .kit-item-card { border-radius:8px; overflow:hidden; }
+    .kit-item-card .kit-item-image { position:relative; aspect-ratio:1; background:#090909; }
+    .kit-item-card .kit-item-image:after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 58%,rgba(0,0,0,.35)); pointer-events:none; }
+
     #summary-bar {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
       background: #111111; border-top: 1px solid rgba(221,175,52,.2);
@@ -126,12 +144,18 @@
 
   <!-- CONTEÚDO -->
   <main id="page-content" class="hidden max-w-5xl mx-auto px-6 py-10 w-full flex-1 pb-32">
-    <div class="mb-8">
-      <span class="font-mono text-xs text-freo-orange uppercase tracking-widest">✦ Kit Configurável</span>
-      <h1 id="kit-title" class="font-display font-black text-3xl md:text-4xl uppercase tracking-tighter text-white mt-2"></h1>
-      <p id="kit-instructions" class="font-mono text-sm text-white/40 mt-2"></p>
-    </div>
+    <section class="kit-studio p-5 md:p-8 grid md:grid-cols-[1fr_210px] gap-7 md:gap-10 items-center">
+      <div class="relative z-10 order-2 md:order-1">
+        <span class="font-mono text-xs text-freo-orange uppercase tracking-widest">✦ Experiência Freo · Kit configurável</span>
+        <h1 id="kit-title" class="font-display font-black text-4xl md:text-6xl uppercase tracking-tighter text-white mt-2 leading-none"></h1>
+        <p id="kit-instructions" class="font-body text-sm md:text-base text-white/55 mt-4 max-w-xl"></p>
+        <span id="kit-benefit" class="kit-benefit mt-5"></span>
+        <div class="kit-price-panel"><div><small>Itens escolhidos</small><strong id="kit-hero-original">R$ 0,00</strong></div><div class="kit-price-final"><small>Seu preço no kit</small><strong id="kit-hero-final">R$ 0,00</strong></div></div>
+      </div>
+      <div id="kit-cover-art" class="kit-cover-art relative z-10 order-1 md:order-2" aria-label="Capa do kit"></div>
+    </section>
 
+    <div class="kit-selection-heading"><div><span class="font-mono text-xs text-freo-orange uppercase tracking-widest">Itens que podem fazer parte</span><h2 class="font-display font-bold text-2xl uppercase tracking-tight mt-1">Escolha sua combinação</h2></div><span id="kit-items-total" class="font-mono text-xs text-white/35"></span></div>
     <div id="kit-items-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
   </main>
 
@@ -185,6 +209,21 @@
       return Math.max(0, Math.round(result * 100) / 100);
     }
 
+    function renderKitCover() {
+      var cover = document.getElementById('kit-cover-art');
+      var customImage = kitProduct && Array.isArray(kitProduct.images) && kitProduct.images[0];
+      if (customImage) {
+        cover.innerHTML = '<img src="' + customImage + '" alt="' + (kitProduct.title || 'Kit FreoFigures') + '">';
+        return;
+      }
+      var cells = eligibleItems.slice(0, 4).map(function(item) {
+        var image = item.images && item.images[0];
+        return image ? '<img src="' + image + '" alt="">' : '<span class="grid place-items-center bg-white/5 text-freo-orange/50">✦</span>';
+      });
+      while (cells.length < 4) cells.push('<span class="grid place-items-center bg-white/[.04] text-white/10">+</span>');
+      cover.innerHTML = '<div class="kit-cover-auto">' + cells.join('') + '</div>';
+    }
+
     function toggleItem(id) {
       var idx = selectedIds.indexOf(id);
       if (idx >= 0) {
@@ -208,7 +247,7 @@
         var thumb = (item.images && item.images.length > 0) ? item.images[0] : null;
         return '<div class="kit-item-card' + (isSelected ? ' selected' : '') + (isDisabled ? ' disabled' : '') + '" onclick="toggleItem(\'' + item.id + '\')">'
           + '<div class="kit-item-check">' + (isSelected ? '<svg width="12" height="12" fill="none" stroke="#0A0A0A" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : '') + '</div>'
-          + '<div class="aspect-square bg-freo-black overflow-hidden">'
+          + '<div class="kit-item-image">'
           + (thumb ? '<img src="' + thumb + '" class="w-full h-full object-cover" alt="">' : '<div class="w-full h-full flex items-center justify-center text-white/10">—</div>')
           + '</div>'
           + '<div class="p-3">'
@@ -237,6 +276,8 @@
         origEl.classList.add('hidden');
       }
       document.getElementById('summary-price-final').innerText = formatCurrency(final);
+      document.getElementById('kit-hero-original').innerText = formatCurrency(sum);
+      document.getElementById('kit-hero-final').innerText = formatCurrency(final);
 
       var btn = document.getElementById('btn-add-kit');
       btn.disabled = count !== slots;
@@ -270,9 +311,8 @@
       var sum = selectedItems.reduce(function(acc, item) { return acc + getItemPrice(item); }, 0);
       var finalPrice = applyKitDiscount(sum, kitProduct.kit_discount_type, kitProduct.kit_discount_value);
       var variantStr = 'Kit: ' + selectedItems.map(function(item) { return item.title; }).join(', ');
-      var thumb = selectedItems.length > 0 && selectedItems[0].images && selectedItems[0].images.length > 0
-        ? selectedItems[0].images[0]
-        : null;
+      var thumb = kitProduct.images && kitProduct.images.length ? kitProduct.images[0]
+        : (selectedItems.length > 0 && selectedItems[0].images && selectedItems[0].images.length > 0 ? selectedItems[0].images[0] : null);
 
       try {
         var r = await window.supabaseClient.from('cart_items').insert({
@@ -299,14 +339,16 @@
 
     async function init() {
       try {
-        var kitRes = await window.supabaseClient
+        var requestedKitId = new URLSearchParams(window.location.search).get('id');
+        var kitQuery = window.supabaseClient
           .from('products')
           .select('*')
           .eq('is_kit', true)
           .eq('kit_type', 'configurable')
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle();
+          .eq('is_active', true);
+        if (requestedKitId) kitQuery = kitQuery.eq('id', requestedKitId);
+        else kitQuery = kitQuery.limit(1);
+        var kitRes = await kitQuery.maybeSingle();
 
         if (kitRes.error || !kitRes.data) {
           document.getElementById('page-loading').classList.add('hidden');
@@ -341,7 +383,13 @@
         document.getElementById('kit-title').innerText = kitProduct.title || 'Monte seu Kit';
         document.getElementById('kit-instructions').innerText =
           'Escolha ' + kitProduct.kit_slots + ' de ' + eligibleItems.length + ' produtos disponíveis para montar seu kit com desconto.';
+        document.getElementById('kit-items-total').innerText = eligibleItems.length + ' itens disponíveis';
+        var discount = Number(kitProduct.kit_discount_value) || 0;
+        document.getElementById('kit-benefit').innerText = kitProduct.kit_discount_type === 'fixed'
+          ? formatCurrency(discount) + ' de desconto no kit'
+          : discount > 0 ? discount + '% de desconto no kit' : 'Preço especial de kit';
 
+        renderKitCover();
         renderGrid();
         updateSummary();
 

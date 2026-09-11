@@ -98,8 +98,28 @@ async function loadKitFixedItems(p) {
         throw new Error('O preço deste kit está indisponível.');
     kitFixedPrice = applyKitDiscount(sum, p.kit_discount_type, p.kit_discount_value);
 }
+function renderKitPurchaseCard(p) {
+    var card = el('kit-purchase-card');
+    if (!card)
+        return;
+    var isFixedKit = p && p.is_kit && p.kit_type === 'fixed' && kitFixedItems.length;
+    card.classList.toggle('hidden', !isFixedKit);
+    if (!isFixedKit)
+        return;
+    var individualTotal = kitFixedItems.reduce(function (sum, item) { return sum + basePrice(item); }, 0);
+    var savings = Math.max(0, individualTotal - kitFixedPrice);
+    text('kit-purchase-savings', savings > 0 ? 'Economize ' + formatCurrency(savings) : 'Seleção especial');
+    var price = el('kit-purchase-price');
+    price.innerHTML = 'Avulso: <s>' + formatCurrency(individualTotal) + '</s> <span aria-hidden="true">→</span> No kit: <strong>' + formatCurrency(kitFixedPrice) + '</strong>';
+    el('kit-purchase-items').innerHTML = kitFixedItems.map(function (item) {
+        var image = imageUrls(item)[0];
+        return '<article class="kit-purchase-item">' + (image ? '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(item.title) + '" loading="lazy">' : '<span class="kit-item-empty" aria-hidden="true">✦</span>') + '<span title="' + escapeHtml(item.title) + '">' + escapeHtml(item.title) + '</span></article>';
+    }).join('');
+}
 function applyEditorial(p) {
     var category = normalized(p.category), copy = ['Seu universo.', 'Bem de perto.'];
+    if (p.is_kit && p.kit_type === 'fixed')
+        copy = ['Sua coleção.', 'Completa.'];
     if (/anime|games|filmes|series|geek/.test(category))
         copy = ['Seu universo.', 'Fora da tela.'];
     else if (/keycap|setup/.test(category))
@@ -111,8 +131,8 @@ function applyEditorial(p) {
     text('editorial-line-one', copy[0]);
     text('editorial-line-two', copy[1]);
     text('edition-number', 'FIG. ' + String(p.id).padStart(4, '0'));
-    text('edition-category', String(p.category || 'FREOFIGURES').toUpperCase());
-    text('stage-label', 'FREO / ' + String(p.category || 'FIGURES').toUpperCase());
+    text('edition-category', String(p.is_kit ? 'KIT EXCLUSIVO' : (p.category || 'FREOFIGURES')).toUpperCase());
+    text('stage-label', 'FREO / ' + String(p.is_kit ? 'KIT' : (p.category || 'FIGURES')).toUpperCase());
 }
 function optionVisual(group, option) {
     if (/cor|color/.test(normalized(group.name))) {
@@ -451,7 +471,7 @@ async function renderProduct(p) {
     document.title = (p.title || 'Produto') + ' | FreoFigures';
     text('product-title', p.title);
     el('product-title').classList.toggle('long-title', String(p.title).length > 55);
-    text('product-category', p.category || 'Coleção Freo');
+    text('product-category', p.is_kit ? 'Kit exclusivo' : (p.category || 'Coleção Freo'));
     applyEditorial(p);
     var tags = asArray(p.tags);
     if (!tags.length && typeof p.tags === 'string' && !p.tags.startsWith('['))
@@ -460,6 +480,7 @@ async function renderProduct(p) {
     renderStock();
     renderVariants();
     renderDescription(p);
+    renderKitPurchaseCard(p);
     syncPurchase(false);
     galleryItems = imageUrls(p).map(function (url) { return { type: 'image', src: url }; });
     var youtube = getYouTubeEmbed(p.video_url), videoUrl = safeUrl(p.video_url);

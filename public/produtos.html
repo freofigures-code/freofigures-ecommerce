@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Produtos | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#111111',
+            'freo-card': '#181818',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#DDAF34',
+            'freo-muted': '#888',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #0A0A0A; }
+
+    .fi { width:100%; background:#0D0D0D; border:1px solid rgba(255,255,255,0.08); color:#F5F5F5; padding:.7rem 1rem; font-family:'Space Grotesk',sans-serif; font-size:.875rem; outline:none; transition:border-color .15s; border-radius:2px; }
+    .fi:focus { border-color:#DDAF34; }
+    .fi::placeholder { color:rgba(245,245,245,.2); }
+    textarea.fi { resize:vertical; min-height:90px; }
+    select.fi { appearance:none; cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .75rem center; }
+    select.fi option { background:#111; }
+    .fl { display:block; font-family:ui-monospace,monospace; font-size:.65rem; color:rgba(245,245,245,.35); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
+
+    .product-card { background:#141414; border:1px solid rgba(255,255,255,.06); transition:border-color .2s, transform .15s; cursor:pointer; }
+    .product-card:hover { border-color:rgba(221,175,52,.3); transform:translateY(-1px); }
+
+    .img-drop { border:2px dashed rgba(255,255,255,.1); transition:border-color .2s,background .2s; cursor:pointer; }
+    .img-drop:hover, .img-drop.dragover { border-color:#DDAF34; background:rgba(221,175,52,.04); }
+
+    .img-thumb { position:relative; width:80px; height:80px; border:1px solid rgba(255,255,255,.08); flex-shrink:0; overflow:hidden; cursor:grab; transition:opacity .15s, transform .15s, border-color .15s; }
+    .img-thumb:active { cursor:grabbing; }
+    .img-thumb.dragging { opacity:0.35; transform:scale(0.95); border-color:rgba(221,175,52,.5); }
+    .img-thumb.drag-over { border-color:#DDAF34; transform:scale(1.06); box-shadow:0 0 0 2px rgba(221,175,52,.3); }
+    .img-thumb img { width:100%; height:100%; object-fit:cover; }
+    .img-thumb .del-img { position:absolute; top:2px; right:2px; background:rgba(0,0,0,.7); border:none; color:#ef4444; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; opacity:0; transition:opacity .15s; border-radius:2px; }
+    .img-thumb:hover .del-img { opacity:1; }
+
+    /* Variantes */
+    .variant-block { background:#0D0D0D; border:1px solid rgba(255,255,255,.06); border-radius:4px; overflow:hidden; }
+    .variant-block-header { display:flex; align-items:center; gap:8px; padding:.6rem .75rem; border-bottom:1px solid rgba(255,255,255,.05); background:#0A0A0A; }
+    .variant-name-input { flex:1; background:transparent; border:none; outline:none; color:#F5F5F5; font-family:'Space Grotesk',sans-serif; font-size:.85rem; font-weight:600; }
+    .variant-name-input::placeholder { color:rgba(245,245,245,.2); font-weight:400; }
+
+    .price-toggle-row { display:flex; align-items:center; gap:8px; padding:.45rem .75rem; border-bottom:1px solid rgba(255,255,255,.04); background:#090909; }
+    .toggle-track { position:relative; width:32px; height:17px; flex-shrink:0; cursor:pointer; }
+    .toggle-track-bg { position:absolute; inset:0; border-radius:100px; transition:background .2s; }
+    .toggle-thumb { position:absolute; top:2px; width:13px; height:13px; background:#fff; border-radius:50%; transition:left .2s; }
+
+    .variant-options-wrap { padding:.5rem .75rem; display:flex; flex-direction:column; gap:5px; }
+    .opt-row { display:flex; align-items:center; gap:6px; background:#111; border:1px solid rgba(255,255,255,.05); border-radius:2px; padding:.3rem .5rem; }
+    .opt-name-input { flex:1; background:transparent; border:none; outline:none; color:#F5F5F5; font-family:'Space Grotesk',sans-serif; font-size:.8rem; min-width:60px; }
+    .opt-name-input::placeholder { color:rgba(245,245,245,.2); }
+    .opt-price-wrap { display:flex; align-items:center; gap:3px; background:#0A0A0A; border:1px solid rgba(255,255,255,.07); border-radius:2px; padding:0 6px; flex-shrink:0; }
+    .opt-price-prefix { font-family:ui-monospace,monospace; font-size:.65rem; color:rgba(221,175,52,.45); white-space:nowrap; }
+    .opt-price-input { width:68px; background:transparent; border:none; outline:none; color:#DDAF34; font-family:ui-monospace,monospace; font-size:.75rem; text-align:right; padding:4px 0; }
+    .opt-price-input::placeholder { color:rgba(221,175,52,.2); }
+    .opt-del-btn { background:none; border:none; cursor:pointer; color:rgba(239,68,68,.3); transition:color .15s; flex-shrink:0; display:flex; align-items:center; padding:0; }
+    .opt-del-btn:hover { color:#ef4444; }
+
+    .variant-add-opt-btn { display:flex; align-items:center; gap:4px; font-family:ui-monospace,monospace; font-size:.65rem; color:rgba(245,245,245,.25); text-transform:uppercase; letter-spacing:.06em; cursor:pointer; background:none; border:none; padding:.45rem .75rem; border-top:1px solid rgba(255,255,255,.04); width:100%; transition:color .15s; }
+    .variant-add-opt-btn:hover { color:#DDAF34; }
+
+    .tag-pill { display:inline-flex; align-items:center; gap:4px; background:rgba(221,175,52,.1); border:1px solid rgba(221,175,52,.25); color:#DDAF34; font-family:ui-monospace,monospace; font-size:.7rem; padding:2px 8px; border-radius:2px; }
+    .badge-active { background:rgba(34,197,94,.1); color:#22c55e; border:1px solid rgba(34,197,94,.2); }
+    .badge-inactive { background:rgba(239,68,68,.1); color:#ef4444; border:1px solid rgba(239,68,68,.2); }
+    .modal-overlay { background:rgba(0,0,0,.85); backdrop-filter:blur(8px); }
+
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:#0A0A0A; }
+    ::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+    ::-webkit-scrollbar-thumb:hover { background:#DDAF34; }
+
+    #toast { position:fixed; bottom:2rem; right:2rem; z-index:9999; font-family:'Space Grotesk',sans-serif; font-size:.875rem; padding:.75rem 1.25rem; border-radius:4px; transform:translateY(120%); transition:transform .25s; pointer-events:none; max-width:320px; }
+    #toast.show { transform:translateY(0); }
+    #toast.success { background:#1a2e1a; border:1px solid rgba(34,197,94,.4); color:#86efac; }
+    #toast.error   { background:#2e1a1a; border:1px solid rgba(239,68,68,.4); color:#fca5a5; }
+    .upload-bar { height:3px; background:#DDAF34; width:0%; transition:width .3s; }
+
+    /* Toggle Varejo/B2B */
+    .view-mode-btn { background:transparent; color:rgba(245,245,245,.35); border:none; cursor:pointer; }
+    .view-mode-btn.active-varejo { background:#DDAF34; color:#000; font-weight:700; }
+    .view-mode-btn.active-b2b { background:#3B6E8F; color:#fff; font-weight:700; }
+
+    /* Faixas de preço B2B */
+    .tier-row { display:flex; align-items:center; gap:8px; background:#0D0D0D; border:1px solid rgba(255,255,255,.06); padding:.5rem .6rem; border-radius:2px; }
+    .tier-input { background:transparent; border:none; outline:none; color:#F5F5F5; font-family:ui-monospace,monospace; font-size:.8rem; width:100%; }
+    .tier-del-btn { background:none; border:none; cursor:pointer; color:rgba(239,68,68,.35); flex-shrink:0; display:flex; align-items:center; }
+    .tier-del-btn:hover { color:#ef4444; }
+    .b2b-badge-quote { background:rgba(221,175,52,.12); color:#DDAF34; border:1px solid rgba(221,175,52,.3); }
+
+    /* Partnership requests panel */
+    .partner-row { background:#141414; border:1px solid rgba(255,255,255,.06); padding:1rem; }
+    .partner-status-pending   { background:rgba(245,158,11,.1); color:#f59e0b; border:1px solid rgba(245,158,11,.25); }
+    .partner-status-in_review{ background:rgba(59,130,246,.1); color:#60a5fa; border:1px solid rgba(59,130,246,.25); }
+    .partner-status-approved { background:rgba(34,197,94,.1); color:#4ade80; border:1px solid rgba(34,197,94,.25); }
+    .partner-status-rejected { background:rgba(239,68,68,.1); color:#f87171; border:1px solid rgba(239,68,68,.25); }
+  </style>
+</head>
+<body class="text-freo-light font-body antialiased min-h-screen flex flex-col">
+
+  <!-- NAV -->
+  <nav class="bg-freo-dark border-b border-white/[0.06] py-3 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="/dashboard.html" class="text-freo-light/40 hover:text-freo-orange transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </a>
+        <div class="flex items-center gap-2">
+          <span class="font-display font-black text-xl tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
+          <span class="text-white/20 font-mono text-xs">/</span>
+          <span class="font-mono text-xs text-freo-orange uppercase tracking-widest">Admin</span>
+          <span class="text-white/20 font-mono text-xs">/</span>
+          <span class="font-mono text-xs text-white/40 uppercase tracking-widest">Produtos</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="admin-badge" class="hidden font-mono text-[10px] bg-freo-orange/10 border border-freo-orange/30 text-freo-orange px-2 py-1 uppercase tracking-widest">Admin</span>
+        <div class="flex border border-white/10 rounded overflow-hidden mr-1">
+          <button onclick="setViewMode('varejo')" id="mode-varejo" class="view-mode-btn font-mono text-xs uppercase tracking-widest px-3 py-2 transition-colors">Varejo</button>
+          <button onclick="setViewMode('b2b')" id="mode-b2b" class="view-mode-btn font-mono text-xs uppercase tracking-widest px-3 py-2 transition-colors">B2B</button>
+        </div>
+        <button onclick="openImport()" class="flex items-center gap-2 border border-freo-orange/40 text-freo-orange font-mono text-xs uppercase tracking-widest px-4 py-2 hover:bg-freo-orange hover:text-freo-black transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          Importar Shopee
+        </button>
+        <button onclick="openKitModal(null)" class="flex items-center gap-2 border border-white/15 text-white/70 font-mono text-xs uppercase tracking-widest px-4 py-2 hover:border-freo-orange hover:text-freo-orange transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Novo Kit
+        </button>
+        <button onclick="openForm(null)" class="flex items-center gap-2 bg-freo-orange text-freo-black font-display font-bold uppercase text-xs tracking-widest px-4 py-2 hover:bg-white transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Novo Produto
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══════ AJUSTE DE PREÇO EM MASSA ══════ -->
+  <div id="bulk-price-bar" class="hidden bg-freo-dark border-b border-freo-orange/20 py-3">
+    <div class="max-w-7xl mx-auto px-6 flex items-center gap-3 flex-wrap">
+      <span class="font-mono text-xs text-freo-orange uppercase tracking-widest flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 10v-2m0-8a3.75 3.75 0 000 8M12 20a8 8 0 100-16 8 8 0 000 16z"/></svg>
+        Ajustar preços em massa
+      </span>
+      <select id="bulk-op" class="fi py-2" style="width:110px">
+        <option value="add">Somar</option>
+        <option value="subtract">Subtrair</option>
+      </select>
+      <div class="flex items-center gap-1">
+        <span class="font-mono text-xs text-white/40">R$</span>
+        <input type="number" id="bulk-value" class="fi py-2" style="width:110px" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <select id="bulk-scope" class="fi py-2" style="width:170px">
+        <option value="all">Todos os produtos</option>
+        <option value="active">Somente ativos</option>
+        <option value="inactive">Somente inativos</option>
+      </select>
+      <label class="flex items-center gap-2 font-mono text-xs text-white/40 cursor-pointer select-none">
+        <input type="checkbox" id="bulk-include-variants" checked class="w-3.5 h-3.5">
+        Incluir preços de variantes
+      </label>
+      <button onclick="openBulkConfirm()" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-xs tracking-widest px-4 py-2 hover:bg-white transition-colors">
+        Aplicar
+      </button>
+      <span id="bulk-status" class="font-mono text-xs text-white/30"></span>
+    </div>
+  </div>
+
+  <div id="page-loading" class="flex-1 flex items-center justify-center min-h-[60vh]">
+    <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <main id="main-content" class="hidden max-w-7xl mx-auto px-6 py-8 w-full flex-1">
+
+    <!-- ══════ PAINEL B2B: Solicitações de Parceria (só aparece em modo B2B) ══════ -->
+    <div id="b2b-partnerships-panel" class="hidden mb-8 border border-white/10 bg-freo-dark">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-white/[0.07]">
+        <h2 class="font-display font-black uppercase text-sm text-white flex items-center gap-2">
+          <svg class="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 3c0 1.657-3.134 3-7 3s-7-1.343-7-3"/></svg>
+          Solicitações de Parceria/Fornecedor
+          <span id="partnerships-badge" class="font-mono text-[10px] bg-freo-orange text-freo-black px-2 py-0.5 rounded-full font-bold">0</span>
+        </h2>
+      </div>
+      <div id="partnerships-list" class="p-5 space-y-3"></div>
+      <div id="partnerships-empty" class="hidden p-8 text-center">
+        <p class="font-mono text-xs text-white/25">Nenhuma solicitação de parceria ainda.</p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="filterStatus('all')" id="filter-all" class="filter-btn active font-mono text-xs uppercase tracking-widest px-3 py-1.5 border border-freo-orange text-freo-orange">Todos</button>
+        <button onclick="filterStatus('active')" id="filter-active" class="filter-btn font-mono text-xs uppercase tracking-widest px-3 py-1.5 border border-white/10 text-white/40 hover:border-white/30 transition-colors">Ativos</button>
+        <button onclick="filterStatus('inactive')" id="filter-inactive" class="filter-btn font-mono text-xs uppercase tracking-widest px-3 py-1.5 border border-white/10 text-white/40 hover:border-white/30 transition-colors">Inativos</button>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+          <input type="text" id="search-input" class="fi pl-9 w-56 py-2" placeholder="Buscar produto..." oninput="renderList()">
+        </div>
+        <span id="product-count" class="font-mono text-xs text-white/30">0 produtos</span>
+      </div>
+    </div>
+    <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+    <div id="list-empty" class="hidden text-center py-20">
+      <div class="text-6xl mb-4">📦</div>
+      <p class="font-display font-bold text-xl text-white/20 uppercase">Nenhum produto ainda</p>
+      <p class="font-mono text-sm text-white/20 mt-2 mb-6">Clique em "Novo Produto" para começar</p>
+      <button onclick="openForm(null)" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm px-6 py-3 hover:bg-white transition-colors">+ Adicionar primeiro produto</button>
+    </div>
+  </main>
+
+  <!-- PAINEL LATERAL -->
+  <div id="form-overlay" class="fixed inset-0 z-50 hidden modal-overlay" onclick="handleOverlayClick(event)">
+    <div id="form-panel" class="absolute right-0 top-0 h-full w-full max-w-2xl bg-freo-dark border-l border-white/[0.07] flex flex-col shadow-2xl" style="overflow:hidden">
+
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] flex-shrink-0">
+        <div>
+          <h2 id="form-title" class="font-display font-black uppercase text-xl text-white">Novo Produto</h2>
+          <p id="form-subtitle" class="font-mono text-xs text-white/30 mt-0.5">Preencha as informações abaixo</p>
+        </div>
+        <button onclick="closeForm()" class="text-white/30 hover:text-white transition-colors p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="flex border-b border-white/[0.07] flex-shrink-0 px-6">
+        <button onclick="showTab('tab-basic')" id="btn-tab-basic" class="form-tab active py-3 mr-6 font-mono text-xs uppercase tracking-widest text-freo-orange border-b-2 border-freo-orange">Básico</button>
+        <button onclick="showTab('tab-images')" id="btn-tab-images" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Imagens</button>
+        <button onclick="showTab('tab-variants')" id="btn-tab-variants" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">Variantes</button>
+        <button onclick="showTab('tab-seo')" id="btn-tab-seo" class="form-tab py-3 mr-6 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">SEO</button>
+        <button onclick="showTab('tab-b2b')" id="btn-tab-b2b" class="form-tab py-3 font-mono text-xs uppercase tracking-widest text-white/30 border-b-2 border-transparent hover:text-white/60 transition-colors">B2B</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto">
+
+        <!-- ABA BÁSICO -->
+        <div id="tab-basic" class="form-tab-content p-6 space-y-5">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+              <label class="fl">Título do produto *</label>
+              <input type="text" id="f-title" class="fi" placeholder="Ex: Estátua Kratos God of War 1/4">
+            </div>
+            <div>
+              <label class="fl">Preço base (R$) *</label>
+              <input type="number" id="f-price" class="fi" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div>
+              <label class="fl">Preço promocional</label>
+              <input type="number" id="f-promo" class="fi" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div>
+              <label class="fl">Estoque</label>
+              <input type="number" id="f-stock" class="fi" placeholder="0" min="0">
+            </div>
+            <div>
+              <label class="fl">Categoria</label>
+              <select id="f-category" class="fi">
+                <option value="">Selecionar</option>
+                <option value="religioso">Religioso</option>
+                <option value="games">Games</option>
+                <option value="anime">Anime</option>
+                <option value="filmes">Filmes / Séries</option>
+                <option value="keycaps">Keycaps</option>
+                <option value="personalizado">Personalizado</option>
+                <option value="lifestyle">Lifestyle</option>
+                <option value="outros">Outros</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="fl">Descrição</label>
+            <textarea id="f-description" class="fi" placeholder="Descreva o produto, materiais, dimensões, acabamento..."></textarea>
+          </div>
+          <div>
+            <label class="fl">Tags <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">(Enter para adicionar)</span></label>
+            <div class="fi flex flex-wrap gap-1.5 min-h-[42px] cursor-text" id="tags-container" onclick="document.getElementById('tag-input').focus()">
+              <input type="text" id="tag-input" style="background:transparent;outline:none;border:none;color:#F5F5F5;font-family:'Space Grotesk',sans-serif;font-size:.875rem;min-width:80px;flex:1" placeholder="Ex: 3d impresso, resina, colecionável..." onkeydown="handleTagInput(event)">
+            </div>
+          </div>
+          <div class="flex items-center gap-3 pt-1">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="f-active" class="sr-only peer" checked>
+              <div class="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-freo-orange transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-4 after:h-4 after:transition-transform peer-checked:after:translate-x-5"></div>
+            </label>
+            <span class="font-mono text-xs text-white/50 uppercase tracking-widest">Produto ativo (visível na loja)</span>
+          </div>
+        </div>
+
+        <!-- ABA IMAGENS -->
+        <div id="tab-images" class="form-tab-content hidden p-6 space-y-5">
+        
+          <!-- Drop zone de imagens -->
+          <div id="drop-zone" class="img-drop rounded p-8 text-center"
+            onclick="document.getElementById('file-input').click()"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event)">
+            <input type="file" id="file-input" accept="image/*" multiple class="hidden"
+              onchange="handleFileSelect(event)">
+            <svg class="w-10 h-10 text-white/20 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <p class="font-mono text-sm text-white/40">Clique ou arraste as fotos aqui</p>
+            <p class="font-mono text-xs text-white/20 mt-1">JPG, PNG, WEBP · até 5MB por imagem · múltiplas</p>
+          </div>
+        
+          <!-- Barra de progresso das imagens -->
+          <div id="upload-progress-wrap" class="hidden">
+            <div class="flex justify-between mb-1">
+              <span class="font-mono text-xs text-white/40">Enviando imagens...</span>
+              <span id="upload-pct" class="font-mono text-xs text-freo-orange">0%</span>
+            </div>
+            <div class="bg-white/10 h-1 rounded overflow-hidden">
+              <div id="upload-progress-bar" class="upload-bar h-full"></div>
+            </div>
+          </div>
+        
+          <!-- Grid de previews das imagens -->
+          <div>
+            <label class="fl mb-2">Imagens do produto <span id="img-count" class="text-freo-orange">(0)</span></label>
+            <div id="img-preview-grid" class="flex flex-wrap gap-2"></div>
+            <p class="font-mono text-xs text-white/20 mt-2">A primeira imagem é a foto principal. Arraste para reordenar.</p>
+          </div>
+        
+          <!-- Adicionar imagem por URL -->
+          <div class="pt-2 border-t border-white/[0.06]">
+            <label class="fl">Ou adicione por URL</label>
+            <div class="flex gap-2">
+              <input type="url" id="img-url-input" class="fi py-2" placeholder="https://...">
+              <button onclick="addImageByURL()"
+                class="flex-shrink-0 px-4 bg-freo-orange/10 border border-freo-orange/30
+                       text-freo-orange font-mono text-xs hover:bg-freo-orange
+                       hover:text-freo-black transition-colors whitespace-nowrap">
+                + Adicionar
+              </button>
+            </div>
+          </div>
+        
+          <!-- ─── BLOCO DE VÍDEO ─────────────────────────────────────────────── -->
+          <div class="pt-4 border-t border-white/[0.06] space-y-3">
+        
+            <label class="fl">Vídeo do produto</label>
+        
+            <!-- Preview do vídeo já salvo (oculto por padrão) -->
+            <div id="video-preview-wrap" class="hidden">
+              <video id="video-preview-el"
+                class="w-full rounded border border-white/[0.06] bg-black"
+                style="max-height:220px"
+                controls muted playsinline>
+              </video>
+              <div class="flex items-center justify-between mt-2">
+                <span id="video-preview-name"
+                  class="font-mono text-xs text-white/30 truncate max-w-xs"></span>
+                <button onclick="removeVideo()"
+                  class="font-mono text-xs text-red-500/50 hover:text-red-400
+                         border border-red-500/20 hover:border-red-500/40
+                         px-3 py-1 transition-colors uppercase tracking-widest">
+                  Remover vídeo
+                </button>
+              </div>
+            </div>
+        
+            <!-- Drop zone do vídeo -->
+            <div id="video-drop-zone"
+              class="img-drop rounded p-8 text-center"
+              onclick="document.getElementById('video-file-input').click()"
+              ondragover="handleVideoDragOver(event)"
+              ondragleave="handleVideoDragLeave(event)"
+              ondrop="handleVideoDrop(event)">
+              <input type="file" id="video-file-input"
+                accept="video/mp4,video/webm,video/mov,video/quicktime"
+                class="hidden" onchange="handleVideoFileSelect(event)">
+              <svg class="w-10 h-10 text-white/20 mx-auto mb-3" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15
+                     14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0
+                     01-2-2V8z"/>
+              </svg>
+              <p class="font-mono text-sm text-white/40">Clique ou arraste o vídeo aqui</p>
+              <p class="font-mono text-xs text-white/20 mt-1">MP4, WEBM, MOV · até 100MB</p>
+            </div>
+        
+            <!-- Barra de progresso do vídeo -->
+            <div id="video-upload-progress-wrap" class="hidden">
+              <div class="flex justify-between mb-1">
+                <span class="font-mono text-xs text-white/40">Enviando vídeo...</span>
+                <span id="video-upload-pct" class="font-mono text-xs text-freo-orange">0%</span>
+              </div>
+              <div class="bg-white/10 h-1 rounded overflow-hidden">
+                <div id="video-upload-progress-bar" class="upload-bar h-full" style="width:0%"></div>
+              </div>
+            </div>
+        
+            <!-- URL externa como fallback (YouTube / Vimeo) -->
+            <div>
+              <label class="fl">
+                Ou use URL externa
+                <span style="text-transform:none;font-style:italic;color:rgba(245,245,245,.2)">
+                  (YouTube / Vimeo)
+                </span>
+              </label>
+              <input type="url" id="f-video" class="fi"
+                placeholder="https://youtube.com/watch?v=...">
+            </div>
+        
+          </div>
+          <!-- ─── FIM DO BLOCO DE VÍDEO ──────────────────────────────────────── -->
+        
+        </div>
+
+        <!-- ABA VARIANTES -->
+        <div id="tab-variants" class="form-tab-content hidden p-6 space-y-5">
+          <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
+            <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div class="font-mono text-xs text-white/40 leading-relaxed space-y-1">
+              <p>Crie variantes como <strong style="color:rgba(221,175,52,.7)">Tamanho</strong> ou <strong style="color:rgba(221,175,52,.7)">Cor</strong> e adicione quantas opções quiser.</p>
+              <p style="color:rgba(245,245,245,.2)">Ative <strong style="color:rgba(221,175,52,.5)">Preço por opção</strong> para definir um preço diferente em cada tamanho/cor. Deixe em branco para usar o preço base.</p>
+            </div>
+          </div>
+          <div id="variants-list" class="space-y-4"></div>
+          <button onclick="addVariant()" class="w-full border border-dashed border-white/10 py-3 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors">
+            + Adicionar variante
+          </button>
+        </div>
+
+        <!-- ABA SEO -->
+        <div id="tab-seo" class="form-tab-content hidden p-6 space-y-5">
+          <div class="flex items-start gap-3 p-4 bg-white/[0.03] border border-white/[0.06]">
+            <svg class="w-4 h-4 text-white/30 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+            <p class="font-mono text-xs text-white/30 leading-relaxed">SEO ajuda o produto a aparecer no Google. Se deixar em branco, usará o título e descrição do produto.</p>
+          </div>
+          <div>
+            <label class="fl">Título SEO <span style="text-transform:none;color:rgba(245,245,245,.2)">(max 60 chars)</span></label>
+            <input type="text" id="f-seo-title" class="fi" placeholder="Título para o Google..." maxlength="60" oninput="updateSEOCount(this,'seo-title-count',60)">
+            <span id="seo-title-count" class="font-mono text-[10px] text-white/20 mt-1 block text-right">0/60</span>
+          </div>
+          <div>
+            <label class="fl">Descrição SEO <span style="text-transform:none;color:rgba(245,245,245,.2)">(max 160 chars)</span></label>
+            <textarea id="f-seo-desc" class="fi" placeholder="Descrição para o Google..." maxlength="160" style="min-height:70px" oninput="updateSEOCount(this,'seo-desc-count',160)"></textarea>
+            <span id="seo-desc-count" class="font-mono text-[10px] text-white/20 mt-1 block text-right">0/160</span>
+          </div>
+          <div class="border border-white/[0.06] p-4 rounded">
+            <p class="font-mono text-[10px] text-white/25 uppercase tracking-widest mb-3">Preview no Google</p>
+            <p class="text-blue-400 text-sm hover:underline cursor-pointer font-sans truncate" id="seo-preview-title">Título do produto</p>
+            <p class="font-mono text-[11px] text-green-600">freofigures.com.br/produto</p>
+            <p class="font-sans text-xs text-white/40 mt-1 leading-relaxed" id="seo-preview-desc">Descrição do produto aparecerá aqui...</p>
+          </div>
+        </div>
+
+        <!-- ABA B2B -->
+        <div id="tab-b2b" class="form-tab-content hidden p-6 space-y-5">
+
+          <div class="flex items-start gap-3 p-4 border" style="background:rgba(59,110,143,.06);border-color:rgba(59,110,143,.25)">
+            <svg class="w-4 h-4 flex-shrink-0 mt-0.5" style="color:#3B6E8F" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p class="font-mono text-xs text-white/40 leading-relaxed">Configure aqui como este produto aparece no catálogo B2B (freofigures.com.br/b2b.html). Salvo separadamente do produto — use o botão específico abaixo.</p>
+          </div>
+
+          <div>
+            <label class="fl">Modo de venda no B2B</label>
+            <select id="f-sale-mode" class="fi">
+              <option value="normal">Normal — preço por faixa de quantidade</option>
+              <option value="quote_only">Somente cotação via WhatsApp</option>
+            </select>
+            <p id="sale-mode-hint" class="font-mono text-[10px] text-white/20 mt-1.5"></p>
+          </div>
+
+          <div id="tiers-editor-wrap">
+            <div class="flex items-center justify-between mb-2">
+              <label class="fl mb-0">Faixas de preço por quantidade</label>
+              <span id="tiers-save-status" class="font-mono text-[10px] text-white/20"></span>
+            </div>
+            <div id="tiers-list" class="space-y-2"></div>
+            <button onclick="addTier()" type="button" class="w-full mt-2 border border-dashed border-white/10 py-2.5 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors">
+              + Adicionar faixa
+            </button>
+            <button onclick="saveTiers()" id="save-tiers-btn" type="button" class="w-full mt-3 py-2.5 font-mono text-xs uppercase tracking-widest transition-colors" style="background:#3B6E8F;color:#fff">
+              Salvar faixas de preço
+            </button>
+          </div>
+
+        </div>
+
+        </div>
+
+      <!-- Footer -->
+      <div class="border-t border-white/[0.07] px-6 py-4 flex items-center gap-3 flex-shrink-0 bg-freo-dark">
+        <button id="form-delete-btn" onclick="confirmDelete()" class="hidden text-xs font-mono text-red-500/50 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 transition-colors uppercase tracking-widest">Excluir produto</button>
+        <div class="flex-1"></div>
+        <button onclick="closeForm()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
+        <button onclick="saveProduct()" id="form-save-btn" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-6 py-2.5 hover:bg-white transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="/auth-listener.js"></script>
+
+  <script>
+  // ─────────────────────────────────────────────────────────────────────────
+  // ESTADO GLOBAL
+  // ─────────────────────────────────────────────────────────────────────────
+  var allProducts = [];
+  var currentFilter = 'all';
+  var editingProductId = null;
+  var currentImages = [];
+  var currentTags = [];
+  var currentViewMode = 'varejo'; // 'varejo' | 'b2b'
+  var currentTiers = []; // faixas de preço do produto em edição, formato: [{id, min_qty, max_qty, unit_price, _isNew}]
+
+  /*
+    Formato interno de currentVariants:
+    [
+      {
+        name: "Tamanho",
+        per_option_price: true,
+        options: [
+          { name: "10cm", price: 50.00 },
+          { name: "15cm", price: 80.00 },
+          { name: "20cm", price: null }   // null = usa preço base
+        ]
+      }
+    ]
+
+    Salvo no banco (jsonb) exatamente com essa estrutura.
+  */
+  var currentVariants = [];
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUTH
+  // ─────────────────────────────────────────────────────────────────────────
+  window.addEventListener('auth-data-loaded', function(e) {
+    var profile = e.detail.profile;
+    if (!profile || !profile.is_admin) {
+      showToast('Acesso negado. Área restrita a administradores.', 'error');
+      setTimeout(function() { window.location.href = '/dashboard.html'; }, 1500);
+      return;
+    }
+    document.getElementById('admin-badge').classList.remove('hidden');
+    document.getElementById('bulk-price-bar').classList.remove('hidden');
+    setViewMode('varejo');
+    loadProducts();
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TOGGLE VAREJO / B2B
+  // ─────────────────────────────────────────────────────────────────────────
+  function setViewMode(mode) {
+    currentViewMode = mode;
+    var btnVarejo = document.getElementById('mode-varejo');
+    var btnB2b = document.getElementById('mode-b2b');
+    btnVarejo.classList.toggle('active-varejo', mode === 'varejo');
+    btnB2b.classList.toggle('active-b2b', mode === 'b2b');
+
+    var panel = document.getElementById('b2b-partnerships-panel');
+    if (mode === 'b2b') {
+      panel.classList.remove('hidden');
+      loadPartnerships();
+    } else {
+      panel.classList.add('hidden');
+    }
+    renderList();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SOLICITAÇÕES DE PARCERIA (b2b_partnership_requests)
+  // ─────────────────────────────────────────────────────────────────────────
+  async function loadPartnerships() {
+    var list = document.getElementById('partnerships-list');
+    var empty = document.getElementById('partnerships-empty');
+    try {
+      var r = await window.supabaseClient
+        .from('b2b_partnership_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (r.error) throw r.error;
+      var rows = r.data || [];
+      document.getElementById('partnerships-badge').innerText = rows.filter(function(x) { return x.status === 'pending'; }).length;
+
+      if (rows.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      list.innerHTML = rows.map(renderPartnerRow).join('');
+    } catch (e) {
+      list.innerHTML = '<p class="font-mono text-xs text-red-400/60">Erro ao carregar solicitações: ' + e.message + '</p>';
+    }
+  }
+
+  function renderPartnerRow(p) {
+    var statusLabel = { pending: 'Pendente', in_review: 'Em análise', approved: 'Aprovado', rejected: 'Rejeitado' };
+    var date = new Date(p.created_at).toLocaleDateString('pt-BR');
+    return '<div class="partner-row">'
+      + '<div class="flex items-start justify-between gap-4 flex-wrap">'
+      + '<div class="flex-1 min-w-[240px]">'
+      + '<div class="flex items-center gap-2 mb-1">'
+      + '<p class="font-display font-bold text-sm text-white">' + escapeHTMLAdmin(p.company_name) + '</p>'
+      + '<span class="font-mono text-[9px] px-1.5 py-0.5 uppercase partner-status-' + p.status + '">' + (statusLabel[p.status] || p.status) + '</span>'
+      + '</div>'
+      + '<p class="font-mono text-xs text-white/40">CNPJ: ' + escapeHTMLAdmin(p.cnpj) + ' · ' + date + '</p>'
+      + '<p class="font-mono text-xs text-white/40 mt-1">' + escapeHTMLAdmin(p.contact_name) + ' · ' + escapeHTMLAdmin(p.email) + ' · ' + escapeHTMLAdmin(p.phone) + '</p>'
+      + (p.segment ? '<p class="font-mono text-xs text-white/30 mt-1">Segmento: ' + escapeHTMLAdmin(p.segment) + '</p>' : '')
+      + (p.message ? '<p class="font-mono text-xs text-white/30 mt-2 border-l-2 border-white/10 pl-2">' + escapeHTMLAdmin(p.message) + '</p>' : '')
+      + '</div>'
+      + '<div class="flex flex-col gap-1.5 flex-shrink-0">'
+      + '<select class="fi py-1.5 text-xs" style="width:140px" onchange="updatePartnerStatus(\'' + p.id + '\', this.value)">'
+      + ['pending','in_review','approved','rejected'].map(function(s) {
+          return '<option value="' + s + '"' + (p.status === s ? ' selected' : '') + '>' + statusLabel[s] + '</option>';
+        }).join('')
+      + '</select>'
+      + '</div>'
+      + '</div></div>';
+  }
+
+  async function updatePartnerStatus(id, newStatus) {
+    try {
+      var r = await window.supabaseClient.from('b2b_partnership_requests').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
+      if (r.error) throw r.error;
+      showToast('Status atualizado.', 'success');
+      loadPartnerships();
+    } catch (e) {
+      showToast('Erro ao atualizar status: ' + e.message, 'error');
+    }
+  }
+
+  function escapeHTMLAdmin(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PRODUTOS
+  // ─────────────────────────────────────────────────────────────────────────
+  async function loadProducts() {
+    try {
+      var r = await window.supabaseClient.from('products').select('*').order('created_at', { ascending: false });
+      if (r.error) throw r.error;
+      allProducts = r.data || [];
+      document.getElementById('page-loading').classList.add('hidden');
+      document.getElementById('main-content').classList.remove('hidden');
+      renderList();
+    } catch(e) { showToast('Erro ao carregar produtos: ' + e.message, 'error'); }
+  }
+
+  function filterStatus(status) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(function(btn) {
+      btn.classList.remove('border-freo-orange','text-freo-orange');
+      btn.classList.add('border-white/10','text-white/40');
+    });
+    var active = document.getElementById('filter-' + status);
+    active.classList.add('border-freo-orange','text-freo-orange');
+    active.classList.remove('border-white/10','text-white/40');
+    renderList();
+  }
+
+  function renderList() {
+    var search = (document.getElementById('search-input').value || '').toLowerCase();
+    var filtered = allProducts.filter(function(p) {
+      if (currentFilter === 'active' && !p.is_active) return false;
+      if (currentFilter === 'inactive' && p.is_active) return false;
+      if (search && !p.title.toLowerCase().includes(search) && !(p.category||'').toLowerCase().includes(search)) return false;
+      return true;
+    });
+    var container = document.getElementById('product-list');
+    var emptyEl = document.getElementById('list-empty');
+    document.getElementById('product-count').innerText = filtered.length + ' produto' + (filtered.length !== 1 ? 's' : '');
+    if (filtered.length === 0) { container.innerHTML = ''; emptyEl.classList.remove('hidden'); return; }
+    emptyEl.classList.add('hidden');
+    container.innerHTML = filtered.map(function(p) {
+      var imgs = p.images || [];
+      var thumb = imgs.length > 0 ? imgs[0] : null;
+      var hasPromo = p.promotional_price && p.promotional_price < p.price;
+      var isQuoteOnly = p.sale_mode === 'quote_only';
+      var b2bBadge = '';
+      if (currentViewMode === 'b2b' && !p.is_kit) {
+        b2bBadge = isQuoteOnly
+          ? '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase b2b-badge-quote">Sob cotação</span>'
+          : '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase" style="background:rgba(59,110,143,.15);color:#5A8FB0;border:1px solid rgba(59,110,143,.3)">Normal B2B</span>';
+      }
+     return '<div class="product-card" onclick="' + (p.is_kit ? 'openKitModal' : 'openForm') + '(\'' + p.id + '\')">'
+        + '<div class="relative aspect-square bg-freo-black overflow-hidden">'
+        + (thumb ? '<img src="' + thumb + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">'
+                 : '<div class="w-full h-full flex items-center justify-center"><svg class="w-12 h-12 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>')
+        + b2bBadge
+        + '<span class="absolute top-2 right-2 font-mono text-[9px] px-1.5 py-0.5 uppercase ' + (p.is_active ? 'badge-active' : 'badge-inactive') + '">' + (p.is_active ? 'Ativo' : 'Inativo') + '</span>'
+        + (p.is_kit ? '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase" style="background:rgba(221,175,52,.15);color:#DDAF34;border:1px solid rgba(221,175,52,.3)">Kit</span>' : '')
+        + (imgs.length > 1 ? '<span class="absolute bottom-2 left-2 font-mono text-[9px] bg-black/60 text-white/60 px-1.5 py-0.5">' + imgs.length + ' fotos</span>' : '')
+        + '<p class="font-display font-bold text-sm text-white leading-tight truncate mb-1">' + (p.title || 'Sem título') + '</p>'
+        + (p.category ? '<p class="font-mono text-[10px] text-white/30 uppercase mb-2">' + p.category + '</p>' : '')
+        + '<div class="flex items-end gap-2">'
+        + (hasPromo
+            ? '<span class="font-mono text-xs text-white/30 line-through">R$ ' + Number(p.price).toFixed(2).replace('.',',') + '</span><span class="font-mono text-sm font-bold text-freo-orange">R$ ' + Number(p.promotional_price).toFixed(2).replace('.',',') + '</span>'
+            : '<span class="font-mono text-sm font-bold text-freo-orange">R$ ' + Number(p.price).toFixed(2).replace('.',',') + '</span>')
+        + '</div><p class="font-mono text-[10px] text-white/20 mt-1">Estoque: ' + (p.stock || 0) + '</p>'
+        + '</div></div>';
+    }).join('');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // NORMALIZA VARIANTES DO BANCO → FORMATO INTERNO
+  // ─────────────────────────────────────────────────────────────────────────
+  function normalizeVariantsFromDB(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.map(function(v) {
+      var per = !!v.per_option_price;
+      var opts = [];
+      if (Array.isArray(v.options)) {
+        opts = v.options.map(function(o) {
+          if (typeof o === 'object' && o !== null) {
+            return { name: String(o.name || ''), price: (o.price != null && !isNaN(parseFloat(o.price))) ? parseFloat(o.price) : null };
+          }
+          return { name: String(o || ''), price: null };
+        });
+      } else if (typeof v.options === 'string') {
+        opts = v.options.split(',').map(function(s) { return { name: s.trim(), price: null }; }).filter(function(o){ return o.name; });
+      }
+      return { name: v.name || '', per_option_price: per, options: opts };
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FORMULÁRIO
+  // ─────────────────────────────────────────────────────────────────────────
+  function openForm(productId) {
+    editingProductId = productId;
+    currentImages = []; currentTags = []; currentVariants = [];
+    document.getElementById('form-overlay').classList.remove('hidden');
+    document.getElementById('form-overlay').classList.add('flex');
+    showTab('tab-basic');
+
+    if (productId) {
+      var p = allProducts.find(function(x) { return String(x.id) === String(productId); });
+      if (!p) return;
+      document.getElementById('form-title').innerText = 'Editar Produto';
+      document.getElementById('form-subtitle').innerText = 'ID: ' + p.id;
+      document.getElementById('form-delete-btn').classList.remove('hidden');
+      document.getElementById('f-title').value = p.title || '';
+      document.getElementById('f-price').value = p.price || '';
+      document.getElementById('f-promo').value = p.promotional_price || '';
+      document.getElementById('f-stock').value = p.stock || 0;
+      document.getElementById('f-category').value = p.category || '';
+      document.getElementById('f-description').value = p.description || '';
+      document.getElementById('f-video').value = p.video_url || '';
+      document.getElementById('f-active').checked = p.is_active !== false;
+      document.getElementById('f-seo-title').value = p.seo_title || '';
+      document.getElementById('f-seo-desc').value = p.seo_description || '';
+      updateSEOCount(document.getElementById('f-seo-title'), 'seo-title-count', 60);
+      updateSEOCount(document.getElementById('f-seo-desc'), 'seo-desc-count', 160);
+      currentImages = Array.isArray(p.images) ? p.images.slice() : [];
+      currentTags = Array.isArray(p.tags) ? p.tags.slice() : [];
+      currentVariants = normalizeVariantsFromDB(p.variants);
+      document.getElementById('f-sale-mode').value = p.sale_mode || 'normal';
+      updateSaleModeHint();
+      loadTiersForProduct(p.id);
+
+      // Detecta se video_url é upload direto ou YouTube
+      var savedVideo = p.video_url || '';
+      if (savedVideo && !savedVideo.includes('youtube') && !savedVideo.includes('youtu.be') && !savedVideo.includes('vimeo')) {
+        currentVideoUrl = savedVideo;
+        document.getElementById('f-video').value = '';
+      } else {
+        currentVideoUrl = null;
+        document.getElementById('f-video').value = savedVideo;
+      }
+      renderVideoUI();
+      
+    } else {
+      document.getElementById('form-title').innerText = 'Novo Produto';
+      document.getElementById('form-subtitle').innerText = 'Preencha as informações abaixo';
+      document.getElementById('form-delete-btn').classList.add('hidden');
+      ['f-title','f-price','f-promo','f-video','f-seo-title','f-seo-desc','f-description'].forEach(function(id){ document.getElementById(id).value = ''; });
+      document.getElementById('f-stock').value = 0;
+      document.getElementById('f-category').value = '';
+      document.getElementById('f-active').checked = true;
+      document.getElementById('seo-title-count').innerText = '0/60';
+      document.getElementById('seo-desc-count').innerText = '0/160';
+      document.getElementById('f-sale-mode').value = 'normal';
+      updateSaleModeHint();
+      currentTiers = [];
+      renderTiersUI();
+
+      currentVideoUrl = null;
+      renderVideoUI();
+    }
+    renderTagsUI(); renderImagesUI(); renderVariantsUI(); updateSEOPreview();
+  }
+
+  function closeForm() {
+    document.getElementById('form-overlay').classList.add('hidden');
+    document.getElementById('form-overlay').classList.remove('flex');
+    editingProductId = null;
+  }
+  function handleOverlayClick(e) { if (e.target === document.getElementById('form-overlay')) closeForm(); }
+
+  function showTab(tabId) {
+    document.querySelectorAll('.form-tab-content').forEach(function(el) { el.classList.add('hidden'); });
+    document.querySelectorAll('.form-tab').forEach(function(btn) { btn.classList.remove('text-freo-orange','border-freo-orange'); btn.classList.add('text-white/30','border-transparent'); });
+    document.getElementById(tabId).classList.remove('hidden');
+    var btn = document.getElementById('btn-' + tabId);
+    if (btn) { btn.classList.add('text-freo-orange','border-freo-orange'); btn.classList.remove('text-white/30','border-transparent'); }
+  }
+
+  // ─── TAGS ─────────────────────────────────────────────────────────────────
+  function handleTagInput(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      var val = e.target.value.trim().replace(/,/g,'');
+      if (val && !currentTags.includes(val)) { currentTags.push(val); renderTagsUI(); }
+      e.target.value = '';
+    } else if (e.key === 'Backspace' && !e.target.value && currentTags.length > 0) { currentTags.pop(); renderTagsUI(); }
+  }
+  function removeTag(i) { currentTags.splice(i,1); renderTagsUI(); }
+  function renderTagsUI() {
+    var container = document.getElementById('tags-container');
+    var input = document.getElementById('tag-input');
+    container.innerHTML = '';
+    currentTags.forEach(function(tag, i) {
+      var pill = document.createElement('span'); pill.className = 'tag-pill';
+      pill.innerHTML = tag + '<button onclick="removeTag('+i+')" style="background:none;border:none;cursor:pointer;color:#DDAF34;font-size:14px;line-height:1;padding:0 0 0 2px">×</button>';
+      container.appendChild(pill);
+    });
+    container.appendChild(input);
+    input.placeholder = currentTags.length ? '' : 'Ex: 3d impresso, resina, colecionável...';
+  }
+
+  // ─── IMAGENS ──────────────────────────────────────────────────────────────
+  var dragSrcIdx = null;
+  function renderImagesUI() {
+    var grid = document.getElementById('img-preview-grid');
+    document.getElementById('img-count').innerText = '(' + currentImages.length + ')';
+    grid.innerHTML = currentImages.map(function(url, i) {
+      return '<div class="img-thumb" draggable="true" ondragstart="onImgDragStart(event,'+i+')" ondragover="onImgDragOver(event,'+i+')" ondragleave="onImgDragLeave(event)" ondrop="onImgDrop(event,'+i+')" ondragend="onImgDragEnd()">'
+        + '<img src="'+url+'" alt="" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><rect fill=%22%23222%22 width=%2280%22 height=%2280%22/></svg>\'">'
+        + (i===0?'<span style="position:absolute;bottom:2px;left:2px;background:rgba(221,175,52,.8);color:#000;font-size:8px;font-family:monospace;padding:1px 4px;z-index:2">CAPA</span>':'')
+        + '<button class="del-img" onclick="event.stopPropagation();removeImage('+i+')" title="Remover">×</button></div>';
+    }).join('');
+  }
+  function onImgDragStart(e,idx){ dragSrcIdx=idx; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',String(idx)); setTimeout(function(){ var t=document.querySelectorAll('.img-thumb'); if(t[idx]) t[idx].classList.add('dragging'); },0); }
+  function onImgDragOver(e,idx){ e.preventDefault(); e.dataTransfer.dropEffect='move'; if(dragSrcIdx===null||dragSrcIdx===idx) return; document.querySelectorAll('.img-thumb').forEach(function(t){ t.classList.remove('drag-over'); }); var t=document.querySelectorAll('.img-thumb'); if(t[idx]) t[idx].classList.add('drag-over'); }
+  function onImgDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+  function onImgDrop(e,targetIdx){ e.preventDefault(); if(dragSrcIdx===null||dragSrcIdx===targetIdx) return; var moved=currentImages.splice(dragSrcIdx,1)[0]; currentImages.splice(targetIdx,0,moved); dragSrcIdx=null; renderImagesUI(); showToast('Imagem reordenada!','success'); }
+  function onImgDragEnd(){ dragSrcIdx=null; document.querySelectorAll('.img-thumb').forEach(function(t){ t.classList.remove('dragging','drag-over'); }); }
+  function removeImage(i){ currentImages.splice(i,1); renderImagesUI(); }
+  function addImageByURL(){ var url=document.getElementById('img-url-input').value.trim(); if(!url) return; currentImages.push(url); renderImagesUI(); document.getElementById('img-url-input').value=''; }
+  function handleFileSelect(e){ uploadFiles(Array.from(e.target.files)); }
+  function handleDragOver(e){ e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
+  function handleDragLeave(e){ document.getElementById('drop-zone').classList.remove('dragover'); }
+  function handleDrop(e){ e.preventDefault(); document.getElementById('drop-zone').classList.remove('dragover'); uploadFiles(Array.from(e.dataTransfer.files).filter(function(f){ return f.type.startsWith('image/'); })); }
+  async function uploadFiles(files){
+    if(!files.length) return;
+    var wrap=document.getElementById('upload-progress-wrap'),bar=document.getElementById('upload-progress-bar'),pct=document.getElementById('upload-pct');
+    wrap.classList.remove('hidden'); var done=0;
+    for(var f of files){
+      if(f.size>5*1024*1024){ showToast(f.name+' excede 5MB, pulando...','error'); done++; continue; }
+      var ext=f.name.split('.').pop();
+      var path='produtos/'+Date.now()+'_'+Math.random().toString(36).slice(2)+'.'+ext;
+      var r=await window.supabaseClient.storage.from('imagens').upload(path,f,{upsert:false,contentType:f.type});
+      if(!r.error){ var pub=window.supabaseClient.storage.from('imagens').getPublicUrl(path); currentImages.push(pub.data.publicUrl); renderImagesUI(); }
+      else showToast('Erro ao enviar '+f.name+': '+r.error.message,'error');
+      done++; var p=Math.round((done/files.length)*100); bar.style.width=p+'%'; pct.innerText=p+'%';
+    }
+    setTimeout(function(){ wrap.classList.add('hidden'); bar.style.width='0%'; },800);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // VARIANTES COM PREÇO POR OPÇÃO
+  // ─────────────────────────────────────────────────────────────────────────
+
+  function addVariant() {
+    currentVariants.push({ name: '', per_option_price: false, options: [] });
+    renderVariantsUI();
+    setTimeout(function() {
+      var inputs = document.querySelectorAll('.variant-name-input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }, 50);
+  }
+
+  function removeVariant(i) { currentVariants.splice(i, 1); renderVariantsUI(); }
+
+  function togglePerOptionPrice(i) {
+    currentVariants[i].per_option_price = !currentVariants[i].per_option_price;
+    renderVariantsUI();
+  }
+
+  function addOption(vi) {
+    if (!currentVariants[vi].options) currentVariants[vi].options = [];
+    currentVariants[vi].options.push({ name: '', price: null });
+    renderVariantsUI();
+    setTimeout(function() {
+      var inputs = document.querySelectorAll('.opt-name-input[data-vi="' + vi + '"]');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }, 40);
+  }
+
+  function removeOption(vi, oi) { currentVariants[vi].options.splice(oi, 1); renderVariantsUI(); }
+  function updateOptName(vi, oi, val) { currentVariants[vi].options[oi].name = val; }
+  function updateOptPrice(vi, oi, val) { var p = parseFloat(val); currentVariants[vi].options[oi].price = isNaN(p) ? null : p; }
+
+  function renderVariantsUI() {
+    var list = document.getElementById('variants-list');
+
+    list.innerHTML = currentVariants.map(function(v, i) {
+      var isPriced = !!v.per_option_price;
+      var opts = Array.isArray(v.options) ? v.options : [];
+
+      // Toggle HTML
+      var toggleBg = isPriced ? '#DDAF34' : 'rgba(255,255,255,.1)';
+      var thumbLeft = isPriced ? '17px' : '2px';
+      var toggleHTML = '<div class="price-toggle-row">'
+        + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;" onclick="togglePerOptionPrice(' + i + ')">'
+        + '<div class="toggle-track">'
+        + '<div class="toggle-track-bg" style="background:' + toggleBg + '"></div>'
+        + '<div class="toggle-thumb" style="left:' + thumbLeft + '"></div>'
+        + '</div>'
+        + '<span style="font-family:ui-monospace,monospace;font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:' + (isPriced ? 'rgba(221,175,52,.8)' : 'rgba(245,245,245,.3)') + ';">'
+        + (isPriced ? '✓ Preço por opção ativado' : 'Preço por opção')
+        + '</span>'
+        + '</label>'
+        + (isPriced ? '<span style="margin-left:auto;font-family:ui-monospace,monospace;font-size:.6rem;color:rgba(245,245,245,.2);">Deixe em branco = preço base</span>' : '')
+        + '</div>';
+
+      // Linhas de opções
+      var optionsHTML = '';
+      if (opts.length > 0) {
+        optionsHTML = '<div class="variant-options-wrap">'
+          + opts.map(function(opt, oi) {
+              var priceInput = isPriced
+                ? '<div class="opt-price-wrap">'
+                  + '<span class="opt-price-prefix">R$</span>'
+                  + '<input type="number" class="opt-price-input" placeholder="0,00" step="0.01" min="0"'
+                  + ' value="' + (opt.price != null ? opt.price : '') + '"'
+                  + ' oninput="updateOptPrice(' + i + ',' + oi + ',this.value)">'
+                  + '</div>'
+                : '';
+              return '<div class="opt-row">'
+                + '<svg style="color:rgba(255,255,255,.12);flex-shrink:0;" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>'
+                + '<input type="text" class="opt-name-input" data-vi="' + i + '" placeholder="Nome da opção (ex: 10cm)" value="' + (opt.name || '').replace(/"/g,'&quot;') + '" oninput="updateOptName(' + i + ',' + oi + ',this.value)">'
+                + priceInput
+                + '<button type="button" class="opt-del-btn" onclick="removeOption(' + i + ',' + oi + ')">'
+                + '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+                + '</button></div>';
+            }).join('')
+          + '</div>';
+      } else {
+        optionsHTML = '<div style="padding:.4rem .75rem;">'
+          + '<p style="font-family:ui-monospace,monospace;font-size:.65rem;color:rgba(245,245,245,.18);">Nenhuma opção ainda. Clique em "+ Adicionar opção" abaixo.</p>'
+          + '</div>';
+      }
+
+      return '<div class="variant-block">'
+        // Cabeçalho com nome + botão remover
+        + '<div class="variant-block-header">'
+        + '<svg width="14" height="14" style="color:rgba(221,175,52,.35);flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>'
+        + '<input type="text" class="variant-name-input" placeholder="Nome da variante (ex: Tamanho, Cor, Material)" value="' + (v.name || '').replace(/"/g,'&quot;') + '" oninput="currentVariants[' + i + '].name=this.value">'
+        + '<button type="button" onclick="removeVariant(' + i + ')" style="background:none;border:none;cursor:pointer;color:rgba(239,68,68,.3);display:flex;align-items:center;flex-shrink:0;" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'rgba(239,68,68,.3)\'">'
+        + '<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button>'
+        + '</div>'
+        // Toggle preço por opção
+        + toggleHTML
+        // Lista de opções
+        + optionsHTML
+        // Botão adicionar opção
+        + '<button type="button" class="variant-add-opt-btn" onclick="addOption(' + i + ')">'
+        + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>'
+        + '+ Adicionar opção'
+        + '</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // B2B: MODO DE VENDA + FAIXAS DE PREÇO
+  // ─────────────────────────────────────────────────────────────────────────
+  function updateSaleModeHint() {
+    var val = document.getElementById('f-sale-mode').value;
+    var hint = document.getElementById('sale-mode-hint');
+    hint.innerText = val === 'quote_only'
+      ? 'Este produto NÃO mostrará preço no /b2b.html — só um botão para pedir cotação via WhatsApp.'
+      : 'Este produto mostrará a tabela de faixas de preço abaixo para clientes PJ.';
+  }
+
+  document.getElementById('f-sale-mode').addEventListener('change', updateSaleModeHint);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // KIT (modal separado — ver seção "NOVO KIT" mais abaixo)
+  // ─────────────────────────────────────────────────────────────────────────
+  async function saveKitItems(kitProductId, itemIds) {
+    await window.supabaseClient.from('product_kit_items').delete().eq('kit_product_id', kitProductId);
+    if (itemIds.length > 0) {
+      var rows = itemIds.map(function(childId) {
+        return { kit_product_id: kitProductId, child_product_id: childId };
+      });
+      var r = await window.supabaseClient.from('product_kit_items').insert(rows);
+      if (r.error) console.error('Erro ao salvar itens do kit:', r.error);
+    }
+  }
+
+  async function loadTiersForProduct(productId) {
+    document.getElementById('tiers-save-status').innerText = 'Carregando...';
+    try {
+      var r = await window.supabaseClient
+        .from('product_price_tiers')
+        .select('*')
+        .eq('product_id', productId)
+        .order('min_qty', { ascending: true });
+      if (r.error) throw r.error;
+      currentTiers = (r.data || []).map(function(t) {
+        return { id: t.id, min_qty: t.min_qty, max_qty: t.max_qty, unit_price: t.unit_price, _isNew: false, _deleted: false };
+      });
+      document.getElementById('tiers-save-status').innerText = '';
+      renderTiersUI();
+    } catch (e) {
+      document.getElementById('tiers-save-status').innerText = 'Erro ao carregar faixas.';
+      showToast('Erro ao carregar faixas de preço: ' + e.message, 'error');
+    }
+  }
+
+  function addTier() {
+    currentTiers.push({ id: null, min_qty: '', max_qty: '', unit_price: '', _isNew: true, _deleted: false });
+    renderTiersUI();
+  }
+
+  function removeTier(i) {
+    if (currentTiers[i].id) {
+      // Já existe no banco: marca para deletar no próximo save, mas some da UI
+      currentTiers[i]._deleted = true;
+    } else {
+      currentTiers.splice(i, 1);
+    }
+    renderTiersUI();
+  }
+
+  function updateTierField(i, field, value) {
+    currentTiers[i][field] = value;
+  }
+
+  function renderTiersUI() {
+    var list = document.getElementById('tiers-list');
+    var visible = currentTiers.filter(function(t) { return !t._deleted; });
+
+    if (visible.length === 0) {
+      list.innerHTML = '<p class="font-mono text-xs text-white/20 py-2">Nenhuma faixa cadastrada. Sem faixas, o catálogo B2B mostra o preço normal do produto.</p>';
+      return;
+    }
+
+    list.innerHTML = currentTiers.map(function(t, i) {
+      if (t._deleted) return '';
+      return '<div class="tier-row">'
+        + '<div style="width:70px"><input type="number" min="1" class="tier-input" placeholder="Mín." value="' + (t.min_qty !== '' ? t.min_qty : '') + '" oninput="updateTierField(' + i + ',\'min_qty\',this.value)"></div>'
+        + '<span class="font-mono text-xs text-white/20">a</span>'
+        + '<div style="width:70px"><input type="number" min="1" class="tier-input" placeholder="Máx. (vazio=∞)" value="' + (t.max_qty !== null && t.max_qty !== undefined ? t.max_qty : '') + '" oninput="updateTierField(' + i + ',\'max_qty\',this.value)"></div>'
+        + '<span class="font-mono text-xs text-white/20">un. →</span>'
+        + '<div style="flex:1"><input type="number" min="0" step="0.01" class="tier-input" placeholder="Preço unitário R$" value="' + (t.unit_price !== '' ? t.unit_price : '') + '" oninput="updateTierField(' + i + ',\'unit_price\',this.value)"></div>'
+        + '<button type="button" class="tier-del-btn" onclick="removeTier(' + i + ')">'
+        + '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button></div>';
+    }).join('');
+  }
+
+  async function saveTiers() {
+    var btn = document.getElementById('save-tiers-btn');
+    var statusEl = document.getElementById('tiers-save-status');
+    btn.innerText = 'Salvando...'; btn.disabled = true;
+
+    try {
+      // 1. Se o produto ainda não existe (novo), salva o produto primeiro pra gerar o ID.
+      if (!editingProductId) {
+        var title = document.getElementById('f-title').value.trim();
+        var priceRaw = document.getElementById('f-price').value;
+        if (!title || priceRaw === '' || isNaN(parseFloat(priceRaw))) {
+          showToast('Preencha título e preço na aba Básico antes de salvar as faixas — o produto precisa existir primeiro.', 'error');
+          showTab('tab-basic');
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+        showToast('Salvando produto primeiro (necessário para vincular as faixas)...', 'success');
+        await saveProductCore();
+        if (!editingProductId) {
+          // saveProductCore falhou e já mostrou o toast de erro
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+      }
+
+      var productId = editingProductId;
+
+      // 2. Valida faixas antes de mandar pro banco
+      var toInsert = [];
+      var toUpdate = [];
+      var toDeleteIds = [];
+
+      for (var i = 0; i < currentTiers.length; i++) {
+        var t = currentTiers[i];
+        if (t._deleted) {
+          if (t.id) toDeleteIds.push(t.id);
+          continue;
+        }
+        var minQty = parseInt(t.min_qty, 10);
+        var maxQty = (t.max_qty === '' || t.max_qty === null || t.max_qty === undefined) ? null : parseInt(t.max_qty, 10);
+        var unitPrice = parseFloat(t.unit_price);
+
+        if (isNaN(minQty) || minQty <= 0) {
+          showToast('Faixa ' + (i+1) + ': quantidade mínima inválida.', 'error');
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+        if (maxQty !== null && maxQty < minQty) {
+          showToast('Faixa ' + (i+1) + ': quantidade máxima não pode ser menor que a mínima.', 'error');
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+        if (isNaN(unitPrice) || unitPrice <= 0) {
+          showToast('Faixa ' + (i+1) + ': preço unitário inválido.', 'error');
+          btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+          return;
+        }
+
+        var row = { product_id: productId, min_qty: minQty, max_qty: maxQty, unit_price: unitPrice, is_active: true };
+        if (t.id) { row.id = t.id; toUpdate.push(row); }
+        else { toInsert.push(row); }
+      }
+
+      // 3. Aplica no banco: deletes, updates, inserts
+      if (toDeleteIds.length > 0) {
+        var rDel = await window.supabaseClient.from('product_price_tiers').delete().in('id', toDeleteIds);
+        if (rDel.error) throw rDel.error;
+      }
+      for (var u = 0; u < toUpdate.length; u++) {
+        var rUpd = await window.supabaseClient.from('product_price_tiers').update(toUpdate[u]).eq('id', toUpdate[u].id);
+        if (rUpd.error) throw rUpd.error;
+      }
+      if (toInsert.length > 0) {
+        var rIns = await window.supabaseClient.from('product_price_tiers').insert(toInsert);
+        if (rIns.error) throw rIns.error;
+      }
+
+      showToast('Faixas de preço salvas!', 'success');
+      await loadTiersForProduct(productId);
+    } catch (e) {
+      showToast('Erro ao salvar faixas: ' + e.message, 'error');
+    } finally {
+      btn.innerText = 'Salvar faixas de preço'; btn.disabled = false;
+    }
+  }
+
+  // ─── SEO ──────────────────────────────────────────────────────────────────
+  function updateSEOCount(input, countId, max) { document.getElementById(countId).innerText = input.value.length + '/' + max; updateSEOPreview(); }
+  function updateSEOPreview() {
+    var title = document.getElementById('f-seo-title').value || document.getElementById('f-title').value || 'Título do produto';
+    var desc = document.getElementById('f-seo-desc').value || document.getElementById('f-description').value || 'Descrição do produto aparecerá aqui...';
+    document.getElementById('seo-preview-title').innerText = title;
+    document.getElementById('seo-preview-desc').innerText = desc.substring(0, 160);
+  }
+  document.getElementById('f-title').addEventListener('input', updateSEOPreview);
+  document.getElementById('f-description').addEventListener('input', updateSEOPreview);
+  document.getElementById('f-seo-title').addEventListener('input', updateSEOPreview);
+  document.getElementById('f-seo-desc').addEventListener('input', updateSEOPreview);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SALVAR
+  // ─────────────────────────────────────────────────────────────────────────
+  // Núcleo de validação + gravação do produto, reaproveitável pelo botão
+  // "Salvar" principal E pelo botão "Salvar faixas de preço" (quando o
+  // produto ainda não tem ID). Retorna true em sucesso, false em falha.
+  // Efeito colateral: se criar produto novo, seta editingProductId com o ID gerado.
+  async function saveProductCore() {
+    var title = document.getElementById('f-title').value.trim();
+    var priceRaw = document.getElementById('f-price').value;
+    var price = parseFloat(priceRaw);
+
+    if (!title) { showToast('Informe o título do produto.', 'error'); showTab('tab-basic'); return false; }
+    if (priceRaw === '' || isNaN(price) || price < 0) { showToast('Informe um preço válido.', 'error'); showTab('tab-basic'); return false; }
+
+    var promoPrice = parseFloat(document.getElementById('f-promo').value);
+    promoPrice = isNaN(promoPrice) ? null : promoPrice;
+
+    var variantsPayload = currentVariants
+      .filter(function(v) { return v.name || (v.options && v.options.length > 0); })
+      .map(function(v) {
+        var cleanOpts = (v.options || [])
+          .filter(function(o) { return o.name && o.name.trim(); })
+          .map(function(o) {
+            return {
+              name: o.name.trim(),
+              price: (v.per_option_price && o.price != null && !isNaN(o.price)) ? parseFloat(o.price) : null
+            };
+          });
+        return { name: v.name.trim(), per_option_price: !!v.per_option_price, options: cleanOpts };
+      });
+
+    var payload = {
+      title: title,
+      description: document.getElementById('f-description').value.trim() || null,
+      price: price,
+      promotional_price: promoPrice,
+      stock: parseInt(document.getElementById('f-stock').value) || 0,
+      category: document.getElementById('f-category').value || null,
+      images: currentImages,
+      tags: currentTags.length > 0 ? currentTags : null,
+      video_url: currentVideoUrl || document.getElementById('f-video').value.trim() || null,
+      variants: variantsPayload,
+      seo_title: document.getElementById('f-seo-title').value.trim() || null,
+      seo_description: document.getElementById('f-seo-desc').value.trim() || null,
+      is_active: document.getElementById('f-active').checked,
+      sale_mode: document.getElementById('f-sale-mode').value || 'normal',
+      is_kit: false,
+      kit_type: null,
+      kit_slots: null,
+      kit_discount_type: null,
+      kit_discount_value: null
+    };
+
+    try {
+      if (editingProductId) {
+        var rUpd = await window.supabaseClient.from('products').update(payload).eq('id', editingProductId);
+        if (rUpd.error) throw rUpd.error;
+      } else {
+        var rIns = await window.supabaseClient.from('products').insert(payload).select().single();
+        if (rIns.error) throw rIns.error;
+        editingProductId = rIns.data.id;
+        document.getElementById('form-title').innerText = 'Editar Produto';
+        document.getElementById('form-subtitle').innerText = 'ID: ' + editingProductId;
+        document.getElementById('form-delete-btn').classList.remove('hidden');
+      }
+
+      return true;
+    } catch (e) {
+      console.error('saveProductCore error:', e);
+      showToast('Erro ao salvar: ' + (e.message || JSON.stringify(e)), 'error');
+      return false;
+    }
+  }
+
+  // Botão "Salvar" principal do form — mesmo comportamento de antes,
+  // agora usando saveProductCore() por baixo.
+  async function saveProduct() {
+    var btn = document.getElementById('form-save-btn');
+    btn.innerText = 'Salvando...'; btn.disabled = true;
+
+    var ok = await saveProductCore();
+
+    if (ok) {
+      showToast(editingProductId ? 'Produto atualizado!' : 'Produto criado!', 'success');
+      closeForm(); loadProducts();
+    }
+
+    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar';
+    btn.disabled = false;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // EXCLUIR
+  // ─────────────────────────────────────────────────────────────────────────
+  function confirmDelete() {
+    if (!editingProductId) return;
+    var p = allProducts.find(function(x) { return String(x.id) === String(editingProductId); });
+    if (!confirm('Excluir "' + (p ? p.title : 'este produto') + '"?\n\nEsta ação não pode ser desfeita.')) return;
+    deleteProduct();
+  }
+  async function deleteProduct() {
+    if (!editingProductId) return;
+    try {
+      var r = await window.supabaseClient.from('products').delete().eq('id', editingProductId);
+      if (r.error) throw r.error;
+      showToast('Produto excluído.', 'success');
+      closeForm(); loadProducts();
+    } catch(e) { showToast('Erro ao excluir: ' + e.message, 'error'); }
+  }
+
+  // ─── TOAST ────────────────────────────────────────────────────────────────
+  var toastTimer;
+  function showToast(msg, type) {
+    var el = document.getElementById('toast');
+    el.innerText = msg; el.className = 'show ' + (type || 'success');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { el.className = type || 'success'; }, 3200);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AJUSTE DE PREÇO EM MASSA
+  // Soma ou subtrai um valor fixo do preço base (price), do preço
+  // promocional (promotional_price, se existir) e, opcionalmente, do preço
+  // de cada opção de variante que tenha per_option_price ativo.
+  // Nunca deixa nenhum preço final ficar negativo (trava em 0).
+  // ─────────────────────────────────────────────────────────────────────────
+  function openBulkConfirm() {
+    var op = document.getElementById('bulk-op').value;
+    var rawVal = document.getElementById('bulk-value').value;
+    var val = parseFloat(rawVal);
+
+    if (rawVal === '' || isNaN(val) || val <= 0) {
+      showToast('Informe um valor válido maior que zero.', 'error');
+      return;
+    }
+
+    var scope = document.getElementById('bulk-scope').value;
+    var includeVariants = document.getElementById('bulk-include-variants').checked;
+
+    var scopeLabel = { all: 'TODOS os produtos', active: 'produtos ATIVOS', inactive: 'produtos INATIVOS' }[scope];
+    var opLabel = op === 'add' ? 'somar' : 'subtrair';
+
+    var count = allProducts.filter(function(p) {
+      if (scope === 'active') return !!p.is_active;
+      if (scope === 'inactive') return !p.is_active;
+      return true;
+    }).length;
+
+    document.getElementById('bulk-confirm-text').innerText =
+      'Você vai ' + opLabel + ' R$ ' + val.toFixed(2).replace('.', ',') +
+      ' em ' + count + ' produto(s) (' + scopeLabel + ')' +
+      (includeVariants ? ', incluindo preços de variantes' : ', SEM alterar preços de variantes') + '.';
+
+    document.getElementById('bulk-confirm-overlay').classList.remove('hidden');
+    document.getElementById('bulk-confirm-overlay').classList.add('flex');
+  }
+
+  function closeBulkConfirm() {
+    document.getElementById('bulk-confirm-overlay').classList.add('hidden');
+    document.getElementById('bulk-confirm-overlay').classList.remove('flex');
+  }
+
+  // Aplica o delta a um preço, nunca deixando resultado negativo.
+  function applyDelta(originalPrice, delta) {
+    var n = parseFloat(originalPrice);
+    if (isNaN(n)) return originalPrice;
+    var result = n + delta;
+    if (result < 0) result = 0;
+    return Math.round(result * 100) / 100;
+  }
+
+  async function runBulkPriceUpdate() {
+    var op = document.getElementById('bulk-op').value;
+    var val = parseFloat(document.getElementById('bulk-value').value);
+    var scope = document.getElementById('bulk-scope').value;
+    var includeVariants = document.getElementById('bulk-include-variants').checked;
+    var delta = op === 'add' ? val : -val;
+
+    var btn = document.getElementById('bulk-confirm-btn');
+    var statusEl = document.getElementById('bulk-status');
+    btn.disabled = true; btn.innerText = 'Aplicando...';
+
+    var targets = allProducts.filter(function(p) {
+      if (scope === 'active') return !!p.is_active;
+      if (scope === 'inactive') return !p.is_active;
+      return true;
+    });
+
+    var done = 0, errors = 0;
+
+    for (var i = 0; i < targets.length; i++) {
+      var p = targets[i];
+      statusEl.innerText = 'Atualizando ' + (i + 1) + '/' + targets.length + '...';
+
+      var newPrice = applyDelta(p.price, delta);
+      var updatePayload = { price: newPrice };
+
+      if (p.promotional_price != null && p.promotional_price !== '') {
+        updatePayload.promotional_price = applyDelta(p.promotional_price, delta);
+      }
+
+      if (includeVariants && Array.isArray(p.variants) && p.variants.length > 0) {
+        var newVariants = p.variants.map(function(v) {
+          if (!v.per_option_price || !Array.isArray(v.options)) return v;
+          var newOptions = v.options.map(function(o) {
+            if (o.price == null || isNaN(parseFloat(o.price))) return o;
+            return { name: o.name, price: applyDelta(o.price, delta) };
+          });
+          return { name: v.name, per_option_price: v.per_option_price, options: newOptions };
+        });
+        updatePayload.variants = newVariants;
+      }
+
+      try {
+        var r = await window.supabaseClient.from('products').update(updatePayload).eq('id', p.id);
+        if (r.error) throw r.error;
+        done++;
+      } catch (e) {
+        errors++;
+        console.error('Erro ao atualizar produto ' + p.id + ':', e);
+      }
+    }
+
+    btn.disabled = false; btn.innerText = 'Confirmar';
+    closeBulkConfirm();
+    document.getElementById('bulk-value').value = '';
+    statusEl.innerText = '';
+
+    if (errors === 0) {
+      showToast(done + ' produto(s) atualizado(s) com sucesso!', 'success');
+    } else {
+      showToast(done + ' atualizado(s), ' + errors + ' com erro. Veja o console.', 'error');
+    }
+
+    loadProducts();
+  }
+
+    // ─── VÍDEO UPLOAD ─────────────────────────────────────────────────────────
+    var currentVideoUrl = null; // URL final salva no banco
+    
+    function renderVideoUI() {
+      var wrap  = document.getElementById('video-preview-wrap');
+      var dzone = document.getElementById('video-drop-zone');
+      var el    = document.getElementById('video-preview-el');
+      var name  = document.getElementById('video-preview-name');
+    
+      if (currentVideoUrl) {
+        el.src = currentVideoUrl;
+        // Tenta extrair o nome do arquivo da URL
+        var parts = currentVideoUrl.split('/');
+        name.innerText = decodeURIComponent(parts[parts.length - 1]).substring(0, 60);
+        wrap.classList.remove('hidden');
+        dzone.classList.add('hidden');
+      } else {
+        wrap.classList.add('hidden');
+        dzone.classList.remove('hidden');
+        el.src = '';
+      }
+    }
+    
+    function removeVideo() {
+      currentVideoUrl = null;
+      document.getElementById('f-video').value = '';
+      renderVideoUI();
+    }
+    
+    function handleVideoDragOver(e) {
+      e.preventDefault();
+      document.getElementById('video-drop-zone').classList.add('dragover');
+    }
+    function handleVideoDragLeave(e) {
+      document.getElementById('video-drop-zone').classList.remove('dragover');
+    }
+    function handleVideoDrop(e) {
+      e.preventDefault();
+      document.getElementById('video-drop-zone').classList.remove('dragover');
+      var files = Array.from(e.dataTransfer.files)
+        .filter(function(f) { return f.type.startsWith('video/'); });
+      if (files.length > 0) uploadVideo(files[0]);
+    }
+    function handleVideoFileSelect(e) {
+      if (e.target.files.length > 0) uploadVideo(e.target.files[0]);
+    }
+    
+    async function uploadVideo(file) {
+      if (file.size > 100 * 1024 * 1024) {
+        showToast('Vídeo excede 100MB.', 'error');
+        return;
+      }
+    
+      var wrap = document.getElementById('video-upload-progress-wrap');
+      var bar  = document.getElementById('video-upload-progress-bar');
+      var pct  = document.getElementById('video-upload-pct');
+      wrap.classList.remove('hidden');
+      bar.style.width = '10%'; // feedback imediato
+    
+      var ext  = file.name.split('.').pop().toLowerCase();
+      var path = 'videos/' + Date.now() + '_' +
+                 Math.random().toString(36).slice(2) + '.' + ext;
+    
+      try {
+        // Supabase JS v2 não expõe progresso nativo no upload,
+        // mas simulamos com um intervalo para UX
+        var fakeProgress = 10;
+        var interval = setInterval(function() {
+          fakeProgress = Math.min(fakeProgress + 8, 85);
+          bar.style.width = fakeProgress + '%';
+          pct.innerText   = fakeProgress + '%';
+        }, 300);
+    
+        var r = await window.supabaseClient.storage
+          .from('imagens') // mesmo bucket que você já usa
+          .upload(path, file, { upsert: false, contentType: file.type });
+    
+        clearInterval(interval);
+    
+        if (r.error) throw r.error;
+    
+        bar.style.width = '100%';
+        pct.innerText   = '100%';
+    
+        var pub = window.supabaseClient.storage
+          .from('imagens')
+          .getPublicUrl(path);
+    
+        currentVideoUrl = pub.data.publicUrl;
+        // Limpa o campo de URL externa pois agora temos upload direto
+        document.getElementById('f-video').value = '';
+    
+        showToast('Vídeo enviado com sucesso!', 'success');
+        renderVideoUI();
+    
+      } catch (err) {
+        showToast('Erro ao enviar vídeo: ' + err.message, 'error');
+      } finally {
+        setTimeout(function() {
+          wrap.classList.add('hidden');
+          bar.style.width = '0%';
+        }, 800);
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // NOVO KIT — modal independente, fora do form de produto
+    // ─────────────────────────────────────────────────────────────────────
+    var editingKitId = null;
+    var kitSelectedItems = []; // [{id, title, price, promotional_price, images, stock}]
+    var kitSearchDebounce = null;
+    var kitSearchItems = {};
+    var kitCoverImage = null;
+
+    function openKitModal(kitId) {
+      editingKitId = kitId;
+      kitSelectedItems = [];
+      document.getElementById('kit-modal-overlay').classList.remove('hidden');
+      document.getElementById('kit-modal-overlay').classList.add('flex');
+      document.getElementById('k-item-search').value = '';
+      document.getElementById('k-item-category').value = '';
+      document.getElementById('k-item-results').innerHTML = '';
+
+      if (kitId) {
+        var k = allProducts.find(function(x) { return String(x.id) === String(kitId) && x.is_kit; });
+        if (!k) { showToast('Kit não encontrado.', 'error'); closeKitModal(); return; }
+
+        document.getElementById('kit-modal-title').innerText = 'Editar Kit';
+        document.getElementById('kit-modal-delete-btn').classList.remove('hidden');
+        document.getElementById('k-title').value = k.title || '';
+        document.getElementById('k-description').value = k.description || '';
+        document.getElementById('k-type').value = k.kit_type || 'fixed';
+        document.getElementById('k-slots').value = k.kit_slots || '';
+        document.getElementById('k-discount-type').value = k.kit_discount_type || 'percent';
+        document.getElementById('k-discount-value').value = k.kit_discount_value || '';
+        document.getElementById('k-active').checked = k.is_active !== false;
+        kitCoverImage = Array.isArray(k.images) && k.images.length && !String(k.images[0]).includes('/kits/auto/') ? k.images[0] : null;
+
+        window.supabaseClient.from('product_kit_items')
+          .select('child_product_id, products:child_product_id(id, title, price, promotional_price, images, stock)')
+          .eq('kit_product_id', k.id)
+          .then(function(res) {
+            kitSelectedItems = (res.data || [])
+              .filter(function(r) { return r.products; })
+              .map(function(r) {
+                return { id: r.products.id, title: r.products.title, price: r.products.price, promotional_price: r.products.promotional_price, images: r.products.images || [], stock: r.products.stock };
+              });
+            renderKitSelectedList();
+            renderKitModalConfig();
+          });
+      } else {
+        document.getElementById('kit-modal-title').innerText = 'Novo Kit';
+        document.getElementById('kit-modal-delete-btn').classList.add('hidden');
+        document.getElementById('k-title').value = '';
+        document.getElementById('k-description').value = '';
+        document.getElementById('k-type').value = 'fixed';
+        document.getElementById('k-slots').value = '';
+        document.getElementById('k-discount-type').value = 'percent';
+        document.getElementById('k-discount-value').value = '';
+        document.getElementById('k-active').checked = true;
+        kitCoverImage = null;
+        renderKitSelectedList();
+        renderKitModalConfig();
+      }
+      searchKitItems();
+    }
+
+    function closeKitModal() {
+      document.getElementById('kit-modal-overlay').classList.add('hidden');
+      document.getElementById('kit-modal-overlay').classList.remove('flex');
+      editingKitId = null;
+    }
+
+    function renderKitModalConfig() {
+      var type = document.getElementById('k-type').value;
+      document.getElementById('k-slots-field').classList.toggle('hidden', type !== 'configurable');
+      renderKitCoverPreview();
+      updateKitModalPreviewPrice();
+    }
+
+    // Busca no banco (ilike no título) + filtro de categoria, em tempo real
+    function onKitItemSearchInput() {
+      clearTimeout(kitSearchDebounce);
+      kitSearchDebounce = setTimeout(searchKitItems, 300);
+    }
+
+    async function searchKitItems() {
+      var term = document.getElementById('k-item-search').value.trim();
+      var category = document.getElementById('k-item-category').value;
+      var loadingEl = document.getElementById('k-item-loading');
+      var resultsEl = document.getElementById('k-item-results');
+
+      loadingEl.classList.remove('hidden');
+      try {
+        var query = window.supabaseClient
+          .from('products')
+          .select('id, title, price, promotional_price, images, category, stock')
+          .eq('is_kit', false)
+          .order('title', { ascending: true })
+          .limit(40);
+
+        if (term) query = query.ilike('title', '%' + term + '%');
+        if (category) query = query.eq('category', category);
+        if (editingKitId) query = query.neq('id', editingKitId);
+
+        var r = await query;
+        if (r.error) throw r.error;
+        renderKitItemResults(r.data || []);
+      } catch (e) {
+        resultsEl.innerHTML = '<p class="font-mono text-xs text-red-400/60 p-2">Erro ao buscar produtos: ' + e.message + '</p>';
+      } finally {
+        loadingEl.classList.add('hidden');
+      }
+    }
+
+    function renderKitItemResults(products) {
+      var wrap = document.getElementById('k-item-results');
+      kitSearchItems = {};
+      if (products.length === 0) {
+        wrap.innerHTML = '<p class="font-mono text-xs text-white/20 p-2">Nenhum produto encontrado.</p>';
+        return;
+      }
+      wrap.innerHTML = products.map(function(p) {
+        var checked = kitSelectedItems.some(function(x) { return String(x.id) === String(p.id); }) ? 'checked' : '';
+        var thumb = Array.isArray(p.images) && p.images.length ? p.images[0] : '';
+        kitSearchItems[String(p.id)] = p;
+        return '<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04)">'
+          + '<input type="checkbox" value="' + escapeHTMLAdmin(String(p.id)) + '" ' + checked + ' onchange="toggleKitModalItem(this.value, this.checked)">'
+          + (thumb ? '<img src="' + escapeHTMLAdmin(thumb) + '" alt="" style="width:28px;height:28px;object-fit:cover;border:1px solid rgba(255,255,255,.1)">' : '<span style="width:28px;height:28px;display:grid;place-items:center;background:#111;color:rgba(221,175,52,.5)">✦</span>')
+          + '<span class="font-mono text-xs text-white/60 flex-1">' + escapeHTMLAdmin(p.title) + (p.category ? ' <span style="color:rgba(255,255,255,.2)">· ' + escapeHTMLAdmin(p.category) + '</span>' : '') + '</span>'
+          + '<span class="font-mono text-xs text-freo-orange flex-shrink-0">R$ ' + Number(p.price).toFixed(2).replace('.', ',') + '</span>'
+          + '</label>';
+      }).join('');
+    }
+
+    function toggleKitModalItem(id, checked) {
+      var item = kitSearchItems[String(id)];
+      if (!item) return;
+      if (checked) {
+        if (!kitSelectedItems.some(function(x) { return String(x.id) === String(id); })) {
+          kitSelectedItems.push({ id: item.id, title: item.title, price: item.price, promotional_price: item.promotional_price, images: item.images || [], stock: item.stock });
+        }
+      } else {
+        kitSelectedItems = kitSelectedItems.filter(function(x) { return String(x.id) !== String(id); });
+      }
+      renderKitSelectedList();
+      renderKitCoverPreview();
+      updateKitModalPreviewPrice();
+    }
+
+    function removeKitSelectedItem(id) {
+      kitSelectedItems = kitSelectedItems.filter(function(x) { return String(x.id) !== String(id); });
+      renderKitSelectedList();
+      renderKitCoverPreview();
+      updateKitModalPreviewPrice();
+      // Desmarca o checkbox correspondente se estiver visível nos resultados atuais
+      var cb = document.querySelector('#k-item-results input[value="' + id + '"]');
+      if (cb) cb.checked = false;
+    }
+
+    function renderKitSelectedList() {
+      var wrap = document.getElementById('k-selected-wrap');
+      var list = document.getElementById('k-selected-list');
+      document.getElementById('k-items-count').innerText = kitSelectedItems.length + ' produto(s) selecionado(s)';
+
+      if (kitSelectedItems.length === 0) {
+        wrap.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+      }
+      wrap.classList.remove('hidden');
+      list.innerHTML = kitSelectedItems.map(function(item) {
+        var thumb = Array.isArray(item.images) && item.images.length ? '<img src="' + escapeHTMLAdmin(item.images[0]) + '" alt="" style="width:18px;height:18px;object-fit:cover;margin:-1px 2px -1px -4px">' : '';
+        return '<span class="tag-pill">' + thumb + escapeHTMLAdmin(item.title)
+          + '<button onclick="removeKitSelectedItem(\'' + item.id + '\')" style="background:none;border:none;cursor:pointer;color:#DDAF34;font-size:14px;line-height:1;padding:0 0 0 2px">×</button></span>';
+      }).join('');
+    }
+
+    function renderKitCoverPreview() {
+      var preview = document.getElementById('k-cover-preview');
+      var label = document.getElementById('k-cover-status');
+      if (!preview || !label) return;
+      if (kitCoverImage) {
+        preview.innerHTML = '<img src="' + escapeHTMLAdmin(kitCoverImage) + '" alt="Capa personalizada do kit" class="w-full h-full object-cover">';
+        label.innerText = 'Capa personalizada selecionada';
+        return;
+      }
+      var cells = kitSelectedItems.slice(0, 4).map(function(item) {
+        var url = Array.isArray(item.images) && item.images.length ? item.images[0] : '';
+        return url ? '<img src="' + escapeHTMLAdmin(url) + '" alt="" class="w-full h-full object-cover">' : '<span class="grid place-items-center bg-white/5 text-freo-orange/50">✦</span>';
+      });
+      while (cells.length < 4) cells.push('<span class="grid place-items-center bg-white/[.03] text-white/10">+</span>');
+      preview.innerHTML = '<div class="grid grid-cols-2 gap-px w-full h-full bg-freo-orange/20">' + cells.join('') + '</div>';
+      label.innerText = kitSelectedItems.length ? 'Capa automática: montagem dos itens selecionados' : 'A capa automática aparecerá ao selecionar os produtos';
+    }
+
+    async function uploadKitCover(file) {
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { showToast('Escolha uma imagem válida para a capa.', 'error'); return; }
+      if (file.size > 5 * 1024 * 1024) { showToast('A capa deve ter no máximo 5MB.', 'error'); return; }
+      var status = document.getElementById('k-cover-status');
+      status.innerText = 'Enviando capa...';
+      try {
+        var ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-z0-9]/gi, '');
+        var path = 'kits/custom/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+        var result = await window.supabaseClient.storage.from('imagens').upload(path, file, { upsert: false, contentType: file.type });
+        if (result.error) throw result.error;
+        kitCoverImage = window.supabaseClient.storage.from('imagens').getPublicUrl(path).data.publicUrl;
+        renderKitCoverPreview();
+        showToast('Capa personalizada adicionada!', 'success');
+      } catch (error) {
+        status.innerText = 'Não foi possível enviar a capa';
+        showToast('Erro ao enviar a capa: ' + error.message, 'error');
+      }
+    }
+
+    function clearKitCover() {
+      kitCoverImage = null;
+      document.getElementById('k-cover-input').value = '';
+      renderKitCoverPreview();
+    }
+
+    function loadKitCoverImage(url) {
+      return new Promise(function(resolve) {
+        var image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = function() { resolve(image); };
+        image.onerror = function() { resolve(null); };
+        image.src = url;
+      });
+    }
+
+    async function createAutomaticKitCover(items) {
+      var canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1200;
+      var context = canvas.getContext('2d');
+      context.fillStyle = '#111211';
+      context.fillRect(0, 0, 1200, 1200);
+      var sources = items.slice(0, 4).map(function(item) { return Array.isArray(item.images) && item.images.length ? item.images[0] : ''; });
+      var loaded = await Promise.all(sources.map(function(url) { return url ? loadKitCoverImage(url) : Promise.resolve(null); }));
+      for (var index = 0; index < 4; index++) {
+        var x = (index % 2) * 600, y = Math.floor(index / 2) * 600, image = loaded[index];
+        context.fillStyle = index % 2 ? '#1a1e18' : '#252b21';
+        context.fillRect(x, y, 600, 600);
+        if (image) {
+          var scale = Math.max(600 / image.width, 600 / image.height), width = image.width * scale, height = image.height * scale;
+          context.drawImage(image, x + (600 - width) / 2, y + (600 - height) / 2, width, height);
+        } else {
+          context.fillStyle = '#e9c972'; context.font = '700 88px Outfit, sans-serif'; context.textAlign = 'center'; context.fillText('✦', x + 300, y + 325);
+        }
+      }
+      context.fillStyle = 'rgba(10,10,10,.62)'; context.fillRect(0, 1010, 1200, 190);
+      context.fillStyle = '#e9c972'; context.font = '700 42px Space Grotesk, sans-serif'; context.textAlign = 'center'; context.fillText('KIT FREOFIGURES', 600, 1120);
+      var blob = await new Promise(function(resolve) { canvas.toBlob(resolve, 'image/jpeg', .9); });
+      if (!blob) throw new Error('Não foi possível gerar a capa automática.');
+      var path = 'kits/auto/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
+      var upload = await window.supabaseClient.storage.from('imagens').upload(path, blob, { upsert: false, contentType: 'image/jpeg' });
+      if (upload.error) throw upload.error;
+      return window.supabaseClient.storage.from('imagens').getPublicUrl(path).data.publicUrl;
+    }
+
+    function updateKitModalPreviewPrice() {
+      var previewEl = document.getElementById('k-preview-price');
+      var type = document.getElementById('k-type').value;
+      var discountType = document.getElementById('k-discount-type').value;
+      var discountValue = parseFloat(document.getElementById('k-discount-value').value) || 0;
+
+      var slots = parseInt(document.getElementById('k-slots').value) || kitSelectedItems.length;
+      var relevant = type === 'configurable' ? kitSelectedItems.slice(0, slots) : kitSelectedItems;
+
+      var sum = relevant.reduce(function(acc, p) {
+        var hasPromo = p.promotional_price && p.promotional_price < p.price;
+        return acc + Number(hasPromo ? p.promotional_price : p.price);
+      }, 0);
+
+      var final = discountType === 'percent' ? sum * (1 - discountValue / 100) : Math.max(0, sum - discountValue);
+
+      previewEl.innerText = type === 'configurable'
+        ? 'Prévia (assumindo ' + slots + ' item(ns) escolhido(s)): soma R$ ' + sum.toFixed(2).replace('.', ',') + ' → final R$ ' + final.toFixed(2).replace('.', ',')
+        : 'Preço final do kit: soma R$ ' + sum.toFixed(2).replace('.', ',') + ' → final R$ ' + final.toFixed(2).replace('.', ',');
+    }
+
+    async function saveKit() {
+      var btn = document.getElementById('kit-modal-save-btn');
+      var title = document.getElementById('k-title').value.trim();
+      var type = document.getElementById('k-type').value;
+
+      if (!title) { showToast('Informe o nome do kit.', 'error'); return; }
+      if (kitSelectedItems.length === 0) { showToast('Selecione ao menos um produto para o kit.', 'error'); return; }
+
+      var slots = null;
+      if (type === 'configurable') {
+        slots = parseInt(document.getElementById('k-slots').value);
+        if (!slots || slots <= 0) { showToast('Informe quantos itens o cliente deve escolher.', 'error'); return; }
+        if (kitSelectedItems.length < slots) { showToast('Você selecionou menos produtos do que os ' + slots + ' itens exigidos.', 'error'); return; }
+      }
+
+      btn.innerText = 'Salvando...'; btn.disabled = true;
+
+      var slotsForPrice = type === 'configurable' ? slots : kitSelectedItems.length;
+      var relevantItems = type === 'configurable' ? kitSelectedItems.slice(0, slotsForPrice) : kitSelectedItems;
+      var individualTotal = relevantItems.reduce(function(total, item) {
+        var itemPrice = item.promotional_price != null && Number(item.promotional_price) < Number(item.price) ? item.promotional_price : item.price;
+        return total + (Number(itemPrice) || 0);
+      }, 0);
+      var discountType = document.getElementById('k-discount-type').value;
+      var discountValue = parseFloat(document.getElementById('k-discount-value').value) || 0;
+      var kitPrice = discountType === 'percent' ? individualTotal * (1 - discountValue / 100) : Math.max(0, individualTotal - discountValue);
+      var coverUrl = kitCoverImage;
+      var itemStocks = relevantItems.map(function(item) { return Math.max(0, Number(item.stock) || 0); });
+      var kitStock = itemStocks.length ? (type === 'fixed' ? Math.min.apply(null, itemStocks) : Math.max.apply(null, itemStocks)) : 0;
+
+      var payload = {
+        title: title,
+        description: document.getElementById('k-description').value.trim() || null,
+        price: Math.round(kitPrice * 100) / 100,
+        promotional_price: null,
+        stock: kitStock,
+        category: null,
+        images: coverUrl ? [coverUrl] : [],
+        tags: null,
+        video_url: null,
+        variants: [],
+        seo_title: null,
+        seo_description: null,
+        is_active: document.getElementById('k-active').checked,
+        sale_mode: 'normal',
+        is_kit: true,
+        kit_type: type,
+        kit_slots: type === 'configurable' ? slots : null,
+        kit_discount_type: discountType,
+        kit_discount_value: discountValue
+      };
+
+      try {
+        if (!coverUrl) coverUrl = await createAutomaticKitCover(kitSelectedItems);
+        payload.images = coverUrl ? [coverUrl] : [];
+        var kitId = editingKitId;
+        if (kitId) {
+          var rUpd = await window.supabaseClient.from('products').update(payload).eq('id', kitId);
+          if (rUpd.error) throw rUpd.error;
+        } else {
+          var rIns = await window.supabaseClient.from('products').insert(payload).select().single();
+          if (rIns.error) throw rIns.error;
+          kitId = rIns.data.id;
+        }
+
+        await saveKitItems(kitId, kitSelectedItems.map(function(x) { return x.id; }));
+
+        showToast(editingKitId ? 'Kit atualizado!' : 'Kit criado!', 'success');
+        closeKitModal();
+        loadProducts();
+      } catch (e) {
+        console.error('saveKit error:', e);
+        showToast('Erro ao salvar kit: ' + (e.message || JSON.stringify(e)), 'error');
+      } finally {
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Salvar Kit';
+        btn.disabled = false;
+      }
+    }
+
+    function confirmDeleteKit() {
+      if (!editingKitId) return;
+      var k = allProducts.find(function(x) { return String(x.id) === String(editingKitId); });
+      if (!confirm('Excluir o kit "' + (k ? k.title : 'este kit') + '"?\n\nEsta ação não pode ser desfeita.')) return;
+      deleteKit();
+    }
+
+    async function deleteKit() {
+      if (!editingKitId) return;
+      try {
+        await window.supabaseClient.from('product_kit_items').delete().eq('kit_product_id', editingKitId);
+        var r = await window.supabaseClient.from('products').delete().eq('id', editingKitId);
+        if (r.error) throw r.error;
+        showToast('Kit excluído.', 'success');
+        closeKitModal();
+        loadProducts();
+      } catch (e) {
+        showToast('Erro ao excluir kit: ' + e.message, 'error');
+      }
+    }
+  </script>
+
+  <!-- MODAL IMPORTAR SHOPEE -->
+  <div id="import-overlay" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+    <div class="bg-freo-dark border border-white/[0.07] w-full max-w-2xl relative shadow-2xl flex flex-col" style="max-height:90vh">
+      <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-freo-orange to-transparent"></div>
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] flex-shrink-0">
+        <div>
+          <h2 class="font-display font-black uppercase text-xl text-white">Importar da Shopee</h2>
+          <p class="font-mono text-xs text-white/30 mt-0.5">Envie a planilha exportada do Seller Center</p>
+        </div>
+        <button onclick="closeImport()" class="text-white/30 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
+        <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
+          <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <div class="font-mono text-xs text-white/50 leading-relaxed space-y-1">
+            <p><span class="text-freo-orange font-bold">Como exportar:</span> Shopee Seller Center → Meus Produtos → Atualização em Massa → Exportar Informações de Mídia</p>
+            <p>O sistema importa: nome, categoria, imagens (re-upload automático pro seu Storage) e variantes.</p>
+            <p class="text-white/30">Preço e estoque precisam ser preenchidos depois, pois não constam nessa planilha.</p>
+          </div>
+        </div>
+        <div id="import-drop" class="img-drop rounded p-10 text-center" onclick="document.getElementById('import-file').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleImportDrop(event)">
+          <input type="file" id="import-file" accept=".xlsx,.xls" class="hidden" onchange="handleImportFile(event)">
+          <svg class="w-12 h-12 text-white/20 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <p class="font-mono text-sm text-white/40">Clique ou arraste o arquivo .xlsx aqui</p>
+          <p class="font-mono text-xs text-white/20 mt-1">Exportado do Shopee Seller Center</p>
+        </div>
+        <div id="import-preview" class="hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="fl text-sm">Produtos encontrados na planilha</label>
+            <span id="import-count" class="font-mono text-xs text-freo-orange"></span>
+          </div>
+          <div id="import-list" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+        </div>
+        <div id="import-progress-wrap" class="hidden space-y-3">
+          <div class="flex justify-between">
+            <span class="font-mono text-xs text-white/50" id="import-progress-label">Importando...</span>
+            <span class="font-mono text-xs text-freo-orange" id="import-progress-pct">0%</span>
+          </div>
+          <div class="bg-white/10 h-1.5 rounded overflow-hidden">
+            <div id="import-progress-bar" class="h-full bg-freo-orange transition-all duration-300" style="width:0%"></div>
+          </div>
+          <div id="import-log" class="bg-freo-black border border-white/[0.06] p-3 max-h-40 overflow-y-auto font-mono text-xs text-white/40 space-y-1"></div>
+        </div>
+        <div id="import-result" class="hidden p-4 border rounded text-center"></div>
+      </div>
+      <div class="border-t border-white/[0.07] px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <button onclick="closeImport()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
+        <div class="flex-1"></div>
+        <button onclick="startImport()" id="import-btn" class="hidden bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-6 py-2.5 hover:bg-white transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          Importar todos
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAÇÃO DE AJUSTE EM MASSA -->
+  <div id="bulk-confirm-overlay" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+    <div class="bg-freo-dark border border-freo-orange/30 w-full max-w-md relative shadow-2xl">
+      <div class="px-6 py-5 border-b border-white/[0.07]">
+        <h3 class="font-display font-black uppercase text-lg text-white">Confirmar ajuste</h3>
+      </div>
+      <div class="px-6 py-5">
+        <p id="bulk-confirm-text" class="font-mono text-sm text-white/70 leading-relaxed"></p>
+        <p class="font-mono text-xs text-red-400/70 mt-3">Esta ação altera o banco de dados diretamente e não pode ser desfeita automaticamente.</p>
+      </div>
+      <div class="px-6 py-4 border-t border-white/[0.07] flex gap-3 justify-end">
+        <button onclick="closeBulkConfirm()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
+        <button onclick="runBulkPriceUpdate()" id="bulk-confirm-btn" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-5 py-2.5 hover:bg-white transition-colors">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOVO KIT (separado do formulário de produto) -->
+  <div id="kit-modal-overlay" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay p-4">
+    <div class="bg-freo-dark border border-white/[0.07] w-full max-w-3xl relative shadow-2xl flex flex-col" style="max-height:92vh">
+      <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-freo-orange to-transparent"></div>
+
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] flex-shrink-0">
+        <div>
+          <h2 id="kit-modal-title" class="font-display font-black uppercase text-xl text-white">Novo Kit</h2>
+          <p class="font-mono text-xs text-white/30 mt-0.5">Kits são produtos especiais que combinam outros produtos com desconto</p>
+        </div>
+        <button onclick="closeKitModal()" class="text-white/30 hover:text-white transition-colors p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
+
+        <div class="flex items-start gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15">
+          <svg class="w-4 h-4 text-freo-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <div class="font-mono text-xs text-white/40 leading-relaxed space-y-1">
+            <p><strong style="color:rgba(221,175,52,.7)">Kit Fixo</strong>: você escolhe os produtos e um desconto. O preço final é a soma dos itens menos o desconto — todos os itens entram automaticamente.</p>
+            <p><strong style="color:rgba(221,175,52,.7)">Kit Configurável</strong>: cliente escolhe N produtos dentre os elegíveis, na tela /montar-kit.html. Preço = soma dos escolhidos menos o desconto.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="fl">Nome do kit *</label>
+            <input type="text" id="k-title" class="fi" placeholder="Ex: Kit Colecionador Marvel">
+          </div>
+          <div>
+            <label class="fl">Tipo de kit</label>
+            <select id="k-type" class="fi" onchange="renderKitModalConfig()">
+              <option value="fixed">Fixo — todos os itens entram, com desconto</option>
+              <option value="configurable">Configurável — cliente escolhe N itens, com desconto</option>
+            </select>
+          </div>
+          <div id="k-slots-field" class="hidden">
+            <label class="fl">Quantos itens o cliente escolhe</label>
+            <input type="number" id="k-slots" class="fi" min="1" placeholder="Ex: 3">
+          </div>
+        </div>
+
+        <div>
+          <label class="fl">Descrição do kit</label>
+          <textarea id="k-description" class="fi" placeholder="Descreva o kit..."></textarea>
+        </div>
+
+        <div class="p-4 border border-white/[0.08] bg-black/20">
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <label class="fl">Imagem de capa do kit</label>
+              <p class="font-mono text-[10px] text-white/25 normal-case tracking-normal mt-1">Envie uma imagem própria ou deixe vazio para gerar uma capa com todos os itens selecionados.</p>
+            </div>
+            <button type="button" onclick="clearKitCover()" class="font-mono text-[10px] text-white/35 hover:text-freo-orange uppercase tracking-widest whitespace-nowrap">Usar automática</button>
+          </div>
+          <div class="flex gap-4 items-center">
+            <div id="k-cover-preview" class="w-24 h-24 flex-shrink-0 overflow-hidden border border-freo-orange/25 bg-freo-dark"></div>
+            <div class="min-w-0">
+              <input type="file" id="k-cover-input" accept="image/*" class="hidden" onchange="uploadKitCover(this.files[0])">
+              <button type="button" onclick="document.getElementById('k-cover-input').click()" class="border border-freo-orange/40 text-freo-orange font-mono text-xs uppercase tracking-widest px-3 py-2 hover:bg-freo-orange hover:text-freo-black transition-colors">Enviar imagem</button>
+              <p id="k-cover-status" class="font-mono text-[10px] text-white/30 mt-2"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="fl">Tipo de desconto</label>
+            <select id="k-discount-type" class="fi" onchange="updateKitModalPreviewPrice()">
+              <option value="percent">Percentual (%)</option>
+              <option value="fixed">Valor fixo (R$)</option>
+            </select>
+          </div>
+          <div>
+            <label class="fl">Valor do desconto</label>
+            <input type="number" id="k-discount-value" class="fi" step="0.01" min="0" placeholder="0" oninput="updateKitModalPreviewPrice()">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-1">
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="k-active" class="sr-only peer" checked>
+            <div class="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-freo-orange transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-4 after:h-4 after:transition-transform peer-checked:after:translate-x-5"></div>
+          </label>
+          <span class="font-mono text-xs text-white/50 uppercase tracking-widest">Kit ativo (visível na loja)</span>
+        </div>
+
+        <div class="pt-4 border-t border-white/[0.06]">
+          <label class="fl mb-2">Selecionar produtos elegíveis para este kit</label>
+
+          <div class="flex gap-2 mb-3">
+            <div class="relative flex-1">
+              <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+              <input type="text" id="k-item-search" class="fi pl-9 py-2" placeholder="Buscar produto pelo nome..." oninput="onKitItemSearchInput()">
+            </div>
+            <select id="k-item-category" class="fi py-2" style="width:190px" onchange="searchKitItems()">
+              <option value="">Todas as categorias</option>
+              <option value="religioso">Religioso</option>
+              <option value="games">Games</option>
+              <option value="anime">Anime</option>
+              <option value="filmes">Filmes / Séries</option>
+              <option value="keycaps">Keycaps</option>
+              <option value="personalizado">Personalizado</option>
+              <option value="lifestyle">Lifestyle</option>
+              <option value="outros">Outros</option>
+            </select>
+          </div>
+
+          <div id="k-selected-wrap" class="hidden mb-3">
+            <p class="font-mono text-[10px] text-white/25 uppercase tracking-widest mb-1.5">Selecionados</p>
+            <div id="k-selected-list" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <div id="k-item-results" class="space-y-1 max-h-64 overflow-y-auto border border-white/[0.06] p-3"></div>
+          <p id="k-item-loading" class="hidden font-mono text-xs text-white/20 mt-2">Buscando...</p>
+          <p id="k-items-count" class="font-mono text-xs text-white/20 mt-2"></p>
+        </div>
+
+        <div id="k-preview-price" class="p-3 border border-freo-orange/20 bg-freo-orange/5 font-mono text-xs text-freo-orange"></div>
+
+      </div>
+
+      <div class="border-t border-white/[0.07] px-6 py-4 flex items-center gap-3 flex-shrink-0 bg-freo-dark">
+        <button id="kit-modal-delete-btn" onclick="confirmDeleteKit()" class="hidden text-xs font-mono text-red-500/50 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 px-4 py-2.5 transition-colors uppercase tracking-widest">Excluir kit</button>
+        <div class="flex-1"></div>
+        <button onclick="closeKitModal()" class="text-xs font-mono text-white/30 hover:text-white border border-white/10 hover:border-white/30 px-4 py-2.5 transition-colors uppercase tracking-widest">Cancelar</button>
+        <button onclick="saveKit()" id="kit-modal-save-btn" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-6 py-2.5 hover:bg-white transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Salvar Kit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+  var importRows = [];
+  function openImport(){ document.getElementById('import-overlay').classList.remove('hidden'); document.getElementById('import-overlay').classList.add('flex'); resetImport(); }
+  function closeImport(){ document.getElementById('import-overlay').classList.add('hidden'); document.getElementById('import-overlay').classList.remove('flex'); resetImport(); }
+  function resetImport(){ importRows=[]; ['import-preview','import-progress-wrap','import-result','import-btn'].forEach(function(id){ document.getElementById(id).classList.add('hidden'); }); document.getElementById('import-drop').classList.remove('hidden'); document.getElementById('import-file').value=''; document.getElementById('import-log').innerHTML=''; document.getElementById('import-progress-bar').style.width='0%'; }
+  function handleImportDrop(e){ e.preventDefault(); document.getElementById('import-drop').classList.remove('dragover'); var files=e.dataTransfer.files; if(files.length>0) processImportFile(files[0]); }
+  function handleImportFile(e){ if(e.target.files.length>0) processImportFile(e.target.files[0]); }
+  function processImportFile(file){
+    if(!file.name.match(/\.xlsx?$/i)){ alert('Por favor envie um arquivo .xlsx exportado da Shopee.'); return; }
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var wb=XLSX.read(e.target.result,{type:'array'}); var ws=wb.Sheets[wb.SheetNames[0]];
+        var raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        var dataRows=raw.filter(function(row,idx){ return idx>=4&&row[0]&&String(row[0]).match(/^\d+$/); });
+        if(dataRows.length===0){ alert('Nenhum produto encontrado. Verifique se é a planilha correta da Shopee.'); return; }
+        importRows=dataRows.map(function(row){
+          var images=[]; for(var i=4;i<=12;i++){ if(row[i]&&String(row[i]).trim().startsWith('http')) images.push(String(row[i]).trim()); }
+          var variants=[]; var variantName=row[15]?String(row[15]).trim():'';
+          if(variantName){ var opts=[]; for(var j=0;j<5;j++){ var optName=row[16+j*2]; if(optName&&String(optName).trim()) opts.push({name:String(optName).trim(),price:null}); } if(opts.length>0) variants.push({name:variantName,per_option_price:false,options:opts}); }
+          var catRaw=String(row[3]||'').toLowerCase(); var category='outros';
+          if(catRaw.includes('keyboard')||catRaw.includes('keycap')) category='keycaps';
+          else if(catRaw.includes('gaming')||catRaw.includes('game')) category='games';
+          else if(catRaw.includes('religious')||catRaw.includes('fengshui')) category='religioso';
+          else if(catRaw.includes('toy')||catRaw.includes('figure')) category='games';
+          else if(catRaw.includes('home')||catRaw.includes('decoration')) category='lifestyle';
+          return { shopee_id:String(row[0]), title:String(row[2]||'').trim(), category:category, images:images, variants:variants, price:0, stock:0, is_active:true };
+        });
+        renderImportPreview();
+      }catch(err){ alert('Erro ao ler planilha: '+err.message); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  function renderImportPreview(){
+    var list=document.getElementById('import-list');
+    document.getElementById('import-count').innerText=importRows.length+' produto(s)';
+    list.innerHTML=importRows.map(function(p,i){
+      var thumb=p.images.length>0?p.images[0]:null;
+      return '<div class="flex items-center gap-3 p-3 bg-freo-black border border-white/[0.06]">'
+        +'<span class="font-mono text-[10px] text-white/20 w-5 flex-shrink-0">'+(i+1)+'</span>'
+        +(thumb?'<img src="'+thumb+'" class="w-12 h-12 object-cover flex-shrink-0 bg-freo-dark" onerror="this.style.opacity=0.2">':'<div class="w-12 h-12 bg-freo-dark flex-shrink-0"></div>')
+        +'<div class="flex-1 min-w-0"><p class="font-body text-sm font-bold text-white truncate">'+p.title+'</p>'
+        +'<p class="font-mono text-[10px] text-white/30">'+p.category+(p.variants.length>0?' · '+p.variants[0].name+': '+p.variants[0].options.slice(0,3).map(function(o){return o.name;}).join(', ')+(p.variants[0].options.length>3?'...':''):'')+'</p></div>'
+        +'<span class="font-mono text-[9px] text-freo-orange/60 border border-freo-orange/20 px-1.5 py-0.5 flex-shrink-0">A importar</span></div>';
+    }).join('');
+    document.getElementById('import-preview').classList.remove('hidden');
+    document.getElementById('import-btn').classList.remove('hidden');
+  }
+  async function startImport(){
+    if(!importRows.length) return;
+    document.getElementById('import-btn').disabled=true; document.getElementById('import-btn').innerText='Importando...';
+    document.getElementById('import-progress-wrap').classList.remove('hidden'); document.getElementById('import-preview').classList.add('hidden');
+    var log=document.getElementById('import-log'),bar=document.getElementById('import-progress-bar'),pct=document.getElementById('import-progress-pct'),label=document.getElementById('import-progress-label');
+    var done=0,success=0,errors=0;
+    function addLog(msg,isError){ var line=document.createElement('div'); line.className=isError?'text-red-400/70':'text-white/40'; line.innerText=msg; log.appendChild(line); log.scrollTop=log.scrollHeight; }
+    for(var i=0;i<importRows.length;i++){
+      var p=importRows[i]; label.innerText='Importando: '+p.title.substring(0,40)+'...'; addLog('⟳ ['+(i+1)+'/'+importRows.length+'] '+p.title.substring(0,50));
+      try{
+        var uploadedImages=[];
+        for(var j=0;j<p.images.length;j++){
+          try{ var imgUrl=p.images[j]; var resp=await fetch(imgUrl); if(!resp.ok) throw new Error('HTTP '+resp.status); var blob=await resp.blob(); var ext='jpg'; if(blob.type.includes('png')) ext='png'; else if(blob.type.includes('webp')) ext='webp'; var path='produtos/'+p.shopee_id+'_'+j+'_'+Date.now()+'.'+ext; var up=await window.supabaseClient.storage.from('imagens').upload(path,blob,{upsert:true,contentType:blob.type}); if(up.error) throw up.error; var pub=window.supabaseClient.storage.from('imagens').getPublicUrl(path); uploadedImages.push(pub.data.publicUrl); }
+          catch(imgErr){ uploadedImages.push(p.images[j]); addLog('  ⚠ Imagem '+(j+1)+' mantida na Shopee',true); }
+        }
+        var r=await window.supabaseClient.from('products').insert({title:p.title,category:p.category,images:uploadedImages,variants:p.variants,price:0,stock:0,is_active:false});
+        if(r.error) throw r.error; success++; addLog('  ✓ Salvo com '+uploadedImages.length+' imagem(ns)');
+      }catch(err){ errors++; addLog('  ✗ Erro: '+err.message,true); }
+      done++; var perc=Math.round((done/importRows.length)*100); bar.style.width=perc+'%'; pct.innerText=perc+'%';
+    }
+    label.innerText='Importação concluída!';
+    var resultEl=document.getElementById('import-result');
+    resultEl.className=success>0?'p-4 border border-green-500/30 bg-green-500/5 rounded text-center':'p-4 border border-red-500/30 bg-red-500/5 rounded text-center';
+    resultEl.innerHTML='<p class="font-display font-bold text-xl '+(success>0?'text-green-400':'text-red-400')+'">'+success+' produto(s) importado(s)!</p>'+(errors>0?'<p class="font-mono text-xs text-red-400/60 mt-1">'+errors+' com erro</p>':'')+'<p class="font-mono text-xs text-white/30 mt-2">Produtos criados como <strong>inativos</strong> — adicione preço e ative na listagem.</p>';
+    resultEl.classList.remove('hidden'); document.getElementById('import-btn').classList.add('hidden'); loadProducts();
+  }
+  </script>
+</body>
+</html>
