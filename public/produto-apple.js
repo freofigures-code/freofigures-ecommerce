@@ -318,6 +318,11 @@ async function loadShippingPromotion() {
         // O produto continua disponível mesmo quando a promoção de frete não puder ser consultada.
     }
 }
+function renderPreparation(p) {
+    var days = Math.max(1, Math.floor(Number(p && p.preparation_days) || 1));
+    text('preparation-promo-time', 'Postagem em até ' + days + ' dia' + (days === 1 ? ' útil' : 's úteis'));
+    text('preparation-promo-detail', 'Tempo de preparo antes do envio, contado após a confirmação do pagamento.');
+}
 function renderDescription(p) {
     var lines = String(p.description || '').split(/\n+/).map(function (s) { return s.trim(); }).filter(Boolean), container = el('product-description');
     container.innerHTML = '';
@@ -479,6 +484,7 @@ async function renderProduct(p) {
     if (!tags.length && typeof p.tags === 'string' && !p.tags.startsWith('['))
         tags = p.tags.split(',');
     el('product-tags').innerHTML = tags.filter(Boolean).slice(0, 4).map(function (t) { return '<span class="tag-pill">' + escapeHtml(t) + '</span>'; }).join('');
+    renderPreparation(p);
     renderStock();
     renderVariants();
     renderDescription(p);

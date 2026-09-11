@@ -1141,6 +1141,59 @@ section {
   margin-top: 15px;
 }
 
+.preparation-promo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 11px;
+  padding: 13px 15px;
+  border: 1px solid #8faf7866;
+  border-radius: 10px;
+  background: linear-gradient(110deg,#a8c9901c,#d9af3510);
+  box-shadow: inset 3px 0 0 #a8c990;
+}
+
+.preparation-promo-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #a8c990;
+  color: #172013;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.preparation-promo > div { min-width: 0; }
+
+.preparation-promo-label,
+.preparation-promo strong,
+.preparation-promo small { display: block; }
+
+.preparation-promo-label {
+  color: #b8d49f;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.preparation-promo strong {
+  margin-top: 2px;
+  color: #f2f5e9;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.preparation-promo small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .shipping-promo {
   position: relative;
   overflow: hidden;
