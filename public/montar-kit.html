@@ -198,8 +198,8 @@
     }
 
     function getItemPrice(item) {
-      var hasPromo = item.promotional_price && parseFloat(item.promotional_price) < parseFloat(item.price);
-      return parseFloat(hasPromo ? item.promotional_price : item.price) || 0;
+      // O kit é calculado sobre os preços brutos; promoções individuais não são acumuladas.
+      return Math.max(0, parseFloat(item.price) || 0);
     }
 
     function applyKitDiscount(sum, discountType, discountValue) {

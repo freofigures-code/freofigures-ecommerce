@@ -32,6 +32,7 @@ catch (_) {
 } }
 function imageUrls(p) { return asArray(p.images).map(safeUrl).filter(Boolean); }
 function basePrice(p) { var price = Number(p.price), promo = p.promotional_price; return promo != null && Number.isFinite(Number(promo)) && Number(promo) >= 0 && Number(promo) < price ? Number(promo) : price; }
+function grossPrice(p) { return Math.max(0, Number(p && p.price) || 0); }
 function normalizeVariants(p) {
     return asArray(p.variants).filter(function (v) { return v && v.name && asArray(v.options).length; }).map(function (v) {
         return { name: String(v.name), priced: !!v.per_option_price, options: asArray(v.options).map(function (o) {
@@ -93,7 +94,8 @@ async function loadKitFixedItems(p) {
     if (children.error || !children.data || children.data.length !== new Set(ids).size)
         throw new Error('Não foi possível calcular este kit. Tente novamente.');
     kitFixedItems = ids.map(function (id) { return children.data.find(function (c) { return String(c.id) === String(id); }); });
-    var sum = kitFixedItems.reduce(function (total, item) { return total + basePrice(item); }, 0);
+    // O desconto do kit sempre usa a soma dos preços brutos, sem somar promoções individuais.
+    var sum = kitFixedItems.reduce(function (total, item) { return total + grossPrice(item); }, 0);
     if (!Number.isFinite(sum))
         throw new Error('O preço deste kit está indisponível.');
     kitFixedPrice = applyKitDiscount(sum, p.kit_discount_type, p.kit_discount_value);
@@ -106,7 +108,7 @@ function renderKitPurchaseCard(p) {
     card.classList.toggle('hidden', !isFixedKit);
     if (!isFixedKit)
         return;
-    var individualTotal = kitFixedItems.reduce(function (sum, item) { return sum + basePrice(item); }, 0);
+    var individualTotal = kitFixedItems.reduce(function (sum, item) { return sum + grossPrice(item); }, 0);
     var savings = Math.max(0, individualTotal - kitFixedPrice);
     text('kit-purchase-savings', savings > 0 ? 'Economize ' + formatCurrency(savings) : 'Seleção especial');
     var price = el('kit-purchase-price');
