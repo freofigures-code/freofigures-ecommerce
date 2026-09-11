@@ -280,6 +280,11 @@
               <input type="number" id="f-stock" class="fi" placeholder="0" min="0">
             </div>
             <div>
+              <label class="fl">Dias úteis para preparação</label>
+              <input type="number" id="f-preparation-days" class="fi" value="1" min="1" step="1" placeholder="1">
+              <p class="font-mono text-[10px] text-white/25 mt-1 normal-case tracking-normal">Prazo antes da postagem. Se não informar, será 1 dia útil.</p>
+            </div>
+            <div class="col-span-2">
               <label class="fl">Categoria</label>
               <select id="f-category" class="fi">
                 <option value="">Selecionar</option>
@@ -772,6 +777,7 @@
       document.getElementById('f-price').value = p.price || '';
       document.getElementById('f-promo').value = p.promotional_price || '';
       document.getElementById('f-stock').value = p.stock || 0;
+      document.getElementById('f-preparation-days').value = Math.max(1, parseInt(p.preparation_days, 10) || 1);
       document.getElementById('f-category').value = p.category || '';
       document.getElementById('f-description').value = p.description || '';
       document.getElementById('f-video').value = p.video_url || '';
@@ -804,6 +810,7 @@
       document.getElementById('form-delete-btn').classList.add('hidden');
       ['f-title','f-price','f-promo','f-video','f-seo-title','f-seo-desc','f-description'].forEach(function(id){ document.getElementById(id).value = ''; });
       document.getElementById('f-stock').value = 0;
+      document.getElementById('f-preparation-days').value = 1;
       document.getElementById('f-category').value = '';
       document.getElementById('f-active').checked = true;
       document.getElementById('seo-title-count').innerText = '0/60';
@@ -1208,6 +1215,7 @@
 
     var promoPrice = parseFloat(document.getElementById('f-promo').value);
     promoPrice = isNaN(promoPrice) ? null : promoPrice;
+    var preparationDays = Math.max(1, Math.floor(Number(document.getElementById('f-preparation-days').value) || 1));
 
     var variantsPayload = currentVariants
       .filter(function(v) { return v.name || (v.options && v.options.length > 0); })
@@ -1229,6 +1237,7 @@
       price: price,
       promotional_price: promoPrice,
       stock: parseInt(document.getElementById('f-stock').value) || 0,
+      preparation_days: preparationDays,
       category: document.getElementById('f-category').value || null,
       images: currentImages,
       tags: currentTags.length > 0 ? currentTags : null,
