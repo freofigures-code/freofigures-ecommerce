@@ -1538,8 +1538,10 @@
     // NOVO KIT — modal independente, fora do form de produto
     // ─────────────────────────────────────────────────────────────────────
     var editingKitId = null;
-    var kitSelectedItems = []; // [{id, title, price, promotional_price}]
+    var kitSelectedItems = []; // [{id, title, price, promotional_price, images, stock}]
     var kitSearchDebounce = null;
+    var kitSearchItems = {};
+    var kitCoverImage = null;
 
     function openKitModal(kitId) {
       editingKitId = kitId;
@@ -1560,18 +1562,20 @@
         document.getElementById('k-description').value = k.description || '';
         document.getElementById('k-type').value = k.kit_type || 'fixed';
         document.getElementById('k-slots').value = k.kit_slots || '';
+        document.getElementById('k-stock').value = Math.max(0, Number(k.stock) || 0);
         document.getElementById('k-discount-type').value = k.kit_discount_type || 'percent';
         document.getElementById('k-discount-value').value = k.kit_discount_value || '';
         document.getElementById('k-active').checked = k.is_active !== false;
+        kitCoverImage = Array.isArray(k.images) && k.images.length && !String(k.images[0]).includes('/kits/auto/') ? k.images[0] : null;
 
         window.supabaseClient.from('product_kit_items')
-          .select('child_product_id, products:child_product_id(id, title, price, promotional_price)')
+          .select('child_product_id, products:child_product_id(id, title, price, promotional_price, images, stock)')
           .eq('kit_product_id', k.id)
           .then(function(res) {
             kitSelectedItems = (res.data || [])
               .filter(function(r) { return r.products; })
               .map(function(r) {
-                return { id: r.products.id, title: r.products.title, price: r.products.price, promotional_price: r.products.promotional_price };
+                return { id: r.products.id, title: r.products.title, price: r.products.price, promotional_price: r.products.promotional_price, images: r.products.images || [], stock: r.products.stock };
               });
             renderKitSelectedList();
             renderKitModalConfig();
@@ -1583,9 +1587,11 @@
         document.getElementById('k-description').value = '';
         document.getElementById('k-type').value = 'fixed';
         document.getElementById('k-slots').value = '';
+        document.getElementById('k-stock').value = '';
         document.getElementById('k-discount-type').value = 'percent';
         document.getElementById('k-discount-value').value = '';
         document.getElementById('k-active').checked = true;
+        kitCoverImage = null;
         renderKitSelectedList();
         renderKitModalConfig();
       }
@@ -1601,6 +1607,7 @@
     function renderKitModalConfig() {
       var type = document.getElementById('k-type').value;
       document.getElementById('k-slots-field').classList.toggle('hidden', type !== 'configurable');
+      renderKitCoverPreview();
       updateKitModalPreviewPrice();
     }
 
@@ -1620,7 +1627,7 @@
       try {
         var query = window.supabaseClient
           .from('products')
-          .select('id, title, price, promotional_price, images, category')
+          .select('id, title, price, promotional_price, images, category, stock')
           .eq('is_kit', false)
           .order('title', { ascending: true })
           .limit(40);
@@ -1641,35 +1648,43 @@
 
     function renderKitItemResults(products) {
       var wrap = document.getElementById('k-item-results');
+      kitSearchItems = {};
       if (products.length === 0) {
         wrap.innerHTML = '<p class="font-mono text-xs text-white/20 p-2">Nenhum produto encontrado.</p>';
         return;
       }
       wrap.innerHTML = products.map(function(p) {
         var checked = kitSelectedItems.some(function(x) { return String(x.id) === String(p.id); }) ? 'checked' : '';
+        var thumb = Array.isArray(p.images) && p.images.length ? p.images[0] : '';
+        kitSearchItems[String(p.id)] = p;
         return '<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04)">'
-          + '<input type="checkbox" value="' + p.id + '" ' + checked + ' onchange="toggleKitModalItem(\'' + p.id + '\', this.checked, ' + JSON.stringify(p.title).replace(/"/g, '&quot;') + ', ' + Number(p.price) + ', ' + (p.promotional_price != null ? Number(p.promotional_price) : 'null') + ')">'
+          + '<input type="checkbox" value="' + escapeHTMLAdmin(String(p.id)) + '" ' + checked + ' onchange="toggleKitModalItem(this.value, this.checked)">'
+          + (thumb ? '<img src="' + escapeHTMLAdmin(thumb) + '" alt="" style="width:28px;height:28px;object-fit:cover;border:1px solid rgba(255,255,255,.1)">' : '<span style="width:28px;height:28px;display:grid;place-items:center;background:#111;color:rgba(221,175,52,.5)">✦</span>')
           + '<span class="font-mono text-xs text-white/60 flex-1">' + escapeHTMLAdmin(p.title) + (p.category ? ' <span style="color:rgba(255,255,255,.2)">· ' + escapeHTMLAdmin(p.category) + '</span>' : '') + '</span>'
           + '<span class="font-mono text-xs text-freo-orange flex-shrink-0">R$ ' + Number(p.price).toFixed(2).replace('.', ',') + '</span>'
           + '</label>';
       }).join('');
     }
 
-    function toggleKitModalItem(id, checked, title, price, promotionalPrice) {
+    function toggleKitModalItem(id, checked) {
+      var item = kitSearchItems[String(id)];
+      if (!item) return;
       if (checked) {
         if (!kitSelectedItems.some(function(x) { return String(x.id) === String(id); })) {
-          kitSelectedItems.push({ id: id, title: title, price: price, promotional_price: promotionalPrice });
+          kitSelectedItems.push({ id: item.id, title: item.title, price: item.price, promotional_price: item.promotional_price, images: item.images || [], stock: item.stock });
         }
       } else {
         kitSelectedItems = kitSelectedItems.filter(function(x) { return String(x.id) !== String(id); });
       }
       renderKitSelectedList();
+      renderKitCoverPreview();
       updateKitModalPreviewPrice();
     }
 
     function removeKitSelectedItem(id) {
       kitSelectedItems = kitSelectedItems.filter(function(x) { return String(x.id) !== String(id); });
       renderKitSelectedList();
+      renderKitCoverPreview();
       updateKitModalPreviewPrice();
       // Desmarca o checkbox correspondente se estiver visível nos resultados atuais
       var cb = document.querySelector('#k-item-results input[value="' + id + '"]');
@@ -1688,30 +1703,148 @@
       }
       wrap.classList.remove('hidden');
       list.innerHTML = kitSelectedItems.map(function(item) {
-        return '<span class="tag-pill">' + escapeHTMLAdmin(item.title)
+        var thumb = Array.isArray(item.images) && item.images.length ? '<img src="' + escapeHTMLAdmin(item.images[0]) + '" alt="" style="width:18px;height:18px;object-fit:cover;margin:-1px 2px -1px -4px">' : '';
+        return '<span class="tag-pill">' + thumb + escapeHTMLAdmin(item.title)
           + '<button onclick="removeKitSelectedItem(\'' + item.id + '\')" style="background:none;border:none;cursor:pointer;color:#DDAF34;font-size:14px;line-height:1;padding:0 0 0 2px">×</button></span>';
       }).join('');
     }
 
-    function updateKitModalPreviewPrice() {
-      var previewEl = document.getElementById('k-preview-price');
-      var type = document.getElementById('k-type').value;
-      var discountType = document.getElementById('k-discount-type').value;
-      var discountValue = parseFloat(document.getElementById('k-discount-value').value) || 0;
+    function renderKitCoverPreview() {
+      var preview = document.getElementById('k-cover-preview');
+      var label = document.getElementById('k-cover-status');
+      if (!preview || !label) return;
+      if (kitCoverImage) {
+        preview.innerHTML = '<img src="' + escapeHTMLAdmin(kitCoverImage) + '" alt="Capa personalizada do kit" class="w-full h-full object-cover">';
+        label.innerText = 'Capa personalizada selecionada';
+        return;
+      }
+      var cells = kitSelectedItems.slice(0, 4).map(function(item) {
+        var url = Array.isArray(item.images) && item.images.length ? item.images[0] : '';
+        return url ? '<img src="' + escapeHTMLAdmin(url) + '" alt="" class="w-full h-full object-cover">' : '<span class="grid place-items-center bg-white/5 text-freo-orange/50">✦</span>';
+      });
+      while (cells.length < 4) cells.push('<span class="grid place-items-center bg-white/[.03] text-white/10">+</span>');
+      preview.innerHTML = '<div class="grid grid-cols-2 gap-px w-full h-full bg-freo-orange/20">' + cells.join('') + '</div>';
+      label.innerText = kitSelectedItems.length ? 'Capa automática: montagem dos itens selecionados' : 'A capa automática aparecerá ao selecionar os produtos';
+    }
 
+    async function uploadKitCover(file) {
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { showToast('Escolha uma imagem válida para a capa.', 'error'); return; }
+      if (file.size > 5 * 1024 * 1024) { showToast('A capa deve ter no máximo 5MB.', 'error'); return; }
+      var status = document.getElementById('k-cover-status');
+      status.innerText = 'Enviando capa...';
+      try {
+        var ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-z0-9]/gi, '');
+        var path = 'kits/custom/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+        var result = await window.supabaseClient.storage.from('imagens').upload(path, file, { upsert: false, contentType: file.type });
+        if (result.error) throw result.error;
+        kitCoverImage = window.supabaseClient.storage.from('imagens').getPublicUrl(path).data.publicUrl;
+        renderKitCoverPreview();
+        showToast('Capa personalizada adicionada!', 'success');
+      } catch (error) {
+        status.innerText = 'Não foi possível enviar a capa';
+        showToast('Erro ao enviar a capa: ' + error.message, 'error');
+      }
+    }
+
+    function clearKitCover() {
+      kitCoverImage = null;
+      document.getElementById('k-cover-input').value = '';
+      renderKitCoverPreview();
+    }
+
+    function loadKitCoverImage(url) {
+      return new Promise(function(resolve) {
+        var image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = function() { resolve(image); };
+        image.onerror = function() { resolve(null); };
+        image.src = url;
+      });
+    }
+
+    async function createAutomaticKitCover(items) {
+      var canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1200;
+      var context = canvas.getContext('2d');
+      context.fillStyle = '#111211';
+      context.fillRect(0, 0, 1200, 1200);
+      var sources = items.slice(0, 4).map(function(item) { return Array.isArray(item.images) && item.images.length ? item.images[0] : ''; });
+      var loaded = await Promise.all(sources.map(function(url) { return url ? loadKitCoverImage(url) : Promise.resolve(null); }));
+      for (var index = 0; index < 4; index++) {
+        var x = (index % 2) * 600, y = Math.floor(index / 2) * 600, image = loaded[index];
+        context.fillStyle = index % 2 ? '#1a1e18' : '#252b21';
+        context.fillRect(x, y, 600, 600);
+        if (image) {
+          var scale = Math.max(600 / image.width, 600 / image.height), width = image.width * scale, height = image.height * scale;
+          context.drawImage(image, x + (600 - width) / 2, y + (600 - height) / 2, width, height);
+        } else {
+          context.fillStyle = '#e9c972'; context.font = '700 88px Outfit, sans-serif'; context.textAlign = 'center'; context.fillText('✦', x + 300, y + 325);
+        }
+      }
+      context.fillStyle = 'rgba(10,10,10,.62)'; context.fillRect(0, 1010, 1200, 190);
+      context.fillStyle = '#e9c972'; context.font = '700 42px Space Grotesk, sans-serif'; context.textAlign = 'center'; context.fillText('KIT FREOFIGURES', 600, 1120);
+      var blob = await new Promise(function(resolve) { canvas.toBlob(resolve, 'image/jpeg', .9); });
+      if (!blob) throw new Error('Não foi possível gerar a capa automática.');
+      var path = 'kits/auto/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
+      var upload = await window.supabaseClient.storage.from('imagens').upload(path, blob, { upsert: false, contentType: 'image/jpeg' });
+      if (upload.error) throw upload.error;
+      return window.supabaseClient.storage.from('imagens').getPublicUrl(path).data.publicUrl;
+    }
+
+    function formatKitCurrency(value) {
+      return 'R$ ' + Math.max(0, Number(value) || 0).toFixed(2).replace('.', ',');
+    }
+
+    function getKitPricing() {
+      var type = document.getElementById('k-type').value;
       var slots = parseInt(document.getElementById('k-slots').value) || kitSelectedItems.length;
       var relevant = type === 'configurable' ? kitSelectedItems.slice(0, slots) : kitSelectedItems;
-
-      var sum = relevant.reduce(function(acc, p) {
-        var hasPromo = p.promotional_price && p.promotional_price < p.price;
-        return acc + Number(hasPromo ? p.promotional_price : p.price);
+      var grossTotal = relevant.reduce(function(total, item) {
+        return total + Math.max(0, Number(item.price) || 0);
       }, 0);
+      var currentTotal = relevant.reduce(function(total, item) {
+        var base = Math.max(0, Number(item.price) || 0);
+        var promo = Number(item.promotional_price);
+        return total + (Number.isFinite(promo) && promo >= 0 && promo < base ? promo : base);
+      }, 0);
+      var discountType = document.getElementById('k-discount-type').value;
+      var discountValue = Math.max(0, parseFloat(document.getElementById('k-discount-value').value) || 0);
+      var discountAmount = discountType === 'percent'
+        ? currentTotal * Math.min(discountValue, 100) / 100
+        : Math.min(currentTotal, discountValue);
+      return {
+        type: type,
+        slots: slots,
+        grossTotal: grossTotal,
+        currentTotal: currentTotal,
+        itemPromotion: Math.max(0, grossTotal - currentTotal),
+        discountType: discountType,
+        discountValue: discountValue,
+        discountAmount: discountAmount,
+        finalPrice: Math.max(0, currentTotal - discountAmount)
+      };
+    }
 
-      var final = discountType === 'percent' ? sum * (1 - discountValue / 100) : Math.max(0, sum - discountValue);
-
-      previewEl.innerText = type === 'configurable'
-        ? 'Prévia (assumindo ' + slots + ' item(ns) escolhido(s)): soma R$ ' + sum.toFixed(2).replace('.', ',') + ' → final R$ ' + final.toFixed(2).replace('.', ',')
-        : 'Preço final do kit: soma R$ ' + sum.toFixed(2).replace('.', ',') + ' → final R$ ' + final.toFixed(2).replace('.', ',');
+    function updateKitModalPreviewPrice() {
+      var previewEl = document.getElementById('k-preview-price');
+      if (!previewEl) return;
+      var pricing = getKitPricing();
+      var scope = pricing.type === 'configurable'
+        ? 'Prévia para ' + pricing.slots + ' item(ns) escolhido(s)'
+        : 'Resumo de preço do kit';
+      var individualOffer = pricing.itemPromotion > 0
+        ? '<p class="text-[10px] text-white/35 mt-1">Itens já têm ' + formatKitCurrency(pricing.itemPromotion) + ' em ofertas individuais.</p>'
+        : '';
+      var discountLabel = pricing.discountType === 'percent'
+        ? pricing.discountValue.toFixed(2).replace('.', ',') + '%'
+        : formatKitCurrency(pricing.discountValue);
+      previewEl.innerHTML = '<div class="flex items-center justify-between gap-3 mb-3"><p class="text-[10px] uppercase tracking-widest text-white/45">' + scope + '</p><span class="text-[10px] uppercase tracking-widest text-freo-orange">Desconto: ' + discountLabel + '</span></div>'
+        + '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">'
+        + '<div class="border border-white/[0.08] bg-black/20 p-3"><p class="text-[10px] uppercase tracking-widest text-white/35">Valor bruto</p><p class="text-sm text-white mt-1">' + formatKitCurrency(pricing.grossTotal) + '</p>' + individualOffer + '</div>'
+        + '<div class="border border-white/[0.08] bg-black/20 p-3"><p class="text-[10px] uppercase tracking-widest text-white/35">Desconto do kit</p><p class="text-sm text-freo-orange mt-1">− ' + formatKitCurrency(pricing.discountAmount) + '</p><p class="text-[10px] text-white/30 mt-1">sobre ' + formatKitCurrency(pricing.currentTotal) + '</p></div>'
+        + '<div class="border border-freo-orange/40 bg-freo-orange/10 p-3"><p class="text-[10px] uppercase tracking-widest text-freo-orange/70">Preço final do kit</p><p class="text-lg font-bold text-freo-orange mt-0.5">' + formatKitCurrency(pricing.finalPrice) + '</p></div>'
+        + '</div>';
     }
 
     async function saveKit() {
@@ -1721,6 +1854,10 @@
 
       if (!title) { showToast('Informe o nome do kit.', 'error'); return; }
       if (kitSelectedItems.length === 0) { showToast('Selecione ao menos um produto para o kit.', 'error'); return; }
+      var stockField = document.getElementById('k-stock');
+      if (stockField.value === '' || !Number.isFinite(Number(stockField.value)) || Number(stockField.value) < 0) {
+        showToast('Informe o estoque disponível do kit.', 'error'); return;
+      }
 
       var slots = null;
       if (type === 'configurable') {
@@ -1729,17 +1866,23 @@
         if (kitSelectedItems.length < slots) { showToast('Você selecionou menos produtos do que os ' + slots + ' itens exigidos.', 'error'); return; }
       }
 
-      var firstItemImage = null; // kits usam a imagem do primeiro item selecionado, se existir
       btn.innerText = 'Salvando...'; btn.disabled = true;
+
+      var pricing = getKitPricing();
+      var discountType = pricing.discountType;
+      var discountValue = pricing.discountValue;
+      var kitPrice = pricing.finalPrice;
+      var coverUrl = kitCoverImage;
+      var kitStock = Math.max(0, Math.floor(Number(stockField.value)));
 
       var payload = {
         title: title,
         description: document.getElementById('k-description').value.trim() || null,
-        price: 0,
+        price: Math.round(kitPrice * 100) / 100,
         promotional_price: null,
-        stock: 0,
+        stock: kitStock,
         category: null,
-        images: [],
+        images: coverUrl ? [coverUrl] : [],
         tags: null,
         video_url: null,
         variants: [],
@@ -1750,11 +1893,13 @@
         is_kit: true,
         kit_type: type,
         kit_slots: type === 'configurable' ? slots : null,
-        kit_discount_type: document.getElementById('k-discount-type').value,
-        kit_discount_value: parseFloat(document.getElementById('k-discount-value').value) || 0
+        kit_discount_type: discountType,
+        kit_discount_value: discountValue
       };
 
       try {
+        if (!coverUrl) coverUrl = await createAutomaticKitCover(kitSelectedItems);
+        payload.images = coverUrl ? [coverUrl] : [];
         var kitId = editingKitId;
         if (kitId) {
           var rUpd = await window.supabaseClient.from('products').update(payload).eq('id', kitId);
@@ -1898,6 +2043,7 @@
           <div class="font-mono text-xs text-white/40 leading-relaxed space-y-1">
             <p><strong style="color:rgba(221,175,52,.7)">Kit Fixo</strong>: você escolhe os produtos e um desconto. O preço final é a soma dos itens menos o desconto — todos os itens entram automaticamente.</p>
             <p><strong style="color:rgba(221,175,52,.7)">Kit Configurável</strong>: cliente escolhe N produtos dentre os elegíveis, na tela /montar-kit.html. Preço = soma dos escolhidos menos o desconto.</p>
+            <p><strong style="color:rgba(221,175,52,.7)">Estoque do kit</strong>: informe quantas unidades deste kit poderão ser vendidas. Ele é controlado separadamente dos itens que o compõem.</p>
           </div>
         </div>
 
@@ -1917,11 +2063,34 @@
             <label class="fl">Quantos itens o cliente escolhe</label>
             <input type="number" id="k-slots" class="fi" min="1" placeholder="Ex: 3">
           </div>
+          <div>
+            <label class="fl">Estoque disponível do kit *</label>
+            <input type="number" id="k-stock" class="fi" min="0" step="1" placeholder="Ex: 10">
+            <p class="font-mono text-[10px] text-white/25 mt-1 normal-case tracking-normal">O kit ficará esgotado somente quando este estoque chegar a zero.</p>
+          </div>
         </div>
 
         <div>
           <label class="fl">Descrição do kit</label>
           <textarea id="k-description" class="fi" placeholder="Descreva o kit..."></textarea>
+        </div>
+
+        <div class="p-4 border border-white/[0.08] bg-black/20">
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <label class="fl">Imagem de capa do kit</label>
+              <p class="font-mono text-[10px] text-white/25 normal-case tracking-normal mt-1">Envie uma imagem própria ou deixe vazio para gerar uma capa com todos os itens selecionados.</p>
+            </div>
+            <button type="button" onclick="clearKitCover()" class="font-mono text-[10px] text-white/35 hover:text-freo-orange uppercase tracking-widest whitespace-nowrap">Usar automática</button>
+          </div>
+          <div class="flex gap-4 items-center">
+            <div id="k-cover-preview" class="w-24 h-24 flex-shrink-0 overflow-hidden border border-freo-orange/25 bg-freo-dark"></div>
+            <div class="min-w-0">
+              <input type="file" id="k-cover-input" accept="image/*" class="hidden" onchange="uploadKitCover(this.files[0])">
+              <button type="button" onclick="document.getElementById('k-cover-input').click()" class="border border-freo-orange/40 text-freo-orange font-mono text-xs uppercase tracking-widest px-3 py-2 hover:bg-freo-orange hover:text-freo-black transition-colors">Enviar imagem</button>
+              <p id="k-cover-status" class="font-mono text-[10px] text-white/30 mt-2"></p>
+            </div>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -1937,6 +2106,8 @@
             <input type="number" id="k-discount-value" class="fi" step="0.01" min="0" placeholder="0" oninput="updateKitModalPreviewPrice()">
           </div>
         </div>
+
+        <div id="k-preview-price" class="p-4 border border-freo-orange/25 bg-freo-orange/5 font-mono text-xs" aria-live="polite"></div>
 
         <div class="flex items-center gap-3 pt-1">
           <label class="relative inline-flex items-center cursor-pointer">
@@ -1976,8 +2147,6 @@
           <p id="k-item-loading" class="hidden font-mono text-xs text-white/20 mt-2">Buscando...</p>
           <p id="k-items-count" class="font-mono text-xs text-white/20 mt-2"></p>
         </div>
-
-        <div id="k-preview-price" class="p-3 border border-freo-orange/20 bg-freo-orange/5 font-mono text-xs text-freo-orange"></div>
 
       </div>
 
