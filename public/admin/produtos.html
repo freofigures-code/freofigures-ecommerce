@@ -1803,7 +1803,7 @@
       var grossTotal = relevant.reduce(function(total, item) {
         return total + Math.max(0, Number(item.price) || 0);
       }, 0);
-      var currentTotal = relevant.reduce(function(total, item) {
+      var promotionalTotal = relevant.reduce(function(total, item) {
         var base = Math.max(0, Number(item.price) || 0);
         var promo = Number(item.promotional_price);
         return total + (Number.isFinite(promo) && promo >= 0 && promo < base ? promo : base);
@@ -1811,18 +1811,17 @@
       var discountType = document.getElementById('k-discount-type').value;
       var discountValue = Math.max(0, parseFloat(document.getElementById('k-discount-value').value) || 0);
       var discountAmount = discountType === 'percent'
-        ? currentTotal * Math.min(discountValue, 100) / 100
-        : Math.min(currentTotal, discountValue);
+        ? grossTotal * Math.min(discountValue, 100) / 100
+        : Math.min(grossTotal, discountValue);
       return {
         type: type,
         slots: slots,
         grossTotal: grossTotal,
-        currentTotal: currentTotal,
-        itemPromotion: Math.max(0, grossTotal - currentTotal),
+        itemPromotion: Math.max(0, grossTotal - promotionalTotal),
         discountType: discountType,
         discountValue: discountValue,
         discountAmount: discountAmount,
-        finalPrice: Math.max(0, currentTotal - discountAmount)
+        finalPrice: Math.max(0, grossTotal - discountAmount)
       };
     }
 
@@ -1834,7 +1833,7 @@
         ? 'Prévia para ' + pricing.slots + ' item(ns) escolhido(s)'
         : 'Resumo de preço do kit';
       var individualOffer = pricing.itemPromotion > 0
-        ? '<p class="text-[10px] text-white/35 mt-1">Itens já têm ' + formatKitCurrency(pricing.itemPromotion) + ' em ofertas individuais.</p>'
+        ? '<p class="text-[10px] text-white/35 mt-1">Promoções individuais: − ' + formatKitCurrency(pricing.itemPromotion) + ' <span class="text-white/20">(informativo; não entram no cálculo do kit)</span></p>'
         : '';
       var discountLabel = pricing.discountType === 'percent'
         ? pricing.discountValue.toFixed(2).replace('.', ',') + '%'
@@ -1842,7 +1841,7 @@
       previewEl.innerHTML = '<div class="flex items-center justify-between gap-3 mb-3"><p class="text-[10px] uppercase tracking-widest text-white/45">' + scope + '</p><span class="text-[10px] uppercase tracking-widest text-freo-orange">Desconto: ' + discountLabel + '</span></div>'
         + '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">'
         + '<div class="border border-white/[0.08] bg-black/20 p-3"><p class="text-[10px] uppercase tracking-widest text-white/35">Valor bruto</p><p class="text-sm text-white mt-1">' + formatKitCurrency(pricing.grossTotal) + '</p>' + individualOffer + '</div>'
-        + '<div class="border border-white/[0.08] bg-black/20 p-3"><p class="text-[10px] uppercase tracking-widest text-white/35">Desconto do kit</p><p class="text-sm text-freo-orange mt-1">− ' + formatKitCurrency(pricing.discountAmount) + '</p><p class="text-[10px] text-white/30 mt-1">sobre ' + formatKitCurrency(pricing.currentTotal) + '</p></div>'
+        + '<div class="border border-white/[0.08] bg-black/20 p-3"><p class="text-[10px] uppercase tracking-widest text-white/35">Desconto do kit</p><p class="text-sm text-freo-orange mt-1">− ' + formatKitCurrency(pricing.discountAmount) + '</p><p class="text-[10px] text-white/30 mt-1">sobre o valor bruto: ' + formatKitCurrency(pricing.grossTotal) + '</p></div>'
         + '<div class="border border-freo-orange/40 bg-freo-orange/10 p-3"><p class="text-[10px] uppercase tracking-widest text-freo-orange/70">Preço final do kit</p><p class="text-lg font-bold text-freo-orange mt-0.5">' + formatKitCurrency(pricing.finalPrice) + '</p></div>'
         + '</div>';
     }
