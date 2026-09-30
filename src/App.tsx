@@ -1,6 +1,7 @@
 import { CATEGORY_LABELS, categoryLabel, normalizeCategory } from '../public/catalog-categories.js';
 import { useState, useEffect } from "react";
 import { updateStoreLocation } from './seo';
+import GeekShopView from './GeekShop';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShoppingCart,
@@ -2242,6 +2243,19 @@ const ShopView = ({ addToCart, activeFilter, onSelectCategory, searchTerm, onCle
   const handleCategoryClick = (category: string) => {
     onSelectCategory(category);
   };
+
+  if (activeFilter === 'games' && !hasSearch) {
+    return <GeekShopView
+      products={filtered}
+      loading={loading}
+      onAddToCart={(product) => {
+        trackEvent('add_to_cart', String(product.id), product.title);
+        addToCart(product);
+      }}
+      onProductClick={(product) => trackEvent('product_click', String(product.id), product.title)}
+      onSelectCategory={handleCategoryClick}
+    />;
+  }
 
   return (
     <motion.div
