@@ -11,6 +11,9 @@ import {
   getGeneration,
   isGenerationBusy,
   requestGenerationPrice,
+  getGenerationPublication,
+  submitGenerationPublication,
+  type GenerationPublication,
   startImageRefinement,
   startModelGeneration,
   subscribeToGeneration,
@@ -155,6 +158,41 @@ export default function FreoCriarModelo() {
   const [currentJob, setCurrentJob] = useState<GenerationJob | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [restoring, setRestoring] = useState(true);
+  const [publishConsent, setPublishConsent] = useState(false);
+  const [publication, setPublication] = useState<GenerationPublication | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publicationError, setPublicationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPublishConsent(false);
+    setPublication(null);
+    setPublicationError(null);
+    if (currentJob?.id) {
+      getGenerationPublication(currentJob.id).then(value => {
+        if (!cancelled) setPublication(current => current || value);
+      }).catch(() => {
+        if (!cancelled) setPublicationError('Não foi possível consultar a publicação. Você pode continuar a compra normalmente.');
+      });
+    }
+    return () => { cancelled = true; };
+  }, [currentJob?.id]);
+
+  const sendPublication = async () => {
+    if (!currentJob?.id || !publishConsent || publication) return;
+    const generationId = currentJob.id;
+    setPublishing(true);
+    setPublicationError(null);
+    try {
+      const result = await submitGenerationPublication(generationId);
+      if (mountedRef.current && currentJobIdRef.current === generationId) setPublication(result);
+    } catch (error) {
+      if (mountedRef.current && currentJobIdRef.current === generationId) setPublicationError(error instanceof Error ? error.message : 'Não foi possível enviar para aprovação.');
+      throw error;
+    } finally {
+      if (mountedRef.current) setPublishing(false);
+    }
+  };
 
   const modelViewerReady = useModelViewerScript();
   const imageLoadingMessage = useRotatingMessages(
@@ -452,7 +490,7 @@ export default function FreoCriarModelo() {
   };
 
   const handleIrParaPagamento = async () => {
-    if (submitting || !currentJob?.id || price === null) return;
+    if (submitting || publishing || !currentJob?.id || price === null) return;
 
     const user = await requireAccount();
     if (!user) return;
@@ -472,6 +510,8 @@ export default function FreoCriarModelo() {
       }
 
       setPrice(valorServidor);
+
+      if (publishConsent && !publication) await sendPublication();
 
       window.location.href =
         `/checkout.html?custom=1&generation_id=${encodeURIComponent(currentJob.id)}`;
@@ -1205,8 +1245,36 @@ export default function FreoCriarModelo() {
                   </p>
                 </div>
 
+                <section className="border border-white/10 bg-[#111] p-5 mb-5" aria-label="Publicação na comunidade">
+                  {publication ? (
+                    <div role="status" className="font-body text-sm text-white/75">
+                      {publication.status === 'pending' && <p>Enviado para aprovação. Seu modelo só aparecerá em <strong>Feito por vocês</strong> após a aprovação do admin.</p>}
+                      {publication.status === 'approved' && <p>Seu modelo foi aprovado e está em <a className="text-freo-orange underline" href={`/?categoria=feito_por_voces`}>Feito por vocês</a>.</p>}
+                      {publication.status === 'rejected' && <p>Publicação não aprovada.{publication.rejection_reason ? ` Motivo: ${publication.rejection_reason}` : ''} Você pode comprar sua criação normalmente.</p>}
+                    </div>
+                  ) : (
+                    <>
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" checked={publishConsent} disabled={publishing || submitting}
+                          onChange={event => { setPublishConsent(event.target.checked); setPublicationError(null); }}
+                          className="mt-1 w-5 h-5 accent-freo-orange shrink-0" />
+                        <span className="font-body text-sm">
+                          <strong className="block text-white">Publicar para que outras pessoas vejam</strong>
+                          <span className="block text-white/50 mt-2">Autorizo a FreoFigures a exibir e vender este modelo em “Feito por vocês”, após análise do admin. A publicação é opcional e não depende da compra. Seus dados pessoais não serão exibidos.</span>
+                        </span>
+                      </label>
+                      {publishConsent && <button type="button" onClick={() => { void sendPublication().catch(() => {}); }} disabled={publishing || submitting}
+                        className="mt-4 w-full border border-freo-orange/40 text-freo-orange font-display font-bold py-3 disabled:opacity-50">
+                        {publishing ? 'Enviando para aprovação...' : 'Enviar para aprovação'}
+                      </button>}
+                    </>
+                  )}
+                  {publicationError && <p role="alert" className="text-amber-300 text-sm mt-3">{publicationError}</p>}
+                </section>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
+                    disabled={submitting || publishing}
                     onClick={() => setStep("model-ready")}
                     className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
                   >
@@ -1214,7 +1282,7 @@ export default function FreoCriarModelo() {
                   </button>
                   <button
                     onClick={handleIrParaPagamento}
-                    disabled={submitting}
+                    disabled={submitting || publishing}
                     className="flex items-center justify-center gap-2 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <DollarSign className="w-4 h-4" />

@@ -3,14 +3,11 @@ export const LOGO = 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/
 export const HOME_TITLE = 'FreoFigures | Arte em Impressão 3D';
 export const HOME_DESCRIPTION = 'Conheça a FreoFigures: peças em impressão 3D, artigos religiosos, action figures, keycaps e decoração. Explore o catálogo e os projetos personalizados.';
 export const CATEGORIES = {
-  Todos: ['Catálogo', 'Explore o catálogo de peças em impressão 3D da FreoFigures.'],
-  games: ['Games & Geek', 'Peças de games e cultura geek em impressão 3D. Confira os modelos da FreoFigures.'],
-  religioso: ['Artigos religiosos', 'Imagens religiosas e pias de água benta em impressão 3D. Confira modelos, medidas e opções na FreoFigures.'],
-  keycaps: ['Keycaps personalizados', 'Keycaps para personalizar seu teclado. Confira modelos e opções disponíveis na FreoFigures.'],
-  personalizado: ['Personalizados', 'Conheça as peças personalizadas em impressão 3D da FreoFigures.'],
-  lifestyle: ['Utensílios e acessórios', 'Peças funcionais, suportes e acessórios em impressão 3D da FreoFigures.'],
-  outros: ['Decoração', 'Objetos decorativos em impressão 3D para seu ambiente. Conheça o catálogo da FreoFigures.'],
   kit_fixo: ['Kits prontos', 'Conheça os kits de produtos disponíveis na FreoFigures.'],
+  Todos: ['Catálogo', 'Explore o catálogo de peças em impressão 3D da FreoFigures.'],
+  games: ['Geek/Gamer', 'Peças de games e cultura geek em impressão 3D. Confira os modelos da FreoFigures.'],
+  religioso: ['Religioso', 'Imagens religiosas e pias de água benta em impressão 3D. Confira modelos, medidas e opções na FreoFigures.'],
+  feito_por_voces: ['Feito por vocês', 'Modelos criados pela comunidade no gerador de personalizados e aprovados pela FreoFigures.'],
 };
 export const categoryUrl = category => `${SITE}/?categoria=${encodeURIComponent(category)}`;
 export const productUrl = id => `${SITE}/produto?id=${encodeURIComponent(id)}`;

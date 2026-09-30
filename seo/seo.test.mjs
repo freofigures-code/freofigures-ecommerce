@@ -41,7 +41,7 @@ test('categories have unique canonicals and only matching product links', () => 
   assert.ok(root.includes('/produto?id=8'));
   assert.ok(!root.includes('/produto?id=9'));
   assert.match(html, /canonical" href="https:\/\/www.freofigures.com.br\/\?categoria=religioso"/);
-  assert.equal(json(html,'breadcrumb-structured-data').itemListElement[1].name,'Artigos religiosos');
+  assert.equal(json(html,'breadcrumb-structured-data').itemListElement[1].name,'Religioso');
 });
 test('sitemap contains all products, no tracking, no invented modification dates', () => {
   const xml=sitemap([product,{...product,id:9,category:'anime'}]);

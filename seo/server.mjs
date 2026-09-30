@@ -1,3 +1,4 @@
+import { LEGACY_CATEGORIES, normalizeCategory } from '../public/catalog-categories.js';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { SITE, LOGO, CATEGORIES, categoryUrl, productUrl, pageMetadata, plainText, escapeHtml as esc, safeJson, safeImage, productSchema, organizationSchema, breadcrumbs } from './shared.mjs';
@@ -67,7 +68,7 @@ function fallbackShell(content, id = '') {
 export function renderHome(html, products, category) {
   const meta = pageMetadata(category);
   const selected = category === 'Todos' ? products : category === 'kit_fixo' ? products.filter(p => p.is_kit && p.kit_type === 'fixed')
-    : category ? products.filter(p => p.category === category) : products.slice(0, 4);
+    : category ? products.filter(p => normalizeCategory(p.category) === category) : products.slice(0, 4);
   const cards = selected.map(p => `<li><a href="${esc(productUrl(p.id))}">${esc(p.title)}</a></li>`).join('');
   const content = fallbackShell(`<h1>${esc(meta.title)}</h1><p>${esc(meta.description)}</p><ul>${cards}</ul>`);
   return addHead(html, meta, category ? [jsonLd('breadcrumb-structured-data', breadcrumbs(category))] : [])
@@ -81,10 +82,10 @@ export function renderProduct(html, p) {
   const variants = (Array.isArray(p.variants) ? p.variants : []).filter(v => v.name && Array.isArray(v.options)).map(v => `<p>${esc(v.name)}: ${v.options.map(o => esc(typeof o === 'object' ? o.name : o)).join(', ')}</p>`).join('');
   const summary = fallbackShell(`<h1>${esc(p.title)}</h1>${meta.image ? `<img src="${esc(meta.image)}" alt="${esc(p.title)}" width="320" style="max-width:100%;height:auto">` : ''}<p>${esc(priceText)}</p><p style="white-space:pre-line">${esc(plainText(p.description))}</p>${variants}<p>${Number(p.stock) > 0 ? 'Em estoque' : 'Fora de estoque'}</p>`, 'seo-product-summary');
   return addHead(html, meta, [jsonLd('product-structured-data', schema), jsonLd('breadcrumb-structured-data', breadcrumbs(p.category, p))])
-    .replace('<!-- CONTEÚDO DO PRODUTO -->', `${summary}\n<!-- CONTEÚDO DO PRODUTO -->`);
+    .replace('<main id="page-content"', `${summary}\n<main id="page-content"`);
 }
 export function sitemap(products) {
-  const categories = Object.keys(CATEGORIES).filter(key => key === 'Todos' || products.some(p => key === 'kit_fixo' ? p.is_kit && p.kit_type === 'fixed' : p.category === key));
+  const categories = Object.keys(CATEGORIES).filter(key => key === 'Todos' || products.some(p => key === 'kit_fixo' ? p.is_kit && p.kit_type === 'fixed' : normalizeCategory(p.category) === key));
   const urls = [`${SITE}/`, `${SITE}/faq.html`, `${SITE}/politicas.html`, ...categories.map(categoryUrl), ...products.map(p => productUrl(p.id))];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${[...new Set(urls)].map(url => `<url><loc>${esc(url)}</loc></url>`).join('')}</urlset>`;
 }
@@ -105,6 +106,10 @@ export function createSeoMiddleware({ root, outputDir, loadCatalog, read = readF
       res.setHeader('Cache-Control', 'no-cache');
       res.end(req.method === 'HEAD' ? undefined : body);
     };
+    if (pathname === '/' && LEGACY_CATEGORIES.includes(url.searchParams.get('categoria'))) {
+      url.searchParams.set('categoria', 'games');
+      res.setHeader('Location', '/' + url.search); return send(301, 'text/plain', 'Moved permanently');
+    }
     if (Object.hasOwn(ALIASES, pathname)) {
       res.setHeader('Location', ALIASES[pathname]); return send(301, 'text/plain', 'Moved permanently');
     }

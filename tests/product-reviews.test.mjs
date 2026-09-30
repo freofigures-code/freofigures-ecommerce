@@ -4,14 +4,17 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../public/produto', import.meta.url), 'utf8');
-const section = html.slice(html.indexOf('    var allReviews'), html.indexOf('    // ── Integra ao renderProduct'));
+const productScript = readFileSync(new URL('../public/produto-apple.js', import.meta.url), 'utf8');
+const helpers = productScript.slice(productScript.indexOf('function escapeHtml('), productScript.indexOf('function imageUrls('));
+const section = helpers + productScript.slice(productScript.indexOf('var allReviews ='));
+assert.ok(section.includes('async function submitReview'), 'Tests must load the current review implementation');
 function setup({ session = { user: { id: 'buyer', email: 'buyer@example.com' } }, eligibility = 'eligible', error = null } = {}) {
   const calls = [];
   const elements = new Map();
   const context = vm.createContext({
-    URL, console: { error() {} }, setTimeout() {},
+    URL, location: { href: 'https://www.freofigures.com.br/produto?id=15' }, console: { error() {} }, setTimeout() {},
     document: { getElementById(id) {
-      if (!elements.has(id)) elements.set(id, { value: 'Produto recebido', style: {}, classList: { remove() {} } });
+      if (!elements.has(id)) elements.set(id, { value: 'Produto recebido', style: {}, setAttribute() {}, classList: { remove() {} } });
       return elements.get(id);
     } },
     window: { supabaseClient: {

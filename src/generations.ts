@@ -1,6 +1,30 @@
 export const GENERATIONS_BUCKET = 'generations';
 export const MAX_GENERATION_UPLOAD_BYTES = 20 * 1024 * 1024;
 
+export type GenerationPublication = {
+  id: string;
+  generation_id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejection_reason: string | null;
+  product_id: string | null;
+};
+
+export async function getGenerationPublication(generationId: string): Promise<GenerationPublication | null> {
+  const { data, error } = await getSupabase().from('generation_publications')
+    .select('id,generation_id,status,rejection_reason,product_id').eq('generation_id', generationId).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function submitGenerationPublication(generationId: string): Promise<GenerationPublication> {
+  await getAuthenticatedUser();
+  const { data, error } = await getSupabase().functions.invoke('generation-publication', {
+    body: { action: 'submit', generation_id: generationId, consent: true },
+  });
+  if (error || !data?.publication) throw new Error(data?.error || 'Não foi possível enviar para aprovação. Tente novamente ou desmarque a publicação para continuar a compra.');
+  return data.publication;
+}
+
 export type GenerationSourceType = 'prompt' | 'upload';
 export type GenerationStatus =
   | 'queued'

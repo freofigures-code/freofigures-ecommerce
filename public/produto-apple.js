@@ -1,3 +1,4 @@
+function catalogCategoryLabel(category) { return ({ games: 'Geek/Gamer', religioso: 'Religioso', feito_por_voces: 'Feito por vocês' })[category] || 'Geek/Gamer'; }
 /* FreoFigures / Coleção viva — v2. Sem dependências adicionais.
    A página utiliza o mesmo Supabase, tabelas e checkout do projeto original. */
 'use strict';
@@ -133,8 +134,8 @@ function applyEditorial(p) {
     text('editorial-line-one', copy[0]);
     text('editorial-line-two', copy[1]);
     text('edition-number', 'FIG. ' + String(p.id).padStart(4, '0'));
-    text('edition-category', String(p.is_kit ? 'KIT EXCLUSIVO' : (p.category || 'FREOFIGURES')).toUpperCase());
-    text('stage-label', 'FREO / ' + String(p.is_kit ? 'KIT' : (p.category || 'FIGURES')).toUpperCase());
+    text('edition-category', String(p.is_kit ? 'KIT EXCLUSIVO' : catalogCategoryLabel(p.category)).toUpperCase());
+    text('stage-label', 'FREO / ' + String(p.is_kit ? 'KIT' : catalogCategoryLabel(p.category)).toUpperCase());
 }
 function optionVisual(group, option) {
     if (/cor|color/.test(normalized(group.name))) {
@@ -465,6 +466,8 @@ function closeLightbox() { el('review-lightbox').close(); }
 function viewerStep(delta) { if (!viewerProduct || !galleryItems.length)
     return; navigateGallery(delta); renderViewer(); }
 async function renderProduct(p) {
+    var seoSummary = document.getElementById('seo-product-summary');
+    if (seoSummary) seoSummary.remove();
     product = p;
     qty = 1;
     selectedVariants = {};
@@ -478,7 +481,7 @@ async function renderProduct(p) {
     document.title = (p.title || 'Produto') + ' | FreoFigures';
     text('product-title', p.title);
     el('product-title').classList.toggle('long-title', String(p.title).length > 55);
-    text('product-category', p.is_kit ? 'Kit exclusivo' : (p.category || 'Coleção Freo'));
+    text('product-category', p.is_kit ? 'Kit exclusivo' : catalogCategoryLabel(p.category));
     applyEditorial(p);
     var tags = asArray(p.tags);
     if (!tags.length && typeof p.tags === 'string' && !p.tags.startsWith('['))
@@ -633,7 +636,7 @@ else
     showToast('As avaliações não estão disponíveis neste momento.', 'error'); }
 async function loadRelatedProducts(id, category) { if (!category)
     return; var result = await window.supabaseClient.from('products').select('id,title,price,promotional_price,images,category').eq('category', category).eq('is_active', true).neq('id', id).limit(8); if (result.error || !result.data || !result.data.length)
-    return; text('related-category-label', category); el('related-grid').innerHTML = result.data.map(function (p) { var image = imageUrls(p)[0]; return '<a class="related-card" href="/produto?id=' + encodeURIComponent(p.id) + '"><div class="related-image">' + (image ? '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(p.title) + '" loading="lazy" onerror="this.hidden=true">' : '<span>FREOFIGURES</span>') + '</div><div class="related-copy"><p>' + escapeHtml(p.title) + '</p><div><strong>' + formatCurrency(basePrice(p)) + '</strong><span aria-hidden="true">↗</span></div></div></a>'; }).join(''); el('related-section').classList.remove('hidden'); }
+    return; text('related-category-label', catalogCategoryLabel(category)); el('related-grid').innerHTML = result.data.map(function (p) { var image = imageUrls(p)[0]; return '<a class="related-card" href="/produto?id=' + encodeURIComponent(p.id) + '"><div class="related-image">' + (image ? '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(p.title) + '" loading="lazy" onerror="this.hidden=true">' : '<span>FREOFIGURES</span>') + '</div><div class="related-copy"><p>' + escapeHtml(p.title) + '</p><div><strong>' + formatCurrency(basePrice(p)) + '</strong><span aria-hidden="true">↗</span></div></div></a>'; }).join(''); el('related-section').classList.remove('hidden'); }
 async function init() {
     el('page-loading').hidden = false;
     el('page-notfound').classList.add('hidden');
@@ -836,12 +839,13 @@ async function loadReviews(productId) {
         .from('product_reviews')
         .select('*')
         .eq('product_id', String(productId))
+        .eq('is_artificial', false)
         .order('created_at', { ascending: false });
     if (result.error) {
         console.error('Erro ao carregar avaliações:', result.error);
         return;
     }
-    allReviews = result.data || [];
+    allReviews = (result.data || []).filter(function (review) { return review.is_artificial === false; });
     reviewPage = 1;
     // Resumo
     var total = allReviews.length;
@@ -881,35 +885,11 @@ async function loadReviews(productId) {
 async function checkVerifiedBuyer(productId) {
     var sessionRes = await window.supabaseClient.auth.getSession();
     var session = sessionRes.data && sessionRes.data.session;
-    if (!session || session.user.is_anonymous)
+    if (sessionRes.error || !session || session.user.is_anonymous)
         return { loggedIn: false, verified: false };
-    // Checa se já avaliou
-    var existingRes = await window.supabaseClient
-        .from('product_reviews')
-        .select('id')
-        .eq('product_id', String(productId))
-        .eq('user_id', session.user.id)
-        .eq('is_artificial', false)
-        .maybeSingle();
-    if (existingRes.data)
-        return { loggedIn: true, verified: false, alreadyReviewed: true };
-    // Checa pedido entregue
-    var ordersRes = await window.supabaseClient
-        .from('orders')
-        .select('id, items')
-        .eq('user_id', session.user.id)
-        .ilike('status', '%entregue%')
-        .limit(50);
-    if (ordersRes.error || !ordersRes.data || ordersRes.data.length === 0) {
-        return { loggedIn: true, verified: false };
-    }
-    // Verifica se algum pedido contém o produto
-    var hasProduct = ordersRes.data.some(function (o) {
-        return asArray(o.items).some(function (item) {
-            return item && String(item.product_id) === String(productId);
-        });
-    });
-    return { loggedIn: true, verified: hasProduct, user: session.user };
+    var result = await window.supabaseClient.rpc('product_review_eligibility', { p_product_id: String(productId) });
+    return { loggedIn: true, verified: !result.error && result.data === 'eligible',
+        alreadyReviewed: !result.error && result.data === 'already_reviewed', user: session.user };
 }
 // ── Renderiza área do formulário ─────────────────────────────
 async function renderReviewFormArea(productId) {
@@ -1074,8 +1054,10 @@ async function submitReview() {
     try {
         var sessionRes = await window.supabaseClient.auth.getSession();
         var session = sessionRes.data && sessionRes.data.session;
-        if (!session)
+        if (!session || session.user.is_anonymous)
             throw new Error('Sem sessão');
+        var eligibility = await checkVerifiedBuyer(reviewProductId);
+        if (!eligibility.verified) throw new Error('Somente clientes com pedido entregue podem avaliar.');
         // Nome do usuário
         var uMeta = session.user.user_metadata || {};
         var reviewerName = uMeta.name || uMeta.full_name || (session.user.email || 'Cliente').split('@')[0];
