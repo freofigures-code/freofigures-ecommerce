@@ -7,7 +7,7 @@ export const LEGACY_CATEGORIES = ['anime', 'filmes', 'keycaps', 'personalizado',
 export function normalizeCategory(category) {
   if (category === 'kit_fixo' || category === 'montar_kit') return category;
   if (Object.hasOwn(CATEGORY_LABELS, category)) return category;
-  return LEGACY_CATEGORIES.includes(category) ? 'games' : 'Todos';
+  return 'games';
 }
 export function categoryLabel(category) {
   return CATEGORY_LABELS[normalizeCategory(category)] || 'Geek/Gamer';

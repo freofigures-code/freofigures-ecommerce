@@ -1,7 +1,7 @@
 import { pageMetadata, breadcrumbs, CATEGORIES, safeJson } from '../seo/shared.mjs';
 
-export function updateStoreMetadata(category?: string) {
-  const meta = pageMetadata(category);
+export function updateStoreMetadata(category?: string, chooser = false) {
+  const meta = pageMetadata(category, chooser);
   document.title = meta.title;
   const setMeta = (key: string, content: string, property = false) => {
     const attribute = property ? 'property' : 'name';
@@ -23,10 +23,16 @@ export function updateStoreMetadata(category?: string) {
   } else trail?.remove();
 }
 
-export function updateStoreLocation(category?: string) {
+export function updateStoreLocation(category?: string, chooser = false) {
   const url = new URL(window.location.href);
-  if (category) url.searchParams.set('categoria', category);
-  else url.searchParams.delete('categoria');
+  if (category) {
+    url.searchParams.set('categoria', category);
+    url.searchParams.delete('categorias');
+  } else {
+    url.searchParams.delete('categoria');
+    if (chooser) url.searchParams.set('categorias', '1');
+    else url.searchParams.delete('categorias');
+  }
   window.history.replaceState({}, '', '/' + url.search + url.hash);
-  updateStoreMetadata(category);
+  updateStoreMetadata(category, chooser);
 }
