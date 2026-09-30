@@ -18,6 +18,9 @@ import {
   ChevronDown,
   ArrowLeft,
   Sparkles,
+  Gamepad2,
+  Cross,
+  UsersRound,
 } from 'lucide-react';
   import FreoChat from './FreoChat';
   import FreoCupom from './FreoCupom';
@@ -458,7 +461,7 @@ type CategoryTheme = {
 };
 
 const CATEGORY_THEMES: Record<string, CategoryTheme> = {
-  Todos: {
+  catalogo: {
     fontImport: '',
     wrapper: { background: '#080808', color: '#f0f0f0', transition: 'all 0.6s ease' },
     sidebar: { background: '#111111', borderRight: '1px solid rgba(221,175,52,0.15)' },
@@ -468,9 +471,9 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     headerTitle: { color: '#DDAF34' },
     headerSub: { color: 'rgba(255,255,255,0.4)' },
     accent: '#DDAF34',
-    bgDecorClass: 'theme-todos',
-    label: 'CATÁLOGO',
-    tagline: 'Todos os produtos · FreoFigures',
+    bgDecorClass: 'theme-catalogo',
+    label: 'CATEGORIAS',
+    tagline: 'Escolha um universo para explorar',
   },
   games: {
     fontImport: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap',
@@ -700,7 +703,7 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     tagline: 'SURPREENDENTES · RAROS · ÚNICOS',
   },
 };
-CATEGORY_THEMES.feito_por_voces = { ...CATEGORY_THEMES.Todos, label: 'FEITO POR VOCÊS', tagline: 'Criações da comunidade aprovadas pela FreoFigures' };
+CATEGORY_THEMES.feito_por_voces = { ...CATEGORY_THEMES.catalogo, label: 'FEITO POR VOCÊS', tagline: 'Criações da comunidade aprovadas pela FreoFigures' };
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -709,7 +712,7 @@ CATEGORY_THEMES.feito_por_voces = { ...CATEGORY_THEMES.Todos, label: 'FEITO POR 
 
 const ThemeBackground = ({ themeKey }: { themeKey: string }) => {
   const svgs: Record<string, React.ReactNode> = {
-    Todos: (
+    catalogo: (
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.6 }} xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="bg-todos" width="60" height="60" patternUnits="userSpaceOnUse">
@@ -809,7 +812,7 @@ const ThemeBackground = ({ themeKey }: { themeKey: string }) => {
     ),
   };
 
-  return <>{svgs[themeKey] || svgs['Todos']}</>;
+  return <>{svgs[themeKey] || svgs.catalogo}</>;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1081,7 +1084,7 @@ const useIsMobile = () => {
 
 const Navbar = ({
   currentView, setCurrentView, onOpenAuth, cartItems, onOpenCart, user,
-  searchTerm, setSearchTerm, onSearchSubmit, onSearchClear,
+  searchTerm, setSearchTerm, onSearchSubmit, onSearchClear, onShowCategories,
 }: any) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -1126,7 +1129,7 @@ const Navbar = ({
 
   const goToCatalog = () => {
     onSearchClear();
-    setCurrentView('shop');
+    onShowCategories();
     setMobileMenuOpen(false);
     window.scrollTo(0, 0);
   };
@@ -1161,7 +1164,7 @@ const Navbar = ({
         <div className="hidden lg:flex items-center gap-4 xl:gap-7 font-body text-xs xl:text-sm font-semibold tracking-widest uppercase text-freo-light whitespace-nowrap">
           {currentView === 'home' ? (
             <>
-              <a href="#categorias" className="hover:text-freo-orange transition-colors">Categorias</a>
+              <button type="button" onClick={goToCatalog} className="hover:text-freo-orange transition-colors">Categorias</button>
               <a href="#destaques" className="hover:text-freo-orange transition-colors">Destaques</a>
               <a href="#sobre" className="hover:text-freo-orange transition-colors">O Processo</a>
               <a href="#sobre-nos" className="hover:text-freo-orange transition-colors">A Origem</a>
@@ -1170,6 +1173,7 @@ const Navbar = ({
           ) : (
             <>
               <button onClick={goHome} className="hover:text-freo-orange transition-colors">Início</button>
+              <button type="button" onClick={goToCatalog} className="hover:text-freo-orange transition-colors">Categorias</button>
               <span className="text-freo-orange">Catálogo</span>
             </>
           )}
@@ -1253,9 +1257,9 @@ const Navbar = ({
             <div className="flex-1 overflow-y-auto py-6 px-6 flex flex-col gap-1">
               {currentView === 'home' ? (
                 <>
-                  <a href="#categorias" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between">
+                  <button type="button" onClick={goToCatalog} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between">
                     Categorias <ChevronRight className="w-4 h-4 opacity-40" />
-                  </a>
+                  </button>
                   <a href="#destaques" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors flex items-center justify-between">
                     Destaques <ChevronRight className="w-4 h-4 opacity-40" />
                   </a>
@@ -1273,6 +1277,9 @@ const Navbar = ({
                 <>
                   <button onClick={goHome} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors text-left flex items-center gap-3">
                     <ArrowLeft className="w-4 h-4" /> Início
+                  </button>
+                  <button type="button" onClick={goToCatalog} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 hover:text-freo-orange transition-colors text-left flex items-center justify-between">
+                    Categorias <ChevronRight className="w-4 h-4 opacity-40" />
                   </button>
                   <span className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 text-freo-orange flex items-center justify-between">
                     Catálogo
@@ -1401,7 +1408,7 @@ const resolveBannerLink = (linkUrl: string | null) => {
   return { href: linkUrl, isExternal };
 };
 
-const HeroCarousel = ({ setCurrentView }: any) => {
+const HeroCarousel = ({ onExplore }: any) => {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -1466,7 +1473,7 @@ const HeroCarousel = ({ setCurrentView }: any) => {
   }
 
   if (banners.length === 0) {
-    return <Hero setCurrentView={setCurrentView} />;
+    return <Hero onExplore={onExplore} />;
   }
 
   return (
@@ -1588,7 +1595,7 @@ const HeroCarousel = ({ setCurrentView }: any) => {
 // HERO (fallback estático — usado apenas se não houver nenhum banner ativo cadastrado)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Hero = ({ setCurrentView }: any) => (
+const Hero = ({ onExplore }: { onExplore: () => void }) => (
   <section className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]">
     <div className="absolute inset-0 z-0" style={{ backgroundImage: 'linear-gradient(rgba(221,175,52,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(221,175,52,0.04) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
     <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse 55% 75% at 22% 55%, rgba(221,175,52,0.07) 0%, transparent 70%)' }} />
@@ -1609,7 +1616,7 @@ const Hero = ({ setCurrentView }: any) => (
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.46 }} className="flex flex-col sm:flex-row gap-3 md:gap-4 mt-1">
           <button
-            onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }}
+            onClick={onExplore}
             className="group relative flex items-center justify-center gap-3 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-8 py-4 hover:bg-white transition-colors overflow-hidden active:scale-95"
           >
             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
@@ -1668,48 +1675,58 @@ const Marquee = () => (
 // CATEGORIES
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Categories = ({ setCurrentView, setFilter }: any) => {
-  const cats = [
-    { name: 'Geek/Gamer', slug: 'games', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/ACTION_FIGURES.png', desc: 'Heróis, jogos e cultura pop.' },
-    { name: 'Religioso', slug: 'religioso', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/RELIGIOSO.png', desc: 'Fé materializada com respeito.' },
-    { name: 'Feito por vocês', slug: 'feito_por_voces', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/DECORACAO.png', desc: 'Suas ideias, aprovadas para nossa coleção.' },
-  ];
+const CATEGORY_CHOICES = [
+  { name: 'Geek/Gamer', slug: 'games', icon: Gamepad2, accent: '#6de8f7', description: 'Jogos, heróis e cultura pop.' },
+  { name: 'Religioso', slug: 'religioso', icon: Cross, accent: '#e9c66e', description: 'Peças de fé feitas com cuidado.' },
+  { name: 'Feito por vocês', slug: 'feito_por_voces', icon: UsersRound, accent: '#f29a65', description: 'Criações da comunidade aprovadas.' },
+];
 
-  const handleCatClick = (slug: string) => {
-    setFilter(slug);
-    setCurrentView('shop');
-    window.scrollTo(0, 0);
-  };
-
-  return (
-    <section id="categorias" className="py-16 md:py-24 px-5 md:px-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 md:mb-12 gap-4 md:gap-6">
-        <div>
-          <h2 className="text-3xl md:text-4xl lg:text-6xl font-display font-black uppercase tracking-tighter">
-            Nossos <span className="text-freo-orange">Domínios</span>
-          </h2>
-          <p className="text-freo-light/60 mt-2 font-body max-w-md text-sm md:text-base">Explore nossas categorias de produtos criados com precisão milimétrica.</p>
-        </div>
-        <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="text-sm font-bold uppercase tracking-widest border-b border-freo-orange pb-1 hover:text-freo-orange transition-colors whitespace-nowrap">
-          Ver todas
+const CategoryIconGrid = ({ onSelect }: { onSelect: (slug: string) => void }) => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5 lg:gap-8 w-full max-w-4xl mx-auto">
+    {CATEGORY_CHOICES.map((category, index) => {
+      const Icon = category.icon;
+      return (
+        <button
+          key={category.slug}
+          type="button"
+          onClick={() => onSelect(category.slug)}
+          aria-label={`Explorar ${category.name}`}
+          className={`group w-full min-h-44 sm:min-h-56 flex flex-col items-center justify-center rounded-2xl border bg-white/[0.035] px-3 py-5 sm:px-5 sm:py-7 text-center transition-all duration-200 hover:-translate-y-1 hover:bg-white/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.98] ${index === 2 ? 'col-span-2 max-w-[240px] justify-self-center sm:col-span-1 sm:max-w-none' : ''}`}
+          style={{ borderColor: `${category.accent}45`, outlineColor: category.accent }}
+        >
+          <span className="flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-full border-2 transition-transform duration-200 group-hover:scale-105" style={{ color: category.accent, borderColor: `${category.accent}80`, background: `${category.accent}12`, boxShadow: `0 0 28px ${category.accent}18` }}>
+            <Icon className="h-9 w-9 sm:h-12 sm:w-12" strokeWidth={1.7} aria-hidden="true" />
+          </span>
+          <span className="mt-4 font-display text-sm sm:text-lg lg:text-xl font-black uppercase leading-tight tracking-wide text-white">{category.name}</span>
+          <span className="hidden sm:block mt-2 font-body text-xs lg:text-sm leading-snug text-freo-light/60">{category.description}</span>
         </button>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6">
-        {cats.map((cat, index) => (
-          <a key={cat.slug} href={`/?categoria=${encodeURIComponent(cat.slug)}`} className="group relative aspect-[3/4] md:h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5 active:scale-98">
-            <img src={cat.img} alt={cat.name} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 grayscale group-hover:grayscale-0" />
-            <div className="absolute inset-0 bg-gradient-to-t from-freo-black via-freo-black/50 to-transparent" />
-            <div className="absolute bottom-0 left-0 p-4 md:p-6 w-full">
-              <div className="text-freo-orange font-mono text-[10px] mb-1 opacity-0 group-hover:opacity-100 transition-opacity delay-100">// 0{index + 1}</div>
-              <h3 className="text-base md:text-2xl font-display font-bold uppercase tracking-wide mb-1 leading-tight">{cat.name}</h3>
-              <p className="text-xs md:text-sm text-freo-light/70 font-body hidden md:block opacity-0 group-hover:opacity-100 transition-opacity delay-150">{cat.desc}</p>
-            </div>
-          </a>
-        ))}
-      </div>
-    </section>
-  );
-};
+      );
+    })}
+  </div>
+);
+
+const Categories = ({ onSelectCategory }: { onSelectCategory: (slug: string) => void }) => (
+  <section id="categorias" className="py-16 md:py-24 px-5 md:px-6 max-w-7xl mx-auto text-center">
+    <h2 className="text-3xl md:text-4xl lg:text-6xl font-display font-black uppercase tracking-tighter">
+      Nossas <span className="text-freo-orange">Categorias</span>
+    </h2>
+    <p className="text-freo-light/60 mt-3 mb-8 md:mb-12 font-body max-w-xl mx-auto text-sm md:text-base">Escolha o universo que combina com você.</p>
+    <CategoryIconGrid onSelect={onSelectCategory} />
+  </section>
+);
+
+const CategoryChooser = ({ onSelect }: { onSelect: (slug: string) => void }) => (
+  <section aria-labelledby="category-chooser-title" className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16 text-center flex flex-col items-center justify-center min-h-[calc(100svh-8rem)]">
+    <p className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.25em] text-freo-orange mb-3">Explore a FreoFigures</p>
+    <h1 id="category-chooser-title" className="font-display font-black uppercase text-3xl sm:text-4xl lg:text-6xl tracking-tight leading-tight text-white">Escolha sua <span className="text-freo-orange">categoria</span></h1>
+    <p className="font-body text-sm sm:text-base text-freo-light/65 mt-3 mb-8 sm:mb-12 max-w-xl">Toque em um ícone para ver os produtos e navegar pelas categorias ao lado.</p>
+    <CategoryIconGrid onSelect={onSelect} />
+    <div className="mt-10 sm:mt-14 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 w-full" aria-label="Opções de kits">
+      <button type="button" onClick={() => onSelect('kit_fixo')} className="w-full sm:w-auto min-h-11 px-5 py-2.5 font-display font-bold uppercase text-sm tracking-wide text-freo-orange border border-freo-orange/45 rounded hover:bg-freo-orange/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-freo-orange">🎁 Kits Prontos</button>
+      <button type="button" onClick={() => onSelect('montar_kit')} className="w-full sm:w-auto min-h-11 px-5 py-2.5 font-display font-bold uppercase text-sm tracking-wide text-freo-orange border border-freo-orange/45 rounded hover:bg-freo-orange/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-freo-orange">✦ Montar Kit</button>
+    </div>
+  </section>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRODUCT CARD
@@ -1923,14 +1940,14 @@ const AboutSection = () => (
 // STORE CTA
 // ─────────────────────────────────────────────────────────────────────────────
 
-const StoreCTA = ({ setCurrentView }: any) => (
+const StoreCTA = ({ onExplore }: any) => (
   <section className="py-16 md:py-24 px-5 md:px-6 bg-freo-orange text-freo-black relative overflow-hidden border-y border-freo-orange/50">
     <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
     <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center">
       <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-freo-black mb-5 md:mb-6 shadow-2xl" />
       <h2 className="text-4xl md:text-5xl lg:text-7xl font-display font-black uppercase tracking-tighter mb-4 md:mb-6 leading-none">Acesse o <br />Catálogo Completo</h2>
       <p className="font-body text-base md:text-xl mb-8 md:mb-10 font-medium max-w-2xl">Filtre por categorias, explore detalhes e encontre a peça perfeita para seu setup, altar ou estante.</p>
-      <button onClick={() => { setCurrentView('shop'); window.scrollTo(0, 0); }} className="bg-freo-black text-freo-orange font-display font-bold uppercase tracking-widest px-8 md:px-10 py-4 md:py-5 text-base md:text-lg hover:bg-white hover:text-freo-black transition-colors flex items-center gap-3 group active:scale-98">
+      <button onClick={onExplore} className="bg-freo-black text-freo-orange font-display font-bold uppercase tracking-widest px-8 md:px-10 py-4 md:py-5 text-base md:text-lg hover:bg-white hover:text-freo-black transition-colors flex items-center gap-3 group active:scale-98">
         Entrar na Loja
         <ChevronRight className="group-hover:translate-x-1 transition-transform" />
       </button>
@@ -2166,19 +2183,19 @@ const MobileCategoryDrawer = ({
 
 import { useMemo, useRef } from 'react';
 
-const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) => {
-  const [activeFilter, setActiveFilter] = useState(normalizeCategory(initialFilter));
+const ShopView = ({ addToCart, activeFilter, onSelectCategory, searchTerm, onClearSearch }: any) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMobileCatOpen, setIsMobileCatOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const categories = ['Todos', 'kit_fixo', 'montar_kit', ...Object.keys(CATEGORY_LABELS)];
+  const categories = ['kit_fixo', 'montar_kit', ...Object.keys(CATEGORY_LABELS)];
 
-  const categoryLabels: Record<string, string> = { Todos: 'Todos', kit_fixo: 'Kits Prontos', montar_kit: 'Montar Kit', ...CATEGORY_LABELS };
+  const categoryLabels: Record<string, string> = { kit_fixo: 'Kits Prontos', montar_kit: 'Montar Kit', ...CATEGORY_LABELS };
   const hasSearch = String(searchTerm || '').trim().length > 0;
-  const activeThemeKey = hasSearch ? 'Todos' : activeFilter;
-  const theme = CATEGORY_THEMES[activeThemeKey] || CATEGORY_THEMES['Todos'];
+  const showChooser = !hasSearch && !activeFilter;
+  const activeThemeKey = hasSearch ? 'catalogo' : activeFilter || 'catalogo';
+  const theme = CATEGORY_THEMES[activeThemeKey] || CATEGORY_THEMES.catalogo;
 
   useEffect(() => {
     if (!theme.fontImport) return;
@@ -2190,9 +2207,6 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
     link.setAttribute('data-freo-font', activeThemeKey);
     document.head.appendChild(link);
   }, [activeThemeKey, theme.fontImport]);
-
-  useEffect(() => { setActiveFilter(normalizeCategory(initialFilter)); }, [initialFilter]);
-  useEffect(() => { if (hasSearch) setActiveFilter('Todos'); }, [hasSearch, searchTerm]);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -2220,19 +2234,13 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
         .sort((a, b) => b.score - a.score)
         .map(item => item.product);
     }
-    if (activeFilter === 'Todos') return products;
+    if (!activeFilter) return [];
     if (activeFilter === 'kit_fixo') return products.filter(product => product.is_kit && product.kit_type === 'fixed');
-    return products.filter(product => normalizeCategory(product.category) === activeFilter);
+    return products.filter(product => !product.is_kit && normalizeCategory(product.category) === activeFilter);
   }, [products, searchTerm, hasSearch, activeFilter]);
 
   const handleCategoryClick = (category: string) => {
-    if (category === 'montar_kit') {
-      window.location.href = '/montar-kit.html';
-      return;
-    }
-    onClearSearch();
-    updateStoreLocation(category);
-    setActiveFilter(category);
+    onSelectCategory(category);
   };
 
   return (
@@ -2248,6 +2256,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
       </div>
 
       <div className="pt-20 md:pt-32 pb-24 relative z-10" style={{ minHeight: '100vh' }}>
+        {showChooser ? <CategoryChooser onSelect={handleCategoryClick} /> : <>
 
         {/* MOBILE LAYOUT */}
         {isMobile && (
@@ -2329,7 +2338,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                 </p>
                 {hasSearch && (
                   <button onClick={onClearSearch} className="mt-6 font-mono text-sm uppercase px-5 py-3 rounded-sm" style={{ border: `1px solid ${theme.accent}60`, color: theme.accent }}>
-                    Ver catálogo completo
+                    Escolher categoria
                   </button>
                 )}
               </div>
@@ -2447,7 +2456,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
                     </div>
                     {hasSearch && (
                       <button onClick={onClearSearch} className="self-start md:self-auto text-xs font-mono uppercase tracking-widest px-3 py-2 transition-colors" style={{ border: `1px solid ${theme.accent}50`, color: theme.accent }}>
-                        Ver catálogo completo
+                        Escolher categoria
                       </button>
                     )}
                   </div>
@@ -2491,6 +2500,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
             </div>
           </div>
         )}
+        </>}
       </div>
 
       <MobileCategoryDrawer
@@ -2599,14 +2609,14 @@ const ShopeeReviews = () => {
 // HOME VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 
-const HomeView = ({ setCurrentView, addToCart, setFilter }: any) => (
+const HomeView = ({ onShowCategories, onSelectCategory, addToCart }: any) => (
   <>
-    <HeroCarousel setCurrentView={setCurrentView} />
+    <HeroCarousel onExplore={onShowCategories} />
     <Marquee />
     <ShopeeReviews />
-    <Categories setCurrentView={setCurrentView} setFilter={setFilter} />
+    <Categories onSelectCategory={onSelectCategory} />
     <FeaturedProducts addToCart={addToCart} />
-    <StoreCTA setCurrentView={setCurrentView} />
+    <StoreCTA onExplore={onShowCategories} />
     <ProcessSection />
     <AboutSection />
   </>
@@ -2829,14 +2839,20 @@ const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem, us
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'shop'>(() => new URLSearchParams(window.location.search).has('categoria') ? 'shop' : 'home');
+  const [currentView, setCurrentView] = useState<'home' | 'shop'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('categoria') || params.get('categorias') === '1' ? 'shop' : 'home';
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [activeFilter, setActiveFilter] = useState(() => new URLSearchParams(window.location.search).get('categoria') ? normalizeCategory(new URLSearchParams(window.location.search).get('categoria')) : 'Todos');
+  const [activeFilter, setActiveFilter] = useState(() => {
+    const category = new URLSearchParams(window.location.search).get('categoria');
+    return category && category !== 'Todos' ? normalizeCategory(category) : '';
+  });
   useEffect(() => {
-    updateStoreLocation(currentView === 'shop' ? activeFilter : undefined);
+    updateStoreLocation(currentView === 'shop' ? activeFilter : undefined, currentView === 'shop' && !activeFilter);
   }, [currentView, activeFilter]);
   const [searchTerm, setSearchTerm] = useState('');
   const [cupomCode, setCupomCode] = useState<string | null>(() => {
@@ -2861,7 +2877,7 @@ export default function App() {
     }
     const categoriaParam = params.get('categoria');
     if (categoriaParam) {
-      setActiveFilter(normalizeCategory(categoriaParam));
+      setActiveFilter(categoriaParam === 'Todos' ? '' : normalizeCategory(categoriaParam));
       setCurrentView('shop');
     }
     const handleAuthData = (event: any) => {
@@ -2907,14 +2923,30 @@ export default function App() {
     const clean = String(term ?? searchTerm).trim();
     if (!clean) return;
     setSearchTerm(clean);
-    setActiveFilter('Todos');
+    setActiveFilter('');
     setCurrentView('shop');
     window.setTimeout(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 0);
   };
 
   const handleSearchClear = () => { setSearchTerm(''); };
 
-  const handleFilterChange = (filter: string) => { setSearchTerm(''); setActiveFilter(filter); };
+  const showCategories = () => {
+    setSearchTerm('');
+    setActiveFilter('');
+    setCurrentView('shop');
+    window.scrollTo(0, 0);
+  };
+
+  const handleSelectCategory = (category: string) => {
+    if (category === 'montar_kit') {
+      window.location.href = '/montar-kit.html';
+      return;
+    }
+    setSearchTerm('');
+    setActiveFilter(category);
+    setCurrentView('shop');
+    window.scrollTo(0, 0);
+  };
 
   const addToCart = async (product: Product, skipCouponModal = false) => {
   // @ts-ignore
@@ -3027,12 +3059,13 @@ export default function App() {
         setSearchTerm={setSearchTerm}
         onSearchSubmit={handleSearchSubmit}
         onSearchClear={handleSearchClear}
+        onShowCategories={showCategories}
       />
       {currentView === 'home' && <h1 className="sr-only">FreoFigures — Arte em Impressão 3D</h1>}
       {currentView === 'home' ? (
-        <HomeView setCurrentView={setCurrentView} addToCart={addToCart} setFilter={handleFilterChange} />
+        <HomeView onShowCategories={showCategories} onSelectCategory={handleSelectCategory} addToCart={addToCart} />
       ) : (
-        <ShopView addToCart={addToCart} initialFilter={activeFilter} searchTerm={searchTerm} onClearSearch={handleSearchClear} />
+        <ShopView addToCart={addToCart} activeFilter={activeFilter} onSelectCategory={handleSelectCategory} searchTerm={searchTerm} onClearSearch={handleSearchClear} />
       )}
       <Footer />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />

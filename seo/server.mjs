@@ -1,7 +1,7 @@
 import { LEGACY_CATEGORIES, normalizeCategory } from '../public/catalog-categories.js';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { SITE, LOGO, CATEGORIES, categoryUrl, productUrl, pageMetadata, plainText, escapeHtml as esc, safeJson, safeImage, productSchema, organizationSchema, breadcrumbs } from './shared.mjs';
+import { SITE, LOGO, CHOOSER_URL, CATEGORIES, categoryUrl, productUrl, pageMetadata, plainText, escapeHtml as esc, safeJson, safeImage, productSchema, organizationSchema, breadcrumbs } from './shared.mjs';
 
 const FIELDS = 'id,title,description,category,images,price,promotional_price,stock,is_kit,kit_type,variants,created_at';
 const ALIASES = {
@@ -65,12 +65,13 @@ function categoryLinks() {
 function fallbackShell(content, id = '') {
   return `<section ${id ? `id="${id}"` : ''} style="max-width:1152px;margin:auto;padding:32px 24px;font-family:Arial,sans-serif;line-height:1.6"><a href="/">FreoFigures</a>${content}<nav aria-label="Categorias">${categoryLinks()}</nav><p><a href="/faq.html">Dúvidas frequentes</a> · <a href="/politicas.html">Políticas e atendimento</a></p></section>`;
 }
-export function renderHome(html, products, category) {
-  const meta = pageMetadata(category);
-  const selected = category === 'Todos' ? products : category === 'kit_fixo' ? products.filter(p => p.is_kit && p.kit_type === 'fixed')
-    : category ? products.filter(p => normalizeCategory(p.category) === category) : products.slice(0, 4);
+export function renderHome(html, products, category, chooser = false) {
+  const meta = pageMetadata(category, chooser);
+  const selected = chooser ? [] : category === 'kit_fixo' ? products.filter(p => p.is_kit && p.kit_type === 'fixed')
+    : category ? products.filter(p => !p.is_kit && normalizeCategory(p.category) === category) : products.slice(0, 4);
   const cards = selected.map(p => `<li><a href="${esc(productUrl(p.id))}">${esc(p.title)}</a></li>`).join('');
-  const content = fallbackShell(`<h1>${esc(meta.title)}</h1><p>${esc(meta.description)}</p><ul>${cards}</ul>`);
+  const choices = chooser ? `<ul>${['games', 'religioso', 'feito_por_voces'].map(key => `<li><a href="${esc(categoryUrl(key))}">${esc(CATEGORIES[key][0])}</a></li>`).join('')}</ul><p><a href="${esc(categoryUrl('kit_fixo'))}">Kits prontos</a> · <a href="/montar-kit.html">Montar kit</a></p>` : '';
+  const content = fallbackShell(`<h1>${esc(meta.title)}</h1><p>${esc(meta.description)}</p>${choices}<ul>${cards}</ul>`);
   return addHead(html, meta, category ? [jsonLd('breadcrumb-structured-data', breadcrumbs(category))] : [])
     .replace('<div id="root"></div>', `<div id="root">${content}</div>`);
 }
@@ -85,8 +86,8 @@ export function renderProduct(html, p) {
     .replace('<main id="page-content"', `${summary}\n<main id="page-content"`);
 }
 export function sitemap(products) {
-  const categories = Object.keys(CATEGORIES).filter(key => key === 'Todos' || products.some(p => key === 'kit_fixo' ? p.is_kit && p.kit_type === 'fixed' : normalizeCategory(p.category) === key));
-  const urls = [`${SITE}/`, `${SITE}/faq.html`, `${SITE}/politicas.html`, ...categories.map(categoryUrl), ...products.map(p => productUrl(p.id))];
+  const categories = Object.keys(CATEGORIES).filter(key => key === 'kit_fixo' ? products.some(p => p.is_kit && p.kit_type === 'fixed') : products.some(p => !p.is_kit && normalizeCategory(p.category) === key));
+  const urls = [`${SITE}/`, CHOOSER_URL, `${SITE}/faq.html`, `${SITE}/politicas.html`, ...categories.map(categoryUrl), ...products.map(p => productUrl(p.id))];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${[...new Set(urls)].map(url => `<url><loc>${esc(url)}</loc></url>`).join('')}</urlset>`;
 }
 
@@ -110,6 +111,11 @@ export function createSeoMiddleware({ root, outputDir, loadCatalog, read = readF
       url.searchParams.set('categoria', 'games');
       res.setHeader('Location', '/' + url.search); return send(301, 'text/plain', 'Moved permanently');
     }
+    if (pathname === '/' && url.searchParams.get('categoria') === 'Todos') {
+      url.searchParams.delete('categoria');
+      url.searchParams.set('categorias', '1');
+      res.setHeader('Location', '/' + url.search); return send(301, 'text/plain', 'Moved permanently');
+    }
     if (Object.hasOwn(ALIASES, pathname)) {
       res.setHeader('Location', ALIASES[pathname]); return send(301, 'text/plain', 'Moved permanently');
     }
@@ -128,6 +134,7 @@ export function createSeoMiddleware({ root, outputDir, loadCatalog, read = readF
     try {
       const html = await template(isProduct ? 'produto' : 'index.html');
       const category = url.searchParams.get('categoria');
+      const chooser = !category && url.searchParams.get('categorias') === '1';
       const invalidCategory = category !== null && !Object.hasOwn(CATEGORIES, category);
       const id = url.searchParams.get('id');
       if (isProduct && (!id || !/^[a-zA-Z0-9-]{1,80}$/.test(id))) return send(404, 'text/html', html);
@@ -139,11 +146,11 @@ export function createSeoMiddleware({ root, outputDir, loadCatalog, read = readF
           return send(200, 'text/html', renderProduct(html, p));
         }
         if (invalidCategory) res.setHeader('X-Robots-Tag', 'noindex');
-        return send(200, 'text/html', renderHome(html, products, invalidCategory ? null : category));
+        return send(200, 'text/html', renderHome(html, products, invalidCategory ? null : category, chooser));
       } catch {
         // An upstream outage must not prevent the existing client-side shop from opening.
         // Serve its original template without stale stock/prices or incorrect 404 responses.
-        return send(200, 'text/html', isProduct ? html : renderHome(html, [], invalidCategory ? null : category));
+        return send(200, 'text/html', isProduct ? html : renderHome(html, [], invalidCategory ? null : category, chooser));
       }
     } catch (error) { next(error); }
   };

@@ -2,9 +2,11 @@ export const SITE = 'https://www.freofigures.com.br';
 export const LOGO = 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/LOGO_DEASHBOARD4.png';
 export const HOME_TITLE = 'FreoFigures | Arte em Impressão 3D';
 export const HOME_DESCRIPTION = 'Conheça a FreoFigures: peças em impressão 3D, artigos religiosos, action figures, keycaps e decoração. Explore o catálogo e os projetos personalizados.';
+export const CHOOSER_URL = `${SITE}/?categorias=1`;
+export const CHOOSER_TITLE = 'Categorias | FreoFigures';
+export const CHOOSER_DESCRIPTION = 'Escolha entre Geek/Gamer, Religioso e Feito por vocês. Explore também os kits prontos e monte o seu kit.';
 export const CATEGORIES = {
   kit_fixo: ['Kits prontos', 'Conheça os kits de produtos disponíveis na FreoFigures.'],
-  Todos: ['Catálogo', 'Explore o catálogo de peças em impressão 3D da FreoFigures.'],
   games: ['Geek/Gamer', 'Peças de games e cultura geek em impressão 3D. Confira os modelos da FreoFigures.'],
   religioso: ['Religioso', 'Imagens religiosas e pias de água benta em impressão 3D. Confira modelos, medidas e opções na FreoFigures.'],
   feito_por_voces: ['Feito por vocês', 'Modelos criados pela comunidade no gerador de personalizados e aprovados pela FreoFigures.'],
@@ -17,7 +19,8 @@ export const safeJson = value => JSON.stringify(value).replace(/</g, '\\u003c').
 export function safeImage(value) {
   try { const url = new URL(value); return url.protocol === 'https:' ? url.href : ''; } catch { return ''; }
 }
-export function pageMetadata(category) {
+export function pageMetadata(category, chooser = false) {
+  if (chooser) return { title: CHOOSER_TITLE, description: CHOOSER_DESCRIPTION, url: CHOOSER_URL };
   const entry = Object.hasOwn(CATEGORIES, category || '') ? CATEGORIES[category] : null;
   return entry ? { title: `${entry[0]} | FreoFigures`, description: entry[1], url: categoryUrl(category) }
     : { title: HOME_TITLE, description: HOME_DESCRIPTION, url: `${SITE}/` };

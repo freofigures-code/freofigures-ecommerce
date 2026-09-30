@@ -43,11 +43,21 @@ test('categories have unique canonicals and only matching product links', () => 
   assert.match(html, /canonical" href="https:\/\/www.freofigures.com.br\/\?categoria=religioso"/);
   assert.equal(json(html,'breadcrumb-structured-data').itemListElement[1].name,'Religioso');
 });
+test('category chooser lists the three categories and preserves both kit paths', () => {
+  const html = renderHome(home, [product], null, true);
+  assert.match(html, /canonical" href="https:\/\/www.freofigures.com.br\/\?categorias=1"/);
+  for (const category of ['games', 'religioso', 'feito_por_voces']) assert.ok(html.includes(`?categoria=${category}`));
+  assert.ok(html.includes('?categoria=kit_fixo'));
+  assert.ok(html.includes('/montar-kit.html'));
+  assert.ok(!html.includes('?categoria=Todos'));
+});
 test('sitemap contains all products, no tracking, no invented modification dates', () => {
   const xml=sitemap([product,{...product,id:9,category:'anime'}]);
   assert.match(xml,/id=8/); assert.match(xml,/id=9/);
   assert.ok(!xml.includes('lastmod')); assert.ok(!xml.includes('checkout'));
   assert.ok(!xml.includes('categoria=keycaps'));
+  assert.ok(xml.includes('?categorias=1'));
+  assert.ok(!xml.includes('categoria=Todos'));
 });
 test('loader uses public allowlisted columns, pages results, caches and deduplicates requests', async () => {
   let calls=0, time=0;
@@ -78,12 +88,13 @@ async function withServer(run, loader=async()=>[product]) {
   finally { await new Promise(resolve=>server.close(resolve)); }
 }
 test('HTTP routes have correct MIME, HEAD, sitemap, aliases and real missing-product 404s', async()=>withServer(async base=>{
-  for(const [route,type] of [['/','text/html'],['/?categoria=religioso','text/html'],['/produto?id=8','text/html'],['/robots.txt','text/plain'],['/sitemap.xml','application/xml']]) {
+  for(const [route,type] of [['/','text/html'],['/?categorias=1','text/html'],['/?categoria=religioso','text/html'],['/produto?id=8','text/html'],['/robots.txt','text/plain'],['/sitemap.xml','application/xml']]) {
     const response=await fetch(base+route); assert.equal(response.status,200,route); assert.ok(response.headers.get('content-type').includes(type),route);
   }
   const head=await fetch(base+'/produto?id=8',{method:'HEAD'});assert.equal(head.status,200);assert.equal(await head.text(),'');
   for(const route of ['/produto','/produto?id=999','/produto?id=%22%3E']) assert.equal((await fetch(base+route)).status,404);
   const alias=await fetch(base+'/public/politicas.html',{redirect:'manual'}); assert.equal(alias.status,301);assert.equal(alias.headers.get('location'),'/politicas.html');
+  const oldCatalog=await fetch(base+'/?categoria=Todos',{redirect:'manual'}); assert.equal(oldCatalog.status,301);assert.equal(oldCatalog.headers.get('location'),'/?categorias=1');
 }));
 test('checkout, login, callbacks, assets and POST requests keep their existing handling',async()=>withServer(async base=>{
   for(const route of ['/checkout.html?guest=1','/auth/callback.html?code=test','/admin/produtos.html','/login.html']) {
