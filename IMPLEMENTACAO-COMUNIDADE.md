@@ -36,20 +36,27 @@ precisam ser implantados no Supabase antes de publicar o frontend em produção.
    migrações antigas já instaladas.
 3. Execute `supabase/diagnostics/community_postflight.sql`, apenas leitura.
    Todos os valores da resposta devem ser `true`.
-4. Publique a nova Edge Function:
+4. Execute `supabase/migrations/202609300001_guard_generation_pricing.sql` uma
+   vez. A função de preço publicada lê `generation_jobs.metadata.pricing`; sem
+   essa proteção, o proprietário da geração pode alterar o JSON diretamente
+   pela API antiga. O novo gatilho bloqueia alterações diretas de preço,
+   status e caminhos dos arquivos, mantendo as operações do servidor.
+5. Execute `supabase/diagnostics/generation_pricing_postflight.sql`, apenas
+   leitura. Todos os valores da resposta devem ser `true`.
+6. Publique a nova Edge Function:
    `supabase functions deploy generation-publication --project-ref rrmxqpvxrpcqqxsgccqw`.
    Ela usa as variáveis padrão `SUPABASE_URL`, `SUPABASE_ANON_KEY` e
    `SUPABASE_SERVICE_ROLE_KEY` do ambiente Supabase. Nenhuma chave privilegiada
    deve ir para o frontend. Mantenha a autenticação JWT ativada.
-5. A função existente `generation-price-quote` deve estar operacional. Ela não
-   está versionada neste repositório, portanto seu código e sua resposta em
-   produção não puderam ser verificados aqui. Para
-   publicar, a geração concluída deve ter imagem e `model_path` persistidos no
+7. A função existente `generation-price-quote` deve estar operacional. A versão
+   ativa no projeto foi conferida: ela responde `ready: true` e `valor_final`
+   somente quando há preço concluído no `metadata.pricing`. Para publicar,
+   a geração concluída deve ter imagem e `model_path` persistidos no
    bucket privado `generations`. A publicação falha sem afetar a compra se esses
    arquivos ou o preço não estiverem disponíveis.
-6. Rode `npm ci`, `npm run lint`, `npm run test:community` e `npm run build`.
+8. Rode `npm ci`, `npm run lint`, `npm run test:community` e `npm run build`.
    Depois publique o frontend pelo processo atual de hospedagem.
-7. Valide em homologação: comprar sem publicar; enviar com consentimento; fila
+9. Valide em homologação: comprar sem publicar; enviar com consentimento; fila
    pendente; aprovação e produto no catálogo; recusa sem produto público; repetição
    de envio; acesso negado a usuário comum; Kits Prontos e Montar Kit.
 
@@ -70,7 +77,8 @@ para revisão ou recuperação manual. Não há exclusão de produtos.
 - Testes novos de banco PostgreSQL embutido (PGlite) e Edge Function: aprovados.
   Cobrem propriedade, consentimento, preço do servidor, autorização, recusa,
   visibilidade pública, tentativas de adulterar itens aprovados e repetição de
-  solicitações/decisões.
+  solicitações/decisões. Também simulam uma tentativa de forjar o preço salvo
+  pela API de gerações e uma alteração legítima feita por rotina privilegiada.
 - Prévia no navegador com dados fictícios locais: preço, consentimento,
   envio pendente, aprovação, produto na categoria e opções de kits verificados.
 - Na primeira revisão, sete falhas foram reproduzidas também no commit original:

@@ -41,6 +41,14 @@ test('database enforces consent ownership, admin decisions, idempotency and publ
       grant select on public.profiles to authenticated;
       ${await readFile(new URL('./fixtures/production-generation-jobs.sql', import.meta.url), 'utf8')}
       insert into public.generation_jobs(id,user_id,title,source_type,status) values('${job}','${owner}','Minha peça','prompt','completed'),('${rejectedJob}','${owner}','Recusada','prompt','completed'),('${unfinishedJob}','${owner}','Em andamento','prompt','generating_model');
+      alter table public.generation_jobs enable row level security;
+      create policy jobs_owner_all on public.generation_jobs for all to authenticated
+        using(user_id=auth.uid()) with check(user_id=auth.uid());
+      grant select,insert,update on public.generation_jobs to authenticated,service_role;
+      create function public.start_generation(p_job uuid) returns void language plpgsql security definer as $$
+        begin update public.generation_jobs set status='generating_model',
+          metadata='{"pricing":{"status":"quote_pending"}}'::jsonb where id=p_job; end $$;
+      grant execute on function public.start_generation(uuid) to authenticated;
       ${await readFile(new URL('./fixtures/production-products.sql', import.meta.url), 'utf8')}
       insert into public.products(title,price,category,is_kit) values('Legado',10,'personalizado',false),('Kit',20,null,true),('Santo',30,'religioso',false),('Kit antigo',40,'kit_fixo',false);
       alter table public.products enable row level security;
@@ -134,6 +142,20 @@ test('database enforces consent ownership, admin decisions, idempotency and publ
     await db.exec(`insert into products(title,price,category,publication_id) values('Hidden',1,'feito_por_voces','${rejected.id}')`);
     await act('anon');
     assert.equal((await rows("select * from products where title='Hidden'")).length,0);
+    await db.exec('reset role');
+    await db.exec(await readFile(new URL('../supabase/migrations/202609300001_guard_generation_pricing.sql', import.meta.url), 'utf8'));
+    const pricingPostflight = (await db.query(await readFile(new URL('../supabase/diagnostics/generation_pricing_postflight.sql', import.meta.url), 'utf8'))).rows[0].verificacao_preco;
+    assert.ok(Object.values(pricingPostflight).every(Boolean),JSON.stringify(pricingPostflight));
+    await act('authenticated',owner);
+    await assert.rejects(db.exec(`update generation_jobs set metadata='{"pricing":{"status":"success","valor_final":0.01}}'::jsonb where id='${job}'`), /Campos de geração e preço/);
+    await assert.rejects(db.exec(`update generation_jobs set status='failed' where id='${job}'`), /Campos de geração e preço/);
+    await assert.rejects(db.exec(`update generation_jobs set model_path='${owner}/forged.glb' where id='${job}'`), /Campos de geração e preço/);
+    await assert.rejects(db.exec(`insert into generation_jobs(id,user_id,title,source_type,status,metadata) values(gen_random_uuid(),'${owner}','Forged','prompt','completed','{"pricing":{"valor_final":0.01}}')`), /Campos de geração e preço/);
+    assert.equal((await rows(`update generation_jobs set title='Novo título' where id='${job}' returning title`))[0].title,'Novo título');
+    await db.exec(`select public.start_generation('${job}')`);
+    assert.equal((await rows(`select status from generation_jobs where id='${job}'`))[0].status,'generating_model');
+    await act('service_role');
+    await db.exec(`update generation_jobs set metadata='{"pricing":{"status":"success","valor_final":85.50}}'::jsonb where id='${job}'`);
     await db.exec('reset role');
     await db.exec(`delete from generation_jobs where id='${job}'`);
     assert.equal((await rows(`select * from products where id::text='${approved.product_id}'`)).length,0);

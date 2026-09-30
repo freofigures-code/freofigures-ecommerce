@@ -35,7 +35,7 @@ function harness(options = {}) {
     fetch: async (url, init) => {
       calls.quote++; assert.equal(init.headers.Authorization,'Bearer user-token');
       assert.equal(JSON.parse(init.body).generation_id,id);
-      return Response.json({ success: true, generation_id: id, valor_final: options.price === undefined ? 87.65 : options.price });
+      return Response.json({ success: true, ready: options.pending !== true, generation_id: id, valor_final: options.price === undefined ? 87.65 : options.price });
     },
   });
   return { calls, run: body => handler(new Request('https://example.com', { method:'POST',headers:{Authorization:'Bearer user-token','Content-Type':'application/json'},body:JSON.stringify(body) })) };
@@ -63,6 +63,7 @@ test('Edge fails closed on invalid price and cleans up failed snapshot uploads',
   for (const price of [0,0.001,-1,100000000,'not-a-price']) {
     const h=harness({price});assert.equal((await h.run(submit)).status,400);assert.equal(h.calls.uploads.length,0);assert.equal(h.calls.rpc.length,0);
   }
+  const pending=harness({pending:true});assert.equal((await pending.run(submit)).status,400);assert.equal(pending.calls.uploads.length,0);
   const h=harness({failModel:true});assert.equal((await h.run(submit)).status,400);
   assert.equal(h.calls.rpc.length,0);assert.equal(h.calls.removals[0].paths.length,1);
 });

@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
       const quoteResponse = await fetch(`${url}/functions/v1/generation-price-quote`, { method: 'POST', headers: { Authorization: authorization, apikey: anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ generation_id: job.id }) });
       const quote = await quoteResponse.json();
       const price = Number(quote.valor_final);
-      if (!quoteResponse.ok || quote.success !== true || !Number.isFinite(price) || price < 0.01 || price > 99999999.99 || (quote.generation_id && quote.generation_id !== job.id)) throw new Error('Não foi possível validar o preço desta criação.');
+      if (!quoteResponse.ok || quote.success !== true || quote.ready !== true || quote.generation_id !== job.id || !Number.isFinite(price) || price < 0.01 || price > 99999999.99) throw new Error('Não foi possível validar o preço desta criação.');
       const imagePath = job.rendered_image_path || job.image_path;
       if (!imagePath || !job.model_path) throw new Error('Os arquivos desta criação ainda não estão disponíveis para publicação.');
       // Copy immutable snapshots; later edits to a generation cannot silently
