@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Criador da comunidade | FreoFigures</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://rrmxqpvxrpcqqxsgccqw.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM';
+window.supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+</script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080808;color:#f6f6f6;font:16px/1.5 system-ui,sans-serif}a{color:#ddaf34;text-decoration:none}a:hover{text-decoration:underline}header{border-bottom:1px solid #ffffff18;background:#111;padding:18px clamp(16px,4vw,48px);display:flex;justify-content:space-between;gap:20px;align-items:center}.brand{font-size:22px;font-weight:900;color:white}.brand span{color:#ddaf34}main{max-width:1180px;margin:auto;padding:clamp(24px,5vw,64px) 20px}h1{font-size:clamp(36px,7vw,72px);line-height:1;margin:6px 0 12px;overflow-wrap:anywhere}.eyebrow{color:#ddaf34;text-transform:uppercase;letter-spacing:.2em;font-size:11px;font-weight:700}.muted{color:#aaa}.stats{display:flex;gap:16px;flex-wrap:wrap;margin:28px 0 38px}.stat{background:#131313;border:1px solid #ddaf3433;padding:15px 22px;min-width:130px}.stat strong{display:block;color:#ddaf34;font-size:26px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:18px}.card{display:block;background:#121212;border:1px solid #ffffff20;color:#fff;overflow:hidden}.card:hover{border-color:#ddaf34;text-decoration:none}.card img{width:100%;aspect-ratio:1;object-fit:cover;background:#050505}.card div{padding:14px}.card strong{display:block;margin-bottom:5px}.card small{color:#aaa}.card b{color:#ddaf34}.error{color:#ff9e8e}
+</style></head><body>
+<header><a class="brand" href="/">FREO<span>FIGURES</span></a><a href="/?categoria=feito_por_voces">← Feito por vocês</a></header>
+<main><p class="eyebrow">Perfil de criador</p><h1 id="creator-name">Carregando...</h1><p class="muted">Modelos criados pela comunidade e aprovados pela FreoFigures.</p>
+<div class="stats"><div class="stat"><strong id="product-count">—</strong>produtos</div><div class="stat"><strong id="sales-count">—</strong>vendas</div><div class="stat"><strong id="likes-count">—</strong>curtidas</div></div>
+<p id="message" role="status"></p><div id="products" class="grid"></div></main>
+<script>
+(async function(){
+  const name=new URLSearchParams(location.search).get('user')||'';
+  const message=document.getElementById('message');
+  if(!/^[a-z][a-z0-9_]{2,23}$/.test(name)){message.textContent='Criador não encontrado.';message.className='error';return;}
+  const exists=await window.supabaseClient.rpc('creator_handle_exists',{p_handle:name});
+  if(exists.error||!exists.data){message.textContent='Criador não encontrado.';message.className='error';return;}
+  const result=await window.supabaseClient.rpc('creator_public_profile',{p_handle:name});
+  if(result.error){message.textContent='Não foi possível carregar o perfil. Tente novamente.';message.className='error';return;}
+  const rows=result.data||[];
+  if(!rows.length){message.textContent='Este criador ainda não tem produtos ativos.';}
+  document.title='@'+name+' | FreoFigures';
+  document.getElementById('creator-name').textContent='@'+name;
+  document.getElementById('product-count').textContent=String(rows.length);
+  document.getElementById('sales-count').textContent=String(rows.reduce((n,r)=>n+Number(r.sales_count||0),0));
+  document.getElementById('likes-count').textContent=String(rows.reduce((n,r)=>n+Number(r.likes_count||0),0));
+  const grid=document.getElementById('products');
+  for(const row of rows){
+    const a=document.createElement('a');a.className='card';a.href='/produto?id='+encodeURIComponent(row.product_id);
+    if(row.product_image){const img=document.createElement('img');img.src=row.product_image;img.alt=row.product_title;img.loading='lazy';a.append(img);}
+    const body=document.createElement('div');const title=document.createElement('strong');title.textContent=row.product_title;
+    const stats=document.createElement('small');stats.textContent=Number(row.sales_count||0)+' vendas · '+Number(row.likes_count||0)+' curtidas';
+    const price=document.createElement('b');price.textContent=' · '+Number(row.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    body.append(title,stats,price);a.append(body);grid.append(a);
+  }
+})();
+</script></body></html>

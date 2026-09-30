@@ -1,0 +1,13 @@
+# Criadores da comunidade
+
+O usuário autoriza a publicação na tela de criação 3D. A aprovação em `/admin/criacoes.html` publica o produto e cria automaticamente o perfil de criador. O primeiro @nome é neutro e automático. O criador pode solicitar outro nome no próprio perfil; só a aprovação do administrador torna o nome novo público. Curtidas exigem conta cadastrada e são uma por pessoa e produto.
+
+1. Confirme que `202609300001_guard_generation_pricing.sql`, `202609290001_generation_publications.sql` e `202609300002_freo_credits.sql` já foram aplicados. O [postflight de créditos](diagnostics/freo_credits_postflight.sql) deve retornar todos os valores `true`.
+2. Execute uma vez [202609300003_community_creators.sql](migrations/202609300003_community_creators.sql) no SQL Editor do projeto `rrmxqpvxrpcqqxsgccqw`. O script é transacional e aborta antes de alterar o banco se as migrações anteriores faltarem.
+3. Execute [community_creators_postflight.sql](diagnostics/community_creators_postflight.sql). Todos os valores de `verificacao_criadores` devem ser `true`.
+4. Publique a versão atualizada da Edge Function `freo-checkout` e o frontend da mesma revisão. A `freo-payment-sync` já existente continua a confirmar o pagamento junto ao Mercado Pago. O workflow n8n `criar-pagamento` não muda.
+5. Teste com duas contas cadastradas diferentes: o criador publica um modelo, o administrador aprova, o comprador curte e paga. Verifique no perfil do criador a venda, a curtida e a entrada `creator_reward` no extrato. Repita a confirmação do mesmo pedido e verifique que não há outra entrada. Teste também um pedido com cupom ou Créditos Freo, e um pedido integralmente pago com Créditos Freo.
+
+O criador recebe **3 Créditos Freo por R$ 1 inteiro efetivamente pago pela parte do seu produto**. O valor pago é rateado proporcionalmente entre os produtos e o frete após cupom e uso de créditos; cada parte é arredondada para baixo em centavos, e depois o produto é arredondado para baixo em reais inteiros. Por exemplo, um único produto de R$ 50 sem frete nem desconto, pago em dinheiro, rende 150 Créditos Freo. Um pedido totalmente coberto por créditos rende zero ao criador. A compra da própria criação também não gera bônus de criador. Vendas anteriores a esta migração não recebem bônus retroativo.
+
+Somente itens da comunidade vendidos diretamente recebem o bônus. Kits Prontos e Montar Kit mantêm os fluxos atuais; seus componentes não viram linhas de venda de criador automaticamente. Os pedidos com produtos da comunidade passam pela validação de preços, cupom e frete no servidor mesmo quando o comprador não usa créditos. A recompensa é liberada apenas após a confirmação segura do pagamento pelo servidor.

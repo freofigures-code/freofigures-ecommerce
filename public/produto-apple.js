@@ -482,6 +482,7 @@ async function renderProduct(p) {
     text('product-title', p.title);
     el('product-title').classList.toggle('long-title', String(p.title).length > 55);
     text('product-category', p.is_kit ? 'Kit exclusivo' : catalogCategoryLabel(p.category));
+    Promise.resolve(loadCommunityCreator(p)).catch(function () { el('community-creator').hidden = true; });
     applyEditorial(p);
     var tags = asArray(p.tags);
     if (!tags.length && typeof p.tags === 'string' && !p.tags.startsWith('['))
@@ -519,6 +520,44 @@ async function renderProduct(p) {
     Promise.resolve(loadShippingPromotion()).catch(function () { });
     Promise.resolve(loadReviews(p.id)).catch(function () { text('product-rating-summary', 'Avaliações indisponíveis'); });
     Promise.resolve(loadRelatedProducts(p.id, p.category)).catch(function () { el('related-section').classList.add('hidden'); });
+}
+async function loadCommunityCreator(p) {
+    var panel = el('community-creator');
+    panel.hidden = true;
+    panel.style.display = 'none';
+    if (p.category !== 'feito_por_voces') return;
+    var db = window.supabaseClient;
+    var info = await db.rpc('community_catalog_info');
+    if (info.error) throw info.error;
+    var row = (info.data || []).find(function (item) { return Number(item.product_id) === Number(p.id); });
+    if (!row) return;
+    var link = el('community-creator-link');
+    link.textContent = '@' + row.creator_handle;
+    link.href = '/criador.html?user=' + encodeURIComponent(row.creator_handle);
+    text('community-sales', String(row.sales_count || 0));
+    var likes = Number(row.likes_count || 0);
+    var liked = false;
+    var auth = await db.auth.getUser();
+    var user = auth.data && auth.data.user && !auth.data.user.is_anonymous ? auth.data.user : null;
+    if (user) {
+        var own = await db.from('community_product_likes').select('product_id').eq('product_id', p.id).eq('user_id', user.id).maybeSingle();
+        liked = !!own.data;
+    }
+    var button = el('community-like');
+    var sync = function () { button.setAttribute('aria-pressed', String(liked)); button.innerHTML = (liked ? '♥ ' : '♡ ') + '<span id="community-likes">' + likes + '</span> curtidas'; };
+    sync();
+    button.onclick = async function () {
+        if (!user) { location.href = '/login.html?return=' + encodeURIComponent(location.pathname + location.search); return; }
+        button.disabled = true;
+        var response = liked
+            ? await db.from('community_product_likes').delete().eq('product_id', p.id).eq('user_id', user.id)
+            : await db.from('community_product_likes').insert({ product_id: p.id, user_id: user.id });
+        if (!response.error) { likes = Math.max(0, likes + (liked ? -1 : 1)); liked = !liked; sync(); }
+        else showToast('Não foi possível atualizar a curtida.', 'error');
+        button.disabled = false;
+    };
+    panel.hidden = false;
+    panel.style.display = 'flex';
 }
 function setBusy(busy, action) {
     purchaseBusy = busy;

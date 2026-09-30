@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ArrowLeft,
   Sparkles,
+  Heart,
 } from 'lucide-react';
   import FreoChat from './FreoChat';
   import FreoCupom from './FreoCupom';
@@ -437,6 +438,10 @@ type Product = {
   kit_slots?: number | null;
   kit_discount_type?: 'percent' | 'fixed' | null;
   kit_discount_value?: number | null;
+  creator_handle?: string;
+  likes_count?: number;
+  sales_count?: number;
+  liked?: boolean;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1763,6 +1768,7 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
         >
           <a href={`/produto?id=${encodeURIComponent(product.id)}`} onClick={goToProduct}>{product.title}</a>
         </h3>
+        {product.category === 'feito_por_voces' && product.creator_handle && <CommunitySocial product={product} />}
         <div className="mt-auto flex flex-col gap-2 md:gap-3">
           <div className="flex items-end gap-2">
             {hasPromo && <span className="font-mono text-xs md:text-sm text-white/30 line-through">{formatPrice(product.price)}</span>}
@@ -1785,6 +1791,35 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
   );
 };
 
+function CommunitySocial({ product }: { product: Product }) {
+  const [liked, setLiked] = useState(!!product.liked);
+  const [count, setCount] = useState(Number(product.likes_count || 0));
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setLiked(!!product.liked); setCount(Number(product.likes_count || 0)); }, [product.liked, product.likes_count]);
+  const toggle = async () => {
+    if (busy) return;
+    // @ts-ignore
+    const client = window.supabaseClient || window.supabase;
+    const { data } = await client.auth.getUser();
+    if (!data?.user || data.user.is_anonymous) {
+      const back = window.location.pathname + window.location.search;
+      window.location.href = `/login.html?return=${encodeURIComponent(back)}`;
+      return;
+    }
+    setBusy(true);
+    const result = liked
+      ? await client.from('community_product_likes').delete().eq('product_id', product.id).eq('user_id', data.user.id)
+      : await client.from('community_product_likes').insert({ product_id: product.id, user_id: data.user.id });
+    if (!result.error) { setLiked(!liked); setCount(Math.max(0, count + (liked ? -1 : 1))); }
+    setBusy(false);
+  };
+  return <div className="mb-3 flex items-center justify-between gap-2 text-xs">
+    <a className="truncate text-freo-orange hover:underline" href={`/criador.html?user=${encodeURIComponent(product.creator_handle)}`}>@{product.creator_handle}</a>
+    <button type="button" onClick={() => void toggle()} disabled={busy} aria-label={`${liked ? 'Descurtir' : 'Curtir'} ${product.title}`} aria-pressed={liked}
+      className="flex items-center gap-1 text-white/70 hover:text-red-400 disabled:opacity-50"><Heart className={`h-4 w-4 ${liked ? 'fill-red-400 text-red-400' : ''}`} />{count}</button>
+  </div>;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // FEATURED PRODUCTS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1800,7 +1835,23 @@ const FeaturedProducts = ({ addToCart }: any) => {
         const supabase = window.supabaseClient || window.supabase;
         if (!supabase) return;
         const { data, error } = await supabase.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(4);
-        if (!error && data) setProducts(data);
+        if (!error && data) {
+          const community = data.some((product: Product) => product.category === 'feito_por_voces');
+          if (!community) { setProducts(data); return; }
+          const info = await supabase.rpc('community_catalog_info');
+          if (info.error) throw info.error;
+          const { data: session } = await supabase.auth.getSession();
+          const likes = session?.session?.user && !session.session.user.is_anonymous
+            ? await supabase.from('community_product_likes').select('product_id').eq('user_id', session.session.user.id)
+            : { data: [] };
+          const liked = new Set((likes.data || []).map((row: { product_id: number }) => Number(row.product_id)));
+          const details = new Map((info.data || []).map((row: any) => [Number(row.product_id), row]));
+          setProducts(data.map((product: Product) => {
+            const social: any = details.get(Number(product.id));
+            return social ? { ...product, creator_handle: social.creator_handle, likes_count: social.likes_count,
+              sales_count: social.sales_count, liked: liked.has(Number(product.id)) } : product;
+          }));
+        }
       } catch (error) {
         console.error(error);
       } finally {
