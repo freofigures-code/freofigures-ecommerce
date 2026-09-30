@@ -142,9 +142,6 @@ export default function GeekShopView<T extends GeekProduct>({ products, loading,
                   {availableFilters.map(filter => <option key={filter.key} value={filter.key}>{filter.label}</option>)}
                 </select><ChevronDown className="pointer-events-none absolute right-2 h-3 w-3 text-[#e4b338]" aria-hidden="true" />
               </label>
-              {availableFilters.length > 0 && <div className="order-3 flex w-full gap-1.5 overflow-x-auto pb-1 sm:order-none sm:w-auto sm:flex-1 sm:pb-0" aria-label="Subfiltros Geek/Gamer">
-                {availableFilters.map(filter => <button key={filter.key} type="button" onClick={() => setSubfilter(filter.key)} aria-pressed={subfilter === filter.key} className={`shrink-0 rounded border px-3 py-2 text-xs transition-colors ${subfilter === filter.key ? 'border-[#e4b338] bg-[#4d3910] text-[#f7c54d]' : 'border-[#25303b] bg-[#151d26] text-slate-300 hover:border-[#9d7b2b]'}`}>{filter.label}</button>)}
-              </div>}
               <label className="relative ml-auto flex items-center sm:ml-0">
                 <span className="mr-2 hidden text-xs text-slate-400 xl:inline">Ordenar por:</span>
                 <select value={sort} onChange={event => setSort(event.target.value)} className="h-10 appearance-none rounded border border-[#25303b] bg-[#111820] pl-3 pr-8 text-xs text-slate-200 focus:outline focus:outline-2 focus:outline-[#e4b338]">
