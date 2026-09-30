@@ -8,6 +8,7 @@ import {
   createPromptGeneration,
   createUploadGeneration,
   getAuthenticatedUser,
+  getFreoBalance,
   getGeneration,
   isGenerationBusy,
   requestGenerationPrice,
@@ -162,6 +163,7 @@ export default function FreoCriarModelo() {
   const [publication, setPublication] = useState<GenerationPublication | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publicationError, setPublicationError] = useState<string | null>(null);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -309,6 +311,12 @@ export default function FreoCriarModelo() {
         if (!cancelled) redirectToLogin();
         return;
       }
+      try {
+        const balance = await getFreoBalance();
+        if (!cancelled) setCreditBalance(balance);
+      } catch {
+        if (!cancelled) setErrorMessage('Não foi possível carregar seus Créditos Freo. Atualize a página antes de gerar.');
+      }
 
       const params = new URLSearchParams(window.location.search);
       const explicit = params.get("id")?.trim() || "";
@@ -378,6 +386,7 @@ export default function FreoCriarModelo() {
 
     try {
       const job = await createPromptGeneration(promptFinal, answerSubject.trim());
+      void getFreoBalance().then(setCreditBalance).catch(() => {});
       await applyJob(job);
     } catch (error) {
       if (!mountedRef.current) return;
@@ -457,6 +466,7 @@ export default function FreoCriarModelo() {
 
     try {
       const job = await createUploadGeneration(uploadedFile);
+      void getFreoBalance().then(setCreditBalance).catch(() => {});
       await applyJob(job);
     } catch (error) {
       if (!mountedRef.current) return;
@@ -616,6 +626,11 @@ export default function FreoCriarModelo() {
       </header>
       <main className="flex-1 fcm-grid-bg relative">
         <div className="max-w-2xl mx-auto px-5 py-14 md:py-20">
+
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-freo-orange/25 bg-freo-orange/5 px-4 py-3 font-mono text-xs text-freo-light/75">
+            <span>Créditos Freo: <strong className="text-freo-orange">{creditBalance === null ? "…" : creditBalance}</strong></span>
+            <span>Nova criação: <strong className="text-freo-orange">10 créditos</strong> · refinamentos sem custo</span>
+          </div>
 
           {/* Erro global */}
           <AnimatePresence>

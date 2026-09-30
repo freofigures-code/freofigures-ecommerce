@@ -44,10 +44,14 @@ begin
     if found then raise exception 'Customer became admin'; end if;
   exception when insufficient_privilege then null; end;
 
-  -- Normal checkout's pending -> paid update remains functional.
-  update public.orders set status='pago',payment_id='transaction-only-test' where id=-908000002;
+  -- The browser may record the gateway ID but may not attest payment.
+  update public.orders set payment_id='transaction-only-test' where id=-908000002;
   get diagnostics n = row_count;
-  if n <> 1 then raise exception 'Checkout update blocked'; end if;
+  if n <> 1 then raise exception 'Payment ID update blocked'; end if;
+  begin
+    update public.orders set status='pago' where id=-908000002;
+    raise exception 'Customer marked order paid';
+  exception when insufficient_privilege then null; end;
 
   begin
     insert into public.product_reviews(product_id,user_id,reviewer_name,rating,comment,is_artificial)
