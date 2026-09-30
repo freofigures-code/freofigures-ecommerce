@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+.category-reference-art {
+  --art-scale: .53;
+  display: block;
+  width: calc(182px * var(--art-scale));
+  height: calc(182px * var(--art-scale));
+  flex: none;
+  border-radius: 50%;
+  background-image: url('/category-icons-reference.png');
+  background-repeat: no-repeat;
+  background-size: calc(1428px * var(--art-scale)) calc(602px * var(--art-scale));
+  background-position: calc(var(--art-x) * var(--art-scale)) calc(-258px * var(--art-scale));
+}
+
+@media (min-width: 640px) {
+  .category-reference-art { --art-scale: .72; }
+}
+
+@media (min-width: 1024px) {
+  .category-reference-art { --art-scale: 1; }
+}
+
 @theme {
   --color-freo-black: #050505;
   --color-freo-dark: #121212;
