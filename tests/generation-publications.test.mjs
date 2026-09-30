@@ -1,0 +1,163 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { PGlite } from '@electric-sql/pglite';
+import { CATEGORY_LABELS, normalizeCategory } from '../public/catalog-categories.js';
+import { renderHome, sitemap } from '../seo/server.mjs';
+
+test('three categories retain kit navigation and never treat legacy custom products as consented models', () => {
+  assert.deepEqual(Object.keys(CATEGORY_LABELS), ['games', 'religioso', 'feito_por_voces']);
+  assert.equal(normalizeCategory('personalizado'), 'games');
+  assert.equal(normalizeCategory('kit_fixo'), 'kit_fixo');
+  assert.equal(normalizeCategory('montar_kit'), 'montar_kit');
+  const products = [{ id: 1, category: 'games', title: 'Geek' }, { id: 2, category: 'feito_por_voces', title: 'Comunidade' }];
+  const html = renderHome('<title>Freo</title><div id="root"></div>', products, 'feito_por_voces');
+  assert.match(html, /produto\?id=2/);
+  assert.doesNotMatch(html, /produto\?id=1/);
+  assert.match(sitemap(products), /categoria=feito_por_voces/);
+});
+
+test('database enforces consent ownership, admin decisions, idempotency and public visibility', async () => {
+  const db = new PGlite();
+  const owner = '11111111-1111-4111-8111-111111111111';
+  const other = '22222222-2222-4222-8222-222222222222';
+  const admin = '33333333-3333-4333-8333-333333333333';
+  const job = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const rejectedJob = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const unfinishedJob = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+  try {
+    await db.exec(`
+      create role anon; create role authenticated; create role service_role bypassrls;
+      create schema auth; create schema storage;
+      create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+      grant usage on schema public,auth,storage to anon,authenticated,service_role;
+      create table auth.users(id uuid primary key);
+      insert into auth.users values('${owner}'),('${other}'),('${admin}');
+      create table public.profiles(id uuid primary key, is_admin boolean default false);
+      insert into public.profiles values('${owner}',false),('${other}',false),('${admin}',true);
+      create schema private;
+      create function private.protect_review_admin_flag() returns trigger language plpgsql as $$ begin return new; end; $$;
+      create trigger protect_review_admin_flag before insert or update on public.profiles for each row execute function private.protect_review_admin_flag();
+      grant select on public.profiles to authenticated;
+      ${await readFile(new URL('./fixtures/production-generation-jobs.sql', import.meta.url), 'utf8')}
+      insert into public.generation_jobs(id,user_id,title,source_type,status) values('${job}','${owner}','Minha peça','prompt','completed'),('${rejectedJob}','${owner}','Recusada','prompt','completed'),('${unfinishedJob}','${owner}','Em andamento','prompt','generating_model');
+      alter table public.generation_jobs enable row level security;
+      create policy jobs_owner_all on public.generation_jobs for all to authenticated
+        using(user_id=auth.uid()) with check(user_id=auth.uid());
+      grant select,insert,update on public.generation_jobs to authenticated,service_role;
+      create function public.start_generation(p_job uuid) returns void language plpgsql security definer as $$
+        begin update public.generation_jobs set status='generating_model',
+          metadata='{"pricing":{"status":"quote_pending"}}'::jsonb where id=p_job; end $$;
+      grant execute on function public.start_generation(uuid) to authenticated;
+      ${await readFile(new URL('./fixtures/production-products.sql', import.meta.url), 'utf8')}
+      insert into public.products(title,price,category,is_kit) values('Legado',10,'personalizado',false),('Kit',20,null,true),('Santo',30,'religioso',false),('Kit antigo',40,'kit_fixo',false);
+      alter table public.products enable row level security;
+      create policy catalog_read on public.products for select using(true);
+      grant select on public.products to anon,authenticated;
+      create table storage.buckets(id text primary key,name text,public boolean);
+      insert into storage.buckets values('imagens','imagens',true),('generations','generations',false);
+      create table storage.objects(id uuid,bucket_id text,name text);
+      alter table storage.objects enable row level security;
+      grant select,insert,update,delete on storage.objects to anon,authenticated;
+      create policy legacy_storage_access on storage.objects for all to anon,authenticated using(true) with check(true);
+      insert into storage.objects values(gen_random_uuid(),'imagens','existing-cover'),(gen_random_uuid(),'generation-publications','private-model');
+    `);
+    const diagnostic = await db.query(await readFile(new URL('../supabase/diagnostics/community_preflight.sql', import.meta.url), 'utf8'));
+    assert.ok(JSON.parse(diagnostic.rows[0].diagnostico).columns.some(column => column.table === 'public.products' && column.column === 'images'));
+    const kitsBefore = (await db.query("select to_jsonb(p) as row from products p where is_kit or category='kit_fixo' order by id")).rows.map(r=>r.row);
+    await db.exec(await readFile(new URL('../supabase/migrations/202609290001_generation_publications.sql', import.meta.url), 'utf8'));
+    const postflight = (await db.query(await readFile(new URL('../supabase/diagnostics/community_postflight.sql', import.meta.url), 'utf8'))).rows[0].verificacao_publicacoes;
+    assert.ok(Object.values(postflight).every(Boolean),JSON.stringify(postflight));
+    const kitsAfter = (await db.query("select to_jsonb(p) - 'publication_id' as row from products p where is_kit or category='kit_fixo' order by id")).rows.map(r=>r.row);
+    assert.deepEqual(kitsAfter,kitsBefore);
+    const rows = async sql => (await db.query(sql)).rows;
+    const act = async (role, id) => { await db.exec(`reset role; set role ${role}; select set_config('request.jwt.claim.sub','${id || ''}',false);`); };
+    const submit = (id = job, uid = owner, price = 85.5) => `select (public.submit_generation_publication('${id}','${uid}',${price},'snapshot/cover','snapshot/model')).*`;
+    assert.deepEqual(await rows('select category from products order by id'), [{ category:'games' },{ category:null },{ category:'religioso' },{ category:'kit_fixo' }]);
+    await act('authenticated',owner);
+    await assert.rejects(db.exec(submit()), /permission denied/);
+    await assert.rejects(db.exec(`insert into generation_publications(generation_id,user_id,title,image_path,model_path,quoted_price) values('${job}','${owner}','forged','x','y',1)`), /permission denied/);
+    await act('service_role');
+    await assert.rejects(db.exec(submit(job,other)), /Criação indisponível/);
+    await assert.rejects(db.exec(submit(unfinishedJob)), /Criação indisponível/);
+    await assert.rejects(db.exec(submit(job,owner,0)), /Preço inválido/);
+    await assert.rejects(db.exec(submit(job,owner,100000000)), /Preço inválido/);
+    await assert.rejects(db.exec(submit(job,owner,0.001)), /Preço inválido/);
+    const item = (await rows(submit()))[0];
+    assert.equal(item.status,'pending');
+    assert.equal((await rows(submit()))[0].id,item.id);
+    assert.equal((await rows('select count(*)::int as n from generation_publications'))[0].n,1);
+    await act('authenticated',other);
+    assert.equal((await rows('select * from generation_publications')).length,0);
+    assert.deepEqual(await rows('select name from storage.objects'),[{name:'existing-cover'}]);
+    assert.equal((await rows("update storage.objects set name='tampered' where bucket_id='generation-publications' returning name")).length,0);
+    await assert.rejects(db.exec("insert into storage.objects(bucket_id,name) values('generation-publications','forged')"),/row-level security/);
+    await act('authenticated',owner);
+    assert.equal((await rows('select * from generation_publications')).length,1);
+    await assert.rejects(db.exec(`update generation_publications set status='approved' where id='${item.id}'`),/permission denied/);
+    await act('anon');
+    assert.deepEqual(await rows('select name from storage.objects'),[{name:'existing-cover'}]);
+    await assert.rejects(db.exec('select * from generation_publications'),/permission denied/);
+    assert.equal((await rows("select * from products where category='feito_por_voces'")).length,0);
+    const review = (id, uid, approve) => `select (public.review_generation_publication('${id}','${uid}',${approve},'https://example.com/cover.png',2,'Motivo de teste')).*`;
+    await act('authenticated',admin);
+    assert.equal((await rows("select * from storage.objects where bucket_id='generation-publications'")).length,1);
+    await assert.rejects(db.exec(review(item.id,admin,true)),/permission denied/);
+    await act('service_role');
+    await assert.rejects(db.exec(review(item.id,owner,true)),/Acesso restrito/);
+    const approved = (await rows(review(item.id,admin,true)))[0];
+    assert.equal(approved.status,'approved');
+    assert.equal((await rows(review(item.id,admin,true)))[0].product_id,approved.product_id);
+    assert.equal((await rows(review(item.id,admin,false)))[0].status,'approved');
+    await act('anon');
+    const catalog = await rows("select title,price,stock,images,category from products where category='feito_por_voces'");
+    assert.equal(catalog.length,1); assert.equal(Number(catalog[0].price),85.5); assert.equal(catalog[0].stock,2);
+    assert.deepEqual(catalog[0].images,['https://example.com/cover.png']);
+    await act('service_role');
+    for (const role of ['anon','authenticated']) {
+      await act(role,other);
+      assert.equal((await rows(`update products set price=0.01 where id::text='${approved.product_id}' returning id`)).length,0);
+      assert.equal((await rows(`update products set publication_id=null,category='games' where id::text='${approved.product_id}' returning id`)).length,0);
+      assert.equal((await rows(`delete from products where id::text='${approved.product_id}' returning id`)).length,0);
+      await assert.rejects(db.exec(`insert into products(title,price,category,publication_id) values('Forged',1,'feito_por_voces','${item.id}')`), /row-level security/);
+    }
+    await db.exec('reset role');
+    await db.exec("insert into storage.objects(bucket_id,name) values('imagens','comunidade/test/cover')");
+    await act('authenticated',other);
+    assert.equal((await rows("update storage.objects set name='replaced' where name='comunidade/test/cover' returning name")).length,0);
+    assert.equal((await rows("delete from storage.objects where name='comunidade/test/cover' returning name")).length,0);
+    await assert.rejects(db.exec("insert into storage.objects(bucket_id,name) values('imagens','comunidade/forged')"), /row-level security/);
+    await assert.rejects(db.exec("update storage.objects set name='comunidade/forged' where name='existing-cover'"), /row-level security/);
+    await act('authenticated',admin);
+    assert.equal((await rows("update storage.objects set name='comunidade/test/admin-cover' where name='comunidade/test/cover' returning name")).length,1);
+    await act('service_role');
+    const rejected = (await rows(submit(rejectedJob)))[0];
+    assert.equal((await rows(review(rejected.id,admin,false)))[0].status,'rejected');
+    assert.equal((await rows(review(rejected.id,admin,true)))[0].status,'rejected');
+    await act('anon');
+    assert.equal((await rows("select * from products where category='feito_por_voces'")).length,1);
+    await db.exec('reset role');
+    await assert.rejects(db.exec("insert into products(title,price,category) values('Unreviewed',1,'feito_por_voces')"),/products_community_requires_publication/);
+    // Even a mistakenly inserted product linked to a pending submission remains private.
+    await db.exec(`insert into products(title,price,category,publication_id) values('Hidden',1,'feito_por_voces','${rejected.id}')`);
+    await act('anon');
+    assert.equal((await rows("select * from products where title='Hidden'")).length,0);
+    await db.exec('reset role');
+    await db.exec(await readFile(new URL('../supabase/migrations/202609300001_guard_generation_pricing.sql', import.meta.url), 'utf8'));
+    const pricingPostflight = (await db.query(await readFile(new URL('../supabase/diagnostics/generation_pricing_postflight.sql', import.meta.url), 'utf8'))).rows[0].verificacao_preco;
+    assert.ok(Object.values(pricingPostflight).every(Boolean),JSON.stringify(pricingPostflight));
+    await act('authenticated',owner);
+    await assert.rejects(db.exec(`update generation_jobs set metadata='{"pricing":{"status":"success","valor_final":0.01}}'::jsonb where id='${job}'`), /Campos de geração e preço/);
+    await assert.rejects(db.exec(`update generation_jobs set status='failed' where id='${job}'`), /Campos de geração e preço/);
+    await assert.rejects(db.exec(`update generation_jobs set model_path='${owner}/forged.glb' where id='${job}'`), /Campos de geração e preço/);
+    await assert.rejects(db.exec(`insert into generation_jobs(id,user_id,title,source_type,status,metadata) values(gen_random_uuid(),'${owner}','Forged','prompt','completed','{"pricing":{"valor_final":0.01}}')`), /Campos de geração e preço/);
+    assert.equal((await rows(`update generation_jobs set title='Novo título' where id='${job}' returning title`))[0].title,'Novo título');
+    await db.exec(`select public.start_generation('${job}')`);
+    assert.equal((await rows(`select status from generation_jobs where id='${job}'`))[0].status,'generating_model');
+    await act('service_role');
+    await db.exec(`update generation_jobs set metadata='{"pricing":{"status":"success","valor_final":85.50}}'::jsonb where id='${job}'`);
+    await db.exec('reset role');
+    await db.exec(`delete from generation_jobs where id='${job}'`);
+    assert.equal((await rows(`select * from products where id::text='${approved.product_id}'`)).length,0);
+  } finally { await db.close(); }
+});

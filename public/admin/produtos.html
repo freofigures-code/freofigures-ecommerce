@@ -161,6 +161,8 @@
     </div>
   </nav>
 
+  <a href="/admin/criacoes.html" class="block max-w-7xl mx-auto px-6 py-4 text-freo-orange font-mono text-sm">Feito por vocês — revisar criações →</a>
+
   <!-- ══════ AJUSTE DE PREÇO EM MASSA ══════ -->
   <div id="bulk-price-bar" class="hidden bg-freo-dark border-b border-freo-orange/20 py-3">
     <div class="max-w-7xl mx-auto px-6 flex items-center gap-3 flex-wrap">
@@ -286,17 +288,7 @@
             </div>
             <div class="col-span-2">
               <label class="fl">Categoria</label>
-              <select id="f-category" class="fi">
-                <option value="">Selecionar</option>
-                <option value="religioso">Religioso</option>
-                <option value="games">Games</option>
-                <option value="anime">Anime</option>
-                <option value="filmes">Filmes / Séries</option>
-                <option value="keycaps">Keycaps</option>
-                <option value="personalizado">Personalizado</option>
-                <option value="lifestyle">Lifestyle</option>
-                <option value="outros">Outros</option>
-              </select>
+              <select id="f-category" class="fi"><option value="games">Geek/Gamer</option><option value="religioso">Religioso</option><option value="feito_por_voces">Feito por vocês (via aprovação)</option></select>
             </div>
           </div>
           <div>
@@ -778,7 +770,7 @@
       document.getElementById('f-promo').value = p.promotional_price || '';
       document.getElementById('f-stock').value = p.stock || 0;
       document.getElementById('f-preparation-days').value = Math.max(1, parseInt(p.preparation_days, 10) || 1);
-      document.getElementById('f-category').value = p.category || '';
+      document.getElementById('f-category').value = p.category || 'games';
       document.getElementById('f-description').value = p.description || '';
       document.getElementById('f-video').value = p.video_url || '';
       document.getElementById('f-active').checked = p.is_active !== false;
@@ -811,7 +803,7 @@
       ['f-title','f-price','f-promo','f-video','f-seo-title','f-seo-desc','f-description'].forEach(function(id){ document.getElementById(id).value = ''; });
       document.getElementById('f-stock').value = 0;
       document.getElementById('f-preparation-days').value = 1;
-      document.getElementById('f-category').value = '';
+      document.getElementById('f-category').value = 'games';
       document.getElementById('f-active').checked = true;
       document.getElementById('seo-title-count').innerText = '0/60';
       document.getElementById('seo-desc-count').innerText = '0/160';
@@ -1231,6 +1223,8 @@
         return { name: v.name.trim(), per_option_price: !!v.per_option_price, options: cleanOpts };
       });
 
+    if (document.getElementById('f-category').value === 'feito_por_voces' && !allProducts.find(function(p) { return String(p.id) === String(editingProductId) && p.publication_id; })) { showToast('Use a fila Feito por vocês para aprovar uma criação.', 'error'); return false; }
+
     var payload = {
       title: title,
       description: document.getElementById('f-description').value.trim() || null,
@@ -1238,7 +1232,7 @@
       promotional_price: promoPrice,
       stock: parseInt(document.getElementById('f-stock').value) || 0,
       preparation_days: preparationDays,
-      category: document.getElementById('f-category').value || null,
+      category: document.getElementById('f-category').value || 'games',
       images: currentImages,
       tags: currentTags.length > 0 ? currentTags : null,
       video_url: currentVideoUrl || document.getElementById('f-video').value.trim() || null,
@@ -2133,17 +2127,7 @@
               <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
               <input type="text" id="k-item-search" class="fi pl-9 py-2" placeholder="Buscar produto pelo nome..." oninput="onKitItemSearchInput()">
             </div>
-            <select id="k-item-category" class="fi py-2" style="width:190px" onchange="searchKitItems()">
-              <option value="">Todas as categorias</option>
-              <option value="religioso">Religioso</option>
-              <option value="games">Games</option>
-              <option value="anime">Anime</option>
-              <option value="filmes">Filmes / Séries</option>
-              <option value="keycaps">Keycaps</option>
-              <option value="personalizado">Personalizado</option>
-              <option value="lifestyle">Lifestyle</option>
-              <option value="outros">Outros</option>
-            </select>
+            <select id="k-item-category" class="fi py-2" style="width:190px" onchange="searchKitItems()"><option value="">Todas as categorias</option><option value="games">Geek/Gamer</option><option value="religioso">Religioso</option><option value="feito_por_voces">Feito por vocês</option></select>
           </div>
 
           <div id="k-selected-wrap" class="hidden mb-3">
@@ -2191,12 +2175,12 @@
           var images=[]; for(var i=4;i<=12;i++){ if(row[i]&&String(row[i]).trim().startsWith('http')) images.push(String(row[i]).trim()); }
           var variants=[]; var variantName=row[15]?String(row[15]).trim():'';
           if(variantName){ var opts=[]; for(var j=0;j<5;j++){ var optName=row[16+j*2]; if(optName&&String(optName).trim()) opts.push({name:String(optName).trim(),price:null}); } if(opts.length>0) variants.push({name:variantName,per_option_price:false,options:opts}); }
-          var catRaw=String(row[3]||'').toLowerCase(); var category='outros';
-          if(catRaw.includes('keyboard')||catRaw.includes('keycap')) category='keycaps';
+          var catRaw=String(row[3]||'').toLowerCase(); var category='games';
+          if(catRaw.includes('keyboard')||catRaw.includes('keycap')) category='games';
           else if(catRaw.includes('gaming')||catRaw.includes('game')) category='games';
           else if(catRaw.includes('religious')||catRaw.includes('fengshui')) category='religioso';
           else if(catRaw.includes('toy')||catRaw.includes('figure')) category='games';
-          else if(catRaw.includes('home')||catRaw.includes('decoration')) category='lifestyle';
+          else if(catRaw.includes('home')||catRaw.includes('decoration')) category='games';
           return { shopee_id:String(row[0]), title:String(row[2]||'').trim(), category:category, images:images, variants:variants, price:0, stock:0, is_active:true };
         });
         renderImportPreview();

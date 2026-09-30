@@ -1,3 +1,4 @@
+import { CATEGORY_LABELS, categoryLabel, normalizeCategory } from '../public/catalog-categories.js';
 import { useState, useEffect } from "react";
 import { updateStoreLocation } from './seo';
 import { motion, AnimatePresence } from 'motion/react';
@@ -507,7 +508,7 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     headerSub: { color: '#7b2fff', fontFamily: "'Orbitron', sans-serif", fontSize: '11px', letterSpacing: '0.3em' },
     accent: '#00f5ff',
     bgDecorClass: 'theme-games',
-    label: 'GAMES & GEEK',
+    label: 'GEEK/GAMER',
     tagline: '// SELECT_YOUR_FIGURE',
   },
   religioso: {
@@ -699,6 +700,8 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     tagline: 'SURPREENDENTES · RAROS · ÚNICOS',
   },
 };
+CATEGORY_THEMES.feito_por_voces = { ...CATEGORY_THEMES.Todos, label: 'FEITO POR VOCÊS', tagline: 'Criações da comunidade aprovadas pela FreoFigures' };
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THEME BACKGROUND
@@ -834,20 +837,16 @@ const MINIMUM_SEARCH_SCORE = 35;
 
 const CATEGORY_SEARCH_INTENTS: Record<string, string[]> = {
   religioso: ['religioso','religiosa','religiao','religião','santo','santa','santos','santas','fe','fé','catolico','católico','catolica','católica','nossa senhora','jesus','maria','cruz','sao bento','são bento','sao miguel','são miguel','agua benta','água benta','pia de agua benta','pia de água benta'],
-  games: ['games','game','gamer','geek','jogo','jogos','nerd','action figure','action figures','boneco','bonecos','figura','figuras','colecionavel','colecionável','colecionador'],
-  keycaps: ['keycap','keycaps','tecla','teclas','teclado','switch'],
-  personalizado: ['personalizado','personalizada','personalizados','personalizadas','custom','customizado','customizada','nome','numero','número','presente','encomenda'],
-  lifestyle: ['lifestyle','casa','decoracao','decoração','utilitario','utilitário','utensilio','utensílio','organizador','suporte','porta treco','porta objeto'],
-  outros: ['outros','diversos','variados'],
+  feito_por_voces: ['feito por voces', 'feito por vocês', 'comunidade'],
+  games: ['keycap','keycaps','teclado','personalizado','casa','decoracao','utensilio','games','game','gamer','geek','jogo','jogos','nerd','action figure','action figures','boneco','bonecos','figura','figuras','colecionavel','colecionável','colecionador'],
+
 };
 
 const CATEGORY_BROAD_TERMS: Record<string, string[]> = {
   religioso: ['religioso','religiosa','religiao','religião','santo','santa','santos','santas','fe','fé','catolico','católico','catolica','católica','agua benta','água benta','pia de agua benta','pia de água benta'],
-  games: ['games','game','gamer','geek','jogo','jogos','nerd','action figure','action figures','boneco','bonecos','figura','figuras','colecionavel','colecionável','colecionador'],
-  keycaps: ['keycap','keycaps','tecla','teclas','teclado','switch'],
-  personalizado: ['personalizado','personalizada','personalizados','personalizadas','custom','customizado','customizada','encomenda'],
-  lifestyle: ['lifestyle','casa','decoracao','decoração','utilitario','utilitário','utensilio','utensílio','organizador'],
-  outros: ['outros','diversos','variados'],
+  feito_por_voces: ['feito por voces', 'feito por vocês', 'comunidade'],
+  games: ['keycap','keycaps','teclado','personalizado','casa','decoracao','utensilio','games','game','gamer','geek','jogo','jogos','nerd','action figure','action figures','boneco','bonecos','figura','figuras','colecionavel','colecionável','colecionador'],
+
 };
 
 const RELATED_SEARCH_TERMS: Record<string, string[]> = {
@@ -1015,7 +1014,7 @@ const getSearchScore = (product: Product, searchTerm: string) => {
   const query = normalizeText(searchTerm);
   if (!query) return 0;
   const categoryIntent = getCategoryIntent(searchTerm);
-  const productCategory = normalizeText(product.category || '');
+  const productCategory = normalizeCategory(product.category);
   const title = normalizeText(product.title);
   const text = getProductSearchText(product);
   const productWords = getProductWords(product);
@@ -1671,10 +1670,9 @@ const Marquee = () => (
 
 const Categories = ({ setCurrentView, setFilter }: any) => {
   const cats = [
-    { name: 'Action Figures', slug: 'games', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/ACTION_FIGURES.png', desc: 'Heróis, vilões e cultura pop.' },
+    { name: 'Geek/Gamer', slug: 'games', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/ACTION_FIGURES.png', desc: 'Heróis, jogos e cultura pop.' },
     { name: 'Religioso', slug: 'religioso', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/RELIGIOSO.png', desc: 'Fé materializada com respeito.' },
-    { name: 'Utensílios', slug: 'lifestyle', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/UTENSILIOS.png', desc: 'Design funcional para o dia a dia.' },
-    { name: 'Decoração', slug: 'outros', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/DECORACAO.png', desc: 'Geometria e arte para seu espaço.' },
+    { name: 'Feito por vocês', slug: 'feito_por_voces', img: 'https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/DECORACAO.png', desc: 'Suas ideias, aprovadas para nossa coleção.' },
   ];
 
   const handleCatClick = (slug: string) => {
@@ -1696,7 +1694,7 @@ const Categories = ({ setCurrentView, setFilter }: any) => {
           Ver todas
         </button>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6">
         {cats.map((cat, index) => (
           <a key={cat.slug} href={`/?categoria=${encodeURIComponent(cat.slug)}`} className="group relative aspect-[3/4] md:h-[400px] overflow-hidden bg-freo-dark cursor-pointer border border-white/5 active:scale-98">
             <img src={cat.img} alt={cat.name} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity duration-500 grayscale group-hover:grayscale-0" />
@@ -1747,7 +1745,7 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
         {!compact && <div className="absolute inset-0 bg-freo-orange/20 opacity-0 group-hover:opacity-100 mix-blend-overlay transition-opacity duration-300" />}
       </a>
       <div className={`flex flex-col flex-grow ${compact ? '' : 'p-3 md:p-5'}`}>
-        <span className="text-freo-orange text-[9px] md:text-[10px] font-mono uppercase mb-1 tracking-wider">{product.category || 'Geral'}</span>
+        <span className="text-freo-orange text-[9px] md:text-[10px] font-mono uppercase mb-1 tracking-wider">{categoryLabel(product.category)}</span>
         <h3
           className="font-display font-bold leading-tight mb-2 group-hover:text-freo-orange transition-colors cursor-pointer text-sm md:text-lg line-clamp-2"
         >
@@ -1977,10 +1975,9 @@ const Footer = () => (
         <div>
           <h4 className="font-display font-bold uppercase tracking-widest mb-4 md:mb-6 text-freo-orange text-sm">Loja</h4>
           <ul className="space-y-2 md:space-y-3 text-sm text-freo-light/70 font-body">
-            <li><a href="/?categoria=games" className="hover:text-white transition-colors">Action Figures</a></li>
+            <li><a href="/?categoria=games" className="hover:text-white transition-colors">Geek/Gamer</a></li>
             <li><a href="/?categoria=religioso" className="hover:text-white transition-colors">Artigos Religiosos</a></li>
-            <li><a href="/?categoria=lifestyle" className="hover:text-white transition-colors">Utensílios &amp; Casa</a></li>
-            <li><a href="/?categoria=outros" className="hover:text-white transition-colors">Decoração</a></li>
+            <li><a href="/?categoria=feito_por_voces" className="hover:text-white transition-colors">Feito por vocês</a></li>
             <li>
               <a
                 href="https://wa.me/5511946454111?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20sob%20medida!"
@@ -2170,25 +2167,15 @@ const MobileCategoryDrawer = ({
 import { useMemo, useRef } from 'react';
 
 const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) => {
-  const [activeFilter, setActiveFilter] = useState(initialFilter || 'Todos');
+  const [activeFilter, setActiveFilter] = useState(normalizeCategory(initialFilter));
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMobileCatOpen, setIsMobileCatOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const categories = ['Todos', 'kit_fixo', 'montar_kit', 'games', 'religioso', 'keycaps', 'personalizado', 'lifestyle', 'outros'];
+  const categories = ['Todos', 'kit_fixo', 'montar_kit', ...Object.keys(CATEGORY_LABELS)];
 
-  const categoryLabels: Record<string, string> = {
-    Todos: 'Todos',
-    games: 'Games & Geek',
-    religioso: 'Religioso',
-    keycaps: 'Keycaps',
-    personalizado: 'Personalizado',
-    lifestyle: 'Lifestyle',
-    outros: 'Outros',
-    kit_fixo: 'Kits Prontos',
-    montar_kit: 'Montar Kit',
-  };
+  const categoryLabels: Record<string, string> = { Todos: 'Todos', kit_fixo: 'Kits Prontos', montar_kit: 'Montar Kit', ...CATEGORY_LABELS };
   const hasSearch = String(searchTerm || '').trim().length > 0;
   const activeThemeKey = hasSearch ? 'Todos' : activeFilter;
   const theme = CATEGORY_THEMES[activeThemeKey] || CATEGORY_THEMES['Todos'];
@@ -2204,7 +2191,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
     document.head.appendChild(link);
   }, [activeThemeKey, theme.fontImport]);
 
-  useEffect(() => { setActiveFilter(initialFilter || 'Todos'); }, [initialFilter]);
+  useEffect(() => { setActiveFilter(normalizeCategory(initialFilter)); }, [initialFilter]);
   useEffect(() => { if (hasSearch) setActiveFilter('Todos'); }, [hasSearch, searchTerm]);
 
   useEffect(() => {
@@ -2235,7 +2222,7 @@ const ShopView = ({ addToCart, initialFilter, searchTerm, onClearSearch }: any) 
     }
     if (activeFilter === 'Todos') return products;
     if (activeFilter === 'kit_fixo') return products.filter(product => product.is_kit && product.kit_type === 'fixed');
-    return products.filter(product => product.category === activeFilter);
+    return products.filter(product => normalizeCategory(product.category) === activeFilter);
   }, [products, searchTerm, hasSearch, activeFilter]);
 
   const handleCategoryClick = (category: string) => {
@@ -2847,7 +2834,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [activeFilter, setActiveFilter] = useState(() => new URLSearchParams(window.location.search).get('categoria') || 'Todos');
+  const [activeFilter, setActiveFilter] = useState(() => new URLSearchParams(window.location.search).get('categoria') ? normalizeCategory(new URLSearchParams(window.location.search).get('categoria')) : 'Todos');
   useEffect(() => {
     updateStoreLocation(currentView === 'shop' ? activeFilter : undefined);
   }, [currentView, activeFilter]);
@@ -2874,7 +2861,7 @@ export default function App() {
     }
     const categoriaParam = params.get('categoria');
     if (categoriaParam) {
-      setActiveFilter(categoriaParam);
+      setActiveFilter(normalizeCategory(categoriaParam));
       setCurrentView('shop');
     }
     const handleAuthData = (event: any) => {

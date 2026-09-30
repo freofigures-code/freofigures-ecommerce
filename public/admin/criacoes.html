@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Feito por vocês — Admin | FreoFigures</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0a0a0a;color:#f5f5f5;font:16px/1.5 system-ui,sans-serif}main,nav{max-width:1200px;margin:auto;padding:24px}nav{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff18;gap:16px}a{color:#ddaf34}h1{font-size:clamp(30px,5vw,48px);margin:20px 0 8px;line-height:1.1}h2{font-size:22px;line-height:1.2;overflow-wrap:anywhere}.muted{color:#aaa;font-size:13px}#controls{margin:28px 0}#controls:not([hidden]){display:flex;gap:16px;align-items:center;flex-wrap:wrap}label{display:block;font-size:13px;color:#bbb;margin:16px 0}input,select,textarea{display:block;margin-top:6px;width:100%;padding:12px;background:#111;color:#fff;border:1px solid #ffffff30;font:inherit}select{width:auto}button{background:#ddaf34;border:1px solid #ddaf34;color:#080808;padding:12px 16px;font-weight:700;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.secondary{color:#ddd;background:transparent;border-color:#ffffff40}#publications{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:24px}.card{background:#111;border:1px solid #ffffff18;overflow:hidden}.preview{aspect-ratio:4/3;background:#171717;display:grid;place-items:center}.preview img{width:100%;height:100%;object-fit:contain}.card-content{padding:24px}.badge{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#ddaf34}.price{font-size:30px;font-weight:800;color:#ddaf34;margin-bottom:0}.actions{display:flex;gap:10px;flex-wrap:wrap}.error{color:#ffad91}#message{color:#ddaf34}#load-more{display:block;margin:24px auto}#load-more[hidden]{display:none}.empty{padding:48px 0;color:#aaa}
+</style></head><body><nav><a href="/admin/produtos.html">← Produtos</a><a href="/dashboard.html">Painel administrativo</a></nav>
+<main><p class="badge">Comunidade FreoFigures</p><h1>Feito por vocês</h1><p class="muted">Revise a imagem, o arquivo 3D e o preço antes de publicar. Somente modelos autorizados pelo autor entram nesta fila.</p>
+<p id="message" role="status" aria-live="polite"></p><div id="controls" hidden><label>Situação<select id="status"><option value="pending">Aguardando aprovação</option><option value="approved">Aprovados</option><option value="rejected">Não aprovados</option></select></label><button id="refresh" class="secondary">Atualizar</button></div>
+<p id="loading" hidden role="status">Carregando criações...</p><div id="publications"></div><button id="load-more" hidden>Carregar mais</button></main>
+<script type="module" src="/admin/criacoes.js"></script></body></html>
