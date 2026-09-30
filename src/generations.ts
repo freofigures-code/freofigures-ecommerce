@@ -108,8 +108,15 @@ export async function getAuthenticatedUser(): Promise<any> {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
   const session = data?.session;
-  if (!session?.user) throw new Error('É necessário entrar na sua conta para criar e salvar modelos 3D.');
+  if (!session?.user || session.user.is_anonymous) throw new Error('É necessário entrar em uma conta cadastrada para criar modelos 3D.');
   return session.user;
+}
+
+export async function getFreoBalance(): Promise<number> {
+  const user = await getAuthenticatedUser();
+  const { data, error } = await getSupabase().from('freo_wallets').select('balance').eq('user_id', user.id).single();
+  if (error) throw error;
+  return Number(data.balance);
 }
 
 function normalizeJob(value: unknown): GenerationJob {

@@ -489,6 +489,11 @@
           </div>
         
           <div id="paymentBrick_container"></div>
+          <div id="freo-only-payment" class="hidden space-y-3">
+            <p class="font-mono text-sm text-white/70">Seu pedido será pago integralmente com Créditos Freo, sem cobrança no Mercado Pago.</p>
+            <button id="freo-only-button" type="button" onclick="finalizarComCreditosFreo()" class="w-full bg-freo-orange text-freo-black font-display font-bold uppercase py-3 hover:bg-white transition-colors">Finalizar com Créditos Freo</button>
+            <p id="freo-only-error" class="hidden font-mono text-xs text-red-400"></p>
+          </div>
         </div>
 
       <div class="lg:col-span-5">
@@ -529,6 +534,20 @@
                 <button onclick="aplicarCupom()" class="flex-shrink-0 bg-freo-orange text-freo-black font-mono font-bold text-xs uppercase tracking-widest px-4 hover:bg-white transition-colors">Aplicar</button>
               </div>
               <p id="coupon-error" class="hidden font-mono text-xs text-red-400 mt-2"></p>
+            </div>
+          </div>
+
+          <div id="freo-credits-section" class="hidden border-t border-white/10 mt-5 pt-5">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <label for="freo-credits-input" class="font-display font-bold uppercase text-freo-orange text-sm">Créditos Freo</label>
+              <span id="freo-credits-balance" class="font-mono text-xs text-white/60">0 disponíveis</span>
+            </div>
+            <p class="font-mono text-xs text-white/45 mb-3">10 créditos = R$ 1,00. Use em produtos e frete.</p>
+            <input id="freo-credits-input" type="number" min="0" step="1" value="0" inputmode="numeric"
+              class="fi w-full" aria-describedby="freo-credits-help" oninput="selecionarCreditosFreo(this.value)">
+            <p id="freo-credits-help" class="font-mono text-[11px] text-white/45 mt-2">Escolha até o saldo disponível ou o total do pedido.</p>
+            <div id="freo-credits-discount-row" class="hidden flex justify-between text-green-400 font-mono text-sm mt-3">
+              <span>Desconto em créditos</span><span id="freo-credits-discount">R$ 0,00</span>
             </div>
           </div>
 
@@ -642,6 +661,12 @@
     var currentUser = null;
     var currentProfile = null;
     var selectedShipping = null;
+    var freoCreditBalance = 0;
+    var freoCreditsSelected = 0;
+    var freoCreditEligible = false;
+    var freoPaymentRefreshTimer = null;
+    var freoPaymentInProgress = false;
+    var freoOnlyOrderId = null;
     var paymentBrickInitialized = false;
     var savedAddresses = [];
     var selectedAddress = null;
@@ -1169,8 +1194,59 @@ async function salvarDadosPessoais() {
       btn.disabled = false;
     }
 
+    function totalAntesDosCreditos() {
+      return Math.round((Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount) * 100) / 100;
+    }
+
+    function totalComCreditos() {
+      return Math.round((totalAntesDosCreditos() - freoCreditsSelected / 10) * 100) / 100;
+    }
+
+    function selecionarCreditosFreo(raw) {
+      if (freoPaymentInProgress) {
+        document.getElementById('freo-credits-input').value = String(freoCreditsSelected);
+        return;
+      }
+      var max = Math.min(freoCreditBalance, Math.floor(totalAntesDosCreditos() * 10 + 0.0001));
+      var requested = Math.floor(Number(raw) || 0);
+      freoCreditsSelected = freoCreditEligible ? Math.max(0, Math.min(max, requested)) : 0;
+      var input = document.getElementById('freo-credits-input');
+      input.max = String(max);
+      input.value = String(freoCreditsSelected);
+      document.getElementById('freo-credits-discount-row').classList.toggle('hidden', freoCreditsSelected === 0);
+      document.getElementById('freo-credits-discount').innerText = '− ' + formatCurrency(freoCreditsSelected / 10);
+      document.getElementById('freo-credits-help').innerText = 'Máximo neste pedido: ' + max + ' créditos.';
+      updateTotals();
+      if (selectedShipping) {
+        clearTimeout(freoPaymentRefreshTimer);
+        freoPaymentRefreshTimer = setTimeout(function() { void liberarPagamento(); }, 450);
+      }
+    }
+
+    async function aplicarCreditosAoPedido(orderId) {
+      if (!freoCreditsSelected) return totalAntesDosCreditos();
+      var r = await window.supabaseClient.functions.invoke('freo-checkout', {
+        body: { order_id: orderId, credits: freoCreditsSelected, coupon_code: activeCouponData ? activeCouponData.code : null }
+      });
+      if (r.error || !r.data || typeof r.data.amount !== 'number') {
+        throw new Error((r.data && r.data.error) || 'Não foi possível validar os Créditos Freo. Confira carrinho, cupom e frete.');
+      }
+      if (Math.abs(r.data.amount - totalComCreditos()) > 0.009) throw new Error('O total validado pelo servidor mudou. Recarregue o checkout.');
+      return r.data.amount;
+    }
+
     function updateTotals() {
-      var total = Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount;
+      var maxCredits = Math.min(freoCreditBalance, Math.floor(totalAntesDosCreditos() * 10 + 0.0001));
+      if (freoCreditsSelected > maxCredits) freoCreditsSelected = maxCredits;
+      var creditInput = document.getElementById('freo-credits-input');
+      if (creditInput) {
+        creditInput.max = String(maxCredits);
+        creditInput.value = String(freoCreditsSelected);
+        document.getElementById('freo-credits-discount-row').classList.toggle('hidden', freoCreditsSelected === 0);
+        document.getElementById('freo-credits-discount').innerText = '− ' + formatCurrency(freoCreditsSelected / 10);
+        document.getElementById('freo-credits-help').innerText = 'Máximo neste pedido: ' + maxCredits + ' créditos.';
+      }
+      var total = totalComCreditos();
 
       document.getElementById('summary-subtotal').innerText = formatCurrency(subtotalAmount);
       document.getElementById('summary-total').innerText = formatCurrency(total);
@@ -1541,6 +1617,7 @@ async function salvarDadosPessoais() {
     }
 
     function selectShippingFromPayload(payload, index) {
+      if (freoPaymentInProgress) return;
       var data = JSON.parse(decodeURIComponent(payload));
 
       selectedShipping = {
@@ -1581,6 +1658,54 @@ async function salvarDadosPessoais() {
       document.getElementById('step3-dot').innerHTML = '✓';
       document.getElementById('step3-line').className = 'step-line done';
       document.getElementById('step4-dot').className = 'step-dot active';
+    }
+
+    async function finalizarComCreditosFreo() {
+      var button = document.getElementById('freo-only-button');
+      var errorEl = document.getElementById('freo-only-error');
+      if (!freoCreditEligible || !selectedShipping || !freoCreditsSelected || totalComCreditos() !== 0 || button.disabled || freoPaymentInProgress) return;
+      freoPaymentInProgress = true;
+      clearTimeout(freoPaymentRefreshTimer);
+      document.getElementById('freo-credits-input').disabled = true;
+      button.disabled = true;
+      button.innerText = 'Validando pedido...';
+      errorEl.classList.add('hidden');
+      try {
+        if (!freoOnlyOrderId) {
+          var name = selectedShipping.company ? selectedShipping.company + ' - ' + selectedShipping.service_name : selectedShipping.service_name;
+          var result = await window.supabaseClient.from('orders').insert({
+            user_id: currentUser.id, status: 'pendente', total: totalAntesDosCreditos(), items: buildOrderItems(),
+            frete_valor: selectedShipping.price, frete_nome: name, frete_prazo: String(selectedShipping.days),
+            frete_company: selectedShipping.company, frete_service_id: selectedShipping.service_id,
+            frete_service_name: selectedShipping.service_name, frete_service_code: selectedShipping.service_code,
+            shipping_address: selectedAddress ? JSON.stringify(selectedAddress) : null,
+            customer_name: getCustomerNameForOrder(), customer_email: getCustomerEmailForOrder(),
+            customer_phone: getCustomerPhoneForOrder(), customer_cpf: getCustomerCPFForOrder()
+          }).select('id').single();
+          if (result.error) throw result.error;
+          freoOnlyOrderId = result.data.id;
+        }
+        var existing = await window.supabaseClient.from('orders').select('status').eq('id', freoOnlyOrderId).eq('user_id', currentUser.id).single();
+        if (existing.error) throw existing.error;
+        if (existing.data.status !== 'pago') {
+          var amount = await aplicarCreditosAoPedido(freoOnlyOrderId);
+          if (amount !== 0) throw new Error('O pedido não ficou totalmente coberto pelos créditos.');
+        }
+        if (!customCheckoutMode) await window.supabaseClient.from('cart_items').delete().eq('user_id', currentUser.id);
+        await consumirCupomAposPayment(freoOnlyOrderId);
+        cartItemsData.forEach(function(item) {
+          var id = parseInt(item.product_id, 10);
+          if (!isNaN(id)) window.supabaseClient.rpc('decrementar_estoque', { p_product_id: id, p_quantidade: item.quantity || 1 });
+        });
+        window.location.href = backUrls.success + '?payment_id=' + encodeURIComponent('freo-only:' + freoOnlyOrderId);
+      } catch (error) {
+        freoPaymentInProgress = false;
+        document.getElementById('freo-credits-input').disabled = false;
+        errorEl.innerText = error instanceof Error ? error.message : 'Não foi possível finalizar com créditos.';
+        errorEl.classList.remove('hidden');
+        button.disabled = false;
+        button.innerText = 'Finalizar com Créditos Freo';
+      }
     }
     var savedCards = [];
     var selectedCard = null;
@@ -1663,7 +1788,7 @@ async function salvarDadosPessoais() {
     }
     
     async function pagarComCartaoSalvo() {
-      if (!selectedCard) return;
+      if (!selectedCard || freoPaymentInProgress) return;
     
       var cvv   = document.getElementById('saved-card-cvv').value.trim();
       var errEl = document.getElementById('cvv-error');
@@ -1679,6 +1804,9 @@ async function salvarDadosPessoais() {
     
       btn.innerText = 'Processando...';
       btn.disabled  = true;
+      freoPaymentInProgress = true;
+      clearTimeout(freoPaymentRefreshTimer);
+      document.getElementById('freo-credits-input').disabled = true;
     
       try {
         var mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
@@ -1693,10 +1821,12 @@ async function salvarDadosPessoais() {
           errEl.classList.remove('hidden');
           btn.innerText = 'Confirmar pagamento';
           btn.disabled  = false;
+          freoPaymentInProgress = false;
+          document.getElementById('freo-credits-input').disabled = false;
           return;
         }
     
-        var totalFinal = Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount;
+        var totalFinal = totalComCreditos();
         var userId     = currentUser.id;
         var freteNomeCompleto = selectedShipping
           ? (selectedShipping.company ? selectedShipping.company + ' - ' : '') + (selectedShipping.service_name || 'Entrega')
@@ -1745,7 +1875,7 @@ async function salvarDadosPessoais() {
           .insert({
             user_id:            userId,
             status:             'pendente',
-            total:              totalFinal,
+            total:              totalAntesDosCreditos(),
             items:              payload.items,
             frete_valor:        selectedShipping ? selectedShipping.price        : 0,
             frete_nome:         freteNomeCompleto,
@@ -1765,6 +1895,7 @@ async function salvarDadosPessoais() {
     
         if (orderResult.error) throw orderResult.error;
         var orderId = orderResult.data.id;
+        payload.total_com_frete = await aplicarCreditosAoPedido(orderId);
     
         var r    = await fetch(N8N_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         var resp = await r.json();
@@ -1773,15 +1904,17 @@ async function salvarDadosPessoais() {
         var updateData = {};
         if (data.id)            updateData.payment_id    = String(data.id);
         if (data.preference_id) updateData.preference_id = String(data.preference_id);
-        if (data.status === 'approved') updateData.status = 'pago';
     
         await window.supabaseClient.from('orders').update(updateData).eq('id', orderId).eq('user_id', userId);
-        if (!customCheckoutMode) {
+        if (data.status === 'approved' || data.status === 'rejected') {
+          await window.supabaseClient.functions.invoke('freo-payment-sync', { body: { order_id: orderId } });
+        }
+        if (data.status !== 'rejected' && !customCheckoutMode) {
           await window.supabaseClient.from('cart_items').delete().eq('user_id', userId);
         }
-        await consumirCupomAposPayment(orderId);
+        if (data.status !== 'rejected') await consumirCupomAposPayment(orderId);
     
-        cartItemsData.forEach(function(item) {
+        if (data.status !== 'rejected') cartItemsData.forEach(function(item) {
           var productId = parseInt(item.product_id, 10);
           if (!isNaN(productId)) {
             window.supabaseClient.rpc('decrementar_estoque', { p_product_id: productId, p_quantidade: item.quantity || 1 });
@@ -1798,11 +1931,15 @@ async function salvarDadosPessoais() {
           errEl.classList.remove('hidden');
           btn.innerText = 'Confirmar pagamento';
           btn.disabled  = false;
+          freoPaymentInProgress = false;
+          document.getElementById('freo-credits-input').disabled = false;
         } else {
           setTimeout(function() { window.location.href = backUrls.pending; }, 1500);
         }
     
       } catch(e) {
+        freoPaymentInProgress = false;
+        document.getElementById('freo-credits-input').disabled = false;
         console.error('Erro pagarComCartaoSalvo:', e);
         errEl.innerText = 'Erro inesperado. Tente novamente.';
         errEl.classList.remove('hidden');
@@ -1834,6 +1971,13 @@ async function salvarDadosPessoais() {
         await window.paymentBrickController.unmount();
         paymentBrickInitialized = false;
       }
+      if (totalComCreditos() === 0 && freoCreditsSelected > 0) {
+        document.getElementById('saved-cards-section').classList.add('hidden');
+        document.getElementById('brick-loading').classList.add('hidden');
+        document.getElementById('freo-only-payment').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('freo-only-payment').classList.add('hidden');
     
       // Carrega cartões salvos
       await carregarCartoesSalvos();
@@ -1886,7 +2030,7 @@ async function salvarDadosPessoais() {
     async function initPaymentBrick() {
       paymentBrickInitialized = true;
     
-      var totalFinal = Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount;
+      var totalFinal = totalComCreditos();
       var mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
       var bricksBuilder = mp.bricks();
 
@@ -1947,6 +2091,11 @@ async function salvarDadosPessoais() {
 
           onSubmit: async function(params) {
 
+            if (freoPaymentInProgress) throw new Error('Pagamento já está em processamento.');
+            freoPaymentInProgress = true;
+            clearTimeout(freoPaymentRefreshTimer);
+            document.getElementById('freo-credits-input').disabled = true;
+
             await saveCardAfterPayment(params.formData.token || null);
             
             var deviceId = window.MP_DEVICE_SESSION_ID || '';
@@ -1955,7 +2104,7 @@ async function salvarDadosPessoais() {
               action:          'process_payment',
               user_id:         currentUser.id,
               frete:           selectedShipping,
-              total_com_frete: Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount,
+              total_com_frete: totalComCreditos(),
               backUrls: backUrls,
 
               // Segurança / antifraude
@@ -1989,7 +2138,7 @@ async function salvarDadosPessoais() {
               items: buildOrderItems()
             });
 
-            var totalFinalOrder = Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount;
+            var totalFinalOrder = totalAntesDosCreditos();
             var userId = currentUser.id;
 
             var customerName = getCustomerNameForOrder();
@@ -2032,10 +2181,11 @@ async function salvarDadosPessoais() {
               })
               .select('id')
               .single()
-              .then(function(orderResult) {
+              .then(async function(orderResult) {
                 if (orderResult.error) throw orderResult.error;
 
                 var orderId = orderResult.data.id;
+                payload.total_com_frete = await aplicarCreditosAoPedido(orderId);
 
                 return fetch(N8N_WEBHOOK_URL, {
                   method: 'POST',
@@ -2047,7 +2197,7 @@ async function salvarDadosPessoais() {
                 .then(function(r) {
                   return r.json();
                 })
-                .then(function(response) {
+                .then(async function(response) {
                   var data = Array.isArray(response) ? response[0] : response;
                   var updateData = {};
 
@@ -2063,20 +2213,17 @@ async function salvarDadosPessoais() {
                     }
                   }
 
-                  if (data.status === 'approved') {
-                    updateData.status = 'pago';
-                  }
-
-                  window.supabaseClient
+                  var orderUpdate = await window.supabaseClient
                     .from('orders')
                     .update(updateData)
                     .eq('id', orderId)
-                    .eq('user_id', userId)
-                    .then(function(r) {
-                      if (r.error) console.error('Erro update order:', r.error);
-                    });
+                    .eq('user_id', userId);
+                  if (orderUpdate.error) throw orderUpdate.error;
+                  if (data.status === 'approved' || data.status === 'rejected') {
+                    await window.supabaseClient.functions.invoke('freo-payment-sync', { body: { order_id: orderId } });
+                  }
 
-                  if (!customCheckoutMode) {
+                  if (data.status !== 'rejected' && !customCheckoutMode) {
                     window.supabaseClient
                       .from('cart_items')
                       .delete()
@@ -2085,9 +2232,9 @@ async function salvarDadosPessoais() {
                         if (r.error) console.error('Erro limpar carrinho:', r.error);
                       });
                   }
-                  consumirCupomAposPayment(orderId);
+                  if (data.status !== 'rejected') consumirCupomAposPayment(orderId);
 
-                  cartItemsData.forEach(function(item) {
+                  if (data.status !== 'rejected') cartItemsData.forEach(function(item) {
                     var productId = parseInt(item.product_id, 10);
                     var qty = item.quantity || 1;
 
@@ -2130,6 +2277,8 @@ async function salvarDadosPessoais() {
                 });
               })
               .catch(function(err) {
+                freoPaymentInProgress = false;
+                document.getElementById('freo-credits-input').disabled = false;
                 console.error('Erro onSubmit:', err);
                 throw err;
               });
@@ -2196,6 +2345,15 @@ async function salvarDadosPessoais() {
     var isGuest = urlParams.get('guest') === '1'
       || currentUser.is_anonymous === true
       || (currentUser.user_metadata && currentUser.user_metadata.is_anonymous === true);
+
+    if (!isGuest) {
+      var walletResult = await window.supabaseClient.from('freo_wallets').select('balance').eq('user_id', currentUser.id).single();
+      if (walletResult.error) throw new Error('Não foi possível carregar seus Créditos Freo. Recarregue a página.');
+      freoCreditEligible = true;
+      freoCreditBalance = Number(walletResult.data.balance) || 0;
+      document.getElementById('freo-credits-balance').innerText = freoCreditBalance + ' disponíveis';
+      document.getElementById('freo-credits-section').classList.remove('hidden');
+    }
 
     var profileResult = await window.supabaseClient
       .from('profiles')
@@ -2805,6 +2963,7 @@ async function salvarDadosPessoais() {
 
       mostrarAvisoLimiteCupom();
       updateTotals();
+      if (selectedShipping && !freoPaymentInProgress) void liberarPagamento();
     }
 
     function mostrarAvisoLimiteCupom() {
@@ -2829,6 +2988,7 @@ async function salvarDadosPessoais() {
     }
 
     async function aplicarCupom() {
+      if (freoPaymentInProgress) return;
       var code = document.getElementById('coupon-input').value.trim().toUpperCase();
       var errEl = document.getElementById('coupon-error');
       errEl.classList.add('hidden');
@@ -2863,6 +3023,7 @@ async function salvarDadosPessoais() {
     }
 
     function removerCupom() {
+      if (freoPaymentInProgress) return;
       activeCouponData = null;
       couponDiscountAmount = 0;
       localStorage.removeItem('freo_active_coupon');
@@ -2872,6 +3033,7 @@ async function salvarDadosPessoais() {
       document.getElementById('coupon-discount-row').classList.add('hidden');
       document.getElementById('coupon-limit-warning').classList.add('hidden');
       updateTotals();
+      if (selectedShipping && !freoPaymentInProgress) void liberarPagamento();
     }
 
     async function consumirCupomAposPayment(orderId) {
