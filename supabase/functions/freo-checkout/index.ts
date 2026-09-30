@@ -121,11 +121,12 @@ Deno.serve(async (request: Request) => {
     const client = createClient(url, anonKey, { global: { headers: { Authorization: authorization } }, auth: { persistSession: false } });
     const auth = await client.auth.getUser();
     const user = auth.data?.user;
-    if (auth.error || !user || user.is_anonymous) return respond({ error: 'Entre na sua conta para usar Créditos Freo' }, 401);
+    if (auth.error || !user) return respond({ error: 'Entre na sua conta para validar o pedido' }, 401);
     const body = await request.json();
     const orderId = Number(body.order_id);
     const credits = Number(body.credits);
-    if (!Number.isSafeInteger(orderId) || orderId <= 0 || !Number.isSafeInteger(credits) || credits <= 0) return respond({ error: 'Pedido ou créditos inválidos' }, 400);
+    if (!Number.isSafeInteger(orderId) || orderId <= 0 || !Number.isSafeInteger(credits) || credits < 0) return respond({ error: 'Pedido ou créditos inválidos' }, 400);
+    if (credits > 0 && user.is_anonymous) return respond({ error: 'Entre em uma conta cadastrada para usar Créditos Freo' }, 401);
     const service = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
     const order = value(await service.from('orders').select('*').eq('id', orderId).single());
     if (!order || order.user_id !== user.id || order.status !== 'pendente' || !Array.isArray(order.items) || !order.items.length) return respond({ error: 'Pedido indisponível' }, 403);
@@ -149,6 +150,8 @@ Deno.serve(async (request: Request) => {
     const baseCents = cents(order.total) + Number(order.freo_credits_used) * 10;
     if (expectedCents !== baseCents) throw new Error('O valor do pedido diverge dos preços, cupom ou frete atuais');
     if (credits > expectedCents / 10) throw new Error('Créditos acima do valor do pedido');
+    value(await service.rpc('prepare_community_order', { p_order_id: orderId, p_subtotal: subtotal, p_items: order.items }));
+    if (credits === 0) return respond({ amount: Number(order.total), covered: false });
     const amount = value(await service.rpc('freo_apply_order_credits', { p_order_id: orderId, p_credits: credits, p_user_id: user.id }));
     if (Number(amount) === 0) {
       value(await service.rpc('freo_confirm_paid_order', { p_order_id: orderId, p_payment_id: `freo-only:${orderId}`, p_paid_amount: 0 }));

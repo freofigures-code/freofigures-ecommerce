@@ -1,5 +1,5 @@
 import { createElement, useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Box, Clock3, ExternalLink, Image as ImageIcon, Plus, RefreshCw, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Box, Clock3, ExternalLink, Heart, Image as ImageIcon, Plus, RefreshCw, TriangleAlert } from "lucide-react";
 import {
   createGenerationImageUrl,
   createGenerationModelUrl,
@@ -192,6 +192,8 @@ export default function MinhasCriacoes() {
           </div>
         )}
 
+        {userId && <CreatorPanel userId={userId} />}
+
         {loading ? (
           <div className="py-24 flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-2 border-freo-orange border-t-transparent rounded-full animate-spin" />
@@ -262,6 +264,70 @@ export default function MinhasCriacoes() {
       </main>
     </div>
   );
+}
+
+type CreatorProduct = { product_id: number; creator_handle: string; likes_count: number; sales_count: number; title: string; image: string | null };
+function CreatorPanel({ userId }: { userId: string }) {
+  const [handle, setHandle] = useState<string | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [products, setProducts] = useState<CreatorProduct[]>([]);
+  const [earned, setEarned] = useState(0);
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+  const loadCreator = useCallback(async () => {
+    const db = supabaseClient();
+    const profile = await db.from('creator_profiles').select('handle,pending_handle').eq('user_id', userId).maybeSingle();
+    if (profile.error || !profile.data) return;
+    setHandle(profile.data.handle); setPending(profile.data.pending_handle);
+    const [catalog, sales] = await Promise.all([
+      db.rpc('community_catalog_info'),
+      db.from('community_sales').select('product_id,credits_awarded').eq('creator_id', userId),
+    ]);
+    if (catalog.error || sales.error) { setMessage('Não foi possível carregar as estatísticas. Atualize a página.'); return; }
+    setEarned((sales.data || []).reduce((sum: number, row: any) => sum + Number(row.credits_awarded || 0), 0));
+    const mine = (catalog.data || []).filter((row: any) => row.creator_id === userId);
+    if (!mine.length) { setProducts([]); return; }
+    const details = await db.from('products').select('id,title,images').in('id', mine.map((row: any) => row.product_id));
+    const byId = new Map((details.data || []).map((row: any) => [Number(row.id), row]));
+    setProducts(mine.map((row: any) => {
+      const product: any = byId.get(Number(row.product_id));
+      return { ...row, title: product?.title || 'Modelo da comunidade', image: product?.images?.[0] || null };
+    }));
+  }, [userId]);
+  useEffect(() => { void loadCreator(); }, [loadCreator]);
+  if (!handle) return null;
+  const requestName = async (event: React.FormEvent) => {
+    event.preventDefault(); setMessage(''); setSaving(true);
+    const result = await supabaseClient().rpc('request_creator_handle', { p_handle: draft.replace(/^@/, '') });
+    setSaving(false);
+    if (result.error) { setMessage(result.error.message || 'Não foi possível enviar o nome.'); return; }
+    setDraft(''); setMessage('Novo @nome enviado para aprovação. O atual permanece público até a decisão.');
+    void loadCreator();
+  };
+  return <section id="criador" className="mb-8 border border-freo-orange/35 bg-[#111] p-4 sm:p-6">
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div><p className="font-mono text-[10px] uppercase tracking-widest text-freo-orange">Seu perfil de criador</p>
+        <h2 className="mt-1 font-display text-2xl font-black"><a href={`/criador.html?user=${encodeURIComponent(handle)}`} className="hover:text-freo-orange">@{handle}</a></h2>
+        {pending && <p className="mt-1 text-xs text-white/55">@{pending} aguarda aprovação da administração.</p>}
+      </div>
+      <div className="flex gap-4 font-mono text-sm"><span>{products.length} modelos</span><span>{products.reduce((n,p) => n + Number(p.sales_count || 0),0)} vendas</span><span>{earned} Créditos Freo ganhos</span></div>
+    </div>
+    <form onSubmit={event => void requestName(event)} className="mt-5 flex flex-wrap gap-2">
+      <label htmlFor="creator-handle" className="sr-only">Novo nome público de criador</label>
+      <input id="creator-handle" value={draft} onChange={event => setDraft(event.target.value)} minLength={3} maxLength={25} pattern="@?[A-Za-z][A-Za-z0-9_]{2,23}"
+        placeholder="@seunome" className="min-w-0 flex-1 border border-white/20 bg-black px-3 py-2 text-sm" />
+      <button type="submit" disabled={saving || !draft.trim()} className="bg-freo-orange px-4 py-2 text-xs font-bold uppercase text-black disabled:opacity-50">Enviar @nome</button>
+    </form>
+    <p className="mt-2 text-xs text-white/40">Use letras, números e _. O nome só fica público após aprovação.</p>
+    {message && <p role="status" className="mt-2 text-xs text-freo-orange">{message}</p>}
+    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {products.map(product => <a key={product.product_id} href={`/produto?id=${encodeURIComponent(product.product_id)}`} className="flex gap-3 border border-white/10 bg-black/40 p-3 hover:border-freo-orange/50">
+        {product.image && <img src={product.image} alt="" className="h-16 w-16 shrink-0 object-cover" />}
+        <div className="min-w-0"><strong className="block truncate text-sm">{product.title}</strong><span className="mt-1 block text-xs text-white/50">{product.sales_count} vendas</span><span className="flex items-center gap-1 text-xs text-freo-orange"><Heart className="h-3.5 w-3.5" />{product.likes_count} curtidas</span></div>
+      </a>)}
+    </div>
+  </section>;
 }
 
 function Info({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {

@@ -1224,7 +1224,16 @@ async function salvarDadosPessoais() {
     }
 
     async function aplicarCreditosAoPedido(orderId) {
-      if (!freoCreditsSelected) return totalAntesDosCreditos();
+      var productIds = cartItemsData.map(function(item) { return Number(item.product_id); })
+        .filter(function(id) { return Number.isSafeInteger(id) && id > 0; });
+      var hasCommunityProduct = false;
+      if (!freoCreditsSelected && productIds.length) {
+        var communityLookup = await window.supabaseClient.from('products').select('id')
+          .eq('category', 'feito_por_voces').in('id', productIds).limit(1);
+        if (communityLookup.error) throw communityLookup.error;
+        hasCommunityProduct = !!(communityLookup.data && communityLookup.data.length);
+      }
+      if (!freoCreditsSelected && !hasCommunityProduct) return totalAntesDosCreditos();
       var r = await window.supabaseClient.functions.invoke('freo-checkout', {
         body: { order_id: orderId, credits: freoCreditsSelected, coupon_code: activeCouponData ? activeCouponData.code : null }
       });

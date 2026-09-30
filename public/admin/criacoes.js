@@ -96,6 +96,32 @@ async function load(reset = false) {
   }
 }
 
+async function loadCreatorHandles() {
+  const container = document.getElementById('creator-handles');
+  const result = await client.from('creator_profiles').select('user_id,handle,pending_handle,requested_at')
+    .not('pending_handle', 'is', null).order('requested_at', { ascending: true });
+  if (result.error) { container.textContent = 'Não foi possível carregar os nomes pendentes.'; return; }
+  container.replaceChildren();
+  if (!result.data.length) { container.append(element('p', 'Nenhum nome aguardando aprovação.', 'muted')); return; }
+  for (const row of result.data) {
+    const card = element('article', '', 'card card-content');
+    card.append(element('p', `Atual: @${row.handle} → Solicitado: @${row.pending_handle}`));
+    const actions = element('div', '', 'actions');
+    const approve = element('button', 'Aprovar @nome');
+    const reject = element('button', 'Recusar', 'secondary');
+    const error = element('p', '', 'error'); error.setAttribute('role', 'alert');
+    const decide = async decision => {
+      approve.disabled = reject.disabled = true; error.textContent = '';
+      const response = await client.rpc('review_creator_handle', { p_user_id: row.user_id, p_approve: decision });
+      if (response.error) { error.textContent = response.error.message || 'Falha ao salvar decisão.'; approve.disabled = reject.disabled = false; return; }
+      message.textContent = decision ? `Nome @${response.data} aprovado.` : 'Nome recusado.';
+      await loadCreatorHandles();
+    };
+    approve.onclick = () => void decide(true); reject.onclick = () => void decide(false);
+    actions.append(approve, reject); card.append(actions, error); container.append(card);
+  }
+}
+
 async function init() {
   try {
     const { data, error } = await client.auth.getUser();
@@ -107,6 +133,7 @@ async function init() {
     document.getElementById('refresh').addEventListener('click', () => load(true));
     more.addEventListener('click', () => load());
     await load(true);
+    await loadCreatorHandles();
   } catch { message.textContent = 'Não foi possível verificar seu acesso. Recarregue a página.'; }
 }
 void init();

@@ -754,6 +754,14 @@
             </div>
           </div>
 
+          <div id="creator-summary" class="hidden dash-card corner-tl corner-br p-5 fade-up fade-up-d1">
+            <p class="font-mono text-[10px] uppercase tracking-widest text-freo-orange">Perfil de criador</p>
+            <h2 id="creator-summary-handle" class="mt-2 font-display text-2xl font-black"></h2>
+            <p id="creator-summary-stats" class="mt-2 text-sm text-white/55"></p>
+            <div id="creator-summary-products" class="mt-4 space-y-2"></div>
+            <a href="/minhas-criacoes.html#criador" class="btn-gold mt-4 inline-block px-4 py-3 text-xs">Gerenciar meu perfil de criador</a>
+          </div>
+
           <!-- Cart section -->
           <div id="cart-section" class="dash-card corner-tl corner-br scroll-mt-28 fade-up fade-up-d1">
             <div class="card-scan"></div>
@@ -1113,6 +1121,7 @@
     }
     if (profile && profile.phone) document.getElementById('profile-phone').value = profile.phone;
     document.getElementById('profile-name').value = name;
+    void loadCreatorDashboard(user.id);
 
     var delAccWrapper = document.getElementById('delete-account-wrapper');
     if (delAccWrapper) delAccWrapper.classList.remove('hidden');
@@ -1146,6 +1155,41 @@
         }
       }, 400);
     }
+  }
+
+  async function loadCreatorDashboard(userId) {
+    var db = window.supabaseClient;
+    var profile = await db.from('creator_profiles').select('handle').eq('user_id', userId).maybeSingle();
+    if (profile.error || !profile.data) return;
+    var info = await db.rpc('community_catalog_info');
+    if (info.error) return;
+    var sales = await db.from('community_sales').select('credits_awarded').eq('creator_id', userId);
+    if (sales.error) return;
+    var products = (info.data || []).filter(function(row) { return row.creator_id === userId; });
+    var section = document.getElementById('creator-summary');
+    var name = document.getElementById('creator-summary-handle');
+    var link = document.createElement('a');
+    link.href = '/criador.html?user=' + encodeURIComponent(profile.data.handle);
+    link.textContent = '@' + profile.data.handle;
+    name.replaceChildren(link);
+    document.getElementById('creator-summary-stats').textContent = products.length + ' produtos · ' +
+      products.reduce(function(sum,row) { return sum + Number(row.sales_count || 0); },0) + ' vendas · ' +
+      products.reduce(function(sum,row) { return sum + Number(row.likes_count || 0); },0) + ' curtidas · ' +
+      (sales.data || []).reduce(function(sum,row) { return sum + Number(row.credits_awarded || 0); },0) + ' Créditos Freo ganhos';
+    var list = document.getElementById('creator-summary-products');
+    list.replaceChildren();
+    var ids = products.map(function(row) { return row.product_id; });
+    if (ids.length) {
+      var details = await db.from('products').select('id,title').in('id',ids);
+      (details.data || []).forEach(function(product) {
+        var item = document.createElement('a');
+        item.href = '/produto?id=' + encodeURIComponent(product.id);
+        item.className = 'block border border-white/10 px-3 py-2 text-sm text-white/75 hover:text-freo-orange';
+        item.textContent = product.title;
+        list.append(item);
+      });
+    }
+    section.classList.remove('hidden');
   }
 
   // ── Minhas Criações 3D (client) ───────────────────────────────

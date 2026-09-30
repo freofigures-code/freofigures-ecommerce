@@ -84,6 +84,10 @@
       <section id="configurar" class="product-panel" aria-labelledby="product-title">
         <div class="product-eyebrow"><span id="product-category" class="eyebrow"></span><button id="product-rating-summary" class="rating-jump" type="button" onclick="jumpToReviews()">Avaliações</button></div>
         <h1 id="product-title"></h1><div id="product-tags" class="product-tags"></div>
+        <div id="community-creator" hidden style="margin:14px 0;padding:12px 14px;border:1px solid #ddaf3455;background:#ddaf3410;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <span>Criação de <a id="community-creator-link" href="#" style="color:#ddaf34;font-weight:700"></a> · <span id="community-sales">0</span> vendas</span>
+          <button id="community-like" type="button" aria-pressed="false" style="color:#ddaf34;background:transparent;border:1px solid #ddaf3470;padding:7px 11px;cursor:pointer">♡ <span id="community-likes">0</span> curtidas</button>
+        </div>
         <div class="price-line"><span id="price-main"></span><span id="price-promo" class="hidden"><s id="price-original"></s></span><span id="price-discount-badge" class="hidden discount-badge">−<span id="price-discount-pct"></span>%</span></div>
         <p class="price-caption" id="price-caption">Valor por peça · frete calculado no checkout</p><div id="estoque-badge" class="stock-badge"></div>
         <section id="kit-purchase-card" class="kit-purchase-card hidden" aria-labelledby="kit-purchase-title"><div class="kit-purchase-head"><span>✦ KIT EXCLUSIVO</span><strong id="kit-purchase-savings"></strong></div><h2 id="kit-purchase-title">A coleção completa, em uma escolha.</h2><p id="kit-purchase-price" class="kit-purchase-price"></p><div id="kit-purchase-items" class="kit-purchase-items" aria-label="Itens incluídos neste kit"></div></section>
