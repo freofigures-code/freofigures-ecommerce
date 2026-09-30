@@ -19,9 +19,6 @@ import {
   ChevronDown,
   ArrowLeft,
   Sparkles,
-  Gamepad2,
-  Cross,
-  UsersRound,
 } from 'lucide-react';
   import FreoChat from './FreoChat';
   import FreoCupom from './FreoCupom';
@@ -1677,29 +1674,26 @@ const Marquee = () => (
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CATEGORY_CHOICES = [
-  { name: 'Geek/Gamer', slug: 'games', icon: Gamepad2, accent: '#6de8f7', description: 'Jogos, heróis e cultura pop.' },
-  { name: 'Religioso', slug: 'religioso', icon: Cross, accent: '#e9c66e', description: 'Peças de fé feitas com cuidado.' },
-  { name: 'Feito por vocês', slug: 'feito_por_voces', icon: UsersRound, accent: '#f29a65', description: 'Criações da comunidade aprovadas.' },
+  { name: 'Geek/Gamer', slug: 'games', artX: '-242px', accent: '#42b6c5', description: 'Jogos, heróis e cultura pop.' },
+  { name: 'Religioso', slug: 'religioso', artX: '-674px', accent: '#b88b27', description: 'Peças de fé feitas com cuidado.' },
+  { name: 'Feito por vocês', slug: 'feito_por_voces', artX: '-1102px', accent: '#ba6037', description: 'Criações da comunidade aprovadas.' },
 ];
 
 const CategoryIconGrid = ({ onSelect }: { onSelect: (slug: string) => void }) => (
-  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5 lg:gap-8 w-full max-w-4xl mx-auto">
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5 lg:gap-9 w-full max-w-[1252px] mx-auto">
     {CATEGORY_CHOICES.map((category, index) => {
-      const Icon = category.icon;
       return (
         <button
           key={category.slug}
           type="button"
           onClick={() => onSelect(category.slug)}
           aria-label={`Explorar ${category.name}`}
-          className={`group w-full min-h-44 sm:min-h-56 flex flex-col items-center justify-center rounded-2xl border bg-white/[0.035] px-3 py-5 sm:px-5 sm:py-7 text-center transition-all duration-200 hover:-translate-y-1 hover:bg-white/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.98] ${index === 2 ? 'col-span-2 max-w-[240px] justify-self-center sm:col-span-1 sm:max-w-none' : ''}`}
+          className={`group w-full min-h-[190px] sm:min-h-[280px] lg:min-h-[360px] flex flex-col items-center justify-center rounded-[20px] border bg-[#0d0d0d] px-3 py-5 sm:px-5 sm:py-7 text-center transition-all duration-200 hover:-translate-y-1 hover:bg-[#141414] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.98] ${index === 2 ? 'col-span-2 max-w-[240px] justify-self-center sm:col-span-1 sm:max-w-none' : ''}`}
           style={{ borderColor: `${category.accent}45`, outlineColor: category.accent }}
         >
-          <span className="flex h-20 w-20 sm:h-28 sm:w-28 items-center justify-center rounded-full border-2 transition-transform duration-200 group-hover:scale-105" style={{ color: category.accent, borderColor: `${category.accent}80`, background: `${category.accent}12`, boxShadow: `0 0 28px ${category.accent}18` }}>
-            <Icon className="h-9 w-9 sm:h-12 sm:w-12" strokeWidth={1.7} aria-hidden="true" />
-          </span>
-          <span className="mt-4 font-display text-sm sm:text-lg lg:text-xl font-black uppercase leading-tight tracking-wide text-white">{category.name}</span>
-          <span className="hidden sm:block mt-2 font-body text-xs lg:text-sm leading-snug text-freo-light/60">{category.description}</span>
+          <span className="category-reference-art transition-transform duration-200 group-hover:scale-105" style={{ '--art-x': category.artX } as React.CSSProperties} aria-hidden="true" />
+          <span className="mt-3 sm:mt-4 font-display text-sm sm:text-xl lg:text-[26px] font-black uppercase leading-tight tracking-wide text-white">{category.name}</span>
+          <span className="hidden sm:block mt-2 font-body text-xs lg:text-lg leading-snug text-freo-light/70">{category.description}</span>
         </button>
       );
     })}
@@ -1708,7 +1702,7 @@ const CategoryIconGrid = ({ onSelect }: { onSelect: (slug: string) => void }) =>
 
 const Categories = ({ onSelectCategory }: { onSelectCategory: (slug: string) => void }) => (
   <section id="categorias" className="py-16 md:py-24 px-5 md:px-6 max-w-7xl mx-auto text-center">
-    <h2 className="text-3xl md:text-4xl lg:text-6xl font-display font-black uppercase tracking-tighter">
+    <h2 className="text-3xl md:text-5xl lg:text-[76px] font-display font-black uppercase tracking-tighter">
       Nossas <span className="text-freo-orange">Categorias</span>
     </h2>
     <p className="text-freo-light/60 mt-3 mb-8 md:mb-12 font-body max-w-xl mx-auto text-sm md:text-base">Escolha o universo que combina com você.</p>
@@ -1717,7 +1711,7 @@ const Categories = ({ onSelectCategory }: { onSelectCategory: (slug: string) => 
 );
 
 const CategoryChooser = ({ onSelect }: { onSelect: (slug: string) => void }) => (
-  <section aria-labelledby="category-chooser-title" className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16 text-center flex flex-col items-center justify-center min-h-[calc(100svh-8rem)]">
+  <section aria-labelledby="category-chooser-title" className="max-w-[1320px] mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16 text-center flex flex-col items-center justify-center min-h-[calc(100svh-8rem)]">
     <p className="font-mono text-[10px] sm:text-xs uppercase tracking-[0.25em] text-freo-orange mb-3">Explore a FreoFigures</p>
     <h1 id="category-chooser-title" className="font-display font-black uppercase text-3xl sm:text-4xl lg:text-6xl tracking-tight leading-tight text-white">Escolha sua <span className="text-freo-orange">categoria</span></h1>
     <p className="font-body text-sm sm:text-base text-freo-light/65 mt-3 mb-8 sm:mb-12 max-w-xl">Toque em um ícone para ver os produtos e navegar pelas categorias ao lado.</p>
