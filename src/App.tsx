@@ -1914,14 +1914,14 @@ const ProcessSection = () => (
       </div>
       <div className="order-1 lg:order-2">
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-black uppercase tracking-tighter mb-6 md:mb-8">
-          Feito para <br /><span className="text-freo-orange">representar você</span>
+          Seu espaço deve <br /><span className="text-freo-orange">contar sua história</span>
         </h2>
         <div className="space-y-6 md:space-y-8">
           {[
-            { num: '01', title: 'Significado', desc: 'Peças escolhidas para representar sua fé, suas paixões e sua personalidade..' },
-            { num: '02', title: 'Precisão', desc: 'Produção cuidadosa e atenção aos detalhes em cada etapa..' },
-            { num: '03', title: 'Presença', desc: 'Criações que transformam ambientes e fazem seu espaço falar por você..' },
-            { num: '04', title: 'Sua história', desc: 'Cada peça encontra seu verdadeiro propósito quando passa a fazer parte do seu ambiente e da sua história..' },
+            { num: '01', title: 'Sua essência', desc: 'Escolha peças que expressem sua fé, suas paixões e sua personalidade.' },
+            { num: '02', title: 'Suas lembranças', desc: 'Dê espaço às pessoas, aos personagens e aos momentos que marcaram você.' },
+            { num: '03', title: 'Seu universo', desc: 'Reúna criações que combinem com seu estilo e deem identidade a cada canto.' },
+            { num: '04', title: 'Sua história', desc: 'Construa um ambiente que cresça com você e conte, nos detalhes, quem você é.' },
           ].map(step => (
             <div key={step.num} className="flex gap-5 md:gap-6 group">
               <div className="font-display font-black text-3xl md:text-4xl text-freo-gray group-hover:text-freo-orange transition-colors flex-shrink-0">{step.num}</div>
