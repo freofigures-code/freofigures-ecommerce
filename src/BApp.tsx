@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShoppingCart,
-  Menu,
   X,
   Box,
   Search,
@@ -60,10 +59,10 @@ type Product = {
 
 type B2BCategory = 'loja' | 'eventos' | 'sob_medida';
 
-const B2B_SECTIONS: { id: B2BCategory; title: string; description: string; icon: typeof Box }[] = [
-  { id: 'loja', title: 'Produtos da loja em quantidade', description: 'Escolha produtos do catálogo e ajuste a quantidade do pedido.', icon: ShoppingCart },
-  { id: 'eventos', title: 'Personalizados para eventos', description: 'Peças para escolas, festas, ações e eventos, como chaveiros personalizados.', icon: PartyPopper },
-  { id: 'sob_medida', title: 'Novo produto sob medida', description: 'Desenvolva uma peça exclusiva, como esculturas e brindes para sua empresa.', icon: Shapes },
+const B2B_SECTIONS: { id: B2BCategory; title: string; cardTitle: string; description: string; image: string; icon: typeof Box }[] = [
+  { id: 'loja', title: 'Produtos da loja em quantidade', cardTitle: 'Comprar em quantidade', description: 'Escolha produtos do catálogo e ajuste a quantidade do pedido.', image: '/b2b/quantity.jpg', icon: ShoppingCart },
+  { id: 'eventos', title: 'Personalizados para eventos', cardTitle: 'Personalizados para eventos', description: 'Peças para escolas, festas, ações e eventos, como chaveiros personalizados.', image: '/b2b/events.jpg', icon: PartyPopper },
+  { id: 'sob_medida', title: 'Novo produto sob medida', cardTitle: 'Novo produto sob medida', description: 'Desenvolva uma peça exclusiva, como esculturas e brindes para sua empresa.', image: '/b2b/bespoke.jpg', icon: Shapes },
 ];
 
 type Profile = {
@@ -161,76 +160,44 @@ const B2BAccessGate = ({ reason }: { reason: 'not_logged' | 'not_pj' }) => (
 // ─────────────────────────────────────────────────────────────────────────────
 
 const B2BNavbar = ({ profile, cartItems, onOpenCart, searchTerm, setSearchTerm }: any) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const totalCartItems = cartItems.reduce((total: number, item: CartItem) => total + item.quantity, 0);
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#0d0f12]/95 backdrop-blur-md border-b" style={{ borderColor: `${B2B_ACCENT}25` }}>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-3.5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <img
-            src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
-            alt="Logo"
-            className="w-9 h-9 rounded-full object-cover border-2"
-            style={{ borderColor: B2B_ACCENT }}
-          />
-          <div className="hidden sm:block">
-            <span className="font-display font-black text-lg tracking-tighter uppercase text-white leading-none block">
-              Freo<span style={{ color: B2B_ACCENT }}>Figures</span>
-            </span>
-            <span className="font-mono text-[9px] uppercase tracking-[0.2em]" style={{ color: B2B_MUTED }}>Corporativo</span>
-          </div>
-        </div>
+    <nav className="sticky top-0 z-50 bg-[#061524]/95 backdrop-blur-md border-b border-white/10">
+      <div className="max-w-[1500px] mx-auto px-5 sm:px-8 lg:px-12 h-[72px] md:h-[92px] flex items-center justify-between gap-5">
+        <a href="/b2b.html" className="flex-shrink-0 leading-none" aria-label="FreoFigures Corporativo">
+          <span className="block font-display font-black text-xl sm:text-2xl lg:text-[30px] tracking-[-0.065em] text-white">FREO<span className="text-[#397eac]">FIGURES</span></span>
+          <span className="block mt-2 text-[9px] sm:text-xs uppercase tracking-[0.28em] text-white/75">Corporativo</span>
+        </a>
 
-        <div className="hidden md:flex items-center flex-1 max-w-md relative">
-          <Search className="w-4 h-4 absolute left-3 pointer-events-none" style={{ color: `${B2B_MUTED}80` }} />
-          <input
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Buscar no catálogo B2B..."
-            className="w-full bg-[#141618] border pl-9 pr-3 py-2 text-sm font-mono text-white outline-none transition-colors"
-            style={{ borderColor: `${B2B_ACCENT}30` }}
-          />
-        </div>
+        <label className="hidden md:flex items-center flex-1 max-w-[545px] relative">
+          <Search className="w-6 h-6 absolute left-5 pointer-events-none text-white/70" />
+          <span className="sr-only">Buscar no catálogo B2B</span>
+          <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar no catálogo B2B..." className="w-full rounded-[10px] bg-white/[0.055] border border-white/15 pl-14 pr-4 py-3.5 text-base text-white placeholder:text-white/55 outline-none focus:border-[#eab956]" />
+        </label>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {profile && (
-            <div className="hidden lg:flex flex-col items-end mr-1">
-              <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: B2B_MUTED }}>CNPJ</span>
-              <span className="font-mono text-xs text-white truncate max-w-[160px]">{profile.company_name || '—'}</span>
+        <div className="flex items-center gap-5 sm:gap-7 flex-shrink-0 text-white">
+          <details className="relative hidden sm:block group">
+            <summary className="list-none cursor-pointer flex items-center gap-2 text-sm font-medium uppercase tracking-wide [&::-webkit-details-marker]:hidden">CNPJ <ChevronDown className="w-5 h-5" /></summary>
+            <div className="absolute right-0 top-full mt-5 w-64 bg-[#0d2234] border border-white/15 rounded-lg p-4 shadow-xl text-sm z-50">
+              <p className="font-semibold text-white truncate">{profile?.company_name || 'Conta empresarial'}</p>
+              {profile?.cnpj && <p className="text-white/60 mt-1">CNPJ: {profile.cnpj}</p>}
+              <a href="/dashboard.html" className="block mt-4 text-[#f0bf5d] hover:underline">Minha conta</a>
             </div>
-          )}
-          <a href="/dashboard.html" className="text-white/50 hover:text-white transition-colors" aria-label="Minha conta">
-            <User className="w-5 h-5" />
-          </a>
-          <button onClick={onOpenCart} className="relative text-white/50 hover:text-white transition-colors" aria-label="Carrinho">
-            <ShoppingCart className="w-5 h-5" />
-            {totalCartItems > 0 && (
-              <span className="absolute -top-2 -right-2 text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center" style={{ background: B2B_ACCENT, color: '#fff' }}>
-                {totalCartItems}
-              </span>
-            )}
-          </button>
-          <button className="md:hidden text-white/50" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu">
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </details>
+          <span className="hidden sm:block h-8 w-px bg-white/15" />
+          <a href="/dashboard.html" className="hover:text-[#f0bf5d] transition-colors" aria-label="Minha conta"><User className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={1.8} /></a>
+          <button onClick={onOpenCart} className="relative hover:text-[#f0bf5d] transition-colors" aria-label="Carrinho">
+            <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8" strokeWidth={1.8} />
+            {totalCartItems > 0 && <span className="absolute -top-2 -right-2 text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center bg-[#f0bf5d] text-black">{totalCartItems}</span>}
           </button>
         </div>
       </div>
-
-      {mobileMenuOpen && (
-        <div className="md:hidden px-4 pb-4">
-          <div className="flex items-center relative">
-            <Search className="w-4 h-4 absolute left-3 pointer-events-none" style={{ color: `${B2B_MUTED}80` }} />
-            <input
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Buscar no catálogo B2B..."
-              className="w-full bg-[#141618] border pl-9 pr-3 py-2.5 text-sm font-mono text-white outline-none"
-              style={{ borderColor: `${B2B_ACCENT}30` }}
-            />
-          </div>
-        </div>
-      )}
+      <label className="md:hidden flex items-center relative mx-5 sm:mx-8 mb-3">
+        <Search className="w-4 h-4 absolute left-4 pointer-events-none text-white/60" />
+        <span className="sr-only">Buscar no catálogo B2B</span>
+        <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar no catálogo B2B..." className="w-full rounded-lg bg-white/[0.055] border border-white/15 pl-11 pr-4 py-2.5 text-sm text-white placeholder:text-white/55 outline-none focus:border-[#eab956]" />
+      </label>
     </nav>
   );
 };
@@ -427,6 +394,59 @@ const B2BProjectBrief = ({ section, companyName, selectedProduct }: { section: '
   </form>;
 };
 
+const B2BInformation = ({ onSelect }: { onSelect: (section: B2BCategory) => void }) => (
+  <div className="bg-[#f6f3ed] text-[#071827]">
+    <div className="max-w-[1500px] mx-auto px-5 sm:px-8 lg:px-12 py-16 md:py-20">
+      <div className="grid lg:grid-cols-[0.85fr_1.15fr] gap-10 lg:gap-20">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.22em] text-[#397eac] mb-3">Seu projeto, do começo ao fim</p>
+          <h2 className="font-display font-black text-3xl md:text-5xl leading-tight tracking-tight">Da ideia à peça pronta para sua empresa.</h2>
+          <p className="font-body text-base text-[#425361] mt-5 leading-relaxed">Conte o que você precisa e receba uma proposta adequada ao tipo de peça, à quantidade e ao prazo do seu projeto.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {[
+            ['01', 'Conte sua ideia', 'Envie o objetivo, referências, quantidade e onde as peças serão usadas.'],
+            ['02', 'Receba uma proposta', 'Avaliamos dimensões, materiais, acabamento e volume antes de definir o valor.'],
+            ['03', 'Aprove o projeto', 'Alinhamos os detalhes visuais e as condições de produção antes de começar.'],
+            ['04', 'Produção e entrega', 'Prazo, embalagem e envio são combinados conforme a proposta aprovada.'],
+          ].map(([number, title, description]) => <div key={number} className="bg-white border border-[#dfe5e7] rounded-xl p-5">
+            <span className="font-display font-black text-2xl text-[#d0a346]">{number}</span>
+            <h3 className="font-display font-bold text-lg mt-3">{title}</h3>
+            <p className="font-body text-sm text-[#586772] mt-2 leading-relaxed">{description}</p>
+          </div>)}
+        </div>
+      </div>
+
+      <div className="mt-14 grid lg:grid-cols-2 gap-5">
+        <div className="bg-[#071827] text-white rounded-xl p-7 md:p-9">
+          <h3 className="font-display font-black text-2xl">O que enviar para cotar</h3>
+          <ul className="font-body text-sm text-white/75 mt-5 space-y-3 list-disc pl-5 leading-relaxed">
+            <li>Quantidade estimada e tipo de peça: chaveiro, miniatura, escultura ou outra ideia.</li>
+            <li>Logo, desenho, foto ou referência visual que você tenha autorização para usar.</li>
+            <li>Tamanho, cores, acabamento e embalagem desejados, se já souber.</li>
+            <li>Data necessária e CEP de entrega para avaliarmos prazo e envio.</li>
+          </ul>
+        </div>
+        <div className="bg-white border border-[#dfe5e7] rounded-xl p-7 md:p-9">
+          <h3 className="font-display font-black text-2xl">Dúvidas comuns</h3>
+          <div className="mt-4 divide-y divide-[#dfe5e7]">
+            <details className="py-3 group"><summary className="cursor-pointer font-semibold text-sm">Existe quantidade mínima?</summary><p className="font-body text-sm text-[#586772] mt-2">Ela depende do produto e do processo. Informe a quantidade desejada para avaliarmos a viabilidade.</p></details>
+            <details className="py-3 group"><summary className="cursor-pointer font-semibold text-sm">Posso pedir uma peça que ainda não está no catálogo?</summary><p className="font-body text-sm text-[#586772] mt-2">Sim. Use a opção “Novo produto sob medida” e descreva a ideia para receber uma proposta.</p></details>
+            <details className="py-3 group"><summary className="cursor-pointer font-semibold text-sm">Como são definidos preço e prazo?</summary><p className="font-body text-sm text-[#586772] mt-2">Eles dependem da quantidade, dimensões, acabamento e entrega. Informamos as condições na cotação.</p></details>
+          </div>
+        </div>
+      </div>
+      <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border-t border-[#d7dfdf] pt-8">
+        <p className="font-display font-bold text-xl">Pronto para conversar sobre o seu projeto?</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button type="button" onClick={() => onSelect('eventos')} className="rounded-lg bg-[#071827] text-white px-5 py-3 font-display font-bold text-sm hover:bg-[#15394f]">Personalizados para eventos</button>
+          <button type="button" onClick={() => onSelect('sob_medida')} className="rounded-lg border border-[#071827] text-[#071827] px-5 py-3 font-display font-bold text-sm hover:bg-white">Novo produto sob medida</button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CART DRAWER (reaproveita mesma cart_items / mesmo checkout.html do site)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -525,6 +545,13 @@ export default function BApp() {
   const [quoteProduct, setQuoteProduct] = useState<Product | null>(null);
   const [cartError, setCartError] = useState('');
   const [busyCartItem, setBusyCartItem] = useState<number | null>(null);
+
+  const openSection = (section: B2BCategory) => {
+    setActiveSection(section);
+    setSearchTerm('');
+    setQuoteProduct(null);
+    document.getElementById('b2b-catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // ── Auth gate: só account_type === 'pj' passa ──────────────────────────
   useEffect(() => {
@@ -706,30 +733,43 @@ export default function BApp() {
     <div className="min-h-screen bg-[#0A0A0A]">
       <B2BNavbar profile={profile} cartItems={cartItems} onOpenCart={() => setIsCartOpen(true)} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8 pb-5 border-b flex items-center justify-between flex-wrap gap-3" style={{ borderColor: `${B2B_ACCENT}25` }}>
-          <div>
-            <h1 className="font-display font-black text-2xl md:text-3xl uppercase tracking-tight text-white">
-              Soluções para sua empresa
-            </h1>
-            <p className="font-mono text-xs mt-1" style={{ color: B2B_MUTED }}>
-              {profile?.company_name} · escolha como quer criar ou comprar
-            </p>
-          </div>
+      <section className="relative isolate min-h-[500px] md:min-h-[495px] overflow-hidden">
+        <img src="/b2b/hero.jpg" alt="Exemplos ilustrativos de miniaturas personalizadas" className="absolute inset-0 w-full h-full object-cover object-[68%_center] md:object-center" fetchPriority="high" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#041523] via-[#041523]/85 to-[#041523]/10 md:via-[#041523]/55" />
+        <div className="relative max-w-[1500px] mx-auto px-5 sm:px-8 lg:px-12 min-h-[500px] md:min-h-[495px] flex flex-col justify-center items-start py-12">
+          <h1 className="font-display font-black text-[clamp(3.1rem,6.2vw,5.9rem)] leading-[0.99] tracking-[-0.055em] text-white max-w-[780px]">
+            Soluções <span className="text-[#f0bf5d]">B2B</span><br />para sua empresa
+          </h1>
+          <p className="font-body text-lg sm:text-xl md:text-[25px] text-[#d4dce5] max-w-[420px] leading-snug mt-5">Colecionáveis personalizados para fortalecer a sua marca.</p>
+          <button type="button" onClick={() => openSection('loja')} className="mt-8 inline-flex items-center justify-between gap-5 min-w-[250px] sm:min-w-[390px] rounded-[11px] bg-gradient-to-b from-[#ffdc8c] to-[#e8b34f] px-6 sm:px-8 py-4 sm:py-5 text-[#10151a] font-display font-bold text-lg sm:text-xl shadow-lg shadow-black/20 hover:brightness-110 transition-all">
+            Comprar em quantidade <ArrowRight className="w-6 h-6" />
+          </button>
         </div>
+      </section>
 
-        <nav className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8" aria-label="Soluções B2B">
-          {B2B_SECTIONS.map(({ id, title, description, icon: Icon }) => <button key={id} type="button" aria-pressed={activeSection === id} onClick={() => { setActiveSection(id); setSearchTerm(''); setQuoteProduct(null); }} className="text-left flex flex-col gap-3 p-5 border min-h-[170px] transition-colors" style={{ background: activeSection === id ? `${B2B_ACCENT}28` : '#111316', borderColor: activeSection === id ? B2B_ACCENT_LIGHT : `${B2B_ACCENT}28` }}>
-            <Icon className="w-7 h-7" style={{ color: activeSection === id ? B2B_GOLD : B2B_ACCENT_LIGHT }} />
-            <span className="font-display font-bold uppercase text-white text-sm md:text-base">{title}</span>
-            <span className="font-body text-xs leading-relaxed" style={{ color: B2B_MUTED }}>{description}</span>
-            <ArrowRight className="w-4 h-4 mt-auto" style={{ color: B2B_ACCENT_LIGHT }} />
+      <section className="bg-[#f6f3ed]" aria-label="Escolha uma solução B2B">
+        <nav className="max-w-[1600px] mx-auto px-5 sm:px-8 lg:px-12 py-5 md:py-6 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6" aria-label="Soluções B2B">
+          {B2B_SECTIONS.map(({ id, cardTitle, image, icon: Icon }) => <button key={id} type="button" aria-pressed={activeSection === id} onClick={() => openSection(id)} className="group relative overflow-hidden rounded-xl text-left h-[235px] md:h-[275px] lg:h-[285px] border border-white/10 bg-[#061827] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[#f0bf5d]">
+            <img src={image} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" />
+            <span className="absolute inset-0 bg-gradient-to-r from-[#061827]/95 via-[#061827]/65 to-transparent" />
+            <span className="relative z-10 flex flex-col items-start h-full p-6 sm:p-7 text-white">
+              <Icon className="w-9 h-9 text-[#f2c363]" strokeWidth={1.8} aria-hidden="true" />
+              <span className="font-display font-bold text-[27px] lg:text-[31px] leading-tight tracking-tight max-w-[270px] mt-5">{cardTitle}</span>
+              <span className="mt-auto inline-flex w-12 h-12 rounded-full items-center justify-center bg-gradient-to-b from-[#ffda87] to-[#e4ad45] text-[#081827] group-hover:translate-x-1 transition-transform"><ArrowRight className="w-6 h-6" /></span>
+            </span>
           </button>)}
         </nav>
+        <p className="max-w-[1500px] mx-auto px-5 sm:px-8 lg:px-12 pb-5 text-xs text-[#73808a]">Imagens ilustrativas. Modelos, materiais e acabamento são definidos conforme cada pedido.</p>
+      </section>
 
-        <div className="mb-6">
-          <h2 className="font-display font-black uppercase text-xl text-white">{B2B_SECTIONS.find(section => section.id === activeSection)?.title}</h2>
-          <p className="font-body text-sm mt-1" style={{ color: B2B_MUTED }}>
+      <B2BInformation onSelect={openSection} />
+
+      <section id="b2b-catalog" className="scroll-mt-32 max-w-[1500px] mx-auto px-5 sm:px-8 lg:px-12 py-14 md:py-20">
+
+        <div className="mb-8">
+          <p className="font-mono text-xs tracking-[0.2em] uppercase text-[#e3b653] mb-2">Catálogo e cotação</p>
+          <h2 className="font-display font-black text-3xl md:text-4xl text-white">{B2B_SECTIONS.find(section => section.id === activeSection)?.title}</h2>
+          <p className="font-body text-sm md:text-base mt-2" style={{ color: B2B_MUTED }}>
             {activeSection === 'loja' ? 'Compre itens já disponíveis no catálogo. Para negociar faixas por volume, peça uma cotação antes de finalizar.' : activeSection === 'eventos' ? 'Veja os produtos para eventos ou conte o que precisa. Cada projeto é orçado de acordo com os detalhes e a quantidade.' : 'Sua empresa tem uma ideia que ainda não existe no catálogo? Descreva a peça e receba uma proposta.'}
           </p>
           {!loadingProducts && <p className="font-mono text-xs mt-2" style={{ color: B2B_ACCENT_LIGHT }}>{filtered.length} produto{filtered.length !== 1 ? 's' : ''} nesta categoria</p>}
@@ -774,7 +814,7 @@ export default function BApp() {
           </div>
         )}
         {activeSection !== 'loja' && <B2BProjectBrief key={activeSection} section={activeSection} companyName={profile?.company_name} selectedProduct={quoteProduct} />}
-      </div>
+      </section>
 
       <B2BCartDrawer
         isOpen={isCartOpen}
