@@ -64,6 +64,7 @@ test('loader uses public allowlisted columns, pages results, caches and deduplic
   const loader=createCatalogLoader({sourceHtml:home,now:()=>time,ttl:30,fetchImpl:async (url,init)=>{
     calls++;
     assert.equal(url.searchParams.get('is_active'),'eq.true');
+    assert.equal(url.searchParams.get('b2b_category'),'eq.loja');
     assert.ok(!url.searchParams.get('select').includes('*'));
     assert.equal(Object.keys(init.headers).join(','),'apikey');
     return {ok:true,json:async()=>url.searchParams.get('offset')==='0'? Array.from({length:500},(_,id)=>({...product,id})):[{...product,id:501}]};

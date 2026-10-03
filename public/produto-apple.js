@@ -91,7 +91,7 @@ async function loadKitFixedItems(p) {
     if (relations.error || !relations.data || !relations.data.length)
         throw new Error('Não foi possível carregar os itens deste kit. Tente novamente.');
     var ids = relations.data.map(function (r) { return r.child_product_id; });
-    var children = await db.from('products').select('id,title,price,promotional_price,images').in('id', ids);
+    var children = await db.from('products').select('id,title,price,promotional_price,images').in('id', ids).eq('b2b_category', 'loja');
     if (children.error || !children.data || children.data.length !== new Set(ids).size)
         throw new Error('Não foi possível calcular este kit. Tente novamente.');
     kitFixedItems = ids.map(function (id) { return children.data.find(function (c) { return String(c.id) === String(id); }); });
@@ -584,7 +584,7 @@ async function savePurchase(action) {
     setBusy(true, action);
     try {
         // Confere novamente preço e disponibilidade antes de salvar a escolha.
-        var fresh = await db.from('products').select('*').eq('id', product.id).eq('is_active', true).single();
+        var fresh = await db.from('products').select('*').eq('id', product.id).eq('is_active', true).eq('b2b_category', 'loja').single();
         if (fresh.error || !fresh.data)
             throw new Error('Não foi possível confirmar esta peça. Tente novamente.');
         if (fresh.data.is_kit && fresh.data.kit_type === 'configurable') {
@@ -689,7 +689,7 @@ async function init() {
         }
         if (!window.supabaseClient || !window.supabaseClient.from)
             throw new Error('Não foi possível conectar ao catálogo. Confira sua conexão e tente novamente.');
-        var result = await window.supabaseClient.from('products').select('*').eq('id', id).eq('is_active', true).single();
+        var result = await window.supabaseClient.from('products').select('*').eq('id', id).eq('is_active', true).eq('b2b_category', 'loja').single();
         if (result.error || !result.data)
             throw new Error('Esta peça não está disponível ou não foi possível carregar o catálogo.');
         if (result.data.is_kit && result.data.kit_type === 'configurable') {
