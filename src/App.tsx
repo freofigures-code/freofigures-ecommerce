@@ -1834,7 +1834,7 @@ const FeaturedProducts = ({ addToCart }: any) => {
         // @ts-ignore
         const supabase = window.supabaseClient || window.supabase;
         if (!supabase) return;
-        const { data, error } = await supabase.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(4);
+        const { data, error } = await supabase.from('products').select('*').eq('is_active', true).eq('b2b_category', 'loja').order('created_at', { ascending: false }).limit(4);
         if (!error && data) {
           const community = data.some((product: Product) => product.category === 'feito_por_voces');
           if (!community) { setProducts(data); return; }
@@ -2261,7 +2261,7 @@ const ShopView = ({ addToCart, activeFilter, onSelectCategory, searchTerm, onCle
         // @ts-ignore
         const supabase = window.supabaseClient || window.supabase;
         if (!supabase) return;
-        const { data, error } = await supabase.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('products').select('*').eq('is_active', true).eq('b2b_category', 'loja').order('created_at', { ascending: false });
         if (!error && data) setProducts(data);
       } catch (error) {
         console.error(error);

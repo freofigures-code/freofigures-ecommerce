@@ -27,7 +27,7 @@ export function createCatalogLoader({ sourceHtml, fetchImpl = fetch, ttl = 30000
       const products = [];
       for (let offset = 0; ; offset += 500) {
         const endpoint = new URL('/rest/v1/products', url);
-        endpoint.search = new URLSearchParams({ select: FIELDS, is_active: 'eq.true', order: 'created_at.desc,id.desc', offset: String(offset), limit: '500' }).toString();
+        endpoint.search = new URLSearchParams({ select: FIELDS, is_active: 'eq.true', b2b_category: 'eq.loja', order: 'created_at.desc,id.desc', offset: String(offset), limit: '500' }).toString();
         const response = await fetchImpl(endpoint, { headers: { apikey: key }, signal: AbortSignal.timeout(4000) });
         if (!response.ok) throw new Error(`Public catalog unavailable (${response.status})`);
         const batch = await response.json();

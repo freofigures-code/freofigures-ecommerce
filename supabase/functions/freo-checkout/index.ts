@@ -24,7 +24,7 @@ async function itemPrice(service: any, authHeader: string, anonKey: string, url:
   const id = Number(item.product_id);
   if (!Number.isSafeInteger(id) || id <= 0) throw new Error('Produto inválido');
   const product = value(await service.from('products').select('*').eq('id', id).eq('is_active', true).single());
-  if (!product || product.sale_mode === 'quote_only') throw new Error('Produto indisponível');
+  if (!product || product.sale_mode === 'quote_only' || (product.b2b_category && product.b2b_category !== 'loja')) throw new Error('Produto indisponível para compra direta');
   let price = Number(product.promotional_price);
   const gross = Number(product.price);
   if (product.promotional_price === null || !Number.isFinite(price) || price >= gross || price < 0) price = gross;

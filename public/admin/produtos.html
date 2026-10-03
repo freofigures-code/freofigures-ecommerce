@@ -482,6 +482,16 @@
           </div>
 
           <div>
+            <label class="fl">Área do catálogo B2B</label>
+            <select id="f-b2b-category" class="fi">
+              <option value="loja">Produtos da loja em quantidade</option>
+              <option value="eventos">Personalizados para eventos</option>
+              <option value="sob_medida">Novo produto sob medida</option>
+            </select>
+            <p class="font-mono text-[10px] text-white/30 mt-1.5">Produtos das duas áreas de personalizados recebem pedidos de cotação no B2B.</p>
+          </div>
+
+          <div>
             <label class="fl">Modo de venda no B2B</label>
             <select id="f-sale-mode" class="fi">
               <option value="normal">Normal — preço por faixa de quantidade</option>
@@ -704,7 +714,11 @@
       var isQuoteOnly = p.sale_mode === 'quote_only';
       var b2bBadge = '';
       if (currentViewMode === 'b2b' && !p.is_kit) {
-        b2bBadge = isQuoteOnly
+        b2bBadge = p.b2b_category === 'eventos'
+          ? '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase b2b-badge-quote">Eventos</span>'
+          : p.b2b_category === 'sob_medida'
+          ? '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase b2b-badge-quote">Sob medida</span>'
+          : isQuoteOnly
           ? '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase b2b-badge-quote">Sob cotação</span>'
           : '<span class="absolute top-2 left-2 font-mono text-[9px] px-1.5 py-0.5 uppercase" style="background:rgba(59,110,143,.15);color:#5A8FB0;border:1px solid rgba(59,110,143,.3)">Normal B2B</span>';
       }
@@ -782,6 +796,8 @@
       currentTags = Array.isArray(p.tags) ? p.tags.slice() : [];
       currentVariants = normalizeVariantsFromDB(p.variants);
       document.getElementById('f-sale-mode').value = p.sale_mode || 'normal';
+      document.getElementById('f-b2b-category').value = p.b2b_category || 'loja';
+      updateB2BCategory();
       updateSaleModeHint();
       loadTiersForProduct(p.id);
 
@@ -808,6 +824,8 @@
       document.getElementById('seo-title-count').innerText = '0/60';
       document.getElementById('seo-desc-count').innerText = '0/160';
       document.getElementById('f-sale-mode').value = 'normal';
+      document.getElementById('f-b2b-category').value = 'loja';
+      updateB2BCategory();
       updateSaleModeHint();
       currentTiers = [];
       renderTiersUI();
@@ -1008,12 +1026,24 @@
   function updateSaleModeHint() {
     var val = document.getElementById('f-sale-mode').value;
     var hint = document.getElementById('sale-mode-hint');
+    if (document.getElementById('f-b2b-category').value !== 'loja') {
+      hint.innerText = 'Produtos personalizados são orçados antes da venda e ficam fora do catálogo da loja comum.';
+      return;
+    }
     hint.innerText = val === 'quote_only'
       ? 'Este produto NÃO mostrará preço no /b2b.html — só um botão para pedir cotação via WhatsApp.'
-      : 'Este produto mostrará a tabela de faixas de preço abaixo para clientes PJ.';
+      : 'Faixas de preço são referenciais para cotação. No checkout, vale o preço normal da loja.';
   }
 
   document.getElementById('f-sale-mode').addEventListener('change', updateSaleModeHint);
+  function updateB2BCategory() {
+    var isCustom = document.getElementById('f-b2b-category').value !== 'loja';
+    var saleMode = document.getElementById('f-sale-mode');
+    if (isCustom) saleMode.value = 'quote_only';
+    saleMode.disabled = isCustom;
+    updateSaleModeHint();
+  }
+  document.getElementById('f-b2b-category').addEventListener('change', updateB2BCategory);
 
   // ─────────────────────────────────────────────────────────────────────────
   // KIT (modal separado — ver seção "NOVO KIT" mais abaixo)
@@ -1241,6 +1271,7 @@
       seo_description: document.getElementById('f-seo-desc').value.trim() || null,
       is_active: document.getElementById('f-active').checked,
       sale_mode: document.getElementById('f-sale-mode').value || 'normal',
+      b2b_category: document.getElementById('f-b2b-category').value || 'loja',
       is_kit: false,
       kit_type: null,
       kit_slots: null,

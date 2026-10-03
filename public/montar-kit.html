@@ -348,7 +348,8 @@
           .select('*')
           .eq('is_kit', true)
           .eq('kit_type', 'configurable')
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('b2b_category', 'loja');
         if (requestedKitId) kitQuery = kitQuery.eq('id', requestedKitId);
         else kitQuery = kitQuery.limit(1);
         var kitRes = await kitQuery.maybeSingle();
@@ -379,7 +380,8 @@
           .from('products')
           .select('id, title, price, promotional_price, images')
           .in('id', childIds)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('b2b_category', 'loja');
 
         eligibleItems = itemsRes.data || [];
 
