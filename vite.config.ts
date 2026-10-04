@@ -1,8 +1,11 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv } from 'vite';
 import { seoPlugin } from './seo/server.mjs';
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -13,16 +16,17 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': projectRoot,
       },
     },
     build: {
       rollupOptions: {
         input: {
-          main: path.resolve(__dirname, 'index.html'),
-          b2b: path.resolve(__dirname, 'b2b.html'),
-          criarModelo: path.resolve(__dirname, 'criar-modelo.html'),
-          minhasCriacoes: path.resolve(__dirname, 'minhas-criacoes.html'),
+          main: path.resolve(projectRoot, 'index.html'),
+          b2b: path.resolve(projectRoot, 'b2b.html'),
+          b2bConta: path.resolve(projectRoot, 'b2b-conta.html'),
+          criarModelo: path.resolve(projectRoot, 'criar-modelo.html'),
+          minhasCriacoes: path.resolve(projectRoot, 'minhas-criacoes.html'),
         },
       },
     },

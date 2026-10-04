@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Cotações B2B — Admin FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#07111a;color:#f5f5f5;font-family:'Space Grotesk',sans-serif}button,input,textarea,select{font:inherit}a{color:#e5bb62}header{background:#061524;border-bottom:1px solid #ffffff20;padding:22px max(20px,calc((100vw - 1200px)/2))}header a{text-decoration:none;font-weight:700}main{max-width:1200px;margin:auto;padding:38px 20px 90px}h1,h2{font-family:Outfit,sans-serif}h1{font-size:clamp(30px,5vw,45px);margin:0 0 8px}p{line-height:1.5}.muted{color:#aeb9c1}.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:25px 0}.toolbar select,.toolbar button,.quote select,.quote textarea,.quote button{background:#0d2231;color:#fff;border:1px solid #ffffff35;padding:10px}.toolbar button,.quote button{cursor:pointer}.toolbar button:hover,.quote button:hover{border-color:#e5bb62}.quote{border:1px solid #ffffff22;background:#0b1b29;padding:22px;margin:14px 0}.quote-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}.quote h2{font-size:22px;margin:4px 0}.tag{display:inline-block;color:#e5bb62;font-size:12px;text-transform:uppercase;letter-spacing:.09em}.meta{font-size:13px;color:#aeb9c1}.quote-body{white-space:pre-wrap;overflow-wrap:anywhere}.quote-grid{display:grid;grid-template-columns:220px 1fr auto;align-items:end;gap:12px;margin-top:20px}.quote label{display:block;font-size:12px;color:#c7d2d9}.quote label>*{display:block;width:100%;margin-top:6px}.quote textarea{min-height:80px;resize:vertical}.quote button{background:#e5bb62;color:#061524;font-weight:700;border-color:#e5bb62}.error{color:#ff9a9a}.success{color:#9ee4b9}#list:empty:after{content:'Nenhuma cotação encontrada.';color:#aeb9c1}@media(max-width:760px){.quote-grid{grid-template-columns:1fr}.quote{padding:17px}}
+  </style>
+</head>
+<body>
+<header><a href="/admin/produtos.html">← Administração FreoFigures</a></header>
+<main>
+  <p class="tag">Corporativo</p><h1>Cotações B2B</h1>
+  <p class="muted">Acompanhe os projetos enviados pelas empresas e registre o andamento. O contato comercial continua pelo WhatsApp.</p>
+  <p id="notice" role="status">Verificando acesso...</p>
+  <div id="content" hidden>
+    <div class="toolbar"><label>Filtrar andamento <select id="filter"><option value="all">Todas</option><option value="recebida">Recebidas</option><option value="em_analise">Em análise</option><option value="proposta_enviada">Proposta enviada</option><option value="aprovada">Aprovadas</option><option value="recusada">Não aprovadas</option></select></label><button id="refresh" type="button">Atualizar lista</button></div>
+    <div id="list"></div>
+  </div>
+</main>
+<script>
+(function(){
+  'use strict';
+  var db = supabase.createClient('https://rrmxqpvxrpcqqxsgccqw.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM');
+  var statuses = {recebida:'Recebida',em_analise:'Em análise',proposta_enviada:'Proposta enviada',aprovada:'Aprovada',recusada:'Não aprovada'};
+  var categories = {loja:'Produtos em quantidade',eventos:'Personalizados para eventos',sob_medida:'Novo produto sob medida'};
+  var rows = [];
+  var notice = document.getElementById('notice');
+  function el(tag, cls, value){var node=document.createElement(tag);if(cls)node.className=cls;if(value!==undefined)node.textContent=value;return node;}
+  function show(message, error){notice.textContent=message;notice.className=error?'error':'success';}
+  async function load(){
+    show('Carregando cotações...',false);
+    var result=await db.from('b2b_quote_requests').select('id,user_id,company_name,contact_email,contact_phone,category,product_name,description,quantity,deadline,status,admin_note,created_at,updated_at').order('created_at',{ascending:false});
+    if(result.error){show('Erro ao carregar cotações. Confirme que o SQL B2B foi aplicado.',true);return;}
+    rows=result.data||[];
+    show(rows.length+' solicitação(ões) encontrada(s).',false);
+    render();
+  }
+  function render(){
+    var list=document.getElementById('list');list.replaceChildren();
+    var filter=document.getElementById('filter').value;
+    rows.filter(function(row){return filter==='all'||row.status===filter;}).forEach(function(row){
+      var card=el('article','quote');
+      var head=el('div','quote-head');
+      var heading=el('div');heading.append(el('span','tag',categories[row.category]||row.category),el('h2','',row.company_name));
+      heading.append(el('p','meta',(row.product_name?row.product_name+' · ':'')+'Protocolo '+row.id+' · '+new Date(row.created_at).toLocaleDateString('pt-BR')));
+      heading.append(el('p','meta','Contato: '+(row.contact_email||'E-mail não informado')+(row.contact_phone?' · '+row.contact_phone:'')));
+      head.append(heading,el('span','tag',statuses[row.status]||row.status));card.append(head);
+      card.append(el('p','quote-body',row.description));
+      card.append(el('p','meta','Quantidade: '+Number(row.quantity).toLocaleString('pt-BR')+(row.deadline?' · Prazo desejado: '+row.deadline:'')));
+      var grid=el('div','quote-grid');
+      var statusLabel=el('label','','Andamento');var select=el('select');
+      Object.keys(statuses).forEach(function(key){var opt=el('option','',statuses[key]);opt.value=key;opt.selected=row.status===key;select.append(opt);});statusLabel.append(select);
+      var noteLabel=el('label','','Retorno visível para o cliente');var textarea=el('textarea');textarea.maxLength=2000;textarea.value=row.admin_note||'';textarea.placeholder='Ex.: proposta enviada pelo WhatsApp em 03/10';noteLabel.append(textarea);
+      var save=el('button','','Salvar andamento');save.type='button';
+      save.onclick=async function(){
+        save.disabled=true;save.textContent='Salvando...';
+        var update=await db.from('b2b_quote_requests').update({status:select.value,admin_note:textarea.value.trim()||null}).eq('id',row.id).select('id').single();
+        if(update.error){show('Não foi possível salvar a cotação '+row.id.slice(0,8)+'. Tente novamente.',true);save.disabled=false;save.textContent='Salvar andamento';return;}
+        await load();
+      };
+      grid.append(statusLabel,noteLabel,save);card.append(grid);list.append(card);
+    });
+  }
+  document.getElementById('filter').onchange=render;
+  document.getElementById('refresh').onclick=load;
+  (async function(){
+    try{
+      var auth=await db.auth.getUser();
+      if(auth.error||!auth.data.user){show('Entre com uma conta administradora para acessar esta página.',true);return;}
+      var p=await db.from('profiles').select('is_admin').eq('id',auth.data.user.id).single();
+      if(p.error||p.data?.is_admin!==true){show('Acesso restrito à administração.',true);return;}
+      document.getElementById('content').hidden=false;
+      await load();
+    }catch(e){show('Não foi possível verificar o acesso. Atualize a página.',true);}
+  })();
+})();
+</script>
+</body>
+</html>

@@ -182,11 +182,11 @@ const B2BNavbar = ({ profile, cartItems, onOpenCart, searchTerm, setSearchTerm }
             <div className="absolute right-0 top-full mt-5 w-64 bg-[#0d2234] border border-white/15 rounded-lg p-4 shadow-xl text-sm z-50">
               <p className="font-semibold text-white truncate">{profile?.company_name || 'Conta empresarial'}</p>
               {profile?.cnpj && <p className="text-white/60 mt-1">CNPJ: {profile.cnpj}</p>}
-              <a href="/dashboard.html" className="block mt-4 text-[#f0bf5d] hover:underline">Minha conta</a>
+              <a href="/b2b-conta.html" className="block mt-4 text-[#f0bf5d] hover:underline">Área da empresa</a>
             </div>
           </details>
           <span className="hidden sm:block h-8 w-px bg-white/15" />
-          <a href="/dashboard.html" className="hover:text-[#f0bf5d] transition-colors" aria-label="Minha conta"><User className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={1.8} /></a>
+          <a href="/b2b-conta.html" className="hover:text-[#f0bf5d] transition-colors" aria-label="Área da empresa"><User className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={1.8} /></a>
           <button onClick={onOpenCart} className="relative hover:text-[#f0bf5d] transition-colors" aria-label="Carrinho">
             <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8" strokeWidth={1.8} />
             {totalCartItems > 0 && <span className="absolute -top-2 -right-2 text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center bg-[#f0bf5d] text-black">{totalCartItems}</span>}
@@ -280,10 +280,6 @@ const B2BProductCard = ({
   const needsConfiguration = !!product.is_kit || (Array.isArray(product.variants) && product.variants.some(group => Array.isArray(group.options) && group.options.length > 0));
   const detailHref = product.is_kit && product.kit_type === 'configurable' ? `/montar-kit.html?id=${encodeURIComponent(product.id)}` : `/produto?id=${encodeURIComponent(product.id)}`;
 
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `Olá! Gostaria de uma cotação B2B para: ${product.title} (ID ${product.id}). Categoria: ${section === 'eventos' ? 'personalizados para eventos' : section === 'sob_medida' ? 'novo produto sob medida' : 'produtos da loja em quantidade'}.`
-  )}`;
-
   return (
     <div className="flex flex-col bg-[#111316] border transition-colors" style={{ borderColor: `${B2B_ACCENT}20` }}>
       <div className="relative aspect-square bg-[#0A0A0A] overflow-hidden">
@@ -314,22 +310,10 @@ const B2BProductCard = ({
             </>
           )}
 
-          {isQuoteOnly && section !== 'loja' ? (
+          {isQuoteOnly ? (
             <button type="button" onClick={() => onRequestQuote(product)} className="w-full flex items-center justify-center gap-2 font-display font-bold uppercase tracking-wider py-2.5 text-xs transition-colors" style={{ background: '#25D366', color: '#000' }}>
               <MessageCircle className="w-4 h-4" />Descrever pedido e cotar
             </button>
-          ) : isQuoteOnly ? (
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackEvent('b2b_quote_click', String(product.id), product.title)}
-              className="w-full flex items-center justify-center gap-2 font-display font-bold uppercase tracking-wider py-2.5 text-xs transition-colors"
-              style={{ background: '#25D366', color: '#000' }}
-            >
-              <MessageCircle className="w-4 h-4" />
-              Pedir cotação
-            </a>
           ) : (
             <div className="space-y-2">
             {needsConfiguration ? <a href={detailHref} className="w-full flex items-center justify-center gap-2 font-display font-bold uppercase tracking-wider py-2.5 text-xs transition-colors" style={{ background: B2B_ACCENT, color: '#fff' }}>Ver opções e comprar</a> : <button
@@ -344,7 +328,7 @@ const B2BProductCard = ({
               <ShoppingCart className="w-4 h-4" />
               {Number(product.stock || 0) < 1 ? 'Indisponível' : 'Comprar pelo preço da loja'}
             </button>}
-            {tiers.length > 0 && <a href={whatsappHref} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('b2b_quote_click', String(product.id), product.title)} className="w-full flex items-center justify-center gap-2 border py-2.5 font-display font-bold uppercase tracking-wider text-xs" style={{ borderColor: B2B_GOLD, color: B2B_GOLD }}><MessageCircle className="w-4 h-4" />Solicitar preço por volume</a>}
+            {tiers.length > 0 && <button type="button" onClick={() => onRequestQuote(product)} className="w-full flex items-center justify-center gap-2 border py-2.5 font-display font-bold uppercase tracking-wider text-xs" style={{ borderColor: B2B_GOLD, color: B2B_GOLD }}><MessageCircle className="w-4 h-4" />Solicitar preço por volume</button>}
             </div>
           )}
         </div>
@@ -353,32 +337,64 @@ const B2BProductCard = ({
   );
 };
 
-const B2BProjectBrief = ({ section, companyName, selectedProduct }: { section: 'eventos' | 'sob_medida'; companyName?: string | null; selectedProduct: Product | null }) => {
+const B2BProjectBrief = ({ section, userId, companyName, selectedProduct }: { section: B2BCategory; userId: string; companyName?: string | null; selectedProduct: Product | null }) => {
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState('');
   const [deadline, setDeadline] = useState('');
-  const subject = section === 'eventos' ? 'personalizados para eventos' : 'novo produto sob medida';
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const subject = section === 'eventos' ? 'personalizados para eventos' : section === 'sob_medida' ? 'novo produto sob medida' : 'preço por volume';
 
   useEffect(() => {
     if (selectedProduct) setDescription(`Tenho interesse em ${selectedProduct.title} (ID ${selectedProduct.id}). `);
   }, [selectedProduct]);
 
-  const requestQuote = (event: React.FormEvent<HTMLFormElement>) => {
+  const requestQuote = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const message = [
-      `Olá! Gostaria de solicitar uma cotação B2B para ${subject}.`,
-      companyName ? `Empresa: ${companyName}` : '',
-      `Projeto: ${description.trim()}`,
-      `Quantidade estimada: ${quantity.trim()}`,
-      deadline.trim() ? `Prazo desejado: ${deadline.trim()}` : '',
-    ].filter(Boolean).join('\n');
-    trackEvent('b2b_quote_click', undefined, subject);
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+    if (submitting) return;
+    setSubmitting(true);
+    setError('');
+    setSuccess('');
+    try {
+      const db = (window as any).supabaseClient;
+      const { data: authData, error: authError } = await db.auth.getUser();
+      if (authError || authData.user?.id !== userId) {
+        setError('Sua sessão expirou. Entre novamente para solicitar a cotação.');
+        return;
+      }
+      const { data, error: insertError } = await db.from('b2b_quote_requests').insert({
+        user_id: userId,
+        category: section,
+        product_id: selectedProduct?.id ?? null,
+        description: description.trim(),
+        quantity: Number(quantity),
+        deadline: deadline.trim() || null,
+      }).select('id').single();
+      if (insertError || !data) throw insertError || new Error('Sem confirmação');
+      const message = [
+        `Olá! Gostaria de solicitar uma cotação B2B para ${subject}.`,
+        `Protocolo: ${data.id}`,
+        companyName ? `Empresa: ${companyName}` : '',
+        `Projeto: ${description.trim()}`,
+        `Quantidade estimada: ${quantity.trim()}`,
+        deadline.trim() ? `Prazo desejado: ${deadline.trim()}` : '',
+      ].filter(Boolean).join('\n');
+      trackEvent('b2b_quote_click', undefined, subject);
+      setSuccess(`Solicitação registrada. Protocolo ${data.id}. Continue a conversa no WhatsApp ou acompanhe na área da empresa.`);
+      window.location.assign(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`);
+    } catch {
+      setError('Não foi possível confirmar a cotação. Confira suas solicitações na área da empresa antes de tentar novamente.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return <form id="b2b-brief" onSubmit={requestQuote} className="mt-8 border bg-[#111316] p-5 md:p-7 scroll-mt-24" style={{ borderColor: `${B2B_ACCENT}35` }}>
     <h2 className="font-display font-black text-xl uppercase text-white">Conte seu projeto</h2>
-    <p className="font-body text-sm mt-1 mb-5" style={{ color: B2B_MUTED }}>Envie as informações iniciais pelo WhatsApp para receber uma proposta personalizada.</p>
+    <p className="font-body text-sm mt-1 mb-5" style={{ color: B2B_MUTED }}>Registre o pedido para acompanhá-lo na área da empresa e continue a conversa pelo WhatsApp.</p>
+    {error && <p role="alert" className="mb-4 text-sm text-red-400">{error} <a href="/b2b-conta.html" className="underline">Ver solicitações</a></p>}
+    {success && <p role="status" className="mb-4 text-sm text-green-400">{success} <a href="/b2b-conta.html" className="underline">Ver solicitações</a></p>}
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <label className="sm:col-span-2 block font-mono text-xs text-white/70">O que você quer criar?
         <textarea required minLength={10} maxLength={1000} value={description} onChange={e => setDescription(e.target.value)} placeholder={section === 'eventos' ? 'Ex.: chaveiros com o símbolo da escola para a formatura' : 'Ex.: escultura exclusiva para presentear clientes da empresa'} className="mt-2 w-full min-h-28 bg-[#0A0A0A] border p-3 text-sm text-white outline-none" style={{ borderColor: `${B2B_ACCENT}35` }} />
@@ -390,7 +406,7 @@ const B2BProjectBrief = ({ section, companyName, selectedProduct }: { section: '
         <input type="text" maxLength={100} value={deadline} onChange={e => setDeadline(e.target.value)} placeholder="Ex.: até novembro" className="mt-2 w-full bg-[#0A0A0A] border p-3 text-sm text-white outline-none" style={{ borderColor: `${B2B_ACCENT}35` }} />
       </label>
     </div>
-    <button type="submit" className="mt-5 inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-display font-bold uppercase text-sm" style={{ background: B2B_ACCENT, color: '#fff' }}><MessageCircle className="w-4 h-4" />Solicitar cotação</button>
+    <button type="submit" disabled={submitting} className="mt-5 inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-display font-bold uppercase text-sm disabled:opacity-50" style={{ background: B2B_ACCENT, color: '#fff' }}><MessageCircle className="w-4 h-4" />{submitting ? 'Registrando...' : 'Solicitar cotação'}</button>
   </form>;
 };
 
@@ -807,13 +823,13 @@ export default function BApp() {
                 product={product}
                 tiers={tiersByProduct[product.id] || []}
                 onAddToCart={addToCart}
-                onRequestQuote={product => { setQuoteProduct(product); document.getElementById('b2b-brief')?.scrollIntoView({ behavior: 'smooth' }); }}
+                onRequestQuote={product => { setQuoteProduct(product); window.setTimeout(() => document.getElementById('b2b-brief')?.scrollIntoView({ behavior: 'smooth' }), 0); }}
                 section={activeSection}
               />
             ))}
           </div>
         )}
-        {activeSection !== 'loja' && <B2BProjectBrief key={activeSection} section={activeSection} companyName={profile?.company_name} selectedProduct={quoteProduct} />}
+        {(activeSection !== 'loja' || quoteProduct) && <B2BProjectBrief key={activeSection} section={activeSection} userId={profile!.id} companyName={profile?.company_name} selectedProduct={quoteProduct} />}
       </section>
 
       <B2BCartDrawer
