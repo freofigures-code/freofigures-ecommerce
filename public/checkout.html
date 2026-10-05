@@ -218,7 +218,7 @@
   <!-- End Google Tag Manager (noscript) -->
   
   <header class="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between border-b border-white/10">
-    <div class="flex items-center gap-4 cursor-pointer" onclick="window.location.href='/dashboard.html'">
+    <div class="flex items-center gap-4 cursor-pointer" onclick="window.location.href=new URLSearchParams(location.search).get('b2b')==='1'?'/b2b.html?cart=1':'/dashboard.html'">
       <svg class="w-5 h-5 text-freo-light/50 hover:text-freo-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
@@ -656,6 +656,7 @@
     var subtotalAmount = 0;
     var freteAmount = 0;
     var cartItemsData = [];
+    var b2bCheckoutMode = false;
     var customCheckoutMode = false;
     var customGenerationId = null;
     var currentUser = null;
@@ -920,6 +921,7 @@ async function salvarDadosPessoais() {
       document.getElementById('checkout-main').classList.add('hidden');
       document.getElementById('cart-empty-state').classList.remove('hidden');
       document.getElementById('cart-empty-state').classList.add('flex');
+      if (b2bCheckoutMode) document.querySelector('#cart-empty-state a').href = '/b2b.html';
     }
 
     function showCheckout() {
@@ -939,7 +941,7 @@ async function salvarDadosPessoais() {
         + '<div class="text-5xl mb-4">⚠️</div>'
         + '<p class="font-display font-bold text-xl text-white uppercase mb-3">Não foi possível abrir o checkout</p>'
         + '<p class="font-mono text-sm text-red-400 mb-5">' + escapeHtml(message || 'Erro desconhecido.') + '</p>'
-        + '<a href="/minhas-criacoes.html" class="inline-block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-white transition-colors">Voltar para Minhas Criações</a>'
+        + '<a href="' + (b2bCheckoutMode ? '/b2b.html?cart=1' : '/minhas-criacoes.html') + '" class="inline-block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-white transition-colors">' + (b2bCheckoutMode ? 'Voltar ao B2B' : 'Voltar para Minhas Criações') + '</a>'
         + '</div>';
     }
 
@@ -1227,15 +1229,15 @@ async function salvarDadosPessoais() {
       var productIds = cartItemsData.map(function(item) { return Number(item.product_id); })
         .filter(function(id) { return Number.isSafeInteger(id) && id > 0; });
       var needsServerValidation = false;
-      if (!freoCreditsSelected && productIds.length) {
-        var catalogLookup = await window.supabaseClient.from('products').select('id,category,b2b_category')
+      if (!freoCreditsSelected && productIds.length && !b2bCheckoutMode) {
+        var catalogLookup = await window.supabaseClient.from('products').select('id,category,b2b_category,sale_mode')
           .in('id', productIds);
         if (catalogLookup.error) throw catalogLookup.error;
-        needsServerValidation = (catalogLookup.data || []).some(function(product) {
-          return product.category === 'feito_por_voces' || (product.b2b_category && product.b2b_category !== 'loja');
+        needsServerValidation = (catalogLookup.data || []).length !== new Set(productIds).size || (catalogLookup.data || []).some(function(product) {
+          return product.category === 'feito_por_voces' || product.sale_mode === 'quote_only' || (product.b2b_category && product.b2b_category !== 'loja');
         });
       }
-      if (!freoCreditsSelected && !needsServerValidation) return totalAntesDosCreditos();
+      if (!freoCreditsSelected && !needsServerValidation && !b2bCheckoutMode) return totalAntesDosCreditos();
       var r = await window.supabaseClient.functions.invoke('freo-checkout', {
         body: { order_id: orderId, credits: freoCreditsSelected, coupon_code: activeCouponData ? activeCouponData.code : null }
       });
@@ -1685,7 +1687,7 @@ async function salvarDadosPessoais() {
         if (!freoOnlyOrderId) {
           var name = selectedShipping.company ? selectedShipping.company + ' - ' + selectedShipping.service_name : selectedShipping.service_name;
           var result = await window.supabaseClient.from('orders').insert({
-            user_id: currentUser.id, status: 'pendente', total: totalAntesDosCreditos(), items: buildOrderItems(),
+            user_id: currentUser.id, status: 'pendente', is_b2b: b2bCheckoutMode, total: totalAntesDosCreditos(), items: buildOrderItems(),
             frete_valor: selectedShipping.price, frete_nome: name, frete_prazo: String(selectedShipping.days),
             frete_company: selectedShipping.company, frete_service_id: selectedShipping.service_id,
             frete_service_name: selectedShipping.service_name, frete_service_code: selectedShipping.service_code,
@@ -1702,9 +1704,9 @@ async function salvarDadosPessoais() {
           var amount = await aplicarCreditosAoPedido(freoOnlyOrderId);
           if (amount !== 0) throw new Error('O pedido não ficou totalmente coberto pelos créditos.');
         }
-        if (!customCheckoutMode) await window.supabaseClient.from('cart_items').delete().eq('user_id', currentUser.id);
+        if (!customCheckoutMode) await window.supabaseClient.from(b2bCheckoutMode ? 'b2b_cart_items' : 'cart_items').delete().eq('user_id', currentUser.id);
         await consumirCupomAposPayment(freoOnlyOrderId);
-        cartItemsData.forEach(function(item) {
+        if (!b2bCheckoutMode) cartItemsData.forEach(function(item) {
           var id = parseInt(item.product_id, 10);
           if (!isNaN(id)) window.supabaseClient.rpc('decrementar_estoque', { p_product_id: id, p_quantidade: item.quantity || 1 });
         });
@@ -1886,6 +1888,7 @@ async function salvarDadosPessoais() {
           .insert({
             user_id:            userId,
             status:             'pendente',
+            is_b2b:             b2bCheckoutMode,
             total:              totalAntesDosCreditos(),
             items:              payload.items,
             frete_valor:        selectedShipping ? selectedShipping.price        : 0,
@@ -1921,11 +1924,11 @@ async function salvarDadosPessoais() {
           await window.supabaseClient.functions.invoke('freo-payment-sync', { body: { order_id: orderId } });
         }
         if (data.status !== 'rejected' && !customCheckoutMode) {
-          await window.supabaseClient.from('cart_items').delete().eq('user_id', userId);
+          await window.supabaseClient.from(b2bCheckoutMode ? 'b2b_cart_items' : 'cart_items').delete().eq('user_id', userId);
         }
         if (data.status !== 'rejected') await consumirCupomAposPayment(orderId);
     
-        if (data.status !== 'rejected') cartItemsData.forEach(function(item) {
+        if (data.status !== 'rejected' && !b2bCheckoutMode) cartItemsData.forEach(function(item) {
           var productId = parseInt(item.product_id, 10);
           if (!isNaN(productId)) {
             window.supabaseClient.rpc('decrementar_estoque', { p_product_id: productId, p_quantidade: item.quantity || 1 });
@@ -2171,6 +2174,7 @@ async function salvarDadosPessoais() {
               .insert({
                 user_id: userId,
                 status: 'pendente',
+                is_b2b: b2bCheckoutMode,
                 total: totalFinalOrder,
                 items: buildOrderItems(),
 
@@ -2236,7 +2240,7 @@ async function salvarDadosPessoais() {
 
                   if (data.status !== 'rejected' && !customCheckoutMode) {
                     window.supabaseClient
-                      .from('cart_items')
+                      .from(b2bCheckoutMode ? 'b2b_cart_items' : 'cart_items')
                       .delete()
                       .eq('user_id', userId)
                       .then(function(r) {
@@ -2245,7 +2249,7 @@ async function salvarDadosPessoais() {
                   }
                   if (data.status !== 'rejected') consumirCupomAposPayment(orderId);
 
-                  if (data.status !== 'rejected') cartItemsData.forEach(function(item) {
+                  if (data.status !== 'rejected' && !b2bCheckoutMode) cartItemsData.forEach(function(item) {
                     var productId = parseInt(item.product_id, 10);
                     var qty = item.quantity || 1;
 
@@ -2335,6 +2339,41 @@ async function salvarDadosPessoais() {
         return null;
       }
     }
+    async function validarCarrinhoB2B() {
+      var ids = cartItemsData.map(function(item) { return Number(item.product_id); });
+      if (ids.some(function(id) { return !Number.isSafeInteger(id) || id < 1; })) throw new Error('Produto B2B inválido.');
+      var [productsResult, tiersResult] = await Promise.all([
+        window.supabaseClient.from('products').select('id,title,images,is_active,sale_mode,is_kit').in('id', ids).eq('is_active', true),
+        window.supabaseClient.from('product_price_tiers').select('product_id,min_qty,max_qty,unit_price,is_active').in('product_id', ids).eq('is_active', true)
+      ]);
+      if (productsResult.error || tiersResult.error) throw new Error('Não foi possível validar os preços B2B.');
+      var products = productsResult.data || [];
+      var tiers = tiersResult.data || [];
+      for (var item of cartItemsData) {
+        var quantity = Number(item.quantity);
+        var product = products.find(function(p) { return Number(p.id) === Number(item.product_id); });
+        if (!product || product.sale_mode === 'quote_only' || product.is_kit ||
+            !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000) {
+          throw new Error('Um produto B2B não está disponível para compra direta. Volte ao catálogo para solicitar cotação.');
+        }
+        var tier = tiers.filter(function(t) {
+          return Number(t.product_id) === Number(product.id) && t.is_active &&
+            quantity >= Number(t.min_qty) && (t.max_qty == null || quantity <= Number(t.max_qty)) && Number(t.unit_price) > 0;
+        }).sort(function(a, b) { return Number(b.min_qty) - Number(a.min_qty); })[0];
+        if (!tier) throw new Error('A quantidade não atende à faixa B2B. Volte ao produto e ajuste o pedido.');
+        var price = Number(tier.unit_price);
+        if (!Number.isFinite(price) || Math.round(price * quantity * 100) > Number.MAX_SAFE_INTEGER) throw new Error('Valor B2B inválido.');
+        item.price = price;
+        item.product_name = product.title;
+        item.image_url = Array.isArray(product.images) ? product.images[0] : null;
+        var update = await window.supabaseClient.from('b2b_cart_items').update({
+          price: price, total_price: Math.round(price * quantity * 100) / 100,
+          product_name: item.product_name, image_url: item.image_url
+        }).eq('id', item.id).eq('user_id', currentUser.id);
+        if (update.error) throw update.error;
+      }
+    }
+
     async function initCheckout() {
   showLoading();
 
@@ -2353,6 +2392,7 @@ async function salvarDadosPessoais() {
 
     // Detecta se é convidado (anônimo) — via query string ou flag do Supabase
     var urlParams = new URLSearchParams(window.location.search);
+    b2bCheckoutMode = urlParams.get('b2b') === '1';
     var isGuest = urlParams.get('guest') === '1'
       || currentUser.is_anonymous === true
       || (currentUser.user_metadata && currentUser.user_metadata.is_anonymous === true);
@@ -2368,7 +2408,7 @@ async function salvarDadosPessoais() {
 
     var profileResult = await window.supabaseClient
       .from('profiles')
-      .select('id, name, email, phone, cpf')
+      .select('id, name, email, phone, cpf, account_type, is_admin, cnpj')
       .eq('id', currentUser.id)
       .single();
 
@@ -2381,6 +2421,12 @@ async function salvarDadosPessoais() {
       phone: metadata.phone || metadata.telefone || ''
     };
 
+    if (b2bCheckoutMode && (isGuest || !profileResult.data ||
+        (profileResult.data.is_admin !== true && (profileResult.data.account_type !== 'pj' || String(profileResult.data.cnpj || '').replace(/\D/g, '').length !== 14)))) {
+      showCheckoutError('Entre com uma conta empresarial (CNPJ) para finalizar o pedido B2B.');
+      return;
+    }
+
     if (!currentProfile.name) {
       currentProfile.name = metadata.full_name || metadata.name || metadata.display_name || currentUser.email || '';
     }
@@ -2392,7 +2438,7 @@ async function salvarDadosPessoais() {
     }
 
     customGenerationId = urlParams.get('generation_id')?.trim() || null;
-    customCheckoutMode = urlParams.get('custom') === '1' && Boolean(customGenerationId);
+    customCheckoutMode = !b2bCheckoutMode && urlParams.get('custom') === '1' && Boolean(customGenerationId);
 
     if (customCheckoutMode) {
       // Checkout dedicado da criação personalizada.
@@ -2400,12 +2446,13 @@ async function salvarDadosPessoais() {
       cartItemsData = [await carregarItemPersonalizado(customGenerationId)];
     } else {
       var cartResult = await window.supabaseClient
-        .from('cart_items')
+        .from(b2bCheckoutMode ? 'b2b_cart_items' : 'cart_items')
         .select('*')
         .eq('user_id', currentUser.id);
 
       if (cartResult.error) throw cartResult.error;
       cartItemsData = cartResult.data || [];
+      if (b2bCheckoutMode && cartItemsData.length) await validarCarrinhoB2B();
     }
 
     if (cartItemsData.length === 0) {
@@ -2429,7 +2476,7 @@ async function salvarDadosPessoais() {
     }
   } catch (err) {
     console.error('Erro checkout:', err);
-    if (customCheckoutMode) {
+    if (customCheckoutMode || b2bCheckoutMode) {
       showCheckoutError(err instanceof Error ? err.message : String(err || 'Erro desconhecido.'));
     } else {
       showEmpty();

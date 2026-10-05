@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from 'motion/react';
+import { b2bUnitPrice, minimumB2BQuantity } from './b2bPricing';
 import {
   ShoppingCart,
   X,
@@ -22,6 +23,7 @@ import {
 
 type CartItem = {
   cartItemId?: number;
+  productId?: number;
   name: string;
   price: string;
   priceValue?: number;
@@ -231,9 +233,9 @@ const PriceTierTable = ({ tiers, basePrice }: { tiers: PriceTier[]; basePrice: n
         className="w-full flex items-center justify-between text-left"
       >
         <div>
-          <span className="font-mono text-[10px] uppercase tracking-widest block mb-0.5" style={{ color: B2B_MUTED }}>Preço da loja</span>
+          <span className="font-mono text-[10px] uppercase tracking-widest block mb-0.5" style={{ color: B2B_MUTED }}>Preço B2B inicial</span>
           <span className="font-mono text-sm font-bold text-white">{formatPrice(basePrice)} / un.</span>
-          <span className="font-mono text-[10px] block mt-1" style={{ color: B2B_GOLD }}>Ver faixas para cotação</span>
+          <span className="font-mono text-[10px] block mt-1" style={{ color: B2B_GOLD }}>Ver faixas de compra</span>
         </div>
         <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} style={{ color: B2B_ACCENT }} />
       </button>
@@ -276,18 +278,17 @@ const PriceTierTable = ({ tiers, basePrice }: { tiers: PriceTier[]; basePrice: n
 // ─────────────────────────────────────────────────────────────────────────────
 
 const B2BProductCard = ({
-  product, tiers, onAddToCart, onRequestQuote, section,
-}: { product: Product; tiers: PriceTier[]; onAddToCart: (p: Product) => void; onRequestQuote: (p: Product) => void; section: B2BCategory }) => {
+  product, tiers, section,
+}: { product: Product; tiers: PriceTier[]; section: B2BCategory }) => {
   const thumb = product.images && product.images.length > 0 ? product.images[0] : null;
-  const hasPromo = product.promotional_price !== null && product.promotional_price < product.price;
-  const basePrice = hasPromo ? product.promotional_price! : product.price;
-  const isQuoteOnly = product.sale_mode === 'quote_only' || section !== 'loja';
-  const needsConfiguration = !!product.is_kit || (Array.isArray(product.variants) && product.variants.some(group => Array.isArray(group.options) && group.options.length > 0));
-  const detailHref = product.is_kit && product.kit_type === 'configurable' ? `/montar-kit.html?id=${encodeURIComponent(product.id)}` : `/produto?id=${encodeURIComponent(product.id)}`;
+  const minimum = minimumB2BQuantity(tiers);
+  const minPrice = b2bUnitPrice(tiers, minimum || 1);
+  const isQuoteOnly = product.sale_mode === 'quote_only' || !!product.is_kit || minPrice === null;
+  const detailHref = `/b2b-produto.html?id=${encodeURIComponent(product.id)}`;
 
   return (
     <div className="flex flex-col bg-[#111316] border transition-colors" style={{ borderColor: `${B2B_ACCENT}20` }}>
-      <div className="relative aspect-square bg-[#0A0A0A] overflow-hidden">
+      <a href={detailHref} className="relative block aspect-square bg-[#0A0A0A] overflow-hidden">
         {isQuoteOnly && (
           <div className="absolute top-2 left-2 z-10 font-mono text-[9px] font-bold uppercase tracking-widest px-2 py-1" style={{ background: B2B_GOLD, color: '#000' }}>
             Sob cotação
@@ -298,11 +299,11 @@ const B2BProductCard = ({
         ) : (
           <div className="w-full h-full flex items-center justify-center"><Box className="w-10 h-10 text-white/10" /></div>
         )}
-      </div>
+      </a>
       <div className="p-4 flex flex-col flex-grow gap-3">
         <div>
           <span className="font-mono text-[10px] uppercase tracking-wider block mb-1" style={{ color: B2B_ACCENT }}>{section === 'loja' ? product.category || 'Geral' : section === 'eventos' ? 'Eventos' : 'Sob medida'}</span>
-          <h3 className="font-display font-bold text-sm text-white leading-tight line-clamp-2">{product.title}</h3>
+          <h3 className="font-display font-bold text-sm text-white leading-tight line-clamp-2"><a href={detailHref} className="hover:text-[#f0bf5d]">{product.title}</a></h3>
         </div>
 
         <div className="mt-auto flex flex-col gap-3">
@@ -310,32 +311,12 @@ const B2BProductCard = ({
             <p className="font-mono text-xs" style={{ color: B2B_MUTED }}>Preço definido após avaliarmos quantidade e especificações.</p>
           ) : (
             <>
-              {needsConfiguration ? <p className="font-mono text-xs" style={{ color: B2B_MUTED }}>Escolha as opções e confira o preço na página do produto.</p> : <PriceTierTable tiers={tiers} basePrice={basePrice} />}
-              {tiers.length > 0 && <p className="font-mono text-[10px] leading-relaxed" style={{ color: B2B_MUTED }}>As faixas são referenciais. O checkout usa o preço da loja; solicite cotação para preço por volume.</p>}
+              <PriceTierTable tiers={tiers} basePrice={minPrice || 0} />
+              <p className="font-mono text-[10px] leading-relaxed" style={{ color: B2B_MUTED }}>A partir de {minimum} unidades. Preço B2B confirmado no checkout.</p>
             </>
           )}
 
-          {isQuoteOnly ? (
-            <button type="button" onClick={() => onRequestQuote(product)} className="w-full flex items-center justify-center gap-2 font-display font-bold uppercase tracking-wider py-2.5 text-xs transition-colors" style={{ background: '#25D366', color: '#000' }}>
-              <MessageCircle className="w-4 h-4" />Descrever pedido e cotar
-            </button>
-          ) : (
-            <div className="space-y-2">
-            {needsConfiguration ? <a href={detailHref} className="w-full flex items-center justify-center gap-2 font-display font-bold uppercase tracking-wider py-2.5 text-xs transition-colors" style={{ background: B2B_ACCENT, color: '#fff' }}>Ver opções e comprar</a> : <button
-              onClick={() => {
-                trackEvent('add_to_cart', String(product.id), product.title);
-                onAddToCart(product);
-              }}
-              disabled={Number(product.stock || 0) < 1}
-              className="w-full flex items-center justify-center gap-2 font-display font-bold uppercase tracking-wider py-2.5 text-xs transition-colors disabled:opacity-40"
-              style={{ background: B2B_ACCENT, color: '#fff' }}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              {Number(product.stock || 0) < 1 ? 'Indisponível' : 'Comprar pelo preço da loja'}
-            </button>}
-            {tiers.length > 0 && <button type="button" onClick={() => onRequestQuote(product)} className="w-full flex items-center justify-center gap-2 border py-2.5 font-display font-bold uppercase tracking-wider text-xs" style={{ borderColor: B2B_GOLD, color: B2B_GOLD }}><MessageCircle className="w-4 h-4" />Solicitar preço por volume</button>}
-            </div>
-          )}
+          <a href={detailHref} className="w-full flex items-center justify-center gap-2 font-display font-bold uppercase tracking-wider py-2.5 text-xs transition-colors" style={{ background: isQuoteOnly ? '#25D366' : B2B_ACCENT, color: isQuoteOnly ? '#000' : '#fff' }}>{isQuoteOnly ? 'Ver produto e cotar' : 'Ver produto e comprar'} <ArrowRight className="w-4 h-4" /></a>
         </div>
       </div>
     </div>
@@ -469,7 +450,7 @@ const B2BInformation = ({ onSelect }: { onSelect: (section: B2BCategory) => void
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CART DRAWER (reaproveita mesma cart_items / mesmo checkout.html do site)
+// CART DRAWER (carrinho B2B separado; checkout visual da loja)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const B2BCartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem, error, busyItem }: any) => {
@@ -533,7 +514,7 @@ const B2BCartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem,
                 </div>
                 <button
                   disabled={busyItem !== null}
-                  onClick={() => { window.location.href = '/checkout.html'; }}
+                  onClick={() => { window.location.href = '/checkout.html?b2b=1'; }}
                   className="w-full font-bold font-display uppercase tracking-widest py-3.5 text-sm transition-colors disabled:opacity-50"
                   style={{ background: B2B_ACCENT, color: '#fff' }}
                 >
@@ -595,12 +576,14 @@ export default function BApp() {
         if (!active) return;
         const p = profileResult.data;
         if (profileResult.error) throw profileResult.error;
-        if (!p || (p.account_type !== 'pj' && p.is_admin !== true)) { setAuthState('not_pj'); return; }
+        if (!p || (p.is_admin !== true && (p.account_type !== 'pj' || String(p.cnpj || '').replace(/\D/g, '').length !== 14))) { setAuthState('not_pj'); return; }
         setProfile(p);
         setAuthState('ok');
-        const cartResult = await db.from('cart_items').select('id,product_name,price,image_url,quantity,variant').eq('user_id', userId);
+        const cartResult = await db.from('b2b_cart_items').select('id,product_id,product_name,price,image_url,quantity,variant').eq('user_id', userId);
+        if (active && cartResult.error) setCartError('Não foi possível carregar o pedido B2B. Confira se o SQL B2B foi aplicado.');
         if (active && !cartResult.error) setCartItems((cartResult.data || []).map((item: any) => ({
           cartItemId: item.id,
+          productId: Number(item.product_id),
           name: item.product_name,
           price: formatPrice(item.price),
           priceValue: Number(item.price),
@@ -658,6 +641,19 @@ export default function BApp() {
     load();
   }, [authState]);
 
+  useEffect(() => {
+    if (authState !== 'ok' || loadingProducts) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('cart') === '1') setIsCartOpen(true);
+    const quoteId = Number(params.get('quote'));
+    const selected = products.find(p => p.id === quoteId);
+    if (selected) {
+      setActiveSection(selected.b2b_category || 'loja');
+      setQuoteProduct(selected);
+      window.setTimeout(() => document.getElementById('b2b-brief')?.scrollIntoView({ behavior: 'smooth' }), 0);
+    }
+  }, [authState, loadingProducts, products]);
+
   const filtered = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     const sectionProducts = products.filter(p => (p.b2b_category || 'loja') === activeSection);
@@ -668,50 +664,9 @@ export default function BApp() {
     );
   }, [products, searchTerm, activeSection]);
 
-  const addToCart = async (product: Product) => {
-    // @ts-ignore
-    const supabase = window.supabaseClient || window.supabase;
-    if (!supabase) { setCartError('Conexão com o carrinho indisponível.'); setIsCartOpen(true); return; }
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setCartError('Sua sessão expirou. Entre novamente.'); setIsCartOpen(true); return; }
-
-    try {
-      setCartError('');
-      const thumb = product.images && product.images.length > 0 ? product.images[0] : '';
-      const priceNum = product.promotional_price !== null && product.promotional_price < product.price
-        ? product.promotional_price
-        : product.price;
-      const { data, error } = await supabase.from('cart_items').insert({
-        user_id: session.user.id,
-        product_id: String(product.id),
-        product_name: product.title,
-        quantity: 1,
-        price: priceNum,
-        total_price: priceNum,
-        image_url: thumb,
-        variant: null,
-      }).select().single();
-      if (error) throw error;
-      setCartItems(prev => [...prev, {
-        cartItemId: data.id,
-        name: product.title,
-        price: formatPrice(priceNum),
-        priceValue: priceNum,
-        img: thumb,
-        quantity: 1,
-        variant: null,
-      }]);
-      setIsCartOpen(true);
-    } catch (err) {
-      console.error('[B2B] erro ao adicionar ao carrinho:', err);
-      setCartError(err instanceof Error ? err.message : 'Não foi possível adicionar o produto.');
-      setIsCartOpen(true);
-    }
-  };
-
   const updateQuantity = async (product: CartItem, delta: number) => {
     if (!product.cartItemId || busyCartItem !== null) return;
-    const nextQuantity = Math.max(1, product.quantity + delta);
+    const nextQuantity = product.quantity + delta;
     if (nextQuantity === product.quantity) return;
     setCartError('');
     setBusyCartItem(product.cartItemId);
@@ -720,11 +675,14 @@ export default function BApp() {
       const supabase = window.supabaseClient || window.supabase;
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Sua sessão expirou. Entre novamente.');
-      const { data, error } = await supabase.from('cart_items')
-        .update({ quantity: nextQuantity, total_price: Math.round(cartUnitPrice(product) * nextQuantity * 100) / 100 })
+      const tiers = tiersByProduct[product.productId || 0] || [];
+      const price = b2bUnitPrice(tiers, nextQuantity);
+      if (price === null || nextQuantity > 1000000) throw new Error(`A quantidade deve respeitar as faixas B2B. Mínimo: ${minimumB2BQuantity(tiers) || 1}.`);
+      const { data, error } = await supabase.from('b2b_cart_items')
+        .update({ quantity: nextQuantity, price, total_price: Math.round(price * nextQuantity * 100) / 100 })
         .eq('id', product.cartItemId).eq('user_id', session.user.id).select('id,quantity').single();
       if (error || !data) throw error || new Error('Item do carrinho não encontrado');
-      setCartItems(prev => prev.map(item => item.cartItemId === product.cartItemId ? { ...item, quantity: Number(data.quantity) } : item));
+      setCartItems(prev => prev.map(item => item.cartItemId === product.cartItemId ? { ...item, quantity: Number(data.quantity), price: formatPrice(price), priceValue: price } : item));
     } catch (error) {
       setCartError(error instanceof Error ? error.message : 'Não foi possível atualizar a quantidade.');
     } finally {
@@ -738,7 +696,7 @@ export default function BApp() {
       const supabase = window.supabaseClient || window.supabase;
       const { data: { session } } = await supabase.auth.getSession();
       if (!session || !product.cartItemId) throw new Error('Sua sessão expirou. Entre novamente.');
-      const { error } = await supabase.from('cart_items').delete().eq('id', product.cartItemId).eq('user_id', session.user.id);
+      const { error } = await supabase.from('b2b_cart_items').delete().eq('id', product.cartItemId).eq('user_id', session.user.id);
       if (error) throw error;
       setCartItems(prev => prev.filter(item => item.cartItemId !== product.cartItemId));
       setCartError('');
@@ -792,7 +750,7 @@ export default function BApp() {
           <p className="font-mono text-xs tracking-[0.2em] uppercase text-[#e3b653] mb-2">Catálogo e cotação</p>
           <h2 className="font-display font-black text-3xl md:text-4xl text-white">{B2B_SECTIONS.find(section => section.id === activeSection)?.title}</h2>
           <p className="font-body text-sm md:text-base mt-2" style={{ color: B2B_MUTED }}>
-            {activeSection === 'loja' ? 'Compre itens já disponíveis no catálogo. Para negociar faixas por volume, peça uma cotação antes de finalizar.' : activeSection === 'eventos' ? 'Veja os produtos para eventos ou conte o que precisa. Cada projeto é orçado de acordo com os detalhes e a quantidade.' : 'Sua empresa tem uma ideia que ainda não existe no catálogo? Descreva a peça e receba uma proposta.'}
+            {activeSection === 'loja' ? 'Escolha um produto e compre pelo preço B2B após atingir a quantidade mínima configurada.' : activeSection === 'eventos' ? 'Escolha um produto para comprar em quantidade ou solicite uma cotação personalizada.' : 'Conheça os produtos sob medida disponíveis ou descreva uma nova ideia para cotação.'}
           </p>
           {!loadingProducts && <p className="font-mono text-xs mt-2" style={{ color: B2B_ACCENT_LIGHT }}>{filtered.length} produto{filtered.length !== 1 ? 's' : ''} nesta categoria</p>}
         </div>
@@ -828,8 +786,6 @@ export default function BApp() {
                 key={product.id}
                 product={product}
                 tiers={tiersByProduct[product.id] || []}
-                onAddToCart={addToCart}
-                onRequestQuote={product => { setQuoteProduct(product); window.setTimeout(() => document.getElementById('b2b-brief')?.scrollIntoView({ behavior: 'smooth' }), 0); }}
                 section={activeSection}
               />
             ))}

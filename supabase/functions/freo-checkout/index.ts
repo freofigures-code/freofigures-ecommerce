@@ -7,10 +7,11 @@ const money = (n: number) => Math.max(0, Math.round(n * 100) / 100);
 const value = (r: { data: any; error: unknown }): any => { if (r.error) throw r.error; return r.data; };
 const discount = (sum: number, type: string | null, amount: unknown) => money(type === 'fixed' ? sum - Number(amount || 0) : sum * (1 - Number(amount || 0) / 100));
 
-async function itemPrice(service: any, authHeader: string, anonKey: string, url: string, item: any): Promise<number> {
+async function itemPrice(service: any, authHeader: string, anonKey: string, url: string, item: any, b2b: boolean): Promise<number> {
   const quantity = Number(item.quantity);
-  if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000) throw new Error('Quantidade do produto inválida');
+  if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > (b2b ? 1000000 : 1000)) throw new Error('Quantidade do produto inválida');
   if (item.custom_product === true) {
+    if (b2b) throw new Error('Criação personalizada indisponível no checkout B2B');
     if (quantity !== 1 || typeof item.generation_id !== 'string' || item.product_id !== `custom-${item.generation_id}`) throw new Error('Criação personalizada inválida');
     const r = await fetch(`${url}/functions/v1/generation-price-quote`, {
       method: 'POST', headers: { Authorization: authHeader, apikey: anonKey, 'Content-Type': 'application/json' },
@@ -24,7 +25,7 @@ async function itemPrice(service: any, authHeader: string, anonKey: string, url:
   const id = Number(item.product_id);
   if (!Number.isSafeInteger(id) || id <= 0) throw new Error('Produto inválido');
   const product = value(await service.from('products').select('*').eq('id', id).eq('is_active', true).single());
-  if (!product || product.sale_mode === 'quote_only' || (product.b2b_category && product.b2b_category !== 'loja')) throw new Error('Produto indisponível para compra direta');
+  if (!product || product.sale_mode === 'quote_only' || (!b2b && product.b2b_category && product.b2b_category !== 'loja') || (b2b && product.is_kit)) throw new Error('Produto indisponível para compra direta');
   let price = Number(product.promotional_price);
   const gross = Number(product.price);
   if (product.promotional_price === null || !Number.isFinite(price) || price >= gross || price < 0) price = gross;
@@ -72,8 +73,15 @@ async function itemPrice(service: any, authHeader: string, anonKey: string, url:
     }
     if (optionPrice !== null) price = optionPrice;
   }
-  if (!Number.isFinite(price) || price < 0 || cents(price) !== cents(item.price)) throw new Error('Preço do produto foi alterado');
-  if (!product.is_kit && Number(product.stock) < quantity) throw new Error('Produto sem estoque suficiente');
+  if (b2b) {
+    const tiers = value(await service.from('product_price_tiers').select('min_qty,max_qty,unit_price,is_active').eq('product_id', id).eq('is_active', true));
+    const eligible = tiers.filter((t: any) => quantity >= Number(t.min_qty) && (t.max_qty === null || quantity <= Number(t.max_qty)) && Number(t.unit_price) > 0)
+      .sort((a: any, b: any) => Number(b.min_qty) - Number(a.min_qty));
+    if (!eligible.length) throw new Error('Quantidade abaixo do mínimo B2B ou fora das faixas de preço');
+    price = Number(eligible[0].unit_price);
+  }
+  if (!Number.isFinite(price) || price <= 0 || cents(price) !== cents(item.price)) throw new Error('Preço do produto foi alterado');
+  if (!b2b && !product.is_kit && Number(product.stock) < quantity) throw new Error('Produto sem estoque suficiente');
   return price * quantity;
 }
 
@@ -130,7 +138,12 @@ Deno.serve(async (request: Request) => {
     const service = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
     const order = value(await service.from('orders').select('*').eq('id', orderId).single());
     if (!order || order.user_id !== user.id || order.status !== 'pendente' || !Array.isArray(order.items) || !order.items.length) return respond({ error: 'Pedido indisponível' }, 403);
-    const subtotal = money((await Promise.all(order.items.map((item: any) => itemPrice(service, authorization, anonKey, url, item)))).reduce((a, b) => a + b, 0));
+    const b2b = order.is_b2b === true;
+    if (b2b) {
+      const profile = value(await service.from('profiles').select('account_type,is_admin,cnpj').eq('id', user.id).single());
+      if (!profile || (profile.is_admin !== true && (profile.account_type !== 'pj' || String(profile.cnpj || '').replace(/\D/g, '').length !== 14))) return respond({ error: 'Pedido B2B exige conta empresarial com CNPJ' }, 403);
+    }
+    const subtotal = money((await Promise.all(order.items.map((item: any) => itemPrice(service, authorization, anonKey, url, item, b2b)))).reduce((a, b) => a + b, 0));
     const quantity = order.items.reduce((sum: number, x: any) => sum + Number(x.quantity), 0);
     const shipping = await shippingPrice(service, order, subtotal, quantity);
     let couponDiscount = 0;
@@ -151,6 +164,7 @@ Deno.serve(async (request: Request) => {
     if (expectedCents !== baseCents) throw new Error('O valor do pedido diverge dos preços, cupom ou frete atuais');
     if (credits > expectedCents / 10) throw new Error('Créditos acima do valor do pedido');
     value(await service.rpc('prepare_community_order', { p_order_id: orderId, p_subtotal: subtotal, p_items: order.items }));
+    if (b2b) value(await service.rpc('mark_b2b_order_validated', { p_order_id: orderId }));
     if (credits === 0) return respond({ amount: Number(order.total), covered: false });
     const amount = value(await service.rpc('freo_apply_order_credits', { p_order_id: orderId, p_credits: credits, p_user_id: user.id }));
     if (Number(amount) === 0) {
