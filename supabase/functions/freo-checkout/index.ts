@@ -80,7 +80,7 @@ async function itemPrice(service: any, authHeader: string, anonKey: string, url:
     if (!eligible.length) throw new Error('Quantidade abaixo do mínimo B2B ou fora das faixas de preço');
     price = Number(eligible[0].unit_price);
   }
-  if (!Number.isFinite(price) || price <= 0 || cents(price) !== cents(item.price)) throw new Error('Preço do produto foi alterado');
+  if (!Number.isFinite(price) || (b2b ? price <= 0 : price < 0) || cents(price) !== cents(item.price)) throw new Error('Preço do produto foi alterado');
   if (!b2b && !product.is_kit && Number(product.stock) < quantity) throw new Error('Produto sem estoque suficiente');
   return price * quantity;
 }
