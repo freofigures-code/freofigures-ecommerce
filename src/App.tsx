@@ -2041,6 +2041,7 @@ const Footer = () => (
             <li><a href="/?categoria=games" className="hover:text-white transition-colors">Geek/Gamer</a></li>
             <li><a href="/?categoria=religioso" className="hover:text-white transition-colors">Artigos Religiosos</a></li>
             <li><a href="/?categoria=feito_por_voces" className="hover:text-white transition-colors">Feito por vocês</a></li>
+            <li><a href="/b2b.html" className="hover:text-white transition-colors">Soluções B2B para empresas</a></li>
             <li>
               <a
                 href="https://wa.me/5511946454111?text=Olá,%20gostaria%20de%20falar%20sobre%20um%20projeto%20sob%20medida!"

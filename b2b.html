@@ -13,8 +13,19 @@
     <meta name="facebook-domain-verification" content="i7m7hq8is7cha2emzat5l0it6o87b0" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Soluções B2B | FreoFigures Corporativo</title>
-    <meta name="description" content="Compre produtos FreoFigures em quantidade ou solicite peças personalizadas para eventos e projetos sob medida para sua empresa." />
+    <title>Brindes e Miniaturas Personalizadas para Empresas | FreoFigures B2B</title>
+    <meta name="description" content="Soluções B2B em impressão 3D: produtos em quantidade, chaveiros e brindes personalizados para eventos, além de miniaturas e esculturas sob medida para empresas." />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="https://www.freofigures.com.br/b2b.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="FreoFigures" />
+    <meta property="og:title" content="Soluções B2B para empresas | FreoFigures" />
+    <meta property="og:description" content="Produtos em quantidade, brindes para eventos e peças corporativas sob medida em impressão 3D." />
+    <meta property="og:url" content="https://www.freofigures.com.br/b2b.html" />
+    <meta property="og:image" content="https://www.freofigures.com.br/b2b/hero.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","name":"Soluções B2B em impressão 3D da FreoFigures","description":"Produtos em quantidade, brindes e chaveiros personalizados para eventos e miniaturas ou esculturas sob medida para empresas.","url":"https://www.freofigures.com.br/b2b.html","areaServed":{"@type":"Country","name":"Brasil"},"provider":{"@type":"Organization","name":"FreoFigures","url":"https://www.freofigures.com.br/"}}</script>
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -32,11 +43,12 @@
     <script>
       const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
-      window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.supabase = window.supabaseClient;
     </script>
-
-    <!-- Auth Listener -->
-    <script src="/auth-listener.js"></script>
+    <style>
+      .b2b-static{background:#07111a;color:#f5f5f5;font-family:Arial,sans-serif;line-height:1.55;min-height:100vh}.b2b-static a{color:#eec46e}.b2b-static header,.b2b-static section{padding:24px max(20px,calc((100vw - 1100px)/2))}.b2b-static header{background:#061524}.b2b-static h1{font-size:clamp(2.5rem,5vw,4.5rem);line-height:1.05}.b2b-static h2{font-size:clamp(1.5rem,3vw,2.5rem)}.b2b-static p{max-width:760px}.b2b-static ul{padding-left:22px}.b2b-static li{margin:10px 0}
+    </style>
   </head>
   <body class="bg-freo-black text-freo-white antialiased selection:bg-freo-orange selection:text-white">
     <!-- Google Tag Manager (noscript) -->
@@ -44,7 +56,31 @@
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
-    <div id="root"></div>
+    <div id="root">
+      <div class="b2b-static">
+        <header><a href="/">FreoFigures</a> · Corporativo</header>
+        <main>
+          <section>
+            <h1>Soluções B2B em impressão 3D para sua empresa</h1>
+            <p>Compre produtos da loja em quantidade ou solicite peças personalizadas para eventos e projetos corporativos. A FreoFigures avalia quantidade, acabamento, prazo e entrega antes de preparar uma proposta.</p>
+            <p><a href="/cadastro.html">Criar conta empresarial</a> · <a href="/login.html?return=%2Fb2b.html">Entrar com CNPJ</a></p>
+          </section>
+          <section aria-labelledby="b2b-categories">
+            <h2 id="b2b-categories">Soluções para empresas</h2>
+            <ul>
+              <li><strong>Comprar em quantidade:</strong> selecione produtos já disponíveis na loja. Para condições por volume, solicite uma cotação antes da compra.</li>
+              <li><strong>Personalizados para eventos:</strong> apresente sua ideia para chaveiros, lembranças, miniaturas e outras peças para escolas, festas e ações de marca.</li>
+              <li><strong>Novo produto sob medida:</strong> descreva esculturas, brindes e modelos específicos que sua empresa quer desenvolver.</li>
+            </ul>
+          </section>
+          <section aria-labelledby="b2b-process">
+            <h2 id="b2b-process">Como funciona a cotação B2B</h2>
+            <p>Informe o tipo de peça, referências visuais, quantidade e prazo desejado. A equipe analisa dimensões, materiais, acabamento e envio. A proposta é preparada conforme os detalhes do projeto. O catálogo empresarial e o acompanhamento das cotações ficam disponíveis após o acesso com uma conta CNPJ.</p>
+            <p><a href="/faq.html">Perguntas frequentes</a> · <a href="/politicas.html">Políticas e atendimento</a></p>
+          </section>
+        </main>
+      </div>
+    </div>
     <script type="module" src="/src/main-b2b.tsx"></script>
   </body>
 </html>

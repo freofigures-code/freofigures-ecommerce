@@ -10,7 +10,6 @@ import {
   Plus,
   Minus,
   MessageCircle,
-  Building2,
   ChevronDown,
   ArrowRight,
   PartyPopper,
@@ -122,38 +121,44 @@ function trackEvent(eventType: string, productId?: string, productName?: string)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TELA DE ACESSO NEGADO (PF ou deslogado tentando ver /b2b.html)
+// Apresentação pública. Catálogo, preços e cotações seguem exclusivos para PJ.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const B2BAccessGate = ({ reason }: { reason: 'not_logged' | 'not_pj' }) => (
-  <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-5">
-    <div className="max-w-md w-full text-center">
-      <div className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: `${B2B_ACCENT}15`, border: `1px solid ${B2B_ACCENT}40` }}>
-        <Building2 className="w-7 h-7" style={{ color: B2B_ACCENT }} />
+const B2BPublicLanding = ({ reason }: { reason: 'loading' | 'not_logged' | 'not_pj' | 'error' }) => {
+  const accountHref = reason === 'not_pj' ? '/cadastro.html' : '/login.html?return=%2Fb2b.html';
+  return <div className="min-h-screen bg-[#07111a] text-white">
+    <header className="border-b border-white/10 bg-[#061524]">
+      <div className="max-w-[1500px] mx-auto px-5 sm:px-8 lg:px-12 py-5 flex flex-wrap justify-between items-center gap-4">
+        <a href="/b2b.html" className="font-display font-black text-2xl tracking-tight">FREO<span className="text-[#5a9cc5]">FIGURES</span><span className="block font-body font-normal text-[10px] uppercase tracking-[0.28em] text-white/65">Corporativo</span></a>
+        <nav className="flex flex-wrap gap-5 text-sm font-body" aria-label="Navegação B2B"><a href="/" className="text-white/65 hover:text-white">Loja</a><a href="/cadastro.html" className="text-white/65 hover:text-white">Cadastrar empresa</a><a href="/login.html?return=%2Fb2b.html" className="text-[#f0bf5d]">Entrar</a></nav>
       </div>
-      <h1 className="font-display font-black text-2xl uppercase tracking-tight text-white mb-3">
-        Área exclusiva para contas empresariais
-      </h1>
-      <p className="font-body text-sm text-white/50 leading-relaxed mb-8">
-        {reason === 'not_logged'
-          ? 'Faça login com uma conta CNPJ para acessar preços e condições B2B.'
-          : 'Sua conta atual é pessoa física. Cadastre os dados da sua empresa para desbloquear preços por volume, condições especiais e catálogo B2B.'}
-      </p>
-      <div className="flex flex-col gap-3">
-        <a
-          href="/dashboard.html"
-          className="font-mono text-xs uppercase tracking-widest px-6 py-3.5 transition-colors"
-          style={{ background: B2B_ACCENT, color: '#fff' }}
-        >
-          {reason === 'not_logged' ? 'Fazer login' : 'Completar cadastro empresarial'}
-        </a>
-        <a href="/" className="font-mono text-xs uppercase tracking-widest px-6 py-3 text-white/40 hover:text-white/70 transition-colors">
-          Voltar para a loja
-        </a>
-      </div>
-    </div>
-  </div>
-);
+    </header>
+    <main>
+      <section className="relative isolate overflow-hidden min-h-[480px]">
+        <img src="/b2b/hero.jpg" alt="Miniaturas personalizadas usadas como exemplo de soluções para empresas" className="absolute inset-0 w-full h-full object-cover object-[68%_center] md:object-center" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#041523] via-[#041523]/90 to-[#041523]/15" />
+        <div className="relative max-w-[1500px] mx-auto px-5 sm:px-8 lg:px-12 py-16 min-h-[480px] flex flex-col justify-center items-start">
+          <p className="font-mono text-xs uppercase tracking-[0.23em] text-[#f0bf5d] mb-4">FreoFigures corporativo</p>
+          <h1 className="font-display font-black text-[clamp(2.9rem,6vw,5.7rem)] leading-[0.99] tracking-tight max-w-[780px]">Soluções <span className="text-[#f0bf5d]">B2B</span><br />para sua empresa</h1>
+          <p className="font-body text-lg md:text-2xl text-[#d4dce5] mt-5 max-w-[600px]">Compre produtos em quantidade ou solicite miniaturas, chaveiros e brindes personalizados para eventos e projetos corporativos.</p>
+          <a href={accountHref} className="mt-8 inline-flex items-center gap-3 rounded-lg bg-[#f0bf5d] text-[#081827] font-display font-bold px-6 py-4 hover:brightness-110">{reason === 'not_pj' ? 'Cadastrar conta empresarial' : 'Acessar catálogo empresarial'} <ArrowRight size={20} /></a>
+          {reason === 'loading' && <span className="sr-only" role="status">Verificando acesso à conta empresarial</span>}
+          {reason === 'error' && <p role="alert" className="font-body text-sm text-red-200 mt-4">Não foi possível verificar sua conta agora. <button type="button" onClick={() => window.location.reload()} className="underline">Tentar novamente</button></p>}
+        </div>
+      </section>
+      <section className="bg-[#f6f3ed] text-[#071827]" aria-labelledby="b2b-solutions-heading">
+        <div className="max-w-[1500px] mx-auto px-5 sm:px-8 lg:px-12 py-14">
+          <h2 id="b2b-solutions-heading" className="font-display font-black text-3xl md:text-4xl">O que sua empresa pode criar</h2>
+          <div className="grid md:grid-cols-3 gap-5 mt-7">
+            {B2B_SECTIONS.map(({ id, cardTitle, description, image }) => <article key={id} className="bg-white border border-[#dfe5e7] rounded-xl overflow-hidden"><img src={image} alt="" loading="lazy" className="w-full h-44 object-cover" /><div className="p-6"><h3 className="font-display font-bold text-xl">{cardTitle}</h3><p className="font-body text-[#586772] text-sm mt-2 min-h-16">{description}</p><a href={accountHref} className="inline-flex items-center gap-2 text-[#174b70] font-bold text-sm mt-4">Solicitar acesso <ArrowRight size={16} /></a></div></article>)}
+          </div>
+          <p className="font-body text-sm text-[#586772] mt-5">Preços, condições por volume e envio de cotações ficam disponíveis após entrar com uma conta empresarial.</p>
+        </div>
+      </section>
+      <B2BInformation onSelect={() => { window.location.href = accountHref; }} />
+    </main>
+  </div>;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NAVBAR B2B
@@ -548,7 +553,7 @@ const B2BCartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem,
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function BApp() {
-  const [authState, setAuthState] = useState<'loading' | 'not_logged' | 'not_pj' | 'ok'>('loading');
+  const [authState, setAuthState] = useState<'loading' | 'not_logged' | 'not_pj' | 'error' | 'ok'>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [tiersByProduct, setTiersByProduct] = useState<Record<number, PriceTier[]>>({});
@@ -569,19 +574,32 @@ export default function BApp() {
     document.getElementById('b2b-catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // ── Auth gate: só account_type === 'pj' passa ──────────────────────────
+  // Consulta o estado de autenticação diretamente: eventos do script global
+  // podem disparar antes de o React registrar listeners e deixar a tela presa.
   useEffect(() => {
-    const handleAuthData = (e: any) => {
-      const p = e.detail.profile;
-      const isAdmin = !!(p && p.is_admin === true);
-      if (!p || (p.account_type !== 'pj' && !isAdmin)) {
-        setAuthState('not_pj');
-        return;
-      }
-      setProfile(p);
-      setAuthState('ok');
-      if (e.detail.cartItems) {
-        setCartItems(e.detail.cartItems.map((item: any) => ({
+    let active = true;
+    const loadAuth = async () => {
+      try {
+        const db = (window as any).supabaseClient;
+        if (!db) throw new Error('Supabase indisponível');
+        const sessionResult = await db.auth.getSession();
+        if (!active) return;
+        if (sessionResult.error) throw sessionResult.error;
+        if (!sessionResult.data.session) { setAuthState('not_logged'); return; }
+        const userResult = await db.auth.getUser();
+        if (!active) return;
+        if (userResult.error) throw userResult.error;
+        if (!userResult.data.user) { setAuthState('not_logged'); return; }
+        const userId = userResult.data.user.id;
+        const profileResult = await db.from('profiles').select('id,account_type,company_name,cnpj,is_admin').eq('id', userId).single();
+        if (!active) return;
+        const p = profileResult.data;
+        if (profileResult.error) throw profileResult.error;
+        if (!p || (p.account_type !== 'pj' && p.is_admin !== true)) { setAuthState('not_pj'); return; }
+        setProfile(p);
+        setAuthState('ok');
+        const cartResult = await db.from('cart_items').select('id,product_name,price,image_url,quantity,variant').eq('user_id', userId);
+        if (active && !cartResult.error) setCartItems((cartResult.data || []).map((item: any) => ({
           cartItemId: item.id,
           name: item.product_name,
           price: formatPrice(item.price),
@@ -590,16 +608,12 @@ export default function BApp() {
           quantity: item.quantity,
           variant: item.variant ?? null,
         })));
+      } catch {
+        if (active) setAuthState('error');
       }
     };
-    const handleNotLoggedIn = () => setAuthState('not_logged');
-
-    window.addEventListener('auth-data-loaded', handleAuthData);
-    window.addEventListener('auth-not-logged-in', handleNotLoggedIn);
-    return () => {
-      window.removeEventListener('auth-data-loaded', handleAuthData);
-      window.removeEventListener('auth-not-logged-in', handleNotLoggedIn);
-    };
+    loadAuth();
+    return () => { active = false; };
   }, []);
 
   // ── Carrega produtos + faixas de preço só depois de confirmado PJ ──────
@@ -733,16 +747,8 @@ export default function BApp() {
     }
   };
 
-  if (authState === 'loading') {
-    return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <div className="w-10 h-10 border-2 rounded-full animate-spin" style={{ borderColor: `${B2B_ACCENT}40`, borderTopColor: B2B_ACCENT }} />
-      </div>
-    );
-  }
-
-  if (authState === 'not_logged' || authState === 'not_pj') {
-    return <B2BAccessGate reason={authState} />;
+  if (authState !== 'ok') {
+    return <B2BPublicLanding reason={authState} />;
   }
 
   return (
