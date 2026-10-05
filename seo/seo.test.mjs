@@ -7,6 +7,7 @@ import { productSchema, productUrl, SITE } from './shared.mjs';
 
 const product = { id: 8, title: 'Peça & decoração', description: 'Peça de teste.', category: 'religioso', images: ['https://example.com/image.png'], price: 42.49, promotional_price: 30, stock: 2, variants: [] };
 const home = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+const b2b = await readFile(new URL('../b2b.html', import.meta.url), 'utf8');
 const detail = await readFile(new URL('../public/produto', import.meta.url), 'utf8');
 const json = (body, id) => JSON.parse(body.match(new RegExp(`<script id="${id}" type="application/ld\\+json">([\\s\\S]*?)</script>`))[1]);
 
@@ -51,12 +52,25 @@ test('category chooser lists the three categories and preserves both kit paths',
   assert.ok(html.includes('/montar-kit.html'));
   assert.ok(!html.includes('?categoria=Todos'));
 });
+test('B2B has public, crawlable service content and canonical metadata before JavaScript', () => {
+  assert.match(b2b, /<h1>Soluções B2B em impressão 3D para sua empresa<\/h1>/);
+  assert.match(b2b, /Brindes e Miniaturas Personalizadas para Empresas/);
+  assert.match(b2b, /rel="canonical" href="https:\/\/www\.freofigures\.com\.br\/b2b\.html"/);
+  assert.match(b2b, /<meta name="robots" content="index,follow/);
+  assert.match(b2b, /<li><strong>Personalizados para eventos:/);
+  assert.match(b2b, /<li><strong>Novo produto sob medida:/);
+  assert.ok(!b2b.includes('src="/auth-listener.js"'));
+  const schema=JSON.parse(b2b.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)[1]);
+  assert.equal(schema['@type'],'Service');
+  assert.equal(schema.url,`${SITE}/b2b.html`);
+});
 test('sitemap contains all products, no tracking, no invented modification dates', () => {
   const xml=sitemap([product,{...product,id:9,category:'anime'}]);
   assert.match(xml,/id=8/); assert.match(xml,/id=9/);
   assert.ok(!xml.includes('lastmod')); assert.ok(!xml.includes('checkout'));
   assert.ok(!xml.includes('categoria=keycaps'));
   assert.ok(xml.includes('?categorias=1'));
+  assert.ok(xml.includes(`${SITE}/b2b.html`));
   assert.ok(!xml.includes('categoria=Todos'));
 });
 test('loader uses public allowlisted columns, pages results, caches and deduplicates requests', async () => {
@@ -98,7 +112,7 @@ test('HTTP routes have correct MIME, HEAD, sitemap, aliases and real missing-pro
   const oldCatalog=await fetch(base+'/?categoria=Todos',{redirect:'manual'}); assert.equal(oldCatalog.status,301);assert.equal(oldCatalog.headers.get('location'),'/?categorias=1');
 }));
 test('checkout, login, callbacks, assets and POST requests keep their existing handling',async()=>withServer(async base=>{
-  for(const route of ['/checkout.html?guest=1','/auth/callback.html?code=test','/admin/produtos.html','/login.html']) {
+  for(const route of ['/checkout.html?guest=1','/auth/callback.html?code=test','/admin/produtos.html','/login.html','/b2b-conta.html']) {
     const response=await fetch(base+route);assert.equal(await response.text(),'unchanged downstream'); assert.equal(response.headers.get('x-robots-tag'),'noindex');
   }
   assert.equal(await (await fetch(base+'/assets/app.js')).text(),'unchanged downstream');
