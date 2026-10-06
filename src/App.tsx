@@ -1148,24 +1148,24 @@ const Navbar = ({
   const totalCartItems = cartItems.reduce((total: number, item: CartItem) => total + item.quantity, 0);
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-black/90 backdrop-blur-md border-b border-freo-orange/20 py-3 md:py-4' : 'bg-transparent py-4 md:py-6'
+    <nav className={`fixed top-0 left-0 w-full z-50 py-2.5 sm:py-3 transition-all duration-300 border-b ${
+      isScrolled ? 'bg-black/95 border-freo-orange/20' : 'bg-black/95 border-white/10'
     }`}>
-      <div className="max-w-[1500px] mx-auto px-3 sm:px-4 xl:px-6 flex justify-between items-center gap-2 xl:gap-4">
+      <div className="max-w-[1500px] mx-auto px-3 sm:px-4 lg:px-6 flex flex-wrap justify-between items-center gap-x-3">
         {/* Logo */}
-        <div className="flex items-center gap-2 md:gap-3 z-50 cursor-pointer flex-shrink-0" onClick={goHome}>
+        <div className="order-1 flex items-center gap-2 md:gap-3 z-50 cursor-pointer flex-shrink-0" onClick={goHome}>
           <img
             src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg"
             alt="Logo"
-            className="w-8 h-8 sm:w-9 sm:h-9 xl:w-10 xl:h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]"
+            className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-full object-cover border-2 border-freo-orange shadow-[0_0_10px_rgba(221,175,52,0.5)]"
           />
-          <span className="font-display font-black text-lg sm:text-xl xl:text-2xl tracking-tighter uppercase whitespace-nowrap">
+          <span className="font-display font-black text-lg sm:text-xl lg:text-2xl tracking-tighter uppercase whitespace-nowrap">
             Freo<span className="text-freo-orange font-light">Figures</span>
           </span>
         </div>
 
         {/* Desktop Nav */}
-        <div className="hidden xl:flex items-center gap-3 2xl:gap-5 font-body text-[11px] 2xl:text-sm font-semibold tracking-wide 2xl:tracking-widest uppercase text-freo-light whitespace-nowrap">
+        <div className="order-3 hidden lg:flex w-full items-center justify-center gap-7 xl:gap-10 font-body text-sm xl:text-[15px] font-semibold tracking-wider uppercase text-freo-light whitespace-nowrap border-t border-white/10 mt-2 pt-2">
           {currentView === 'home' ? (
             <>
               <button type="button" onClick={goToCatalog} className="hover:text-freo-orange transition-colors">Categorias</button>
@@ -1184,16 +1184,16 @@ const Navbar = ({
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden xl:flex items-center gap-2 2xl:gap-4 flex-shrink-0 whitespace-nowrap">
-          <a href="/b2b.html" className="flex items-center gap-1.5 text-[11px] font-mono text-[#f0bf5d] hover:text-white transition-colors border border-[#f0bf5d]/40 bg-[#f0bf5d]/10 px-2.5 py-1.5 rounded" aria-label="Acessar área B2B para empresas"><Building2 className="w-4 h-4" /><span className="2xl:hidden">B2B</span><span className="hidden 2xl:inline">Empresas B2B</span></a>
+        <div className="order-2 hidden lg:flex items-center gap-2.5 xl:gap-4 flex-shrink-0 whitespace-nowrap">
+          <a href="/b2b.html" className="flex items-center gap-2 text-xs font-mono text-[#f0bf5d] hover:text-white transition-colors border border-[#f0bf5d]/40 bg-[#f0bf5d]/10 px-3 py-2 rounded" aria-label="Acessar área B2B para empresas"><Building2 className="w-4 h-4" /> Empresas B2B</a>
           <a href="/criar-modelo.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded whitespace-nowrap">
             <Sparkles className="w-4 h-4" />
-            <span className="2xl:hidden">Criar 3D</span><span className="hidden 2xl:inline">Criar Modelo 3D</span>
+            <span>Criar Modelo 3D</span>
           </a>
           {user && (
             <a href="/meus-pedidos.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded whitespace-nowrap">
               <Box className="w-4 h-4" />
-              <span className="2xl:hidden">Pedidos</span><span className="hidden 2xl:inline">Meus Pedidos</span>
+              <span>Meus Pedidos</span>
             </a>
           )}
           <button onClick={() => setIsSearchOpen(true)} className="text-freo-light hover:text-freo-orange transition-colors" aria-label="Pesquisar produto">
@@ -1213,7 +1213,7 @@ const Navbar = ({
         </div>
 
         {/* Mobile Actions */}
-        <div className="flex xl:hidden items-center gap-0.5 sm:gap-1 z-50 flex-shrink-0">
+        <div className="order-2 flex lg:hidden items-center gap-0.5 sm:gap-1 z-50 flex-shrink-0">
           <button
             onClick={() => setIsSearchOpen(true)}
             className="hidden sm:inline-flex p-2.5 text-freo-light hover:text-freo-orange transition-colors"
@@ -1258,7 +1258,7 @@ const Navbar = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="xl:hidden fixed inset-0 top-0 bg-black z-40 flex flex-col"
+            className="lg:hidden fixed inset-0 top-0 bg-black z-40 flex flex-col"
           >
             <div className="h-16 flex items-center px-4 border-b border-white/10">
               <span className="font-display font-black text-xl tracking-tighter uppercase">
