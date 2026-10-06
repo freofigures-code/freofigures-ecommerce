@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
         input: {
           main: path.resolve(projectRoot, 'index.html'),
           b2b: path.resolve(projectRoot, 'b2b.html'),
+          b2bProduto: path.resolve(projectRoot, 'b2b-produto.html'),
           b2bConta: path.resolve(projectRoot, 'b2b-conta.html'),
           criarModelo: path.resolve(projectRoot, 'criar-modelo.html'),
           minhasCriacoes: path.resolve(projectRoot, 'minhas-criacoes.html'),

@@ -1,0 +1,3104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-PSSBXMVL');</script>
+  <!-- End Google Tag Manager -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout empresarial | FreoFigures B2B</title>
+  <meta name="robots" content="noindex,nofollow" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#121212',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#D4AF37',
+            'freo-cyan': '#2C3E50'
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+
+  <style>
+    .glass {
+      background: rgba(18,18,18,0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0A0A0A; }
+    ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 3px; }
+
+    #paymentBrick_container { min-height: 500px; }
+
+    .frete-option {
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .frete-option:hover {
+      border-color: rgba(212,175,55,0.4);
+      background: rgba(212,175,55,0.04);
+    }
+
+    .frete-option.selected {
+      border-color: #D4AF37;
+      background: rgba(212,175,55,0.08);
+    }
+
+    .frete-option input[type="radio"] {
+      accent-color: #D4AF37;
+    }
+
+    .cep-input,
+    .fi {
+      width: 100%;
+      background: #0A0A0A;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #F5F5F5;
+      padding: .7rem 1rem;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: .875rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .cep-input:focus,
+    .fi:focus {
+      border-color: #D4AF37;
+    }
+
+    .cep-input::placeholder,
+    .fi::placeholder {
+      color: rgba(245,245,245,0.25);
+    }
+
+    .fl {
+      display: block;
+      font-family: ui-monospace, monospace;
+      font-size: .65rem;
+      color: rgba(245,245,245,0.4);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: .35rem;
+    }
+
+    .addr-card {
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 1rem;
+      transition: border-color .2s;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .addr-card:hover {
+      border-color: rgba(212,175,55,0.3);
+    }
+
+    .addr-card.selected {
+      border-color: #D4AF37;
+      background: rgba(212,175,55,0.05);
+    }
+
+    .carrier-badge {
+      font-family: ui-monospace, monospace;
+      font-size: 9px;
+      font-weight: bold;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .variant-tag {
+      display: inline-block;
+      font-family: ui-monospace, monospace;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 1px 6px;
+      border-radius: 2px;
+      background: rgba(212,175,55,0.1);
+      border: 1px solid rgba(212,175,55,0.25);
+      color: #D4AF37;
+      margin-top: 2px;
+    }
+
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .step-dot.active {
+      background: #D4AF37;
+      color: #0A0A0A;
+    }
+
+    .step-dot.done {
+      background: rgba(34,197,94,0.2);
+      color: #4ade80;
+      border: 1px solid rgba(34,197,94,0.3);
+    }
+
+    .step-dot.pending {
+      background: rgba(255,255,255,0.05);
+      color: rgba(245,245,245,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .step-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .step-line.done {
+      background: rgba(34,197,94,0.3);
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body class="bg-freo-black text-freo-light font-body antialiased min-h-screen flex flex-col selection:bg-freo-orange selection:text-white">
+
+    <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PSSBXMVL"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
+  <header class="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between border-b border-white/10">
+    <div class="flex items-center gap-4 cursor-pointer" onclick="window.location.href='/b2b.html?cart=1'">
+      <svg class="w-5 h-5 text-freo-light/50 hover:text-freo-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+
+      <div class="flex items-center gap-3">
+        <img src="https://rrmxqpvxrpcqqxsgccqw.supabase.co/storage/v1/object/public/imagens/logo.jpg" alt="Logo" class="w-8 h-8 rounded-full border border-freo-orange/50" onerror="this.style.display='none'">
+        <span class="font-display font-black text-lg tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
+      </div>
+
+      <span class="text-white/20 font-mono text-xs hidden sm:block">/</span>
+      <span class="font-mono text-xs text-freo-orange uppercase tracking-widest hidden sm:block">Checkout</span>
+    </div>
+
+    <div class="flex items-center gap-2 text-freo-orange/70">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+      </svg>
+      <span class="font-mono text-xs uppercase tracking-widest hidden sm:inline">Compra segura</span>
+    </div>
+  </header>
+
+  <div id="page-loading" class="flex-1 flex items-center justify-center min-h-[60vh]">
+    <div class="text-center">
+      <div class="w-12 h-12 border-4 border-freo-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="font-mono text-sm text-freo-orange/60 uppercase tracking-widest">Carregando carrinho...</p>
+    </div>
+  </div>
+
+  <div id="cart-empty-state" class="hidden flex-1 items-center justify-center min-h-[60vh]">
+    <div class="text-center">
+      <div class="text-6xl mb-4">🛒</div>
+      <p class="font-display font-bold text-xl text-white/30 uppercase mb-4">Carrinho vazio</p>
+      <a href="/" class="inline-block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-white transition-colors">Explorar catálogo</a>
+    </div>
+  </div>
+
+  <main id="checkout-main" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+
+    <div class="flex items-center gap-2 mb-10 max-w-lg mx-auto">
+      <div class="step-dot active" id="step1-dot">1</div>
+      <div class="step-line" id="step1-line"></div>
+      <div class="step-dot pending" id="step2-dot">2</div>
+      <div class="step-line" id="step2-line"></div>
+      <div class="step-dot pending" id="step3-dot">3</div>
+      <div class="step-line" id="step3-line"></div>
+      <div class="step-dot pending" id="step4-dot">4</div>
+    </div>
+
+    <div class="flex justify-between max-w-lg mx-auto mb-10 -mt-8">
+      <span class="font-mono text-[10px] text-freo-orange uppercase tracking-wider">Itens</span>
+      <span class="font-mono text-[10px] text-white/30 uppercase tracking-wider">Endereço</span>
+      <span class="font-mono text-[10px] text-white/30 uppercase tracking-wider">Frete</span>
+      <span class="font-mono text-[10px] text-white/30 uppercase tracking-wider">Pagamento</span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <div class="lg:col-span-7 space-y-6">
+
+        <div id="section-cart" class="glass rounded-xl p-6">
+          <h2 class="text-lg font-display font-bold uppercase text-freo-orange mb-5 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            Seus Itens
+          </h2>
+
+          <div id="checkout-items" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
+        </div>
+
+        <div class="glass rounded-xl p-6" id="section-address">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-display font-bold uppercase text-white flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              Endereço de Entrega
+            </h2>
+
+            <button id="btn-change-address" onclick="mostrarFormEndereco()" class="hidden font-mono text-xs text-freo-orange border border-freo-orange/30 px-3 py-1.5 hover:bg-freo-orange hover:text-freo-black transition-colors uppercase tracking-widest">Trocar</button>
+          </div>
+
+          <div id="address-confirmed" class="hidden p-4 bg-green-500/5 border border-green-500/20 rounded-lg mb-3">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <div>
+                <p class="font-body font-bold text-sm text-white" id="addr-confirmed-line1"></p>
+                <p class="font-mono text-xs text-white/50 mt-0.5" id="addr-confirmed-line2"></p>
+                <p class="font-mono text-xs text-white/30 mt-0.5" id="addr-confirmed-line3"></p>
+              </div>
+            </div>
+          </div>
+
+          <div id="saved-addresses-section" class="space-y-3">
+            <div id="saved-addresses-list" class="space-y-2"></div>
+
+            <button id="btn-add-new-address" onclick="mostrarFormEndereco()" class="w-full border border-dashed border-white/15 py-3 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors rounded-lg flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Usar outro endereço
+            </button>
+          </div>
+
+          <div id="address-form" class="hidden space-y-4">
+            <div class="flex items-center justify-between mb-1">
+              <p class="font-mono text-xs text-white/40 uppercase tracking-widest">Preencha o endereço</p>
+              <button onclick="cancelarFormEndereco()" id="btn-cancel-form" class="hidden font-mono text-xs text-white/30 hover:text-white transition-colors">← Voltar</button>
+            </div>
+
+            <div>
+              <label class="fl">CEP *</label>
+              <div class="flex gap-2">
+                <input type="text" id="addr-cep" class="fi" placeholder="00000-000" maxlength="9" oninput="maskCEP2(this)" onkeydown="if(event.key==='Enter')buscarCEP()">
+                <button onclick="buscarCEP()" id="btn-buscar-cep" class="flex-shrink-0 px-4 bg-freo-orange/10 border border-freo-orange/40 text-freo-orange font-mono text-xs hover:bg-freo-orange hover:text-freo-black transition-colors whitespace-nowrap">Buscar CEP</button>
+              </div>
+              <p id="cep-searching" class="hidden font-mono text-xs text-white/40 mt-1">Buscando...</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+              <div class="col-span-2">
+                <label class="fl">Rua *</label>
+                <input type="text" id="addr-street" class="fi" placeholder="Rua das Figuras">
+              </div>
+              <div>
+                <label class="fl">Número *</label>
+                <input type="text" id="addr-number" class="fi" placeholder="123">
+              </div>
+            </div>
+
+            <div>
+              <label class="fl">Complemento <span style="font-style:italic;text-transform:none;color:rgba(245,245,245,.2)">(opcional)</span></label>
+              <input type="text" id="addr-complement" class="fi" placeholder="Apto 4B">
+            </div>
+
+            <div>
+              <label class="fl">Bairro *</label>
+              <input type="text" id="addr-neighborhood" class="fi" placeholder="Centro">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="fl">Cidade *</label>
+                <input type="text" id="addr-city" class="fi" placeholder="São Paulo">
+              </div>
+              <div>
+                <label class="fl">Estado *</label>
+                <input type="text" id="addr-state" class="fi" placeholder="SP" maxlength="2" style="text-transform:uppercase">
+              </div>
+            </div>
+
+            <label class="flex items-center gap-3 cursor-pointer select-none">
+              <input type="checkbox" id="addr-save" class="w-4 h-4 accent-freo-orange" checked>
+              <span class="font-mono text-xs text-white/50">Salvar para próximas compras</span>
+            </label>
+
+            <div id="addr-error" class="hidden p-3 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xs rounded"></div>
+
+            <button onclick="confirmarEndereco()" class="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3.5 hover:bg-white transition-colors flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Confirmar Endereço
+            </button>
+          </div>
+        </div>
+
+        <div id="section-shipping" class="glass rounded-xl p-6" style="position:relative">
+          <div id="shipping-locked-overlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-freo-dark/85 backdrop-blur-sm rounded-xl">
+            <svg class="w-8 h-8 text-white/20 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            </svg>
+            <p class="font-mono text-sm text-white/40 uppercase tracking-widest text-center px-8">Confirme o endereço primeiro</p>
+          </div>
+
+          <h2 class="text-lg font-display font-bold uppercase text-white mb-5 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M10 12a1 1 0 000 2h4a1 1 0 000-2h-4z"/>
+            </svg>
+            Opções de Envio
+          </h2>
+
+          <div id="cep-display" class="hidden mb-4 p-3 bg-white/5 border border-white/10 rounded-lg flex items-center gap-2">
+            <svg class="w-4 h-4 text-freo-orange flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            </svg>
+            <span class="font-mono text-sm text-white/70">Calculando frete para CEP <strong id="cep-display-value" class="text-freo-orange"></strong></span>
+          </div>
+
+          <div class="flex gap-3 mb-5">
+            <input type="text" id="cep-input" class="cep-input flex-1 px-4 py-3 text-sm font-mono" placeholder="Digite seu CEP (ex: 01310-100)" maxlength="9" oninput="maskCEP(this)" onkeydown="if(event.key==='Enter') calcularFrete()">
+            <button onclick="calcularFrete()" id="cep-btn" class="flex-shrink-0 bg-freo-orange text-freo-black font-display font-bold uppercase text-xs tracking-widest px-5 py-3 hover:bg-white transition-colors flex items-center gap-2">
+              Calcular
+            </button>
+          </div>
+
+          <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" class="font-mono text-xs text-freo-orange/50 hover:text-freo-orange transition-colors">Não sei meu CEP →</a>
+
+          <div id="frete-loading" class="hidden mt-5 space-y-3">
+            <div class="skeleton h-16 w-full"></div>
+            <div class="skeleton h-16 w-full"></div>
+            <div class="skeleton h-16 w-full"></div>
+          </div>
+
+          <div id="frete-error" class="hidden mt-5 p-4 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xs rounded"></div>
+
+          <div id="frete-options" class="hidden mt-5 space-y-2">
+            <p class="font-mono text-xs text-white/40 uppercase tracking-widest mb-3">Escolha a opção de entrega:</p>
+            <div id="frete-list" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <div id="section-payment" class="glass rounded-xl p-6 relative">
+          <h2 class="text-lg font-display font-bold uppercase text-white mb-5 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+            Pagamento
+          </h2>
+
+          <div id="payment-overlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-freo-dark/90 backdrop-blur-sm rounded-xl">
+            <p class="font-mono text-sm text-white/40 uppercase tracking-widest text-center px-8">Calcule o frete primeiro para liberar o pagamento</p>
+          </div>
+
+          <div id="brick-loading" class="hidden absolute inset-0 z-10 flex flex-col items-center justify-center bg-freo-dark/80 backdrop-blur-sm rounded-xl">
+            <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p class="font-mono text-xs text-freo-orange uppercase tracking-widest animate-pulse">Preparando pagamento...</p>
+          </div>
+
+          <!-- Cartões salvos -->
+          <div id="saved-cards-section" class="hidden space-y-3 mb-5">
+            <p class="font-mono text-xs text-white/40 uppercase tracking-widest mb-3">Escolha um cartão salvo:</p>
+            <div id="saved-cards-list" class="space-y-2"></div>
+
+            <div id="cvv-section" class="hidden mt-4 p-4 bg-white/5 border border-freo-orange/30 rounded-xl space-y-3">
+              <div class="flex items-center gap-3">
+                <div id="cvv-card-icon" class="w-10 h-7 bg-white/10 border border-white/10 rounded flex items-center justify-center font-mono text-[10px] text-white/50 font-bold uppercase flex-shrink-0"></div>
+                <div>
+                  <p id="cvv-card-label" class="font-mono text-sm font-bold text-white"></p>
+                  <p class="font-mono text-[10px] text-white/30">Digite o CVV para confirmar</p>
+                </div>
+              </div>
+              <div>
+                <label class="fl">CVV *</label>
+                <input type="text" id="saved-card-cvv" class="fi" placeholder="123" maxlength="4" inputmode="numeric"
+                  oninput="this.value=this.value.replace(/\D/g,'')" style="max-width:120px">
+              </div>
+              <div id="cvv-error" class="hidden p-2 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xs rounded"></div>
+              <button onclick="pagarComCartaoSalvo()" id="btn-pagar-salvo"
+                class="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3 hover:bg-white transition-colors flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                Confirmar pagamento
+              </button>
+            </div>
+
+            <button onclick="usarOutroCartao()"
+              class="w-full border border-dashed border-white/15 py-3 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors rounded-lg flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Usar outro cartão ou Pix
+            </button>
+          </div>
+
+          <div id="paymentBrick_container"></div>
+          <div id="freo-only-payment" class="hidden space-y-3">
+            <p class="font-mono text-sm text-white/70">Seu pedido será pago integralmente com Créditos Freo, sem cobrança no Mercado Pago.</p>
+            <button id="freo-only-button" type="button" onclick="finalizarComCreditosFreo()" class="w-full bg-freo-orange text-freo-black font-display font-bold uppercase py-3 hover:bg-white transition-colors">Finalizar com Créditos Freo</button>
+            <p id="freo-only-error" class="hidden font-mono text-xs text-red-400"></p>
+          </div>
+        </div>
+
+      <div class="lg:col-span-5">
+        <div class="glass rounded-xl p-6 sticky top-24">
+          <h2 class="text-lg font-display font-bold uppercase text-freo-orange mb-5">Resumo</h2>
+
+          <div class="space-y-3 text-sm font-mono">
+            <div class="flex justify-between text-freo-light/60">
+              <span>Subtotal</span>
+              <span id="summary-subtotal">R$ 0,00</span>
+            </div>
+
+            <div id="coupon-discount-row" class="hidden flex justify-between text-green-400">
+              <span>Desconto cupom</span>
+              <span id="coupon-discount-display">—</span>
+            </div>
+            <div id="coupon-limit-warning" class="hidden text-amber-400 text-[11px] leading-relaxed py-1"></div>
+            <div class="flex justify-between text-freo-light/60">
+              <span>Frete</span>
+              <span id="frete-placeholder" class="text-white/30 italic text-xs">calcule acima</span>
+            </div>
+          </div>
+
+          <!-- Cupom -->
+          <div id="coupon-section" class="border-t border-white/10 mt-4 pt-4">
+            <div id="coupon-active-display" class="hidden mb-3 p-3 rounded-lg flex items-center justify-between gap-2" style="background:rgba(221,175,52,0.08);border:1px solid rgba(221,175,52,0.25)">
+              <div>
+                <p class="font-mono text-xs text-freo-orange uppercase tracking-widest">Cupom aplicado</p>
+                <p class="font-mono font-bold text-sm text-white mt-0.5" id="coupon-code-display">—</p>
+                <p class="font-mono text-xs text-white/40 mt-0.5" id="coupon-benefit-display">—</p>
+              </div>
+              <button onclick="removerCupom()" class="font-mono text-xs text-red-400/60 hover:text-red-400 transition-colors uppercase tracking-widest border border-red-400/20 px-2 py-1">Remover</button>
+            </div>
+            <div id="coupon-input-area">
+              <p class="font-mono text-xs text-white/30 uppercase tracking-widest mb-2">Tem um cupom?</p>
+              <div class="flex gap-2">
+                <input type="text" id="coupon-input" placeholder="CÓDIGO" class="fi flex-1 text-sm font-mono uppercase" oninput="this.value=this.value.toUpperCase()" style="background:#0A0A0A;border:1px solid rgba(255,255,255,0.1);color:#F5F5F5;padding:8px 12px;outline:none;font-family:ui-monospace,monospace;font-size:13px;letter-spacing:0.1em">
+                <button onclick="aplicarCupom()" class="flex-shrink-0 bg-freo-orange text-freo-black font-mono font-bold text-xs uppercase tracking-widest px-4 hover:bg-white transition-colors">Aplicar</button>
+              </div>
+              <p id="coupon-error" class="hidden font-mono text-xs text-red-400 mt-2"></p>
+            </div>
+          </div>
+
+          <div id="freo-credits-section" class="hidden border-t border-white/10 mt-5 pt-5">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <label for="freo-credits-input" class="font-display font-bold uppercase text-freo-orange text-sm">Créditos Freo</label>
+              <span id="freo-credits-balance" class="font-mono text-xs text-white/60">0 disponíveis</span>
+            </div>
+            <p class="font-mono text-xs text-white/45 mb-3">10 créditos = R$ 1,00. Use em produtos e frete.</p>
+            <input id="freo-credits-input" type="number" min="0" step="1" value="0" inputmode="numeric"
+              class="fi w-full" aria-describedby="freo-credits-help" oninput="selecionarCreditosFreo(this.value)">
+            <p id="freo-credits-help" class="font-mono text-[11px] text-white/45 mt-2">Escolha até o saldo disponível ou o total do pedido.</p>
+            <div id="freo-credits-discount-row" class="hidden flex justify-between text-green-400 font-mono text-sm mt-3">
+              <span>Desconto em créditos</span><span id="freo-credits-discount">R$ 0,00</span>
+            </div>
+          </div>
+
+          <div class="border-t border-white/10 mt-5 pt-5 flex justify-between items-end">
+            <span class="font-display font-bold uppercase text-white">Total</span>
+            <div class="text-right">
+              <span id="summary-total" class="font-mono font-bold text-3xl text-freo-orange">R$ 0,00</span>
+              <p class="font-mono text-[10px] text-white/30 mt-1">em 12x sem juros no cartão</p>
+            </div>
+          </div>
+
+          <div id="selected-shipping-info" class="hidden mt-4 p-3 bg-green-500/5 border border-green-500/20 rounded">
+            <div>
+              <p class="font-mono text-xs text-green-400 font-bold" id="selected-shipping-name">—</p>
+              <p class="font-mono text-[10px] text-white/40" id="selected-shipping-deadline">—</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="phone-required-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="bg-freo-dark border border-white/10 w-full max-w-md p-6 rounded-xl shadow-2xl relative">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-transparent"></div>
+
+      <h3 class="font-display font-black uppercase text-2xl text-white mb-2">Falta seu telefone</h3>
+
+      <p class="font-mono text-sm text-white/45 leading-relaxed mb-5">
+        Para finalizar a compra, informe seu WhatsApp. Usaremos apenas para atualizações do pedido e entrega.
+      </p>
+
+      <div id="phone-required-error" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono p-3 mb-4"></div>
+
+      <label class="fl">Telefone / WhatsApp *</label>
+      <input type="tel" id="checkout-phone" class="fi" maxlength="15" placeholder="(11) 99999-9999" oninput="maskCheckoutPhone(this)">
+
+      <button onclick="saveCheckoutPhone()" id="save-checkout-phone-btn" class="w-full mt-5 bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3.5 hover:bg-white transition-colors">
+        Salvar e continuar
+      </button>
+    </div>
+  </div>
+
+  <div id="dados-pessoais-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="bg-freo-dark border border-white/10 w-full max-w-md p-6 rounded-xl shadow-2xl relative">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-transparent rounded-t-xl"></div>
+
+      <h3 class="font-display font-black uppercase text-2xl text-white mb-1">Dados pessoais</h3>
+      <p class="font-mono text-sm text-white/40 leading-relaxed mb-5">Necessários para processar seu pedido.</p>
+
+      <div id="dados-pessoais-error" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono p-3 mb-4 rounded"></div>
+
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="fl">Nome *</label>
+          <input type="text" id="dp-firstname" class="fi" placeholder="Kevyn">
+        </div>
+        <div>
+          <label class="fl">Sobrenome *</label>
+          <input type="text" id="dp-lastname" class="fi" placeholder="Freo">
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="fl">CPF *</label>
+        <input type="text" id="dp-cpf" class="fi" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)">
+      </div>
+
+      <div class="mb-5">
+        <label class="fl">Telefone / WhatsApp *</label>
+        <input type="tel" id="dp-phone" class="fi" maxlength="15" placeholder="(11) 99999-9999" oninput="maskCheckoutPhone(this)">
+      </div>
+
+      <button onclick="salvarDadosPessoais()" id="btn-salvar-dados"
+        class="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3.5 hover:bg-white transition-colors rounded">
+        Salvar e continuar
+      </button>
+    </div>
+  </div>
+  <!-- FIM MODAL DADOS PESSOAIS -->
+
+  <script src="/auth-listener.js"></script>
+
+  <script>
+    var MP_PUBLIC_KEY = 'APP_USR-7eb3299c-7dd3-4e5e-aaf0-c2ca09b1f5ad';
+    var N8N_WEBHOOK_URL = 'https://n8nwebhook.solviaoficial.com/webhook/criar-pagamento';
+    var N8N_FRETE_URL = 'https://n8nwebhook.solviaoficial.com/webhook/calcular-frete';
+
+    var LOJA = {
+      cep: '09691-000',
+      embalagem: {
+        altura: 8,
+        largura: 15,
+        comprimento: 20,
+        peso: 0.5
+      }
+    };
+
+    var backUrls = {
+      success: "https://freofigures.com.br/obrigado.html",
+      failure: "https://freofigures.com.br/erro-pagamento.html",
+      pending: "https://freofigures.com.br/pendente.html"
+    };
+
+    var subtotalAmount = 0;
+    var freteAmount = 0;
+    var cartItemsData = [];
+    // Esta página usa exclusivamente pedidos empresariais e o carrinho B2B.
+    const b2bCheckoutMode = true;
+    var customCheckoutMode = false;
+    var customGenerationId = null;
+    var currentUser = null;
+    var currentProfile = null;
+    var selectedShipping = null;
+    var freoCreditBalance = 0;
+    var freoCreditsSelected = 0;
+    var freoCreditEligible = false;
+    var freoPaymentRefreshTimer = null;
+    var freoPaymentInProgress = false;
+    var freoOnlyOrderId = null;
+    var paymentBrickInitialized = false;
+    var savedAddresses = [];
+    var selectedAddress = null;
+    var shippingPromotionRules = [];       // regras carregadas do Supabase (shipping_promotions)
+    var shippingPromotionRulesLoaded = false;
+    var lastFreteMotivo = null;            // 'gratis' | 'subsidio' | 'normal' | 'sem_regra' — usado na exibição
+
+    // ─── DADOS PESSOAIS ────────────────────────────────────────────────────────
+
+function maskCPF(input) {
+  var v = input.value.replace(/\D/g, '').substring(0, 11);
+  if (v.length > 9)      v = v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6,9)+'-'+v.substring(9);
+  else if (v.length > 6) v = v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6);
+  else if (v.length > 3) v = v.substring(0,3)+'.'+v.substring(3);
+  input.value = v;
+}
+
+// ── DADOS PESSOAIS PARA CONVIDADO (modal adaptado) ──────────────────────────
+function abrirDadosPessoaisConvidado(isGuest) {
+  // Pré-preenche se já houver algo salvo (ex: usuário voltou à página)
+  var meta = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
+  var nomeCompleto = (currentProfile && currentProfile.name) || meta.full_name || meta.name || '';
+  var partes = nomeCompleto.trim().split(' ');
+
+  document.getElementById('dp-firstname').value = partes[0] || '';
+  document.getElementById('dp-lastname').value  = partes.slice(1).join(' ') || '';
+  document.getElementById('dp-phone').value     = '';
+  document.getElementById('dp-cpf').value       = '';
+
+  // Se é convidado, injeta campo de e-mail no modal (que usuários logados não precisam)
+  if (isGuest) {
+    var modalBox = document.querySelector('#dados-pessoais-modal .bg-freo-dark');
+    if (modalBox && !document.getElementById('dp-email-wrapper')) {
+      var emailWrapper = document.createElement('div');
+      emailWrapper.id = 'dp-email-wrapper';
+      emailWrapper.className = 'mb-4';
+      emailWrapper.innerHTML = '<label class="fl">E-mail *</label>'
+        + '<input type="email" id="dp-email" class="fi" placeholder="seu@email.com">';
+
+      // Insere antes do campo CPF
+      var cpfField = document.getElementById('dp-cpf');
+      if (cpfField && cpfField.parentElement) {
+        modalBox.insertBefore(emailWrapper, cpfField.parentElement);
+      }
+
+      // Adapta título e subtítulo para linguagem de convidado
+      var titulo = modalBox.querySelector('h3');
+      if (titulo) titulo.innerText = 'Seus dados de entrega';
+
+      var sub = modalBox.querySelector('p.font-mono');
+      if (sub) sub.innerText = 'Sem cadastro obrigatório. Usados apenas para entrega e nota fiscal.';
+
+      // Adapta botão
+      var btn = document.getElementById('btn-salvar-dados');
+      if (btn) btn.innerText = 'Continuar para endereço →';
+
+      // Substitui o handler do botão para usar a versão de convidado
+      btn.onclick = function() { salvarDadosPessoaisConvidado(); };
+    }
+  }
+
+  var modal = document.getElementById('dados-pessoais-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('dp-firstname').focus();
+}
+
+async function salvarDadosPessoaisConvidado() {
+  var firstName = document.getElementById('dp-firstname').value.trim();
+  var lastName  = document.getElementById('dp-lastname').value.trim();
+  var emailInput = document.getElementById('dp-email');
+  var email     = emailInput ? emailInput.value.trim() : '';
+  var cpf       = document.getElementById('dp-cpf').value.replace(/\D/g, '');
+  var phone     = document.getElementById('dp-phone').value.replace(/\D/g, '');
+  var errEl     = document.getElementById('dados-pessoais-error');
+  var btn       = document.getElementById('btn-salvar-dados');
+
+  errEl.classList.add('hidden');
+
+  if (!firstName || !lastName) {
+    errEl.innerText = 'Informe seu nome e sobrenome.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    errEl.innerText = 'Informe um e-mail válido.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (cpf.length !== 11) {
+    errEl.innerText = 'CPF inválido. Digite os 11 dígitos.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (phone.length < 10 || phone.length > 11) {
+    errEl.innerText = 'Telefone inválido. Inclua o DDD.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.innerText = 'Salvando...';
+  btn.disabled  = true;
+
+  try {
+    var fullName = firstName + ' ' + lastName;
+
+    // Salva nos metadados do usuário anônimo
+    await window.supabaseClient.auth.updateUser({
+      data: { full_name: fullName, name: fullName, phone: phone, guest_email: email }
+    });
+
+    // Cria/atualiza profile no banco (usando o user_id anônimo)
+    await window.supabaseClient.from('profiles').upsert({
+      id:    currentUser.id,
+      email: email,
+      name:  fullName,
+      phone: phone,
+      cpf:   cpf
+    });
+
+    // Salva também em sessionStorage para usar na conversão pós-pagamento
+    sessionStorage.setItem('freo_guest_data', JSON.stringify({
+      name:  fullName,
+      email: email,
+      cpf:   cpf,
+      phone: phone
+    }));
+
+    // Atualiza currentProfile em memória para que getCustomer*() funcionem
+    currentProfile = Object.assign({}, currentProfile || {}, {
+      name:  fullName,
+      email: email,
+      phone: phone,
+      cpf:   cpf
+    });
+
+    document.getElementById('dados-pessoais-modal').classList.add('hidden');
+    document.getElementById('dados-pessoais-modal').classList.remove('flex');
+
+  } catch (e) {
+    console.error('Erro ao salvar dados do convidado:', e);
+    errEl.innerText = 'Erro ao salvar. Tente novamente.';
+    errEl.classList.remove('hidden');
+  }
+
+  btn.innerText = 'Continuar para endereço →';
+  btn.disabled  = false;
+}
+// ── FIM DADOS PESSOAIS CONVIDADO ─────────────────────────────────────────────
+
+function abrirDadosPessoais() {
+  var meta      = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
+  var nomeCompleto = (currentProfile && currentProfile.name) || meta.full_name || meta.name || '';
+  var partes    = nomeCompleto.trim().split(' ');
+
+  document.getElementById('dp-firstname').value = partes[0] || '';
+  document.getElementById('dp-lastname').value  = partes.slice(1).join(' ') || '';
+  document.getElementById('dp-phone').value     = getCurrentPhone() ? getCurrentPhone().replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') : '';
+  document.getElementById('dp-cpf').value       = (currentProfile && currentProfile.cpf)
+    ? currentProfile.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
+    : '';
+
+  var modal = document.getElementById('dados-pessoais-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('dp-firstname').focus();
+}
+
+async function salvarDadosPessoais() {
+  var firstName = document.getElementById('dp-firstname').value.trim();
+  var lastName  = document.getElementById('dp-lastname').value.trim();
+  var cpf       = document.getElementById('dp-cpf').value.replace(/\D/g, '');
+  var phone     = document.getElementById('dp-phone').value.replace(/\D/g, '');
+  var errEl     = document.getElementById('dados-pessoais-error');
+  var btn       = document.getElementById('btn-salvar-dados');
+
+  errEl.classList.add('hidden');
+
+  if (!firstName || !lastName) {
+    errEl.innerText = 'Informe seu nome e sobrenome.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (cpf.length !== 11) {
+    errEl.innerText = 'CPF inválido. Digite os 11 dígitos.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (phone.length < 10 || phone.length > 11) {
+    errEl.innerText = 'Telefone inválido. Inclua o DDD.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.innerText = 'Salvando...';
+  btn.disabled  = true;
+
+  try {
+    var fullName = firstName + ' ' + lastName;
+    var meta     = currentUser.user_metadata || {};
+
+    await window.supabaseClient.auth.updateUser({
+      data: Object.assign({}, meta, { full_name: fullName, phone: phone })
+    });
+
+    await window.supabaseClient.from('profiles').upsert({
+      id:    currentUser.id,
+      email: currentUser.email || null,
+      name:  fullName,
+      phone: phone,
+      cpf:   cpf
+    });
+
+    currentProfile = Object.assign({}, currentProfile || {}, {
+      name:  fullName,
+      phone: phone,
+      cpf:   cpf,
+      email: currentUser.email
+    });
+
+    document.getElementById('dados-pessoais-modal').classList.add('hidden');
+    document.getElementById('dados-pessoais-modal').classList.remove('flex');
+
+  } catch (e) {
+    console.error('Erro ao salvar dados pessoais:', e);
+    errEl.innerText = 'Erro ao salvar. Tente novamente.';
+    errEl.classList.remove('hidden');
+  }
+
+  btn.innerText = 'Salvar e continuar';
+  btn.disabled  = false;
+}
+
+// ─── FIM DADOS PESSOAIS ────────────────────────────────────────────────────
+
+    function formatCurrency(v) {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(parseFloat(v) || 0);
+    }
+
+    function showLoading() {
+      document.getElementById('page-loading').classList.remove('hidden');
+      document.getElementById('checkout-main').classList.add('hidden');
+      document.getElementById('cart-empty-state').classList.add('hidden');
+    }
+
+    function showEmpty() {
+      document.getElementById('page-loading').classList.add('hidden');
+      document.getElementById('checkout-main').classList.add('hidden');
+      document.getElementById('cart-empty-state').classList.remove('hidden');
+      document.getElementById('cart-empty-state').classList.add('flex');
+      if (b2bCheckoutMode) document.querySelector('#cart-empty-state a').href = '/b2b.html';
+    }
+
+    function showCheckout() {
+      document.getElementById('page-loading').classList.add('hidden');
+      document.getElementById('checkout-main').classList.remove('hidden');
+      document.getElementById('cart-empty-state').classList.add('hidden');
+    }
+
+    function showCheckoutError(message) {
+      var state = document.getElementById('cart-empty-state');
+      document.getElementById('page-loading').classList.add('hidden');
+      document.getElementById('checkout-main').classList.add('hidden');
+      state.classList.remove('hidden');
+      state.classList.add('flex');
+      state.innerHTML =
+        '<div class="text-center max-w-lg px-6">'
+        + '<div class="text-5xl mb-4">⚠️</div>'
+        + '<p class="font-display font-bold text-xl text-white uppercase mb-3">Não foi possível abrir o checkout</p>'
+        + '<p class="font-mono text-sm text-red-400 mb-5">' + escapeHtml(message || 'Erro desconhecido.') + '</p>'
+        + '<a href="' + (b2bCheckoutMode ? '/b2b.html?cart=1' : '/minhas-criacoes.html') + '" class="inline-block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-white transition-colors">' + (b2bCheckoutMode ? 'Voltar ao B2B' : 'Voltar para Minhas Criações') + '</a>'
+        + '</div>';
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function(char) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        }[char];
+      });
+    }
+
+    function safeHttpUrl(value) {
+      if (typeof value !== 'string' || !value.trim()) return '';
+      try {
+        var parsed = new URL(value.trim(), window.location.origin);
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+        return parsed.href;
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function buildOrderItems() {
+      return cartItemsData.map(function(item) {
+        return {
+          product_id: item.product_id,
+          product_name: item.product_name || item.name || 'Produto',
+          quantity: item.quantity || 1,
+          price: Number(item.price) || 0,
+          image_url: item.image_url || null,
+          variant: item.variant || null,
+          generation_id: item.generation_id || null,
+          custom_product: item.custom_product === true
+        };
+      });
+    }
+
+    async function carregarItemPersonalizado(generationId) {
+      if (!currentUser || !currentUser.id) {
+        throw new Error('Sessão do usuário não encontrada.');
+      }
+
+      var cleanId = String(generationId || '').trim();
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cleanId)) {
+        throw new Error('ID da criação personalizada é inválido.');
+      }
+
+      // O preço é buscado novamente na Edge Function autenticada.
+      // Nada vindo da URL/localStorage é usado como preço do produto.
+      var quoteResult = await window.supabaseClient.functions.invoke('generation-price-quote', {
+        body: { generation_id: cleanId }
+      });
+
+      if (quoteResult.error) {
+        throw quoteResult.error;
+      }
+
+      var quote = quoteResult.data;
+      if (!quote || typeof quote !== 'object' || quote.success !== true) {
+        throw new Error(
+          quote && typeof quote.error === 'string' && quote.error.trim()
+            ? quote.error.trim()
+            : 'A criação ainda não possui um preço disponível.'
+        );
+      }
+
+      var valor = Number(quote.valor_final);
+      if (!Number.isFinite(valor) || valor <= 0) {
+        throw new Error('O backend não retornou um valor_final válido.');
+      }
+
+      var serverGenerationId =
+        typeof quote.generation_id === 'string' && quote.generation_id.trim()
+          ? quote.generation_id.trim()
+          : cleanId;
+
+      if (serverGenerationId !== cleanId) {
+        throw new Error('A Edge Function retornou uma criação diferente da solicitada.');
+      }
+
+      var title =
+        typeof quote.title === 'string' && quote.title.trim()
+          ? quote.title.trim()
+          : 'Modelo 3D personalizado';
+
+      var imageUrl = safeHttpUrl(quote.image_url);
+
+      // Fallback da imagem: usa somente a geração do usuário autenticado.
+      if (!imageUrl) {
+        var jobResult = await window.supabaseClient
+          .from('generation_jobs')
+          .select('id,user_id,image_path,title')
+          .eq('id', cleanId)
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (jobResult.error || !jobResult.data) {
+          throw new Error('Não foi possível localizar a imagem desta criação.');
+        }
+
+        if (jobResult.data.image_path) {
+          var signedResult = await window.supabaseClient.storage
+            .from('generations')
+            .createSignedUrl(jobResult.data.image_path, 60 * 60);
+
+          if (!signedResult.error && signedResult.data && signedResult.data.signedUrl) {
+            imageUrl = safeHttpUrl(signedResult.data.signedUrl);
+          }
+        }
+
+        if ((!title || title === 'Modelo 3D personalizado') && jobResult.data.title) {
+          title = String(jobResult.data.title);
+        }
+      }
+
+      if (!imageUrl) {
+        throw new Error('A criação possui preço, mas a imagem personalizada não pôde ser carregada.');
+      }
+
+      return {
+        id: 'custom-' + cleanId,
+        product_id: 'custom-' + cleanId,
+        product_name: 'Modelo 3D personalizado — ' + title,
+        quantity: 1,
+        price: Number(valor.toFixed(2)),
+        image_url: imageUrl,
+        variant: 'Personalizado | 15 cm',
+        generation_id: cleanId,
+        custom_product: true
+      };
+    }
+
+    function maskCEP(input) {
+      var v = input.value.replace(/\D/g, '').substring(0, 8);
+      if (v.length > 5) v = v.substring(0, 5) + '-' + v.substring(5);
+      input.value = v;
+    }
+
+    function maskCEP2(input) {
+      maskCEP(input);
+    }
+
+    function maskCheckoutPhone(input) {
+      var v = input.value.replace(/\D/g, '').substring(0, 11);
+
+      if (v.length > 6) {
+        v = '(' + v.substring(0, 2) + ') ' + v.substring(2, 7) + '-' + v.substring(7);
+      } else if (v.length > 2) {
+        v = '(' + v.substring(0, 2) + ') ' + v.substring(2);
+      }
+
+      input.value = v;
+    }
+
+    function getCurrentPhone() {
+      return String(
+        (currentProfile && currentProfile.phone) ||
+        (currentProfile && currentProfile.telefone) ||
+        (currentUser && currentUser.user_metadata ? currentUser.user_metadata.phone : '') ||
+        ''
+      ).replace(/\D/g, '');
+    }
+
+    function openPhoneRequiredModal() {
+      var modal = document.getElementById('phone-required-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      setTimeout(function() {
+        var input = document.getElementById('checkout-phone');
+        if (input) input.focus();
+      }, 150);
+    }
+
+    function closePhoneRequiredModal() {
+      var modal = document.getElementById('phone-required-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function saveCheckoutPhone() {
+      var input = document.getElementById('checkout-phone');
+      var err = document.getElementById('phone-required-error');
+      var btn = document.getElementById('save-checkout-phone-btn');
+      var phone = input.value.replace(/\D/g, '');
+
+      err.classList.add('hidden');
+
+      if (phone.length < 10 || phone.length > 11) {
+        err.innerText = 'Informe um telefone válido com DDD.';
+        err.classList.remove('hidden');
+        return;
+      }
+
+      btn.innerText = 'Salvando...';
+      btn.disabled = true;
+
+      try {
+        var metadata = currentUser.user_metadata || {};
+
+        var authUpdate = await window.supabaseClient.auth.updateUser({
+          data: Object.assign({}, metadata, {
+            phone: phone
+          })
+        });
+
+        if (authUpdate.error) throw authUpdate.error;
+
+        var profileName =
+          getCustomerNameForOrder() ||
+          metadata.full_name ||
+          metadata.name ||
+          metadata.display_name ||
+          currentUser.email ||
+          '';
+
+        var profileUpdate = await window.supabaseClient
+          .from('profiles')
+          .upsert({
+            id: currentUser.id,
+            email: currentUser.email || null,
+            phone: phone,
+            name: profileName
+          });
+
+        if (profileUpdate.error) {
+          console.warn('Erro ao atualizar profile:', profileUpdate.error.message);
+        }
+
+        currentProfile = Object.assign({}, currentProfile || {}, {
+          phone: phone,
+          email: currentUser.email,
+          name: profileName
+        });
+
+        closePhoneRequiredModal();
+
+        if (selectedShipping && !paymentBrickInitialized) {
+          liberarPagamento();
+        }
+      } catch (e) {
+        console.error('Erro ao salvar telefone:', e);
+        err.innerText = 'Erro ao salvar telefone. Tente novamente.';
+        err.classList.remove('hidden');
+      }
+
+      btn.innerText = 'Salvar e continuar';
+      btn.disabled = false;
+    }
+
+    function totalAntesDosCreditos() {
+      return Math.round((Math.max(0, subtotalAmount - couponDiscountAmount) + freteAmount) * 100) / 100;
+    }
+
+    function totalComCreditos() {
+      return Math.round((totalAntesDosCreditos() - freoCreditsSelected / 10) * 100) / 100;
+    }
+
+    function selecionarCreditosFreo(raw) {
+      if (freoPaymentInProgress) {
+        document.getElementById('freo-credits-input').value = String(freoCreditsSelected);
+        return;
+      }
+      var max = Math.min(freoCreditBalance, Math.floor(totalAntesDosCreditos() * 10 + 0.0001));
+      var requested = Math.floor(Number(raw) || 0);
+      freoCreditsSelected = freoCreditEligible ? Math.max(0, Math.min(max, requested)) : 0;
+      var input = document.getElementById('freo-credits-input');
+      input.max = String(max);
+      input.value = String(freoCreditsSelected);
+      document.getElementById('freo-credits-discount-row').classList.toggle('hidden', freoCreditsSelected === 0);
+      document.getElementById('freo-credits-discount').innerText = '− ' + formatCurrency(freoCreditsSelected / 10);
+      document.getElementById('freo-credits-help').innerText = 'Máximo neste pedido: ' + max + ' créditos.';
+      updateTotals();
+      if (selectedShipping) {
+        clearTimeout(freoPaymentRefreshTimer);
+        freoPaymentRefreshTimer = setTimeout(function() { void liberarPagamento(); }, 450);
+      }
+    }
+
+    async function aplicarCreditosAoPedido(orderId) {
+      var productIds = cartItemsData.map(function(item) { return Number(item.product_id); })
+        .filter(function(id) { return Number.isSafeInteger(id) && id > 0; });
+      var needsServerValidation = false;
+      if (!freoCreditsSelected && productIds.length && !b2bCheckoutMode) {
+        var catalogLookup = await window.supabaseClient.from('products').select('id,category,b2b_category,sale_mode')
+          .in('id', productIds);
+        if (catalogLookup.error) throw catalogLookup.error;
+        needsServerValidation = (catalogLookup.data || []).length !== new Set(productIds).size || (catalogLookup.data || []).some(function(product) {
+          return product.category === 'feito_por_voces' || product.sale_mode === 'quote_only' || (product.b2b_category && product.b2b_category !== 'loja');
+        });
+      }
+      if (!freoCreditsSelected && !needsServerValidation && !b2bCheckoutMode) return totalAntesDosCreditos();
+      var r = await window.supabaseClient.functions.invoke('freo-checkout', {
+        body: { order_id: orderId, credits: freoCreditsSelected, coupon_code: activeCouponData ? activeCouponData.code : null }
+      });
+      if (r.error || !r.data || typeof r.data.amount !== 'number') {
+        throw new Error((r.data && r.data.error) || 'Não foi possível validar os Créditos Freo. Confira carrinho, cupom e frete.');
+      }
+      if (Math.abs(r.data.amount - totalComCreditos()) > 0.009) throw new Error('O total validado pelo servidor mudou. Recarregue o checkout.');
+      return r.data.amount;
+    }
+
+    function updateTotals() {
+      var maxCredits = Math.min(freoCreditBalance, Math.floor(totalAntesDosCreditos() * 10 + 0.0001));
+      if (freoCreditsSelected > maxCredits) freoCreditsSelected = maxCredits;
+      var creditInput = document.getElementById('freo-credits-input');
+      if (creditInput) {
+        creditInput.max = String(maxCredits);
+        creditInput.value = String(freoCreditsSelected);
+        document.getElementById('freo-credits-discount-row').classList.toggle('hidden', freoCreditsSelected === 0);
+        document.getElementById('freo-credits-discount').innerText = '− ' + formatCurrency(freoCreditsSelected / 10);
+        document.getElementById('freo-credits-help').innerText = 'Máximo neste pedido: ' + maxCredits + ' créditos.';
+      }
+      var total = totalComCreditos();
+
+      document.getElementById('summary-subtotal').innerText = formatCurrency(subtotalAmount);
+      document.getElementById('summary-total').innerText = formatCurrency(total);
+    }
+
+    function renderItems(items) {
+      subtotalAmount = 0;
+
+      var html = items.map(function(item) {
+        var price = parseFloat(item.price) || 0;
+        var qty = parseInt(item.quantity, 10) || 1;
+        var subtotal = price * qty;
+        var itemName = escapeHtml(item.product_name || item.name || 'Produto');
+        var itemImage = safeHttpUrl(item.image_url);
+
+        subtotalAmount += subtotal;
+
+        var variantHTML = '';
+
+        if (item.variant) {
+          variantHTML = '<div class="flex flex-wrap gap-1 mt-1">'
+            + String(item.variant).split('|').map(function(v) {
+              return '<span class="variant-tag">' + escapeHtml(v.trim()) + '</span>';
+            }).join('')
+            + '</div>';
+        }
+
+        return '<div class="flex items-start gap-3 p-3 bg-white/5 border border-white/5 rounded-lg">'
+          + '<div class="w-14 h-14 bg-freo-black rounded flex-shrink-0 overflow-hidden">'
+          + (itemImage ? '<img src="' + escapeHtml(itemImage) + '" alt="' + itemName + '" class="w-full h-full object-cover" onerror="this.style.display=\'none\'">' : '')
+          + '</div>'
+          + '<div class="flex-1 min-w-0">'
+          + '<p class="font-display font-bold text-sm text-white leading-tight">' + itemName + '</p>'
+          + variantHTML
+          + '<p class="font-mono text-xs text-white/40 mt-1">Qtd: ' + qty + ' × ' + formatCurrency(price) + '</p>'
+          + '</div>'
+          + '<p class="font-mono font-bold text-freo-orange text-sm flex-shrink-0">' + formatCurrency(subtotal) + '</p>'
+          + '</div>';
+      }).join('');
+
+      document.getElementById('checkout-items').innerHTML = html;
+
+      // Recalcula o desconto do cupom agora que o subtotal real do carrinho
+      // está disponível. O cupom pode ter sido carregado do localStorage
+      // ANTES do carrinho ser buscado no Supabase (quando subtotalAmount
+      // ainda era 0), o que travava o desconto em R$ 0,00.
+      if (activeCouponData) {
+        aplicarDescontoCupom();
+      } else {
+        updateTotals();
+      }
+    }
+
+    // ─── PROMOÇÃO DE FRETE GRÁTIS / SUBSIDIADO ─────────────────────────────────
+    async function carregarRegrasFrete() {
+      if (shippingPromotionRulesLoaded) return;
+      try {
+        var r = await window.supabaseClient
+          .from('shipping_promotions')
+          .select('*')
+          .eq('is_active', true);
+
+        shippingPromotionRules = r.data || [];
+      } catch (e) {
+        console.warn('Não foi possível carregar regras de frete:', e);
+        shippingPromotionRules = [];
+      }
+      shippingPromotionRulesLoaded = true;
+    }
+
+    function aplicarPromocaoFrete(opcoes, subtotal, uf) {
+      var regras = shippingPromotionRules;
+
+      // Normaliza price para número em TODOS os caminhos, mesmo sem regra aplicável.
+      var opcoesNormalizadas = opcoes.map(function(o) {
+        return Object.assign({}, o, { price: parseFloat(o.price) || 0 });
+      });
+
+      if (!regras || !regras.length || !uf) {
+        return { opcoes: opcoesNormalizadas, motivo: 'sem_regra', regraAplicada: null };
+      }
+
+      var ufNormalizada = String(uf).trim().toUpperCase();
+
+      var regrasComUF = regras.filter(function(r) {
+        return Array.isArray(r.uf_list) && r.uf_list.length > 0 && r.uf_list.indexOf(ufNormalizada) !== -1;
+      });
+
+      var regraCatchAll = regras.find(function(r) {
+        return !r.uf_list || r.uf_list.length === 0;
+      });
+
+      var regra = regrasComUF.length > 0 ? regrasComUF[0] : regraCatchAll;
+
+      if (!regra) {
+        return { opcoes: opcoesNormalizadas, motivo: 'sem_regra', regraAplicada: null };
+      }
+
+      var isGratisTotal = regra.min_order_value_free !== null && regra.min_order_value_free !== undefined
+        && subtotal >= parseFloat(regra.min_order_value_free);
+
+      var isSubsidioParcial = !isGratisTotal
+        && regra.subsidy_type && regra.subsidy_type !== 'none'
+        && regra.min_order_value_subsidy !== null && regra.min_order_value_subsidy !== undefined
+        && subtotal >= parseFloat(regra.min_order_value_subsidy);
+
+      var novasOpcoes = opcoesNormalizadas.map(function(o) {
+        var precoOriginal = o.price;
+        var precoFinal = precoOriginal;
+
+        if (isGratisTotal) {
+          precoFinal = 0;
+        } else if (isSubsidioParcial) {
+          var desconto = 0;
+          if (regra.subsidy_type === 'fixed') {
+            desconto = Math.min(parseFloat(regra.subsidy_value) || 0, precoOriginal);
+          } else if (regra.subsidy_type === 'percent') {
+            desconto = precoOriginal * ((parseFloat(regra.subsidy_value) || 0) / 100);
+          }
+          precoFinal = Math.max(0, +(precoOriginal - desconto).toFixed(2));
+        }
+
+        return Object.assign({}, o, { price: precoFinal, price_original: precoOriginal });
+      });
+
+      var motivo = isGratisTotal ? 'gratis' : (isSubsidioParcial ? 'subsidio' : 'normal');
+
+      return { opcoes: novasOpcoes, motivo: motivo, regraAplicada: regra };
+    }
+
+    function exibirAvisoPromocaoFrete(motivo, regra) {
+      var existente = document.getElementById('frete-promo-banner');
+      if (existente) existente.remove();
+
+      if (motivo !== 'gratis' && motivo !== 'subsidio') return;
+
+      var banner = document.createElement('div');
+      banner.id = 'frete-promo-banner';
+      banner.className = 'mb-4 p-3 rounded-lg flex items-center gap-2';
+
+      if (motivo === 'gratis') {
+        banner.style.cssText = 'background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25)';
+        banner.innerHTML = '<span class="font-mono text-sm text-green-400">🎉 Frete grátis aplicado' + (regra && regra.description ? ' — ' + regra.description : '') + '!</span>';
+      } else {
+        banner.style.cssText = 'background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25)';
+        banner.innerHTML = '<span class="font-mono text-sm text-freo-orange">✨ Desconto de frete aplicado' + (regra && regra.description ? ' — ' + regra.description : '') + '!</span>';
+      }
+
+      var opcoesEl = document.getElementById('frete-options');
+      if (opcoesEl && opcoesEl.parentElement) {
+        opcoesEl.parentElement.insertBefore(banner, opcoesEl);
+      }
+    }
+    // ─── FIM PROMOÇÃO DE FRETE ──────────────────────────────────────────────────
+
+    async function calcularFrete(cepParam) {
+      var cep = cepParam || document.getElementById('cep-input').value.replace(/\D/g, '');
+
+      if (cep.length !== 8) {
+        showFreteError('CEP inválido. Digite os 8 dígitos.');
+        return;
+      }
+
+      var btn = document.getElementById('cep-btn');
+      btn.innerText = 'Calculando...';
+      btn.disabled = true;
+
+      document.getElementById('frete-error').classList.add('hidden');
+      document.getElementById('frete-options').classList.add('hidden');
+      document.getElementById('frete-loading').classList.remove('hidden');
+
+      var totalQty = cartItemsData.reduce(function(s, i) {
+        return s + (parseInt(i.quantity, 10) || 1);
+      }, 0);
+
+      var pesoTotal = Math.max(0.1, LOJA.embalagem.peso * totalQty);
+
+      try {
+        var response = await fetch(N8N_FRETE_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            cep_origem: LOJA.cep.replace(/\D/g, ''),
+            cep_destino: cep,
+            produtos: [{
+              altura: LOJA.embalagem.altura,
+              largura: LOJA.embalagem.largura,
+              comprimento: LOJA.embalagem.comprimento,
+              peso: pesoTotal,
+              quantidade: totalQty,
+              valor_declarado: subtotalAmount
+            }]
+          })
+        });
+
+        if (!response.ok) throw new Error('Erro na requisição: ' + response.status);
+
+        var data = await response.json();
+
+        document.getElementById('frete-loading').classList.add('hidden');
+
+        var opcoes = Array.isArray(data) ? data : (data.opcoes || data.fretes || data.services || []);
+
+        opcoes = opcoes.filter(function(o) {
+          return o && o.price && parseFloat(o.price) > 0;
+        });
+
+        if (!opcoes.length) {
+          showFreteError('Não foi possível calcular o frete para este CEP.');
+          return;
+        }
+
+        await carregarRegrasFrete();
+
+        var ufDestino = selectedAddress ? selectedAddress.state : null;
+        var resultadoPromo = aplicarPromocaoFrete(opcoes, subtotalAmount, ufDestino);
+
+        opcoes = resultadoPromo.opcoes;
+        lastFreteMotivo = resultadoPromo.motivo;
+
+        exibirAvisoPromocaoFrete(resultadoPromo.motivo, resultadoPromo.regraAplicada);
+
+        renderFreteOptions(opcoes);
+      } catch (err) {
+        console.error('Erro frete:', err);
+        document.getElementById('frete-loading').classList.add('hidden');
+        showFreteError('Não foi possível calcular o frete automaticamente. <a href="https://wa.me/5511961789176" target="_blank" class="text-freo-orange underline">Falar no WhatsApp</a>');
+      }
+
+      btn.innerText = 'Calcular';
+      btn.disabled = false;
+    }
+
+    function showFreteError(msg) {
+      var el = document.getElementById('frete-error');
+      el.innerHTML = msg;
+      el.classList.remove('hidden');
+      document.getElementById('frete-loading').classList.add('hidden');
+    }
+
+    var carrierColors = {
+      'correios': '#FFD700',
+      'jadlog': '#E63946',
+      'latam': '#023E8A',
+      'azul': '#0077B6',
+      'sequoia': '#2DC653',
+      'loggi': '#7B2FBE',
+      'buslog': '#F77F00'
+    };
+
+    function getCarrierColor(name) {
+      var n = String(name || '').toLowerCase();
+
+      for (var key in carrierColors) {
+        if (n.includes(key)) return carrierColors[key];
+      }
+
+      return '#D4AF37';
+    }
+
+    function normalizeFreteCompany(opcao) {
+      var companyName = '';
+
+      if (opcao.company) {
+        if (typeof opcao.company === 'object') {
+          companyName =
+            opcao.company.name ||
+            opcao.company.company_name ||
+            opcao.company.title ||
+            '';
+        } else {
+          companyName = String(opcao.company || '');
+        }
+      }
+
+      if (!companyName && opcao.company_name) companyName = String(opcao.company_name || '');
+
+      if (!companyName && opcao.carrier) {
+        if (typeof opcao.carrier === 'object') {
+          companyName =
+            opcao.carrier.name ||
+            opcao.carrier.company_name ||
+            opcao.carrier.title ||
+            '';
+        } else {
+          companyName = String(opcao.carrier || '');
+        }
+      }
+
+      if (!companyName && opcao.transportadora) companyName = String(opcao.transportadora || '');
+      if (!companyName && opcao.provider) companyName = String(opcao.provider || '');
+
+      return companyName || 'Transportadora';
+    }
+
+    function normalizeFreteServiceName(opcao) {
+      return String(
+        opcao.name ||
+        opcao.service_name ||
+        opcao.servico ||
+        opcao.delivery_method ||
+        opcao.service_title ||
+        'Entrega'
+      );
+    }
+
+    function normalizeFreteServiceId(opcao) {
+      return String(
+        opcao.id ||
+        opcao.service_id ||
+        opcao.service ||
+        opcao.service_code ||
+        ''
+      );
+    }
+
+    function normalizeFreteDays(opcao) {
+      return String(
+        opcao.delivery_time ||
+        opcao.prazo ||
+        opcao.days ||
+        opcao.delivery_days ||
+        '?'
+      );
+    }
+
+    function renderFreteOptions(opcoes) {
+      opcoes.sort(function(a, b) {
+        return parseFloat(a.price) - parseFloat(b.price);
+      });
+
+      var html = opcoes.slice(0, 6).map(function(opcao, i) {
+        var price = parseFloat(opcao.price) || 0;
+        var companyName = normalizeFreteCompany(opcao);
+        var serviceName = normalizeFreteServiceName(opcao);
+        var serviceId = normalizeFreteServiceId(opcao);
+        var days = normalizeFreteDays(opcao);
+        var serviceCode = String(opcao.service || opcao.service_code || opcao.code || '');
+        var color = getCarrierColor(companyName || serviceName);
+
+        var payload = encodeURIComponent(JSON.stringify({
+          service_id: serviceId,
+          service_name: serviceName,
+          company: companyName,
+          price: price,
+          days: days,
+          raw_name: String(opcao.name || ''),
+          service_code: serviceCode
+        }));
+
+        return '<label class="frete-option flex items-center gap-4 p-4 rounded-lg cursor-pointer" onclick="selectShippingFromPayload(\'' + payload + '\', ' + i + ')">'
+          + '<input type="radio" name="frete" value="' + i + '" class="flex-shrink-0">'
+          + '<div class="flex-1 min-w-0">'
+          + '<div class="flex items-center gap-2 mb-0.5">'
+          + '<span class="carrier-badge" style="background:' + color + '20;color:' + color + ';border:1px solid ' + color + '30">' + companyName.substring(0, 14) + '</span>'
+          + '<span class="font-display font-bold text-sm text-white">' + serviceName + '</span>'
+          + '</div>'
+          + '<p class="font-mono text-xs text-white/40">Prazo estimado: ' + days + ' dia(s) úteis' + (i === 0 ? ' · <span class="text-green-400">Mais barato</span>' : '') + '</p>'
+          + '</div>'
+          + '<div class="text-right flex-shrink-0"><p class="font-mono font-bold text-freo-orange">' + formatCurrency(price) + '</p></div>'
+          + '</label>';
+      }).join('');
+
+      document.getElementById('frete-list').innerHTML = html;
+      document.getElementById('frete-options').classList.remove('hidden');
+    }
+
+    function selectShippingFromPayload(payload, index) {
+      if (freoPaymentInProgress) return;
+      var data = JSON.parse(decodeURIComponent(payload));
+
+      selectedShipping = {
+        service_id: data.service_id || null,
+        service_name: data.service_name || 'Entrega',
+        company: data.company || 'Transportadora',
+        price: parseFloat(data.price) || 0,
+        days: data.days || null,
+        raw_name: data.raw_name || null,
+        service_code: data.service_code || null
+      };
+
+      freteAmount = selectedShipping.price;
+
+      document.querySelectorAll('.frete-option').forEach(function(el, i) {
+        el.classList.toggle('selected', i === index);
+      });
+
+      updateTotals();
+
+      document.getElementById('selected-shipping-name').innerText =
+        selectedShipping.company + ' — ' + selectedShipping.service_name + ' — ' + formatCurrency(selectedShipping.price);
+
+      document.getElementById('selected-shipping-deadline').innerText =
+        'Prazo estimado: ' + selectedShipping.days + ' dia(s) úteis';
+
+      document.getElementById('selected-shipping-info').classList.remove('hidden');
+
+      var fretePlaceholder = document.getElementById('frete-placeholder');
+
+      if (fretePlaceholder && fretePlaceholder.parentElement) {
+        fretePlaceholder.parentElement.style.display = 'none';
+      }
+
+      liberarPagamento();
+
+      document.getElementById('step3-dot').className = 'step-dot done';
+      document.getElementById('step3-dot').innerHTML = '✓';
+      document.getElementById('step3-line').className = 'step-line done';
+      document.getElementById('step4-dot').className = 'step-dot active';
+    }
+
+    async function finalizarComCreditosFreo() {
+      var button = document.getElementById('freo-only-button');
+      var errorEl = document.getElementById('freo-only-error');
+      if (!freoCreditEligible || !selectedShipping || !freoCreditsSelected || totalComCreditos() !== 0 || button.disabled || freoPaymentInProgress) return;
+      freoPaymentInProgress = true;
+      clearTimeout(freoPaymentRefreshTimer);
+      document.getElementById('freo-credits-input').disabled = true;
+      button.disabled = true;
+      button.innerText = 'Validando pedido...';
+      errorEl.classList.add('hidden');
+      try {
+        if (!freoOnlyOrderId) {
+          var name = selectedShipping.company ? selectedShipping.company + ' - ' + selectedShipping.service_name : selectedShipping.service_name;
+          var result = await window.supabaseClient.from('orders').insert({
+            user_id: currentUser.id, status: 'pendente', is_b2b: true, total: totalAntesDosCreditos(), items: buildOrderItems(),
+            frete_valor: selectedShipping.price, frete_nome: name, frete_prazo: String(selectedShipping.days),
+            frete_company: selectedShipping.company, frete_service_id: selectedShipping.service_id,
+            frete_service_name: selectedShipping.service_name, frete_service_code: selectedShipping.service_code,
+            shipping_address: selectedAddress ? JSON.stringify(selectedAddress) : null,
+            customer_name: getCustomerNameForOrder(), customer_email: getCustomerEmailForOrder(),
+            customer_phone: getCustomerPhoneForOrder(), customer_cpf: getCustomerCPFForOrder()
+          }).select('id').single();
+          if (result.error) throw result.error;
+          freoOnlyOrderId = result.data.id;
+        }
+        var existing = await window.supabaseClient.from('orders').select('status').eq('id', freoOnlyOrderId).eq('user_id', currentUser.id).single();
+        if (existing.error) throw existing.error;
+        if (existing.data.status !== 'pago') {
+          var amount = await aplicarCreditosAoPedido(freoOnlyOrderId);
+          if (amount !== 0) throw new Error('O pedido não ficou totalmente coberto pelos créditos.');
+        }
+        await window.supabaseClient.from('b2b_cart_items').delete().eq('user_id', currentUser.id);
+        await consumirCupomAposPayment(freoOnlyOrderId);
+        window.location.href = backUrls.success + '?payment_id=' + encodeURIComponent('freo-only:' + freoOnlyOrderId);
+      } catch (error) {
+        freoPaymentInProgress = false;
+        document.getElementById('freo-credits-input').disabled = false;
+        errorEl.innerText = error instanceof Error ? error.message : 'Não foi possível finalizar com créditos.';
+        errorEl.classList.remove('hidden');
+        button.disabled = false;
+        button.innerText = 'Finalizar com Créditos Freo';
+      }
+    }
+    var savedCards = [];
+    var selectedCard = null;
+
+    async function carregarCartoesSalvos() {
+      if (!currentUser) return;
+      try {
+        var r = await window.supabaseClient
+          .from('user_cards')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+        savedCards = r.data || [];
+      } catch(e) {
+        savedCards = [];
+      }
+    }
+
+    function renderizarCartoesSalvos() {
+      var section = document.getElementById('saved-cards-section');
+      var list    = document.getElementById('saved-cards-list');
+
+      if (!savedCards.length) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      section.classList.remove('hidden');
+
+      list.innerHTML = savedCards.map(function(card, i) {
+        var brand = (card.payment_method || 'card').toUpperCase().substring(0, 4);
+        var label = card.card_label || ('•••• ' + (card.last_four || '****'));
+        var type  = card.payment_type === 'credit_card' ? 'Crédito' : 'Débito';
+        var exp   = (card.expiration_month || '**') + '/' + String(card.expiration_year || '****').slice(-2);
+
+        return '<div class="addr-card" id="saved-card-' + i + '" onclick="selecionarCartao(' + i + ')">'
+          + '<div class="flex items-center gap-3">'
+          + '<input type="radio" name="saved-card" class="flex-shrink-0 accent-freo-orange">'
+          + '<div class="w-10 h-7 bg-white/10 border border-white/10 rounded flex items-center justify-center font-mono text-[10px] text-white/50 font-bold flex-shrink-0">' + brand + '</div>'
+          + '<div class="flex-1 min-w-0">'
+          + '<p class="font-mono text-sm font-bold text-white">' + label + '</p>'
+          + '<p class="font-mono text-[10px] text-white/40 mt-0.5">' + type + ' · Validade ' + exp + '</p>'
+          + '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+
+      selecionarCartao(0);
+    }
+
+    function selecionarCartao(idx) {
+      selectedCard = savedCards[idx];
+
+      document.querySelectorAll('#saved-cards-list .addr-card').forEach(function(el, i) {
+        el.classList.toggle('selected', i === idx);
+        var radio = el.querySelector('input[type=radio]');
+        if (radio) radio.checked = i === idx;
+      });
+
+      var brand = (selectedCard.payment_method || 'card').toUpperCase().substring(0, 4);
+      var label = selectedCard.card_label || ('•••• ' + (selectedCard.last_four || '****'));
+
+      document.getElementById('cvv-card-icon').innerText  = brand;
+      document.getElementById('cvv-card-label').innerText = label;
+      document.getElementById('saved-card-cvv').value     = '';
+      document.getElementById('cvv-error').classList.add('hidden');
+      document.getElementById('cvv-section').classList.remove('hidden');
+      document.getElementById('saved-card-cvv').focus();
+    }
+
+    async function usarOutroCartao() {
+      selectedCard = null;
+      document.getElementById('saved-cards-section').classList.add('hidden');
+      document.getElementById('cvv-section').classList.add('hidden');
+
+      if (!paymentBrickInitialized) {
+        document.getElementById('brick-loading').classList.remove('hidden');
+        await initPaymentBrick();
+      }
+    }
+
+    async function pagarComCartaoSalvo() {
+      if (!selectedCard || freoPaymentInProgress) return;
+
+      var cvv   = document.getElementById('saved-card-cvv').value.trim();
+      var errEl = document.getElementById('cvv-error');
+      var btn   = document.getElementById('btn-pagar-salvo');
+
+      errEl.classList.add('hidden');
+
+      if (!cvv || cvv.length < 3) {
+        errEl.innerText = 'Informe o CVV do cartão.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      btn.innerText = 'Processando...';
+      btn.disabled  = true;
+      freoPaymentInProgress = true;
+      clearTimeout(freoPaymentRefreshTimer);
+      document.getElementById('freo-credits-input').disabled = true;
+
+      try {
+        var mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
+
+        var tokenResult = await mp.createCardToken({
+          cardId:       selectedCard.mp_card_id,
+          securityCode: cvv
+        });
+
+        if (!tokenResult || !tokenResult.id) {
+          errEl.innerText = 'CVV inválido ou cartão recusado. Tente novamente.';
+          errEl.classList.remove('hidden');
+          btn.innerText = 'Confirmar pagamento';
+          btn.disabled  = false;
+          freoPaymentInProgress = false;
+          document.getElementById('freo-credits-input').disabled = false;
+          return;
+        }
+
+        var totalFinal = totalComCreditos();
+        var userId     = currentUser.id;
+        var freteNomeCompleto = selectedShipping
+          ? (selectedShipping.company ? selectedShipping.company + ' - ' : '') + (selectedShipping.service_name || 'Entrega')
+          : null;
+
+        var payload = {
+          token:               tokenResult.id,
+          payment_method_id:   selectedCard.payment_method,
+          installments:        1,
+          action:              'process_payment',
+          user_id:             userId,
+          frete:               selectedShipping,
+          total_com_frete:     totalFinal,
+          backUrls:            backUrls,
+          device_id:           window.MP_DEVICE_SESSION_ID || '',
+          binary_mode:         true,
+          three_d_secure_mode: 'optional',
+          payer: {
+            type:       'customer',
+            id:         selectedCard.mp_customer_id,
+            first_name: getCustomerNameForOrder().split(' ')[0] || '',
+            last_name:  getCustomerNameForOrder().split(' ').slice(1).join(' ') || '',
+            email:      getCustomerEmailForOrder(),
+            identification: {
+              type:   'CPF',
+              number: getCustomerCPFForOrder()
+            },
+            phone: {
+              area_code: getCustomerPhoneForOrder().replace(/\D/g,'').substring(0,2),
+              number:    getCustomerPhoneForOrder().replace(/\D/g,'').substring(2)
+            },
+            address: {
+              zip_code:      (selectedAddress ? selectedAddress.zip_code : '').replace(/\D/g,''),
+              street_name:    selectedAddress ? selectedAddress.street       : '',
+              street_number:  selectedAddress ? selectedAddress.number       : '',
+              neighborhood:   selectedAddress ? selectedAddress.neighborhood : '',
+              city:           selectedAddress ? selectedAddress.city         : '',
+              federal_unit:   selectedAddress ? selectedAddress.state        : ''
+            }
+          },
+          items: buildOrderItems()
+        };
+
+        var orderResult = await window.supabaseClient
+          .from('orders')
+          .insert({
+            user_id:            userId,
+            status:             'pendente',
+            is_b2b:             true,
+            total:              totalAntesDosCreditos(),
+            items:              payload.items,
+            frete_valor:        selectedShipping ? selectedShipping.price        : 0,
+            frete_nome:         freteNomeCompleto,
+            frete_prazo:        selectedShipping ? String(selectedShipping.days)  : null,
+            frete_company:      selectedShipping ? selectedShipping.company       : null,
+            frete_service_id:   selectedShipping ? selectedShipping.service_id    : null,
+            frete_service_name: selectedShipping ? selectedShipping.service_name  : null,
+            frete_service_code: selectedShipping ? selectedShipping.service_code  : null,
+            shipping_address:   selectedAddress  ? JSON.stringify(selectedAddress) : null,
+            customer_name:      getCustomerNameForOrder(),
+            customer_email:     getCustomerEmailForOrder(),
+            customer_phone:     getCustomerPhoneForOrder(),
+            customer_cpf:       getCustomerCPFForOrder()
+          })
+          .select('id')
+          .single();
+
+        if (orderResult.error) throw orderResult.error;
+        var orderId = orderResult.data.id;
+        payload.total_com_frete = await aplicarCreditosAoPedido(orderId);
+
+        var r    = await fetch(N8N_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        var resp = await r.json();
+        var data = Array.isArray(resp) ? resp[0] : resp;
+
+        var updateData = {};
+        if (data.id)            updateData.payment_id    = String(data.id);
+        if (data.preference_id) updateData.preference_id = String(data.preference_id);
+
+        await window.supabaseClient.from('orders').update(updateData).eq('id', orderId).eq('user_id', userId);
+        if (data.status === 'approved' || data.status === 'rejected') {
+          await window.supabaseClient.functions.invoke('freo-payment-sync', { body: { order_id: orderId } });
+        }
+        if (data.status !== 'rejected') {
+          await window.supabaseClient.from('b2b_cart_items').delete().eq('user_id', userId);
+        }
+        if (data.status !== 'rejected') await consumirCupomAposPayment(orderId);
+
+        if (data.status === 'approved') {
+          setTimeout(function() {
+            window.location.href = backUrls.success
+              + '?payment_id=' + encodeURIComponent(String(data.id || ''));
+          }, 1500);
+        } else if (data.status === 'rejected') {
+          errEl.innerText = 'Pagamento recusado. Tente outro cartão.';
+          errEl.classList.remove('hidden');
+          btn.innerText = 'Confirmar pagamento';
+          btn.disabled  = false;
+          freoPaymentInProgress = false;
+          document.getElementById('freo-credits-input').disabled = false;
+        } else {
+          setTimeout(function() { window.location.href = backUrls.pending; }, 1500);
+        }
+
+      } catch(e) {
+        freoPaymentInProgress = false;
+        document.getElementById('freo-credits-input').disabled = false;
+        console.error('Erro pagarComCartaoSalvo:', e);
+        errEl.innerText = 'Erro inesperado. Tente novamente.';
+        errEl.classList.remove('hidden');
+        btn.innerText = 'Confirmar pagamento';
+        btn.disabled  = false;
+      }
+    }
+     async function liberarPagamento() {
+  if (!getCurrentPhone()) {
+    // Se for convidado e não tiver dados, reabre o modal completo de dados
+    var isGuest = currentUser && (currentUser.is_anonymous === true
+      || (currentUser.user_metadata && currentUser.user_metadata.is_anonymous === true));
+    if (isGuest) {
+      abrirDadosPessoaisConvidado(true);
+    } else {
+      openPhoneRequiredModal();
+    }
+    return;
+  }
+
+      if (!selectedShipping) {
+        alert('Escolha uma opção de frete primeiro.');
+        return;
+      }
+
+      document.getElementById('payment-overlay').classList.add('hidden');
+
+      if (paymentBrickInitialized && window.paymentBrickController) {
+        await window.paymentBrickController.unmount();
+        paymentBrickInitialized = false;
+      }
+      if (totalComCreditos() === 0 && freoCreditsSelected > 0) {
+        document.getElementById('saved-cards-section').classList.add('hidden');
+        document.getElementById('brick-loading').classList.add('hidden');
+        document.getElementById('freo-only-payment').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('freo-only-payment').classList.add('hidden');
+
+      // Carrega cartões salvos
+      await carregarCartoesSalvos();
+      renderizarCartoesSalvos();
+
+      // Se não tem cartão salvo, abre o Brick direto
+      if (!savedCards.length && !paymentBrickInitialized) {
+        document.getElementById('brick-loading').classList.remove('hidden');
+        await initPaymentBrick();
+      }
+    }
+
+    function getCustomerNameForOrder() {
+      var metadata = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
+
+      return String(
+        (currentProfile && currentProfile.name) ||
+        (currentProfile && currentProfile.full_name) ||
+        metadata.full_name ||
+        metadata.name ||
+        metadata.display_name ||
+        ''
+      ).trim();
+    }
+
+    function getCustomerEmailForOrder() {
+      return String(
+        (currentProfile && currentProfile.email) ||
+        (currentUser && currentUser.email) ||
+        ''
+      ).trim();
+    }
+
+    function getCustomerPhoneForOrder() {
+      var metadata = currentUser && currentUser.user_metadata ? currentUser.user_metadata : {};
+
+      return String(
+        (currentProfile && currentProfile.phone) ||
+        (currentProfile && currentProfile.telefone) ||
+        metadata.phone ||
+        metadata.telefone ||
+        ''
+      ).trim();
+    }
+
+    function getCustomerCPFForOrder() {
+      return String((currentProfile && currentProfile.cpf) || '').replace(/\D/g, '');
+    }
+
+    async function initPaymentBrick() {
+      paymentBrickInitialized = true;
+
+      var totalFinal = totalComCreditos();
+      var mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
+      var bricksBuilder = mp.bricks();
+
+      var settings = {
+        initialization: {
+          amount: totalFinal,
+
+          // OBRIGATÓRIO para nota de segurança: pré-preenche os dados do pagador
+          payer: {
+            firstName: getCustomerNameForOrder().split(' ')[0] || '',
+            lastName:  getCustomerNameForOrder().split(' ').slice(1).join(' ') || '',
+            email:     getCustomerEmailForOrder(),
+            identification: {
+              type:   'CPF',
+              number: ''   // deixe vazio; o usuário preenche no brick
+            },
+            address: {
+              zipCode:      (selectedAddress ? selectedAddress.zip_code  : '').replace(/\D/g,''),
+              streetName:    selectedAddress ? selectedAddress.street       : '',
+              streetNumber:  selectedAddress ? selectedAddress.number       : '',
+              neighborhood:  selectedAddress ? selectedAddress.neighborhood : '',
+              city:          selectedAddress ? selectedAddress.city         : '',
+              federalUnit:   selectedAddress ? selectedAddress.state        : ''
+            }
+          }
+        },
+        customization: {
+          paymentMethods: {
+            ticket: "all",
+            bankTransfer: "all",
+            creditCard: "all",
+            debitCard: "all",
+            mercadoPago: "all",
+            maxInstallments: 12
+          },
+          visual: {
+            style: {
+              theme: "dark",
+              customVariables: {
+                textPrimaryColor: "#F5F5F5",
+                textSecondaryColor: "#D4AF37",
+                baseColor: "#D4AF37",
+                backgroundColor: "#121212",
+                outlinePrimaryColor: "#D4AF37",
+                formBackgroundColor: "#121212",
+                baseColorFirstVariant: "#C9A227",
+                baseColorSecondVariant: "#B8911F",
+                fontSizeLarge: "16px"
+              }
+            }
+          }
+        },
+        callbacks: {
+          onReady: function() {
+            document.getElementById('brick-loading').classList.add('hidden');
+            document.getElementById('section-payment').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          },
+
+          onSubmit: async function(params) {
+
+            if (freoPaymentInProgress) throw new Error('Pagamento já está em processamento.');
+            freoPaymentInProgress = true;
+            clearTimeout(freoPaymentRefreshTimer);
+            document.getElementById('freo-credits-input').disabled = true;
+
+            await saveCardAfterPayment(params.formData.token || null);
+
+            var deviceId = window.MP_DEVICE_SESSION_ID || '';
+
+            var payload = Object.assign({}, params.formData, {
+              action:          'process_payment',
+              user_id:         currentUser.id,
+              frete:           selectedShipping,
+              total_com_frete: totalComCreditos(),
+              backUrls: backUrls,
+
+              // Segurança / antifraude
+              device_id:          deviceId,          // ← fingerprint do dispositivo
+              binary_mode:        true,              // ← sem binary_mode o MP fica em "pending" indefinido
+              three_d_secure_mode: 'optional',       // ← ativa 3DS quando o banco exigir
+
+              // Dados do pagador (melhora score antifraude)
+              payer: {
+                first_name: getCustomerNameForOrder().split(' ')[0] || '',
+                last_name:  getCustomerNameForOrder().split(' ').slice(1).join(' ') || '',
+                email:      getCustomerEmailForOrder(),
+                identification: {
+                  type:   'CPF',
+                  number: getCustomerCPFForOrder()
+                },
+                phone: {
+                  area_code: getCustomerPhoneForOrder().replace(/\D/g,'').substring(0,2),
+                  number:    getCustomerPhoneForOrder().replace(/\D/g,'').substring(2)
+                },
+                address: {
+                  zip_code:      (selectedAddress ? selectedAddress.zip_code  : '').replace(/\D/g,''),
+                  street_name:    selectedAddress ? selectedAddress.street       : '',
+                  street_number:  selectedAddress ? selectedAddress.number       : '',
+                  neighborhood:   selectedAddress ? selectedAddress.neighborhood : '',
+                  city:           selectedAddress ? selectedAddress.city         : '',
+                  federal_unit:   selectedAddress ? selectedAddress.state        : ''
+                }
+              },
+
+              items: buildOrderItems()
+            });
+
+            var totalFinalOrder = totalAntesDosCreditos();
+            var userId = currentUser.id;
+
+            var customerName = getCustomerNameForOrder();
+            var customerEmail = getCustomerEmailForOrder();
+            var customerPhone = getCustomerPhoneForOrder();
+            var customerCPF = getCustomerCPFForOrder();
+
+            var freteNomeCompleto = null;
+
+            if (selectedShipping) {
+              var company = selectedShipping.company || '';
+              var service = selectedShipping.service_name || selectedShipping.raw_name || 'Entrega';
+
+              freteNomeCompleto = company ? company + ' - ' + service : service;
+            }
+
+            return window.supabaseClient
+              .from('orders')
+              .insert({
+                user_id: userId,
+                status: 'pendente',
+                is_b2b: true,
+                total: totalFinalOrder,
+                items: buildOrderItems(),
+
+                frete_valor: selectedShipping ? selectedShipping.price : 0,
+                frete_nome: freteNomeCompleto,
+                frete_prazo: selectedShipping ? String(selectedShipping.days) : null,
+
+                frete_company: selectedShipping ? selectedShipping.company : null,
+                frete_service_id: selectedShipping ? selectedShipping.service_id : null,
+                frete_service_name: selectedShipping ? selectedShipping.service_name : null,
+                frete_service_code: selectedShipping ? selectedShipping.service_code : null,
+
+                shipping_address: selectedAddress ? JSON.stringify(selectedAddress) : null,
+
+                customer_name: customerName,
+                customer_email: customerEmail,
+                customer_phone: customerPhone,
+                customer_cpf: customerCPF
+              })
+              .select('id')
+              .single()
+              .then(async function(orderResult) {
+                if (orderResult.error) throw orderResult.error;
+
+                var orderId = orderResult.data.id;
+                payload.total_com_frete = await aplicarCreditosAoPedido(orderId);
+
+                return fetch(N8N_WEBHOOK_URL, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(payload)
+                })
+                .then(function(r) {
+                  return r.json();
+                })
+                .then(async function(response) {
+                  var data = Array.isArray(response) ? response[0] : response;
+                  var updateData = {};
+
+                  if (data.id) updateData.payment_id = String(data.id);
+                  if (data.preference_id) updateData.preference_id = String(data.preference_id);
+
+                  if (data.status === 'pending' && data.payment_method_id === 'pix') {
+                    if (data.point_of_interaction && data.point_of_interaction.transaction_data) {
+                      var tx = data.point_of_interaction.transaction_data;
+                      updateData.pix_qr_code = tx.qr_code || null;
+                      updateData.pix_qr_code_base64 = tx.qr_code_base64 || null;
+                      updateData.pix_ticket_url = tx.ticket_url || null;
+                    }
+                  }
+
+                  var orderUpdate = await window.supabaseClient
+                    .from('orders')
+                    .update(updateData)
+                    .eq('id', orderId)
+                    .eq('user_id', userId);
+                  if (orderUpdate.error) throw orderUpdate.error;
+                  if (data.status === 'approved' || data.status === 'rejected') {
+                    await window.supabaseClient.functions.invoke('freo-payment-sync', { body: { order_id: orderId } });
+                  }
+
+                  if (data.status !== 'rejected') {
+                    window.supabaseClient
+                      .from('b2b_cart_items')
+                      .delete()
+                      .eq('user_id', userId)
+                      .then(function(r) {
+                        if (r.error) console.error('Erro limpar carrinho:', r.error);
+                      });
+                  }
+                  if (data.status !== 'rejected') consumirCupomAposPayment(orderId);
+
+                  if (
+                    data.status === 'pending' &&
+                    data.payment_method_id === 'pix' &&
+                    data.point_of_interaction &&
+                    data.point_of_interaction.transaction_data
+                  ) {
+                    var txData = data.point_of_interaction.transaction_data;
+                    exibirPixNaPagina(txData.qr_code, txData.qr_code_base64, txData.ticket_url, orderId, userId);
+                  }
+
+                  if (data.status === 'approved') {
+                    setTimeout(function() {
+                      window.location.href = backUrls.success
+                        + '?payment_id=' + encodeURIComponent(String(data.id || ''));
+                    }, 2000);
+                  }
+
+                  if (data.status === 'rejected') {
+                    setTimeout(function() {
+                      window.location.href = backUrls.failure;
+                    }, 2000);
+                  }
+
+                  return data;
+                });
+              })
+              .catch(function(err) {
+                freoPaymentInProgress = false;
+                document.getElementById('freo-credits-input').disabled = false;
+                console.error('Erro onSubmit:', err);
+                throw err;
+              });
+          },
+
+          onError: function(error) {
+            console.error('Brick error:', error);
+          }
+        }
+      };
+
+      window.paymentBrickController = await bricksBuilder.create("payment", "paymentBrick_container", settings);
+    }
+
+    async function saveCardAfterPayment(cardToken) {
+      if (!cardToken) return null;
+
+      try {
+        var session = await window.supabaseClient.auth.getSession();
+        var accessToken = session?.data?.session?.access_token;
+
+        if (!accessToken) return null;
+
+        var response = await fetch(
+          'https://rrmxqpvxrpcqqxsgccqw.supabase.co/functions/v1/save-card',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':  'application/json',
+              'Authorization': 'Bearer ' + accessToken,
+            },
+            body: JSON.stringify({ card_token: cardToken }),
+          }
+        );
+
+        var data = await response.json();
+        if (!response.ok) return null;
+
+        return data.card || null;
+
+      } catch (err) {
+        console.error('[saveCard] erro silencioso:', err);
+        return null;
+      }
+    }
+    async function validarCarrinhoB2B() {
+      var ids = cartItemsData.map(function(item) { return Number(item.product_id); });
+      if (ids.some(function(id) { return !Number.isSafeInteger(id) || id < 1; })) throw new Error('Produto B2B inválido.');
+      var [productsResult, tiersResult] = await Promise.all([
+        window.supabaseClient.from('products').select('id,title,images,is_active,sale_mode,is_kit').in('id', ids).eq('is_active', true),
+        window.supabaseClient.from('product_price_tiers').select('product_id,min_qty,max_qty,unit_price,is_active').in('product_id', ids).eq('is_active', true)
+      ]);
+      if (productsResult.error || tiersResult.error) throw new Error('Não foi possível validar os preços B2B.');
+      var products = productsResult.data || [];
+      var tiers = tiersResult.data || [];
+      for (var item of cartItemsData) {
+        var quantity = Number(item.quantity);
+        var product = products.find(function(p) { return Number(p.id) === Number(item.product_id); });
+        if (!product || product.sale_mode === 'quote_only' || product.is_kit ||
+            !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000) {
+          throw new Error('Um produto B2B não está disponível para compra direta. Volte ao catálogo para solicitar cotação.');
+        }
+        var tier = tiers.filter(function(t) {
+          return Number(t.product_id) === Number(product.id) && t.is_active &&
+            quantity >= Number(t.min_qty) && (t.max_qty == null || quantity <= Number(t.max_qty)) && Number(t.unit_price) > 0;
+        }).sort(function(a, b) { return Number(b.min_qty) - Number(a.min_qty); })[0];
+        if (!tier) throw new Error('A quantidade não atende à faixa B2B. Volte ao produto e ajuste o pedido.');
+        var price = Number(tier.unit_price);
+        if (!Number.isFinite(price) || Math.round(price * quantity * 100) > Number.MAX_SAFE_INTEGER) throw new Error('Valor B2B inválido.');
+        item.price = price;
+        item.product_name = product.title;
+        item.image_url = Array.isArray(product.images) ? product.images[0] : null;
+        var update = await window.supabaseClient.from('b2b_cart_items').update({
+          price: price, total_price: Math.round(price * quantity * 100) / 100,
+          product_name: item.product_name, image_url: item.image_url
+        }).eq('id', item.id).eq('user_id', currentUser.id);
+        if (update.error) throw update.error;
+      }
+    }
+
+    async function initCheckout() {
+  showLoading();
+
+  try {
+    var sessionResult = await window.supabaseClient.auth.getSession();
+    var session = sessionResult.data && sessionResult.data.session;
+
+    // Sem sessão alguma: redireciona para login (caso extremo — não deveria chegar
+    // aqui porque o addToCart já cria sessão anônima antes de chegar ao checkout)
+    if (!session) {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    currentUser = session.user;
+
+    // Detecta se é convidado (anônimo) — via query string ou flag do Supabase
+    var urlParams = new URLSearchParams(window.location.search);
+    var isGuest = urlParams.get('guest') === '1'
+      || currentUser.is_anonymous === true
+      || (currentUser.user_metadata && currentUser.user_metadata.is_anonymous === true);
+
+    if (!isGuest) {
+      var walletResult = await window.supabaseClient.from('freo_wallets').select('balance').eq('user_id', currentUser.id).single();
+      if (walletResult.error) throw new Error('Não foi possível carregar seus Créditos Freo. Recarregue a página.');
+      freoCreditEligible = true;
+      freoCreditBalance = Number(walletResult.data.balance) || 0;
+      document.getElementById('freo-credits-balance').innerText = freoCreditBalance + ' disponíveis';
+      document.getElementById('freo-credits-section').classList.remove('hidden');
+    }
+
+    var profileResult = await window.supabaseClient
+      .from('profiles')
+      .select('id, name, email, phone, cpf, account_type, is_admin, cnpj')
+      .eq('id', currentUser.id)
+      .single();
+
+    var metadata = currentUser.user_metadata || {};
+
+    currentProfile = profileResult.data || {
+      id: currentUser.id,
+      name: metadata.full_name || metadata.name || metadata.display_name || '',
+      email: currentUser.email || '',
+      phone: metadata.phone || metadata.telefone || ''
+    };
+
+    if (b2bCheckoutMode && (isGuest || !profileResult.data ||
+        (profileResult.data.is_admin !== true && (profileResult.data.account_type !== 'pj' || String(profileResult.data.cnpj || '').replace(/\D/g, '').length !== 14)))) {
+      showCheckoutError('Entre com uma conta empresarial (CNPJ) para finalizar o pedido B2B.');
+      return;
+    }
+
+    if (!currentProfile.name) {
+      currentProfile.name = metadata.full_name || metadata.name || metadata.display_name || currentUser.email || '';
+    }
+    if (!currentProfile.email) {
+      currentProfile.email = currentUser.email || '';
+    }
+    if (!currentProfile.phone) {
+      currentProfile.phone = metadata.phone || metadata.telefone || '';
+    }
+
+    customGenerationId = urlParams.get('generation_id')?.trim() || null;
+    customCheckoutMode = !b2bCheckoutMode && urlParams.get('custom') === '1' && Boolean(customGenerationId);
+
+    if (customCheckoutMode) {
+      // Checkout dedicado da criação personalizada.
+      // O preço e a imagem são buscados no backend usando a sessão atual.
+      cartItemsData = [await carregarItemPersonalizado(customGenerationId)];
+    } else {
+      var cartResult = await window.supabaseClient
+        .from('b2b_cart_items')
+        .select('*')
+        .eq('user_id', currentUser.id);
+
+      if (cartResult.error) throw cartResult.error;
+      cartItemsData = cartResult.data || [];
+      if (b2bCheckoutMode && cartItemsData.length) await validarCarrinhoB2B();
+    }
+
+    if (cartItemsData.length === 0) {
+      showEmpty();
+      return;
+    }
+
+    showCheckout();
+    renderItems(cartItemsData);
+    carregarRegrasFrete(); // dispara em paralelo, não precisa aguardar aqui
+    await carregarEnderecos();
+
+    // Para convidado: sempre abre o modal de dados pessoais (ele não tem cadastro)
+    // Para usuário logado: abre só se dados estiverem incompletos
+    var temDadosCompletos = getCurrentPhone() &&
+                            getCustomerNameForOrder() &&
+                            (currentProfile && currentProfile.cpf);
+
+    if (isGuest || !temDadosCompletos) {
+      abrirDadosPessoaisConvidado(isGuest);
+    }
+  } catch (err) {
+    console.error('Erro checkout:', err);
+    if (customCheckoutMode || b2bCheckoutMode) {
+      showCheckoutError(err instanceof Error ? err.message : String(err || 'Erro desconhecido.'));
+    } else {
+      showEmpty();
+    }
+  }
+}
+
+    async function carregarEnderecos() {
+      try {
+        var r = await window.supabaseClient
+          .from('addresses')
+          .select('*')
+          .eq('user_id', currentUser.id);
+
+        savedAddresses = r.data || [];
+      } catch(e) {
+        savedAddresses = [];
+      }
+
+      var list = document.getElementById('saved-addresses-list');
+
+      if (savedAddresses.length > 0) {
+        list.innerHTML = savedAddresses.map(function(addr, i) {
+          var isPrincipal = addr.is_main || addr.is_default;
+
+          return '<div class="addr-card' + (isPrincipal ? ' selected' : '') + '" onclick="selecionarEndereco(' + i + ')" id="addr-card-' + i + '">'
+            + '<div class="flex items-start gap-2">'
+            + '<input type="radio" name="addr" class="mt-1 flex-shrink-0 accent-freo-orange" ' + (isPrincipal ? 'checked' : '') + '>'
+            + '<div class="flex-1">'
+            + '<p class="font-body font-bold text-sm text-white">' + (addr.street || '') + ', ' + (addr.number || 'S/N') + (addr.complement ? ' - ' + addr.complement : '') + '</p>'
+            + '<p class="font-mono text-xs text-white/50 mt-0.5">' + (addr.neighborhood ? addr.neighborhood + ' · ' : '') + (addr.city || '') + ' - ' + (addr.state || '') + '</p>'
+            + '<p class="font-mono text-xs text-white/30 mt-0.5">CEP: ' + (addr.zip_code || '') + '</p>'
+            + '</div>'
+            + (isPrincipal ? '<span style="font-family:ui-monospace,monospace;font-size:9px;background:#D4AF37;color:#0A0A0A;padding:2px 6px;text-transform:uppercase;font-weight:bold;flex-shrink:0;align-self:flex-start">Principal</span>' : '')
+            + '</div></div>';
+        }).join('');
+
+        var principal = savedAddresses.findIndex(function(a) {
+          return a.is_main || a.is_default;
+        });
+
+        selecionarEndereco(principal >= 0 ? principal : 0);
+      } else {
+        list.innerHTML = '';
+        mostrarFormEndereco(true);
+      }
+    }
+
+    function selecionarEndereco(idx) {
+      var addr = savedAddresses[idx];
+
+      if (!addr) return;
+
+      document.querySelectorAll('.addr-card').forEach(function(card, i) {
+        card.classList.toggle('selected', i === idx);
+
+        var radio = card.querySelector('input[type=radio]');
+        if (radio) radio.checked = i === idx;
+      });
+
+      if (!document.getElementById('address-form').classList.contains('hidden')) return;
+
+      _confirmarComEndereco(addr);
+    }
+
+    function mostrarFormEndereco(hideCancel) {
+      document.getElementById('saved-addresses-section').classList.add('hidden');
+      document.getElementById('address-form').classList.remove('hidden');
+      document.getElementById('address-confirmed').classList.add('hidden');
+      document.getElementById('btn-change-address').classList.add('hidden');
+
+      if (!hideCancel && savedAddresses.length > 0) {
+        document.getElementById('btn-cancel-form').classList.remove('hidden');
+      }
+    }
+
+    function cancelarFormEndereco() {
+      document.getElementById('address-form').classList.add('hidden');
+      document.getElementById('saved-addresses-section').classList.remove('hidden');
+
+      if (selectedAddress) {
+        _confirmarComEndereco(selectedAddress);
+      }
+    }
+
+    async function buscarCEP() {
+      var cep = document.getElementById('addr-cep').value.replace(/\D/g, '');
+
+      if (cep.length !== 8) {
+        alert('CEP inválido. Digite os 8 dígitos.');
+        return;
+      }
+
+      document.getElementById('cep-searching').classList.remove('hidden');
+      document.getElementById('btn-buscar-cep').disabled = true;
+
+      var preencheu = false;
+
+      // Tentativa 1: ViaCEP
+      try {
+        var r1 = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
+        if (r1.ok) {
+          var d1 = await r1.json();
+          if (!d1.erro && d1.logradouro !== undefined) {
+            document.getElementById('addr-street').value = d1.logradouro || '';
+            document.getElementById('addr-neighborhood').value = d1.bairro || '';
+            document.getElementById('addr-city').value = d1.localidade || '';
+            document.getElementById('addr-state').value = d1.uf || '';
+            document.getElementById('addr-number').focus();
+            preencheu = true;
+          }
+        }
+      } catch(e1) { /* segue para fallback */ }
+
+      // Tentativa 2: ApiCEP (fallback)
+      if (!preencheu) {
+        try {
+          var r2 = await fetch('https://cdn.apicep.com/file/apicep/' + cep.substring(0,5) + '-' + cep.substring(5) + '.json');
+          if (r2.ok) {
+            var d2 = await r2.json();
+            if (d2.ok && d2.address) {
+              document.getElementById('addr-street').value = d2.address || '';
+              document.getElementById('addr-neighborhood').value = d2.district || '';
+              document.getElementById('addr-city').value = d2.city || '';
+              document.getElementById('addr-state').value = d2.state || '';
+              document.getElementById('addr-number').focus();
+              preencheu = true;
+            }
+          }
+        } catch(e2) { /* segue para fallback 2 */ }
+      }
+
+      // Tentativa 3: BrasilAPI (segundo fallback)
+      if (!preencheu) {
+        try {
+          var r3 = await fetch('https://brasilapi.com.br/api/cep/v1/' + cep);
+          if (r3.ok) {
+            var d3 = await r3.json();
+            if (d3.street !== undefined) {
+              document.getElementById('addr-street').value = d3.street || '';
+              document.getElementById('addr-neighborhood').value = d3.neighborhood || '';
+              document.getElementById('addr-city').value = d3.city || '';
+              document.getElementById('addr-state').value = d3.state || '';
+              document.getElementById('addr-number').focus();
+              preencheu = true;
+            }
+          }
+        } catch(e3) { /* todas falharam */ }
+      }
+
+      if (!preencheu) {
+        alert('CEP não encontrado. Preencha o endereço manualmente.');
+      }
+
+      document.getElementById('cep-searching').classList.add('hidden');
+      document.getElementById('btn-buscar-cep').disabled = false;
+    }
+
+    async function confirmarEndereco() {
+      var cep = document.getElementById('addr-cep').value.trim();
+      var street = document.getElementById('addr-street').value.trim();
+      var number = document.getElementById('addr-number').value.trim();
+      var comp = document.getElementById('addr-complement').value.trim();
+      var neigh = document.getElementById('addr-neighborhood').value.trim();
+      var city = document.getElementById('addr-city').value.trim();
+      var state = document.getElementById('addr-state').value.trim().toUpperCase();
+      var errEl = document.getElementById('addr-error');
+
+      errEl.classList.add('hidden');
+
+      if (!cep || !street || !number || !city || !state) {
+        errEl.innerText = 'Preencha CEP, rua, número, cidade e estado.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      var addr = {
+        zip_code: cep,
+        street: street,
+        number: number,
+        complement: comp,
+        neighborhood: neigh,
+        city: city,
+        state: state
+      };
+
+      if (document.getElementById('addr-save').checked) {
+        try {
+          var r = await window.supabaseClient
+            .from('addresses')
+            .insert(Object.assign({}, addr, {
+              user_id: currentUser.id,
+              is_main: savedAddresses.length === 0
+            }));
+
+          if (!r.error) {
+            savedAddresses.push(Object.assign({}, addr, { id: Date.now() }));
+          }
+        } catch(e) {
+          console.warn('Erro salvar endereço:', e);
+        }
+      }
+
+      _confirmarComEndereco(addr);
+
+      document.getElementById('address-form').classList.add('hidden');
+      document.getElementById('saved-addresses-section').classList.add('hidden');
+    }
+
+    function _confirmarComEndereco(addr) {
+      selectedAddress = addr;
+
+      document.getElementById('addr-confirmed-line1').innerText =
+        (addr.street || '') + ', ' + (addr.number || 'S/N') + (addr.complement ? ' - ' + addr.complement : '');
+
+      document.getElementById('addr-confirmed-line2').innerText =
+        (addr.neighborhood ? addr.neighborhood + ' · ' : '') + (addr.city || '') + ' - ' + (addr.state || '');
+
+      document.getElementById('addr-confirmed-line3').innerText =
+        'CEP: ' + (addr.zip_code || '');
+
+      document.getElementById('address-confirmed').classList.remove('hidden');
+      document.getElementById('btn-change-address').classList.remove('hidden');
+      document.getElementById('saved-addresses-section').classList.add('hidden');
+
+      document.getElementById('step2-dot').className = 'step-dot done';
+      document.getElementById('step2-dot').innerHTML = '&#10003;';
+      document.getElementById('step2-line').className = 'step-line done';
+      document.getElementById('step3-dot').className = 'step-dot active';
+
+      var overlay = document.getElementById('shipping-locked-overlay');
+
+      if (overlay) {
+        overlay.classList.add('hidden');
+      }
+
+      var cepLimpo = (addr.zip_code || '').replace(/\D/g, '');
+
+      if (cepLimpo.length === 8) {
+        document.getElementById('cep-display-value').innerText = addr.zip_code;
+        document.getElementById('cep-display').classList.remove('hidden');
+
+        var cepRow = document.querySelector('#section-shipping .flex.gap-3.mb-5');
+
+        if (cepRow) {
+          cepRow.style.display = 'none';
+        }
+
+        var cepLink = document.querySelector('#section-shipping a[href*="buscacepinter"]');
+
+        if (cepLink) {
+          cepLink.style.display = 'none';
+        }
+
+        calcularFrete(cepLimpo);
+      }
+    }
+
+    // ─── MONITORAMENTO DO PAGAMENTO PIX (polling) ──────────────────────────────
+    // O Mercado Pago confirma o Pix de forma assíncrona: o cliente paga pelo
+    // banco dele, o MP notifica o n8n (webhook notificacao-pagamento), e o n8n
+    // grava status='pago' na tabela orders. Como esse webhook é servidor→servidor,
+    // ele não tem como avisar o navegador do cliente sozinho — por isso a página
+    // precisa consultar periodicamente se o status já mudou.
+    var pixPollInterval = null;
+    var pixPollAttempts = 0;
+    var PIX_POLL_MAX_ATTEMPTS = 180; // 180 x 5s = 15 minutos de tentativa
+
+    function monitorarPagamentoPix(orderId, userId) {
+      if (!orderId || !userId) return;
+
+      if (pixPollInterval) {
+        clearInterval(pixPollInterval);
+      }
+      pixPollAttempts = 0;
+
+      pixPollInterval = setInterval(async function() {
+        pixPollAttempts++;
+
+        if (pixPollAttempts > PIX_POLL_MAX_ATTEMPTS) {
+          clearInterval(pixPollInterval);
+          pixPollInterval = null;
+          return;
+        }
+
+        try {
+          var r = await window.supabaseClient
+            .from('orders')
+            .select('status, payment_id')
+            .eq('id', orderId)
+            .eq('user_id', userId)
+            .single();
+
+          if (r.error || !r.data) return;
+
+          if (r.data.status === 'pago') {
+            clearInterval(pixPollInterval);
+            pixPollInterval = null;
+
+            var modalEl = document.getElementById('pix-modal-checkout');
+            if (modalEl) modalEl.remove();
+
+            window.location.href = backUrls.success
+              + '?payment_id=' + encodeURIComponent(String(r.data.payment_id || ''));
+          }
+        } catch (e) {
+          console.warn('[PixPoll] erro ao verificar status do pagamento:', e);
+        }
+      }, 5000);
+    }
+
+    function exibirPixNaPagina(qrCode, qrCodeBase64, ticketUrl, orderId, userId) {
+      var oldModal = document.getElementById('pix-modal-checkout');
+
+      if (oldModal) {
+        oldModal.remove();
+      }
+
+      var modal = document.createElement('div');
+      modal.id = 'pix-modal-checkout';
+      modal.style.position = 'fixed';
+      modal.style.inset = '0';
+      modal.style.zIndex = '9999';
+      modal.style.background = 'rgba(10,10,10,0.93)';
+      modal.style.backdropFilter = 'blur(10px)';
+      modal.style.display = 'flex';
+      modal.style.alignItems = 'center';
+      modal.style.justifyContent = 'center';
+      modal.style.padding = '16px';
+      modal.style.overflowY = 'auto';
+
+      var box = document.createElement('div');
+      box.style.background = '#111111';
+      box.style.border = '1px solid rgba(212,175,55,0.25)';
+      box.style.borderRadius = '20px';
+      box.style.padding = '36px 28px 28px';
+      box.style.maxWidth = '400px';
+      box.style.width = '100%';
+      box.style.textAlign = 'center';
+      box.style.fontFamily = 'Space Grotesk, sans-serif';
+      box.style.position = 'relative';
+
+      var closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.innerText = '✕';
+      closeBtn.style.position = 'absolute';
+      closeBtn.style.top = '14px';
+      closeBtn.style.right = '14px';
+      closeBtn.style.background = 'rgba(255,255,255,0.06)';
+      closeBtn.style.border = 'none';
+      closeBtn.style.borderRadius = '50%';
+      closeBtn.style.width = '30px';
+      closeBtn.style.height = '30px';
+      closeBtn.style.cursor = 'pointer';
+      closeBtn.style.color = 'rgba(245,245,245,0.4)';
+      closeBtn.style.fontSize = '16px';
+      closeBtn.addEventListener('click', function() {
+        modal.remove();
+      });
+
+      var title = document.createElement('p');
+      title.innerText = 'Pague via Pix';
+      title.style.fontFamily = 'Outfit, sans-serif';
+      title.style.fontWeight = '900';
+      title.style.fontSize = '22px';
+      title.style.color = '#F5F5F5';
+      title.style.margin = '0 0 4px';
+
+      var subtitle = document.createElement('p');
+      subtitle.innerText = 'Escaneie o QR Code com o app do seu banco';
+      subtitle.style.fontSize = '12px';
+      subtitle.style.color = 'rgba(245,245,245,0.35)';
+      subtitle.style.margin = '0 0 24px';
+      subtitle.style.fontFamily = 'ui-monospace, monospace';
+
+      var qrWrapper = document.createElement('div');
+      qrWrapper.style.background = '#ffffff';
+      qrWrapper.style.padding = '14px';
+      qrWrapper.style.borderRadius = '12px';
+      qrWrapper.style.display = 'inline-block';
+      qrWrapper.style.marginBottom = '24px';
+
+      var qrImg = document.createElement('img');
+      qrImg.src = 'data:image/png;base64,' + (qrCodeBase64 || '');
+      qrImg.alt = 'QR Code Pix';
+      qrImg.style.width = '180px';
+      qrImg.style.height = '180px';
+      qrImg.style.display = 'block';
+      qrWrapper.appendChild(qrImg);
+
+      var copyRow = document.createElement('div');
+      copyRow.style.display = 'flex';
+      copyRow.style.gap = '8px';
+      copyRow.style.marginBottom = '16px';
+
+      var input = document.createElement('input');
+      input.id = 'pix-copy-input';
+      input.readOnly = true;
+      input.value = qrCode || '';
+      input.style.flex = '1';
+      input.style.minWidth = '0';
+      input.style.background = '#0A0A0A';
+      input.style.border = '1px solid rgba(212,175,55,0.25)';
+      input.style.color = 'rgba(212,175,55,0.8)';
+      input.style.fontFamily = 'ui-monospace, monospace';
+      input.style.fontSize = '9px';
+      input.style.padding = '10px 12px';
+      input.style.borderRadius = '8px';
+      input.style.outline = 'none';
+      input.style.overflow = 'hidden';
+      input.style.textOverflow = 'ellipsis';
+      input.style.whiteSpace = 'nowrap';
+
+      var copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.innerText = 'Copiar';
+      copyBtn.style.flexShrink = '0';
+      copyBtn.style.background = '#D4AF37';
+      copyBtn.style.color = '#0A0A0A';
+      copyBtn.style.fontFamily = 'Outfit, sans-serif';
+      copyBtn.style.fontWeight = '800';
+      copyBtn.style.fontSize = '11px';
+      copyBtn.style.textTransform = 'uppercase';
+      copyBtn.style.padding = '10px 18px';
+      copyBtn.style.border = 'none';
+      copyBtn.style.borderRadius = '8px';
+      copyBtn.style.cursor = 'pointer';
+      copyBtn.style.whiteSpace = 'nowrap';
+      copyBtn.addEventListener('click', function() {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(input.value).then(function() {
+            copyBtn.innerText = 'Copiado!';
+          }).catch(function() {
+            input.select();
+            document.execCommand('copy');
+            copyBtn.innerText = 'Copiado!';
+          });
+        } else {
+          input.select();
+          document.execCommand('copy');
+          copyBtn.innerText = 'Copiado!';
+        }
+      });
+
+      copyRow.appendChild(input);
+      copyRow.appendChild(copyBtn);
+
+      var note = document.createElement('p');
+      note.innerText = 'Confirmação automática após pagamento.';
+      note.style.fontSize = '11px';
+      note.style.color = 'rgba(245,245,245,0.4)';
+      note.style.fontFamily = 'ui-monospace, monospace';
+      note.style.margin = '0';
+      note.style.lineHeight = '1.6';
+
+      box.appendChild(closeBtn);
+      box.appendChild(title);
+      box.appendChild(subtitle);
+      box.appendChild(qrWrapper);
+      box.appendChild(copyRow);
+      box.appendChild(note);
+
+      if (ticketUrl) {
+        var link = document.createElement('a');
+        link.href = ticketUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.innerText = 'Ver no Mercado Pago →';
+        link.style.display = 'block';
+        link.style.marginTop = '12px';
+        link.style.fontFamily = 'ui-monospace, monospace';
+        link.style.fontSize = '11px';
+        link.style.color = 'rgba(212,175,55,0.5)';
+        link.style.textDecoration = 'underline';
+        box.appendChild(link);
+      }
+
+      modal.appendChild(box);
+      document.body.appendChild(modal);
+
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+
+      // Começa a monitorar o pagamento — redireciona sozinho quando confirmar
+      monitorarPagamentoPix(orderId, userId);
+    }
+
+    // ─── SISTEMA DE CUPOM NO CHECKOUT ──────────────────────────────────────────
+    var activeCouponData = null;
+    var couponDiscountAmount = 0;
+
+    (function carregarCupomDoStorage() {
+      try {
+        var raw = localStorage.getItem('freo_active_coupon');
+        if (raw) {
+          activeCouponData = JSON.parse(raw);
+          renderizarCupomAtivo();
+        }
+      } catch(e) {}
+    })();
+
+    function renderizarCupomAtivo() {
+      if (!activeCouponData) return;
+
+      document.getElementById('coupon-active-display').classList.remove('hidden');
+      document.getElementById('coupon-input-area').classList.add('hidden');
+      document.getElementById('coupon-code-display').innerText = activeCouponData.code;
+
+      var benefit = '';
+      if (activeCouponData.type === 'free_product') benefit = '🎁 Produto grátis (paga só o frete)';
+      else if (activeCouponData.type === 'percent') benefit = activeCouponData.discount_value + '% de desconto';
+      else if (activeCouponData.type === 'fixed') benefit = 'R$ ' + Number(activeCouponData.discount_value).toFixed(2).replace('.', ',') + ' de desconto';
+      document.getElementById('coupon-benefit-display').innerText = benefit;
+
+      aplicarDescontoCupom();
+    }
+
+    function aplicarDescontoCupom() {
+      if (!activeCouponData) { couponDiscountAmount = 0; updateTotals(); return; }
+
+      if (activeCouponData.type === 'free_product') {
+        couponDiscountAmount = subtotalAmount;
+      } else if (activeCouponData.type === 'percent') {
+        couponDiscountAmount = subtotalAmount * (Number(activeCouponData.discount_value) / 100);
+      } else if (activeCouponData.type === 'fixed') {
+        couponDiscountAmount = Math.min(Number(activeCouponData.discount_value), subtotalAmount);
+      }
+
+      // Aplica o limite máximo de desconto configurado no admin. Vale para
+      // todos os tipos de cupom, inclusive "produto grátis": se o produto custar
+      // mais que o limite, o cliente paga a diferença além do frete.
+      var maxDiscount = activeCouponData.max_discount_value;
+      if (maxDiscount !== null && maxDiscount !== undefined && maxDiscount !== '') {
+        couponDiscountAmount = Math.min(couponDiscountAmount, Number(maxDiscount));
+      }
+
+      document.getElementById('coupon-discount-row').classList.remove('hidden');
+      document.getElementById('coupon-discount-display').innerText = '− ' + formatCurrency(couponDiscountAmount);
+
+      mostrarAvisoLimiteCupom();
+      updateTotals();
+      if (selectedShipping && !freoPaymentInProgress) void liberarPagamento();
+    }
+
+    function mostrarAvisoLimiteCupom() {
+      var el = document.getElementById('coupon-limit-warning');
+      if (!el) return;
+
+      var maxDiscount = activeCouponData ? activeCouponData.max_discount_value : null;
+      var excedeu = maxDiscount !== null && maxDiscount !== undefined && maxDiscount !== ''
+        && subtotalAmount > Number(maxDiscount);
+
+      if (!activeCouponData || !excedeu) {
+        el.classList.add('hidden');
+        el.innerText = '';
+        return;
+      }
+
+      var diferenca = subtotalAmount - Number(maxDiscount);
+      el.innerText = '⚠ Este cupom cobre até ' + formatCurrency(Number(maxDiscount)) +
+        '. Como seu produto custa ' + formatCurrency(subtotalAmount) +
+        ', você pagará a diferença de ' + formatCurrency(diferenca) + ' + frete.';
+      el.classList.remove('hidden');
+    }
+
+    async function aplicarCupom() {
+      if (freoPaymentInProgress) return;
+      var code = document.getElementById('coupon-input').value.trim().toUpperCase();
+      var errEl = document.getElementById('coupon-error');
+      errEl.classList.add('hidden');
+
+      if (!code) { errEl.innerText = 'Digite o código do cupom.'; errEl.classList.remove('hidden'); return; }
+
+      var r = await window.supabaseClient
+        .from('coupons')
+        .select('*')
+        .eq('code', code)
+        .eq('is_active', true)
+        .single();
+
+      if (r.error || !r.data) { errEl.innerText = 'Cupom inválido ou expirado.'; errEl.classList.remove('hidden'); return; }
+      var c = r.data;
+      if (c.used_count >= c.max_uses) { errEl.innerText = 'Este cupom já atingiu o limite de usos.'; errEl.classList.remove('hidden'); return; }
+      if (c.expires_at && new Date(c.expires_at) < new Date()) { errEl.innerText = 'Este cupom expirou.'; errEl.classList.remove('hidden'); return; }
+
+      activeCouponData = {
+        code: c.code,
+        type: c.type,
+        discount_value: c.discount_value,
+        max_discount_value: c.max_discount_value,
+        description: c.description,
+        theme: c.theme,
+        id: c.id,
+        used_count: c.used_count,
+        max_uses: c.max_uses,
+      };
+      localStorage.setItem('freo_active_coupon', JSON.stringify(activeCouponData));
+      renderizarCupomAtivo();
+    }
+
+    function removerCupom() {
+      if (freoPaymentInProgress) return;
+      activeCouponData = null;
+      couponDiscountAmount = 0;
+      localStorage.removeItem('freo_active_coupon');
+      document.getElementById('coupon-active-display').classList.add('hidden');
+      document.getElementById('coupon-input-area').classList.remove('hidden');
+      document.getElementById('coupon-input').value = '';
+      document.getElementById('coupon-discount-row').classList.add('hidden');
+      document.getElementById('coupon-limit-warning').classList.add('hidden');
+      updateTotals();
+      if (selectedShipping && !freoPaymentInProgress) void liberarPagamento();
+    }
+
+    async function consumirCupomAposPayment(orderId) {
+      if (!activeCouponData) return;
+      try {
+        await window.supabaseClient
+          .from('coupons')
+          .update({ used_count: (activeCouponData.used_count || 0) + 1 })
+          .eq('id', activeCouponData.id)
+          .lt('used_count', activeCouponData.max_uses);
+
+        await window.supabaseClient.from('coupon_redemptions').insert({
+          coupon_id: activeCouponData.id,
+          user_id: currentUser ? currentUser.id : null,
+          order_id: orderId,
+          session_info: { code: activeCouponData.code },
+        });
+
+        localStorage.removeItem('freo_active_coupon');
+        activeCouponData = null;
+      } catch(e) {
+        console.error('Erro ao consumir cupom:', e);
+      }
+    }
+    // ─── FIM SISTEMA DE CUPOM ───────────────────────────────────────────────────
+
+    document.addEventListener('DOMContentLoaded', initCheckout);
+
+    window.addEventListener('auth-not-logged-in', function() {
+  // Não redireciona — sessão anônima já foi criada pelo addToCart.
+  // Se por algum motivo não houver sessão, o initCheckout trata.
+  console.log('[FreoFigures] auth-not-logged-in ignorado no checkout — sessão anônima ativa.');
+});
+  </script>
+</body>
+</html>

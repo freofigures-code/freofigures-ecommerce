@@ -47,7 +47,7 @@ export default function B2BAccount() {
     const db = (window as any).supabaseClient;
     const [quoteResult, orderResult] = await Promise.all([
       db.from('b2b_quote_requests').select('id,category,product_name,description,quantity,deadline,status,admin_note,created_at,updated_at').eq('user_id', userId).order('created_at', { ascending: false }),
-      db.from('orders').select('id,status,total,created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+      db.from('orders').select('id,status,total,created_at').eq('user_id', userId).eq('is_b2b', true).order('created_at', { ascending: false }).limit(5),
     ]);
     if (quoteResult.error) setQuotesError('Não foi possível carregar as cotações. Confira se o SQL da área B2B já foi executado e tente novamente.');
     else { setQuotes(quoteResult.data || []); setQuotesError(''); }
@@ -68,7 +68,7 @@ export default function B2BAccount() {
         const { data: p, error: pError } = await db.from('profiles').select('id,account_type,is_admin,company_name,trade_name,cnpj,name,phone').eq('id', user.id).single();
         if (!live) return;
         if (pError) { setAccess('error'); return; }
-        if (p.account_type !== 'pj' && !p.is_admin) { setAccess('pj'); return; }
+        if (!p.is_admin && (p.account_type !== 'pj' || String(p.cnpj || '').replace(/\D/g, '').length !== 14)) { setAccess('pj'); return; }
         setProfile(p);
         setEmail(user.email || '');
         setAccess('ok');
@@ -114,7 +114,7 @@ export default function B2BAccount() {
 
         <div className="space-y-7">
           <section aria-labelledby="company-title" className="border border-white/10 bg-[#0a1a27] p-5 md:p-6"><Building2 className="text-[#e5bb62]" size={24} /><h2 id="company-title" className="font-display font-bold text-xl mt-3">Dados da empresa</h2><dl className="mt-5 space-y-4 text-sm"><div><dt className="text-white/45">Razão social</dt><dd className="font-semibold break-words">{profile?.company_name || 'Não informada'}</dd></div><div><dt className="text-white/45">Nome fantasia</dt><dd>{profile?.trade_name || 'Não informado'}</dd></div><div><dt className="text-white/45">CNPJ</dt><dd>{cnpjDisplay(profile?.cnpj || null)}</dd></div><div><dt className="text-white/45">Contato</dt><dd>{profile?.name || email}{profile?.phone && <span className="block">{profile.phone}</span>}</dd></div><div><dt className="text-white/45">E-mail da conta</dt><dd className="break-all">{email}</dd></div></dl><a href="/dashboard.html" className="inline-flex items-center gap-2 text-[#e5bb62] text-sm mt-6 hover:underline"><UserRound size={16} /> Gerenciar conta, endereços e pagamentos</a></section>
-          <section aria-labelledby="orders-title" className="border border-white/10 bg-[#0a1a27] p-5 md:p-6"><Package className="text-[#e5bb62]" size={24} /><h2 id="orders-title" className="font-display font-bold text-xl mt-3">Pedidos recentes</h2><p className="text-xs text-white/45 mt-1">Compras feitas com esta conta, inclusive fora do catálogo B2B.</p>{ordersError ? <p role="alert" className="text-sm text-red-300 mt-4">{ordersError}</p> : orders.length === 0 ? <p className="text-white/50 text-sm mt-5">Nenhum pedido recente.</p> : <div className="divide-y divide-white/10 mt-4">{orders.map(o => <div key={o.id} className="py-3 flex justify-between gap-3 text-sm"><div><p className="font-semibold">Pedido #{String(o.id).slice(0, 8)}</p><p className="text-white/45 text-xs mt-1">{date(o.created_at)} · {orderName[(o.status || '').toLowerCase()] || o.status || 'Sem status'}</p></div><span className="text-[#e5bb62] whitespace-nowrap">{money(o.total)}</span></div>)}</div>}<a href="/meus-pedidos.html" className="inline-flex items-center gap-2 text-[#e5bb62] text-sm mt-5 hover:underline">Ver todos os pedidos <ArrowRight size={16} /></a></section>
+          <section aria-labelledby="orders-title" className="border border-white/10 bg-[#0a1a27] p-5 md:p-6"><Package className="text-[#e5bb62]" size={24} /><h2 id="orders-title" className="font-display font-bold text-xl mt-3">Pedidos B2B recentes</h2><p className="text-xs text-white/45 mt-1">Compras feitas pelo catálogo empresarial.</p>{ordersError ? <p role="alert" className="text-sm text-red-300 mt-4">{ordersError}</p> : orders.length === 0 ? <p className="text-white/50 text-sm mt-5">Nenhum pedido B2B recente.</p> : <div className="divide-y divide-white/10 mt-4">{orders.map(o => <div key={o.id} className="py-3 flex justify-between gap-3 text-sm"><div><p className="font-semibold">Pedido #{String(o.id).slice(0, 8)}</p><p className="text-white/45 text-xs mt-1">{date(o.created_at)} · {orderName[(o.status || '').toLowerCase()] || o.status || 'Sem status'}</p></div><span className="text-[#e5bb62] whitespace-nowrap">{money(o.total)}</span></div>)}</div>}<a href="/meus-pedidos.html" className="inline-flex items-center gap-2 text-[#e5bb62] text-sm mt-5 hover:underline">Ver todos os pedidos <ArrowRight size={16} /></a></section>
         </div>
       </div>
     </main>}
