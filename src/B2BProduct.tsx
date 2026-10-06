@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Box, ShoppingCart } from 'lucide-react';
 import { b2bUnitPrice, minimumB2BQuantity, type B2BTier } from './b2bPricing';
+import { b2bEventUnitPrice, type B2BEventPricing } from './b2bEventPricing';
 
 type Option = string | { name: string; price?: number };
 type Product = {
@@ -15,6 +16,7 @@ export default function B2BProduct() {
   const [access, setAccess] = useState<'loading' | 'guest' | 'pf' | 'ready' | 'error'>('loading');
   const [product, setProduct] = useState<Product | null>(null);
   const [tiers, setTiers] = useState<B2BTier[]>([]);
+  const [eventPricing, setEventPricing] = useState<B2BEventPricing | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -35,16 +37,19 @@ export default function B2BProduct() {
         if (!active) return;
         if (profile.data.is_admin !== true && (profile.data.account_type !== 'pj' || String(profile.data.cnpj || '').replace(/\D/g, '').length !== 14)) { setAccess('pf'); return; }
         if (!Number.isSafeInteger(id) || id < 1) throw new Error('Produto inválido');
-        const [p, t] = await Promise.all([
+        const [p, t, e] = await Promise.all([
           client.from('products').select('id,title,description,images,sale_mode,b2b_category,is_kit,variants').eq('id', id).eq('is_active', true).single(),
           client.from('product_price_tiers').select('min_qty,max_qty,unit_price,is_active').eq('product_id', id).eq('is_active', true).order('min_qty'),
+          client.from('b2b_event_pricing').select('*').eq('product_id', id).maybeSingle(),
         ]);
         if (p.error) throw p.error;
         if (t.error) throw t.error;
+        if (e.error) throw e.error;
         if (!active) return;
         setProduct(p.data);
         setTiers(t.data || []);
-        setQuantity(String(minimumB2BQuantity(t.data || []) || 1));
+        setEventPricing(e.data || null);
+        setQuantity(String(p.data.b2b_category === 'eventos' ? e.data?.minimum_quantity || 1 : minimumB2BQuantity(t.data || []) || 1));
         setAccess('ready');
       } catch (error) {
         if (active) { setMessage(error instanceof Error ? error.message : 'Não foi possível carregar o produto.'); setAccess('error'); }
@@ -56,6 +61,7 @@ export default function B2BProduct() {
   const amount = Number(quantity);
   const minimum = minimumB2BQuantity(tiers);
   const price = b2bUnitPrice(tiers, amount);
+  const eventPrice = product?.b2b_category === 'eventos' ? b2bEventUnitPrice(eventPricing, amount) : null;
   const groups = useMemo(() => (Array.isArray(product?.variants) ? product.variants : []).filter(group => group?.name && Array.isArray(group.options) && group.options.length), [product]);
   const variant = groups.map(group => `${group.name}: ${choices[group.name] || ''}`).join(' | ');
   const configured = groups.every(group => Boolean(choices[group.name]));
@@ -97,7 +103,10 @@ export default function B2BProduct() {
             <label className="block text-sm">Quantidade<input type="number" min={minimum || 1} max="1000000" step="1" value={quantity} onChange={e => setQuantity(e.target.value)} className="block w-full mt-2 bg-[#07111a] border border-white/20 rounded p-3" /></label>
             {price !== null ? <div><p className="text-sm text-white/55">{currency(price)} por unidade</p><p className="font-display text-3xl font-bold text-[#f0bf5d]">{currency(Math.round(price * amount * 100) / 100)}</p></div> : <p className="text-sm text-amber-300">Quantidade fora das faixas de preço configuradas.</p>}
             <button type="button" disabled={busy || price === null || !configured || amount > 1000000} onClick={addToCart} className="w-full rounded bg-[#f0bf5d] text-[#07111a] font-bold p-4 disabled:opacity-40 flex items-center justify-center gap-2">{busy ? 'Adicionando…' : 'Adicionar ao pedido B2B'} <ArrowRight size={19} /></button>
-          </div> : <div className="mt-8 border border-white/15 bg-[#0d2231] rounded-xl p-5"><p>Este produto é preparado mediante cotação. Informe a quantidade e os detalhes do projeto para receber uma proposta.</p><a href={`/b2b.html?quote=${encodeURIComponent(product.id)}`} className="inline-block mt-5 bg-[#f0bf5d] text-[#07111a] font-bold px-5 py-3">Solicitar cotação</a></div>}
+          </div> : <div className="mt-8 border border-white/15 bg-[#0d2231] rounded-xl p-5 space-y-4"><p>Este produto é preparado mediante cotação. Informe a quantidade e os detalhes do projeto para conversar com nossa equipe no site.</p>
+            {product.b2b_category === 'eventos' && eventPricing && <><p className="text-sm text-white/65">Quantidade mínima: {eventPricing.minimum_quantity.toLocaleString('pt-BR')} unidades</p><label className="block text-sm">Quantidade<input type="number" min={eventPricing.minimum_quantity} max="1000000" step="1" value={quantity} onChange={e => setQuantity(e.target.value)} className="block w-full mt-2 bg-[#07111a] border border-white/20 rounded p-3" /></label><p className="text-sm text-white/75">{eventPrice === null ? 'Informe uma quantidade válida para ver a estimativa.' : `${currency(eventPrice)} por unidade · ${currency(eventPrice * amount)} estimados no total`}</p>{eventPricing.pricing_mode === 'tiers' && <div className="divide-y divide-white/10 border-y border-white/10">{eventPricing.tiers.map(tier => <div key={tier.min_qty} className="flex justify-between gap-3 py-2 text-sm"><span>A partir de {tier.min_qty.toLocaleString('pt-BR')} unidades</span><strong>{currency(tier.unit_price)}/un.</strong></div>)}</div>}{eventPricing.pricing_mode === 'step' && <p className="text-xs text-white/50">O preço unitário diminui {currency(eventPricing.discount_per_extra_unit)} por unidade adicional, até {currency(eventPricing.floor_unit_price)}/un.</p>}</>}
+            {product.b2b_category === 'eventos' && !eventPricing && <p className="text-amber-300 text-sm">Preço definido após análise do projeto e da quantidade.</p>}
+            {(!eventPricing || eventPrice !== null) && <a href={`/b2b.html?quote=${encodeURIComponent(product.id)}${eventPrice !== null ? `&quantity=${amount}` : ''}`} className="inline-block bg-[#f0bf5d] text-[#07111a] font-bold px-5 py-3">Solicitar cotação no site</a>}</div>}
           {message && <p role="alert" className="text-red-300 mt-4">{message}</p>}
           {canBuy && tiers.length > 0 && <section className="mt-8"><h2 className="font-display font-bold text-lg">Preços por quantidade</h2><div className="mt-3 divide-y divide-white/10 border-y border-white/10">{tiers.map((tier, i) => <div key={i} className="flex justify-between py-3 text-sm"><span>{tier.min_qty.toLocaleString('pt-BR')}{tier.max_qty ? ` a ${tier.max_qty.toLocaleString('pt-BR')}` : '+'} unidades</span><strong>{currency(Number(tier.unit_price))}/un.</strong></div>)}</div></section>}
         </div></div>

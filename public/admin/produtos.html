@@ -164,6 +164,7 @@
   <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap gap-x-8 gap-y-2 font-mono text-sm">
     <a href="/admin/criacoes.html" class="text-freo-orange">Feito por vocês — revisar criações →</a>
     <a href="/admin/cotacoes-b2b.html" class="text-freo-orange">B2B — acompanhar cotações →</a>
+    <button type="button" onclick="openEventProduct()" class="text-freo-orange text-left">+ Criar personalizado para eventos</button>
   </div>
 
   <!-- ══════ AJUSTE DE PREÇO EM MASSA ══════ -->
@@ -309,7 +310,7 @@
               <input type="checkbox" id="f-active" class="sr-only peer" checked>
               <div class="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-freo-orange transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:w-4 after:h-4 after:transition-transform peer-checked:after:translate-x-5"></div>
             </label>
-            <span class="font-mono text-xs text-white/50 uppercase tracking-widest">Produto ativo (visível na loja)</span>
+            <span id="active-product-label" class="font-mono text-xs text-white/50 uppercase tracking-widest">Produto ativo (visível na loja)</span>
           </div>
         </div>
 
@@ -498,7 +499,7 @@
             <label class="fl">Modo de venda no B2B</label>
             <select id="f-sale-mode" class="fi">
               <option value="normal">Normal — preço por faixa de quantidade</option>
-              <option value="quote_only">Somente cotação via WhatsApp</option>
+              <option value="quote_only">Somente cotação no chat do site</option>
             </select>
             <p id="sale-mode-hint" class="font-mono text-[10px] text-white/20 mt-1.5"></p>
           </div>
@@ -516,6 +517,22 @@
             <button onclick="saveTiers()" id="save-tiers-btn" type="button" class="w-full mt-3 py-2.5 font-mono text-xs uppercase tracking-widest transition-colors" style="background:#3B6E8F;color:#fff">
               Salvar faixas de preço
             </button>
+          </div>
+
+          <div id="event-pricing-editor" class="hidden border border-freo-orange/25 bg-freo-orange/5 p-4 space-y-4">
+            <div><p class="font-display font-bold text-lg text-freo-orange">Preço para personalizados de eventos</p><p class="font-mono text-xs text-white/50 mt-1">O cliente vê a estimativa e solicita cotação no chat. O pedido não entra no checkout.</p></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="fl">Regra de preço<select id="event-price-mode" class="fi mt-1" onchange="updateEventPriceMode()"><option value="step">Desconto por unidade adicional</option><option value="tiers">Preço fixo por faixa de quantidade</option></select></label>
+              <label class="fl">Quantidade mínima<input id="event-min-qty" class="fi mt-1" type="number" min="1" max="1000000" step="1" value="10"></label>
+              <label id="event-base-field" class="fl">Preço base por unidade (R$)<input id="event-base-price" class="fi mt-1" type="number" min="0.01" max="999999.99" step="0.01" placeholder="2,00"></label>
+            </div>
+            <div id="event-step-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="fl">Desconto no preço unitário a cada peça extra (R$)<input id="event-step-discount" class="fi mt-1" type="number" min="0" step="0.01" value="0.01"></label>
+              <label class="fl">Menor preço permitido por unidade (R$)<input id="event-floor-price" class="fi mt-1" type="number" min="0.01" step="0.01" value="0.01"></label>
+              <p class="sm:col-span-2 font-mono text-xs text-white/45">Exemplo: mínimo 10 peças a R$ 2,00; desconto de R$ 0,02 por peça extra. Em 20 peças, cada unidade sai a R$ 1,80. O preço nunca fica abaixo do limite informado.</p>
+            </div>
+            <div id="event-tier-fields" class="hidden space-y-2"><p class="font-mono text-xs text-white/55">Cada faixa vale da quantidade indicada até a próxima. A última vale para todas as quantidades maiores.</p><div id="event-tier-list" class="space-y-2"></div><button type="button" onclick="addEventTier()" class="border border-white/25 px-3 py-2 text-xs text-white hover:border-freo-orange">+ Adicionar faixa</button></div>
+            <p id="event-pricing-status" role="status" class="font-mono text-xs text-white/50">Salve o produto para publicar estes preços.</p>
           </div>
 
         </div>
@@ -549,6 +566,9 @@
   var currentTags = [];
   var currentViewMode = 'varejo'; // 'varejo' | 'b2b'
   var currentTiers = []; // faixas de preço do produto em edição, formato: [{id, min_qty, max_qty, unit_price, _isNew}]
+  var currentEventTiers = [];
+  var eventPricingReady = true;
+  var nonEventSaleMode = 'normal';
 
   /*
     Formato interno de currentVariants:
@@ -800,10 +820,12 @@
       currentTags = Array.isArray(p.tags) ? p.tags.slice() : [];
       currentVariants = normalizeVariantsFromDB(p.variants);
       document.getElementById('f-sale-mode').value = p.sale_mode || 'normal';
+      nonEventSaleMode = p.sale_mode || 'normal';
       document.getElementById('f-b2b-category').value = p.b2b_category || 'loja';
       updateB2BCategory();
       updateSaleModeHint();
       loadTiersForProduct(p.id);
+      loadEventPricing(p.id);
 
       // Detecta se video_url é upload direto ou YouTube
       var savedVideo = p.video_url || '';
@@ -828,11 +850,13 @@
       document.getElementById('seo-title-count').innerText = '0/60';
       document.getElementById('seo-desc-count').innerText = '0/160';
       document.getElementById('f-sale-mode').value = 'normal';
+      nonEventSaleMode = 'normal';
       document.getElementById('f-b2b-category').value = 'loja';
       updateB2BCategory();
       updateSaleModeHint();
       currentTiers = [];
       renderTiersUI();
+      resetEventPricing();
 
       currentVideoUrl = null;
       renderVideoUI();
@@ -1031,15 +1055,132 @@
     var val = document.getElementById('f-sale-mode').value;
     var hint = document.getElementById('sale-mode-hint');
     hint.innerText = val === 'quote_only'
-      ? 'O cliente verá a página B2B e solicitará cotação; nenhum preço B2B será exibido.'
+      ? 'O cliente verá a página B2B e solicitará cotação pelo chat interno.'
       : 'Configure ao menos uma faixa com quantidade mínima e preço para permitir compra B2B. O servidor valida ambos no checkout.';
   }
 
-  document.getElementById('f-sale-mode').addEventListener('change', updateSaleModeHint);
+  document.getElementById('f-sale-mode').addEventListener('change', function() {
+    nonEventSaleMode = this.value;
+    updateSaleModeHint();
+  });
   function updateB2BCategory() {
+    var eventProduct = document.getElementById('f-b2b-category').value === 'eventos';
+    document.getElementById('event-pricing-editor').classList.toggle('hidden', !eventProduct);
+    document.getElementById('tiers-editor-wrap').classList.toggle('hidden', eventProduct);
+    document.getElementById('active-product-label').textContent = eventProduct
+      ? 'Produto ativo (visível apenas para contas B2B)' : 'Produto ativo (visível na loja)';
+    var saleMode = document.getElementById('f-sale-mode');
+    if (eventProduct) {
+      if (!saleMode.disabled) nonEventSaleMode = saleMode.value;
+      saleMode.value = 'quote_only';
+    } else if (saleMode.disabled) saleMode.value = nonEventSaleMode;
+    saleMode.disabled = eventProduct;
     updateSaleModeHint();
   }
   document.getElementById('f-b2b-category').addEventListener('change', updateB2BCategory);
+
+  function openEventProduct() {
+    setViewMode('b2b');
+    openForm(null);
+    document.getElementById('f-b2b-category').value = 'eventos';
+    updateB2BCategory();
+    showTab('tab-b2b');
+  }
+
+  function resetEventPricing() {
+    eventPricingReady = true;
+    document.getElementById('event-price-mode').value = 'step';
+    document.getElementById('event-min-qty').value = 10;
+    document.getElementById('event-base-price').value = '';
+    document.getElementById('event-step-discount').value = '0.01';
+    document.getElementById('event-floor-price').value = '0.01';
+    currentEventTiers = [{ min_qty: 10, unit_price: '' }];
+    document.getElementById('event-pricing-status').textContent = 'Salve o produto para publicar estes preços.';
+    updateEventPriceMode();
+    renderEventTiers();
+  }
+
+  async function loadEventPricing(productId) {
+    resetEventPricing();
+    eventPricingReady = false;
+    var result = await window.supabaseClient.from('b2b_event_pricing').select('*').eq('product_id', productId).maybeSingle();
+    if (String(editingProductId) !== String(productId)) return;
+    if (result.error) {
+      document.getElementById('event-pricing-status').textContent = 'Erro ao carregar preço de eventos. Não salve antes de atualizar a página.';
+      return;
+    }
+    eventPricingReady = true;
+    if (!result.data) return;
+    var p = result.data;
+    document.getElementById('event-price-mode').value = p.pricing_mode;
+    document.getElementById('event-min-qty').value = p.minimum_quantity;
+    document.getElementById('event-base-price').value = p.base_unit_price;
+    document.getElementById('event-step-discount').value = p.discount_per_extra_unit;
+    document.getElementById('event-floor-price').value = p.floor_unit_price;
+    currentEventTiers = Array.isArray(p.tiers) ? p.tiers.map(function(t) { return { min_qty: Number(t.min_qty), unit_price: Number(t.unit_price) }; }) : [];
+    document.getElementById('event-pricing-status').textContent = 'Configuração de preço carregada.';
+    updateEventPriceMode();
+    renderEventTiers();
+  }
+
+  function updateEventPriceMode() {
+    var tiers = document.getElementById('event-price-mode').value === 'tiers';
+    document.getElementById('event-base-field').classList.toggle('hidden', tiers);
+    document.getElementById('event-step-fields').classList.toggle('hidden', tiers);
+    document.getElementById('event-tier-fields').classList.toggle('hidden', !tiers);
+  }
+  function addEventTier() {
+    currentEventTiers.push({ min_qty: '', unit_price: '' });
+    renderEventTiers();
+  }
+  function removeEventTier(index) {
+    currentEventTiers.splice(index, 1);
+    renderEventTiers();
+  }
+  function setEventTier(index, field, value) { currentEventTiers[index][field] = value; }
+  function renderEventTiers() {
+    document.getElementById('event-tier-list').innerHTML = currentEventTiers.map(function(t, i) {
+      return '<div class="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">'
+        + '<label class="fl">A partir de<input class="fi mt-1" type="number" min="1" max="1000000" step="1" value="' + (Number(t.min_qty) || '') + '" oninput="setEventTier(' + i + ',\'min_qty\',this.value)"></label>'
+        + '<label class="fl">R$ por unidade<input class="fi mt-1" type="number" min="0.01" step="0.01" value="' + (Number(t.unit_price) || '') + '" oninput="setEventTier(' + i + ',\'unit_price\',this.value)"></label>'
+        + '<button type="button" class="border border-white/20 px-3 py-2 text-red-300" onclick="removeEventTier(' + i + ')" aria-label="Remover faixa">×</button></div>';
+    }).join('');
+  }
+
+  function readEventPricing() {
+    if (!eventPricingReady) throw new Error('Aguarde o carregamento do preço de eventos ou atualize a página.');
+    var mode = document.getElementById('event-price-mode').value;
+    var min = Number(document.getElementById('event-min-qty').value);
+    var base = Number(document.getElementById('event-base-price').value);
+    var discount = Number(document.getElementById('event-step-discount').value);
+    var floor = Number(document.getElementById('event-floor-price').value);
+    var validCents = function(value) { return Number.isFinite(value) && Math.abs(Math.round(value * 100) - value * 100) < 0.000001; };
+    if (!Number.isSafeInteger(min) || min < 1 || min > 1000000) throw new Error('Informe uma quantidade mínima válida.');
+    var breaks = [];
+    if (mode === 'tiers') {
+      breaks = currentEventTiers.map(function(t) { return { min_qty: Number(t.min_qty), unit_price: Number(t.unit_price) }; });
+      breaks.sort(function(a, b) { return a.min_qty - b.min_qty; });
+      if (!breaks.length || breaks.length > 30 || breaks[0].min_qty !== min) throw new Error('A primeira faixa deve começar na quantidade mínima.');
+      for (var i = 0; i < breaks.length; i++) {
+        if (!Number.isSafeInteger(breaks[i].min_qty) || breaks[i].min_qty < min || breaks[i].min_qty > 1000000
+          || !Number.isFinite(breaks[i].unit_price) || breaks[i].unit_price < 0.01 || breaks[i].unit_price > 999999.99
+          || !validCents(breaks[i].unit_price)
+          || (i > 0 && (breaks[i].min_qty <= breaks[i-1].min_qty || breaks[i].unit_price > breaks[i-1].unit_price))) {
+          throw new Error('Faixas devem ter quantidades crescentes e preços iguais ou menores.');
+        }
+      }
+      base = breaks[0].unit_price;
+      discount = 0;
+      floor = 0.01;
+      document.getElementById('event-base-price').value = base;
+    } else {
+      if (!validCents(base) || base < 0.01 || base > 999999.99) throw new Error('Informe um preço base válido.');
+      if (!validCents(discount) || discount < 0 || !validCents(floor) || floor < 0.01 || floor > base) throw new Error('Desconto ou preço mínimo inválido.');
+    }
+    return { pricing_mode: mode, minimum_quantity: min, base_unit_price: base,
+      discount_per_extra_unit: mode === 'step' ? discount : 0,
+      floor_unit_price: mode === 'step' ? floor : 0.01, tiers: breaks };
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // KIT (modal separado — ver seção "NOVO KIT" mais abaixo)
@@ -1227,9 +1368,17 @@
     var title = document.getElementById('f-title').value.trim();
     var priceRaw = document.getElementById('f-price').value;
     var price = parseFloat(priceRaw);
+    var eventProduct = document.getElementById('f-b2b-category').value === 'eventos';
+    var eventPricing = null;
+    if (eventProduct) {
+      try { eventPricing = readEventPricing(); }
+      catch (e) { showToast(e.message, 'error'); showTab('tab-b2b'); return false; }
+      price = eventPricing.base_unit_price;
+      document.getElementById('f-price').value = price;
+    }
 
     if (!title) { showToast('Informe o título do produto.', 'error'); showTab('tab-basic'); return false; }
-    if (priceRaw === '' || isNaN(price) || price < 0) { showToast('Informe um preço válido.', 'error'); showTab('tab-basic'); return false; }
+    if ((!eventProduct && priceRaw === '') || isNaN(price) || price < 0) { showToast('Informe um preço válido.', 'error'); showTab('tab-basic'); return false; }
 
     var promoPrice = parseFloat(document.getElementById('f-promo').value);
     promoPrice = isNaN(promoPrice) ? null : promoPrice;
@@ -1255,7 +1404,7 @@
       title: title,
       description: document.getElementById('f-description').value.trim() || null,
       price: price,
-      promotional_price: promoPrice,
+      promotional_price: eventProduct ? null : promoPrice,
       stock: parseInt(document.getElementById('f-stock').value) || 0,
       preparation_days: preparationDays,
       category: document.getElementById('f-category').value || 'games',
@@ -1265,8 +1414,8 @@
       variants: variantsPayload,
       seo_title: document.getElementById('f-seo-title').value.trim() || null,
       seo_description: document.getElementById('f-seo-desc').value.trim() || null,
-      is_active: document.getElementById('f-active').checked,
-      sale_mode: document.getElementById('f-sale-mode').value || 'normal',
+      is_active: eventProduct ? false : document.getElementById('f-active').checked,
+      sale_mode: eventProduct ? 'quote_only' : document.getElementById('f-sale-mode').value || 'normal',
       b2b_category: document.getElementById('f-b2b-category').value || 'loja',
       is_kit: false,
       kit_type: null,
@@ -1286,6 +1435,17 @@
         document.getElementById('form-title').innerText = 'Editar Produto';
         document.getElementById('form-subtitle').innerText = 'ID: ' + editingProductId;
         document.getElementById('form-delete-btn').classList.remove('hidden');
+      }
+
+      if (eventProduct) {
+        var rPrice = await window.supabaseClient.from('b2b_event_pricing')
+          .upsert(Object.assign({ product_id: editingProductId }, eventPricing), { onConflict: 'product_id' });
+        if (rPrice.error) throw rPrice.error;
+        if (document.getElementById('f-active').checked) {
+          var rActivate = await window.supabaseClient.from('products').update({ is_active: true }).eq('id', editingProductId);
+          if (rActivate.error) throw rActivate.error;
+        }
+        document.getElementById('event-pricing-status').textContent = 'Preços salvos e disponíveis no catálogo empresarial.';
       }
 
       return true;
