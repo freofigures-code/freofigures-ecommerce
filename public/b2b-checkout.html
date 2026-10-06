@@ -10,9 +10,10 @@
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-PSSBXMVL');</script>
   <!-- End Google Tag Manager -->
-  
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Checkout | FreoFigures</title>
+  <title>Checkout empresarial | FreoFigures B2B</title>
+  <meta name="robots" content="noindex,nofollow" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -216,9 +217,9 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PSSBXMVL"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
-  
+
   <header class="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between border-b border-white/10">
-    <div class="flex items-center gap-4 cursor-pointer" onclick="window.location.href='/dashboard.html'">
+    <div class="flex items-center gap-4 cursor-pointer" onclick="window.location.href='/b2b.html?cart=1'">
       <svg class="w-5 h-5 text-freo-light/50 hover:text-freo-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
       </svg>
@@ -441,21 +442,21 @@
             </svg>
             Pagamento
           </h2>
-        
+
           <div id="payment-overlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-freo-dark/90 backdrop-blur-sm rounded-xl">
             <p class="font-mono text-sm text-white/40 uppercase tracking-widest text-center px-8">Calcule o frete primeiro para liberar o pagamento</p>
           </div>
-        
+
           <div id="brick-loading" class="hidden absolute inset-0 z-10 flex flex-col items-center justify-center bg-freo-dark/80 backdrop-blur-sm rounded-xl">
             <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin mb-3"></div>
             <p class="font-mono text-xs text-freo-orange uppercase tracking-widest animate-pulse">Preparando pagamento...</p>
           </div>
-        
+
           <!-- Cartões salvos -->
           <div id="saved-cards-section" class="hidden space-y-3 mb-5">
             <p class="font-mono text-xs text-white/40 uppercase tracking-widest mb-3">Escolha um cartão salvo:</p>
             <div id="saved-cards-list" class="space-y-2"></div>
-        
+
             <div id="cvv-section" class="hidden mt-4 p-4 bg-white/5 border border-freo-orange/30 rounded-xl space-y-3">
               <div class="flex items-center gap-3">
                 <div id="cvv-card-icon" class="w-10 h-7 bg-white/10 border border-white/10 rounded flex items-center justify-center font-mono text-[10px] text-white/50 font-bold uppercase flex-shrink-0"></div>
@@ -478,7 +479,7 @@
                 Confirmar pagamento
               </button>
             </div>
-        
+
             <button onclick="usarOutroCartao()"
               class="w-full border border-dashed border-white/15 py-3 font-mono text-xs text-white/30 uppercase tracking-widest hover:border-freo-orange/40 hover:text-freo-orange transition-colors rounded-lg flex items-center justify-center gap-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -487,7 +488,7 @@
               Usar outro cartão ou Pix
             </button>
           </div>
-        
+
           <div id="paymentBrick_container"></div>
           <div id="freo-only-payment" class="hidden space-y-3">
             <p class="font-mono text-sm text-white/70">Seu pedido será pago integralmente com Créditos Freo, sem cobrança no Mercado Pago.</p>
@@ -595,12 +596,12 @@
   <div id="dados-pessoais-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/80 backdrop-blur-md p-4">
     <div class="bg-freo-dark border border-white/10 w-full max-w-md p-6 rounded-xl shadow-2xl relative">
       <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-transparent rounded-t-xl"></div>
-  
+
       <h3 class="font-display font-black uppercase text-2xl text-white mb-1">Dados pessoais</h3>
       <p class="font-mono text-sm text-white/40 leading-relaxed mb-5">Necessários para processar seu pedido.</p>
-  
+
       <div id="dados-pessoais-error" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono p-3 mb-4 rounded"></div>
-  
+
       <div class="grid grid-cols-2 gap-3 mb-4">
         <div>
           <label class="fl">Nome *</label>
@@ -611,17 +612,17 @@
           <input type="text" id="dp-lastname" class="fi" placeholder="Freo">
         </div>
       </div>
-  
+
       <div class="mb-4">
         <label class="fl">CPF *</label>
         <input type="text" id="dp-cpf" class="fi" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)">
       </div>
-  
+
       <div class="mb-5">
         <label class="fl">Telefone / WhatsApp *</label>
         <input type="tel" id="dp-phone" class="fi" maxlength="15" placeholder="(11) 99999-9999" oninput="maskCheckoutPhone(this)">
       </div>
-  
+
       <button onclick="salvarDadosPessoais()" id="btn-salvar-dados"
         class="w-full bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest py-3.5 hover:bg-white transition-colors rounded">
         Salvar e continuar
@@ -656,6 +657,8 @@
     var subtotalAmount = 0;
     var freteAmount = 0;
     var cartItemsData = [];
+    // Esta página usa exclusivamente pedidos empresariais e o carrinho B2B.
+    const b2bCheckoutMode = true;
     var customCheckoutMode = false;
     var customGenerationId = null;
     var currentUser = null;
@@ -920,6 +923,7 @@ async function salvarDadosPessoais() {
       document.getElementById('checkout-main').classList.add('hidden');
       document.getElementById('cart-empty-state').classList.remove('hidden');
       document.getElementById('cart-empty-state').classList.add('flex');
+      if (b2bCheckoutMode) document.querySelector('#cart-empty-state a').href = '/b2b.html';
     }
 
     function showCheckout() {
@@ -939,7 +943,7 @@ async function salvarDadosPessoais() {
         + '<div class="text-5xl mb-4">⚠️</div>'
         + '<p class="font-display font-bold text-xl text-white uppercase mb-3">Não foi possível abrir o checkout</p>'
         + '<p class="font-mono text-sm text-red-400 mb-5">' + escapeHtml(message || 'Erro desconhecido.') + '</p>'
-        + '<a href="/minhas-criacoes.html" class="inline-block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-white transition-colors">Voltar para Minhas Criações</a>'
+        + '<a href="' + (b2bCheckoutMode ? '/b2b.html?cart=1' : '/minhas-criacoes.html') + '" class="inline-block bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-white transition-colors">' + (b2bCheckoutMode ? 'Voltar ao B2B' : 'Voltar para Minhas Criações') + '</a>'
         + '</div>';
     }
 
@@ -1227,15 +1231,15 @@ async function salvarDadosPessoais() {
       var productIds = cartItemsData.map(function(item) { return Number(item.product_id); })
         .filter(function(id) { return Number.isSafeInteger(id) && id > 0; });
       var needsServerValidation = false;
-      if (!freoCreditsSelected && productIds.length) {
-        var catalogLookup = await window.supabaseClient.from('products').select('id,category,b2b_category')
+      if (!freoCreditsSelected && productIds.length && !b2bCheckoutMode) {
+        var catalogLookup = await window.supabaseClient.from('products').select('id,category,b2b_category,sale_mode')
           .in('id', productIds);
         if (catalogLookup.error) throw catalogLookup.error;
-        needsServerValidation = (catalogLookup.data || []).some(function(product) {
-          return product.category === 'feito_por_voces' || (product.b2b_category && product.b2b_category !== 'loja');
+        needsServerValidation = (catalogLookup.data || []).length !== new Set(productIds).size || (catalogLookup.data || []).some(function(product) {
+          return product.category === 'feito_por_voces' || product.sale_mode === 'quote_only' || (product.b2b_category && product.b2b_category !== 'loja');
         });
       }
-      if (!freoCreditsSelected && !needsServerValidation) return totalAntesDosCreditos();
+      if (!freoCreditsSelected && !needsServerValidation && !b2bCheckoutMode) return totalAntesDosCreditos();
       var r = await window.supabaseClient.functions.invoke('freo-checkout', {
         body: { order_id: orderId, credits: freoCreditsSelected, coupon_code: activeCouponData ? activeCouponData.code : null }
       });
@@ -1685,7 +1689,7 @@ async function salvarDadosPessoais() {
         if (!freoOnlyOrderId) {
           var name = selectedShipping.company ? selectedShipping.company + ' - ' + selectedShipping.service_name : selectedShipping.service_name;
           var result = await window.supabaseClient.from('orders').insert({
-            user_id: currentUser.id, status: 'pendente', total: totalAntesDosCreditos(), items: buildOrderItems(),
+            user_id: currentUser.id, status: 'pendente', is_b2b: true, total: totalAntesDosCreditos(), items: buildOrderItems(),
             frete_valor: selectedShipping.price, frete_nome: name, frete_prazo: String(selectedShipping.days),
             frete_company: selectedShipping.company, frete_service_id: selectedShipping.service_id,
             frete_service_name: selectedShipping.service_name, frete_service_code: selectedShipping.service_code,
@@ -1702,12 +1706,8 @@ async function salvarDadosPessoais() {
           var amount = await aplicarCreditosAoPedido(freoOnlyOrderId);
           if (amount !== 0) throw new Error('O pedido não ficou totalmente coberto pelos créditos.');
         }
-        if (!customCheckoutMode) await window.supabaseClient.from('cart_items').delete().eq('user_id', currentUser.id);
+        await window.supabaseClient.from('b2b_cart_items').delete().eq('user_id', currentUser.id);
         await consumirCupomAposPayment(freoOnlyOrderId);
-        cartItemsData.forEach(function(item) {
-          var id = parseInt(item.product_id, 10);
-          if (!isNaN(id)) window.supabaseClient.rpc('decrementar_estoque', { p_product_id: id, p_quantidade: item.quantity || 1 });
-        });
         window.location.href = backUrls.success + '?payment_id=' + encodeURIComponent('freo-only:' + freoOnlyOrderId);
       } catch (error) {
         freoPaymentInProgress = false;
@@ -1720,7 +1720,7 @@ async function salvarDadosPessoais() {
     }
     var savedCards = [];
     var selectedCard = null;
-    
+
     async function carregarCartoesSalvos() {
       if (!currentUser) return;
       try {
@@ -1734,24 +1734,24 @@ async function salvarDadosPessoais() {
         savedCards = [];
       }
     }
-    
+
     function renderizarCartoesSalvos() {
       var section = document.getElementById('saved-cards-section');
       var list    = document.getElementById('saved-cards-list');
-    
+
       if (!savedCards.length) {
         section.classList.add('hidden');
         return;
       }
-    
+
       section.classList.remove('hidden');
-    
+
       list.innerHTML = savedCards.map(function(card, i) {
         var brand = (card.payment_method || 'card').toUpperCase().substring(0, 4);
         var label = card.card_label || ('•••• ' + (card.last_four || '****'));
         var type  = card.payment_type === 'credit_card' ? 'Crédito' : 'Débito';
         var exp   = (card.expiration_month || '**') + '/' + String(card.expiration_year || '****').slice(-2);
-    
+
         return '<div class="addr-card" id="saved-card-' + i + '" onclick="selecionarCartao(' + i + ')">'
           + '<div class="flex items-center gap-3">'
           + '<input type="radio" name="saved-card" class="flex-shrink-0 accent-freo-orange">'
@@ -1763,22 +1763,22 @@ async function salvarDadosPessoais() {
           + '</div>'
           + '</div>';
       }).join('');
-    
+
       selecionarCartao(0);
     }
-    
+
     function selecionarCartao(idx) {
       selectedCard = savedCards[idx];
-    
+
       document.querySelectorAll('#saved-cards-list .addr-card').forEach(function(el, i) {
         el.classList.toggle('selected', i === idx);
         var radio = el.querySelector('input[type=radio]');
         if (radio) radio.checked = i === idx;
       });
-    
+
       var brand = (selectedCard.payment_method || 'card').toUpperCase().substring(0, 4);
       var label = selectedCard.card_label || ('•••• ' + (selectedCard.last_four || '****'));
-    
+
       document.getElementById('cvv-card-icon').innerText  = brand;
       document.getElementById('cvv-card-label').innerText = label;
       document.getElementById('saved-card-cvv').value     = '';
@@ -1786,47 +1786,47 @@ async function salvarDadosPessoais() {
       document.getElementById('cvv-section').classList.remove('hidden');
       document.getElementById('saved-card-cvv').focus();
     }
-    
+
     async function usarOutroCartao() {
       selectedCard = null;
       document.getElementById('saved-cards-section').classList.add('hidden');
       document.getElementById('cvv-section').classList.add('hidden');
-    
+
       if (!paymentBrickInitialized) {
         document.getElementById('brick-loading').classList.remove('hidden');
         await initPaymentBrick();
       }
     }
-    
+
     async function pagarComCartaoSalvo() {
       if (!selectedCard || freoPaymentInProgress) return;
-    
+
       var cvv   = document.getElementById('saved-card-cvv').value.trim();
       var errEl = document.getElementById('cvv-error');
       var btn   = document.getElementById('btn-pagar-salvo');
-    
+
       errEl.classList.add('hidden');
-    
+
       if (!cvv || cvv.length < 3) {
         errEl.innerText = 'Informe o CVV do cartão.';
         errEl.classList.remove('hidden');
         return;
       }
-    
+
       btn.innerText = 'Processando...';
       btn.disabled  = true;
       freoPaymentInProgress = true;
       clearTimeout(freoPaymentRefreshTimer);
       document.getElementById('freo-credits-input').disabled = true;
-    
+
       try {
         var mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
-    
+
         var tokenResult = await mp.createCardToken({
           cardId:       selectedCard.mp_card_id,
           securityCode: cvv
         });
-    
+
         if (!tokenResult || !tokenResult.id) {
           errEl.innerText = 'CVV inválido ou cartão recusado. Tente novamente.';
           errEl.classList.remove('hidden');
@@ -1836,13 +1836,13 @@ async function salvarDadosPessoais() {
           document.getElementById('freo-credits-input').disabled = false;
           return;
         }
-    
+
         var totalFinal = totalComCreditos();
         var userId     = currentUser.id;
         var freteNomeCompleto = selectedShipping
           ? (selectedShipping.company ? selectedShipping.company + ' - ' : '') + (selectedShipping.service_name || 'Entrega')
           : null;
-    
+
         var payload = {
           token:               tokenResult.id,
           payment_method_id:   selectedCard.payment_method,
@@ -1880,12 +1880,13 @@ async function salvarDadosPessoais() {
           },
           items: buildOrderItems()
         };
-    
+
         var orderResult = await window.supabaseClient
           .from('orders')
           .insert({
             user_id:            userId,
             status:             'pendente',
+            is_b2b:             true,
             total:              totalAntesDosCreditos(),
             items:              payload.items,
             frete_valor:        selectedShipping ? selectedShipping.price        : 0,
@@ -1903,35 +1904,28 @@ async function salvarDadosPessoais() {
           })
           .select('id')
           .single();
-    
+
         if (orderResult.error) throw orderResult.error;
         var orderId = orderResult.data.id;
         payload.total_com_frete = await aplicarCreditosAoPedido(orderId);
-    
+
         var r    = await fetch(N8N_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         var resp = await r.json();
         var data = Array.isArray(resp) ? resp[0] : resp;
-    
+
         var updateData = {};
         if (data.id)            updateData.payment_id    = String(data.id);
         if (data.preference_id) updateData.preference_id = String(data.preference_id);
-    
+
         await window.supabaseClient.from('orders').update(updateData).eq('id', orderId).eq('user_id', userId);
         if (data.status === 'approved' || data.status === 'rejected') {
           await window.supabaseClient.functions.invoke('freo-payment-sync', { body: { order_id: orderId } });
         }
-        if (data.status !== 'rejected' && !customCheckoutMode) {
-          await window.supabaseClient.from('cart_items').delete().eq('user_id', userId);
+        if (data.status !== 'rejected') {
+          await window.supabaseClient.from('b2b_cart_items').delete().eq('user_id', userId);
         }
         if (data.status !== 'rejected') await consumirCupomAposPayment(orderId);
-    
-        if (data.status !== 'rejected') cartItemsData.forEach(function(item) {
-          var productId = parseInt(item.product_id, 10);
-          if (!isNaN(productId)) {
-            window.supabaseClient.rpc('decrementar_estoque', { p_product_id: productId, p_quantidade: item.quantity || 1 });
-          }
-        });
-    
+
         if (data.status === 'approved') {
           setTimeout(function() {
             window.location.href = backUrls.success
@@ -1947,7 +1941,7 @@ async function salvarDadosPessoais() {
         } else {
           setTimeout(function() { window.location.href = backUrls.pending; }, 1500);
         }
-    
+
       } catch(e) {
         freoPaymentInProgress = false;
         document.getElementById('freo-credits-input').disabled = false;
@@ -1970,14 +1964,14 @@ async function salvarDadosPessoais() {
     }
     return;
   }
-    
+
       if (!selectedShipping) {
         alert('Escolha uma opção de frete primeiro.');
         return;
       }
-    
+
       document.getElementById('payment-overlay').classList.add('hidden');
-    
+
       if (paymentBrickInitialized && window.paymentBrickController) {
         await window.paymentBrickController.unmount();
         paymentBrickInitialized = false;
@@ -1989,11 +1983,11 @@ async function salvarDadosPessoais() {
         return;
       }
       document.getElementById('freo-only-payment').classList.add('hidden');
-    
+
       // Carrega cartões salvos
       await carregarCartoesSalvos();
       renderizarCartoesSalvos();
-    
+
       // Se não tem cartão salvo, abre o Brick direto
       if (!savedCards.length && !paymentBrickInitialized) {
         document.getElementById('brick-loading').classList.remove('hidden');
@@ -2040,7 +2034,7 @@ async function salvarDadosPessoais() {
 
     async function initPaymentBrick() {
       paymentBrickInitialized = true;
-    
+
       var totalFinal = totalComCreditos();
       var mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
       var bricksBuilder = mp.bricks();
@@ -2108,9 +2102,9 @@ async function salvarDadosPessoais() {
             document.getElementById('freo-credits-input').disabled = true;
 
             await saveCardAfterPayment(params.formData.token || null);
-            
+
             var deviceId = window.MP_DEVICE_SESSION_ID || '';
-            
+
             var payload = Object.assign({}, params.formData, {
               action:          'process_payment',
               user_id:         currentUser.id,
@@ -2171,6 +2165,7 @@ async function salvarDadosPessoais() {
               .insert({
                 user_id: userId,
                 status: 'pendente',
+                is_b2b: true,
                 total: totalFinalOrder,
                 items: buildOrderItems(),
 
@@ -2234,9 +2229,9 @@ async function salvarDadosPessoais() {
                     await window.supabaseClient.functions.invoke('freo-payment-sync', { body: { order_id: orderId } });
                   }
 
-                  if (data.status !== 'rejected' && !customCheckoutMode) {
+                  if (data.status !== 'rejected') {
                     window.supabaseClient
-                      .from('cart_items')
+                      .from('b2b_cart_items')
                       .delete()
                       .eq('user_id', userId)
                       .then(function(r) {
@@ -2244,22 +2239,6 @@ async function salvarDadosPessoais() {
                       });
                   }
                   if (data.status !== 'rejected') consumirCupomAposPayment(orderId);
-
-                  if (data.status !== 'rejected') cartItemsData.forEach(function(item) {
-                    var productId = parseInt(item.product_id, 10);
-                    var qty = item.quantity || 1;
-
-                    if (!isNaN(productId)) {
-                      window.supabaseClient
-                        .rpc('decrementar_estoque', {
-                          p_product_id: productId,
-                          p_quantidade: qty
-                        })
-                        .then(function(r) {
-                          if (r.error) console.error('Erro estoque:', r.error);
-                        });
-                    }
-                  });
 
                   if (
                     data.status === 'pending' &&
@@ -2306,13 +2285,13 @@ async function salvarDadosPessoais() {
 
     async function saveCardAfterPayment(cardToken) {
       if (!cardToken) return null;
-    
+
       try {
         var session = await window.supabaseClient.auth.getSession();
         var accessToken = session?.data?.session?.access_token;
-    
+
         if (!accessToken) return null;
-    
+
         var response = await fetch(
           'https://rrmxqpvxrpcqqxsgccqw.supabase.co/functions/v1/save-card',
           {
@@ -2324,17 +2303,52 @@ async function salvarDadosPessoais() {
             body: JSON.stringify({ card_token: cardToken }),
           }
         );
-    
+
         var data = await response.json();
         if (!response.ok) return null;
-    
+
         return data.card || null;
-    
+
       } catch (err) {
         console.error('[saveCard] erro silencioso:', err);
         return null;
       }
     }
+    async function validarCarrinhoB2B() {
+      var ids = cartItemsData.map(function(item) { return Number(item.product_id); });
+      if (ids.some(function(id) { return !Number.isSafeInteger(id) || id < 1; })) throw new Error('Produto B2B inválido.');
+      var [productsResult, tiersResult] = await Promise.all([
+        window.supabaseClient.from('products').select('id,title,images,is_active,sale_mode,is_kit').in('id', ids).eq('is_active', true),
+        window.supabaseClient.from('product_price_tiers').select('product_id,min_qty,max_qty,unit_price,is_active').in('product_id', ids).eq('is_active', true)
+      ]);
+      if (productsResult.error || tiersResult.error) throw new Error('Não foi possível validar os preços B2B.');
+      var products = productsResult.data || [];
+      var tiers = tiersResult.data || [];
+      for (var item of cartItemsData) {
+        var quantity = Number(item.quantity);
+        var product = products.find(function(p) { return Number(p.id) === Number(item.product_id); });
+        if (!product || product.sale_mode === 'quote_only' || product.is_kit ||
+            !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000) {
+          throw new Error('Um produto B2B não está disponível para compra direta. Volte ao catálogo para solicitar cotação.');
+        }
+        var tier = tiers.filter(function(t) {
+          return Number(t.product_id) === Number(product.id) && t.is_active &&
+            quantity >= Number(t.min_qty) && (t.max_qty == null || quantity <= Number(t.max_qty)) && Number(t.unit_price) > 0;
+        }).sort(function(a, b) { return Number(b.min_qty) - Number(a.min_qty); })[0];
+        if (!tier) throw new Error('A quantidade não atende à faixa B2B. Volte ao produto e ajuste o pedido.');
+        var price = Number(tier.unit_price);
+        if (!Number.isFinite(price) || Math.round(price * quantity * 100) > Number.MAX_SAFE_INTEGER) throw new Error('Valor B2B inválido.');
+        item.price = price;
+        item.product_name = product.title;
+        item.image_url = Array.isArray(product.images) ? product.images[0] : null;
+        var update = await window.supabaseClient.from('b2b_cart_items').update({
+          price: price, total_price: Math.round(price * quantity * 100) / 100,
+          product_name: item.product_name, image_url: item.image_url
+        }).eq('id', item.id).eq('user_id', currentUser.id);
+        if (update.error) throw update.error;
+      }
+    }
+
     async function initCheckout() {
   showLoading();
 
@@ -2368,7 +2382,7 @@ async function salvarDadosPessoais() {
 
     var profileResult = await window.supabaseClient
       .from('profiles')
-      .select('id, name, email, phone, cpf')
+      .select('id, name, email, phone, cpf, account_type, is_admin, cnpj')
       .eq('id', currentUser.id)
       .single();
 
@@ -2381,6 +2395,12 @@ async function salvarDadosPessoais() {
       phone: metadata.phone || metadata.telefone || ''
     };
 
+    if (b2bCheckoutMode && (isGuest || !profileResult.data ||
+        (profileResult.data.is_admin !== true && (profileResult.data.account_type !== 'pj' || String(profileResult.data.cnpj || '').replace(/\D/g, '').length !== 14)))) {
+      showCheckoutError('Entre com uma conta empresarial (CNPJ) para finalizar o pedido B2B.');
+      return;
+    }
+
     if (!currentProfile.name) {
       currentProfile.name = metadata.full_name || metadata.name || metadata.display_name || currentUser.email || '';
     }
@@ -2392,7 +2412,7 @@ async function salvarDadosPessoais() {
     }
 
     customGenerationId = urlParams.get('generation_id')?.trim() || null;
-    customCheckoutMode = urlParams.get('custom') === '1' && Boolean(customGenerationId);
+    customCheckoutMode = !b2bCheckoutMode && urlParams.get('custom') === '1' && Boolean(customGenerationId);
 
     if (customCheckoutMode) {
       // Checkout dedicado da criação personalizada.
@@ -2400,12 +2420,13 @@ async function salvarDadosPessoais() {
       cartItemsData = [await carregarItemPersonalizado(customGenerationId)];
     } else {
       var cartResult = await window.supabaseClient
-        .from('cart_items')
+        .from('b2b_cart_items')
         .select('*')
         .eq('user_id', currentUser.id);
 
       if (cartResult.error) throw cartResult.error;
       cartItemsData = cartResult.data || [];
+      if (b2bCheckoutMode && cartItemsData.length) await validarCarrinhoB2B();
     }
 
     if (cartItemsData.length === 0) {
@@ -2429,7 +2450,7 @@ async function salvarDadosPessoais() {
     }
   } catch (err) {
     console.error('Erro checkout:', err);
-    if (customCheckoutMode) {
+    if (customCheckoutMode || b2bCheckoutMode) {
       showCheckoutError(err instanceof Error ? err.message : String(err || 'Erro desconhecido.'));
     } else {
       showEmpty();
@@ -2517,17 +2538,17 @@ async function salvarDadosPessoais() {
 
     async function buscarCEP() {
       var cep = document.getElementById('addr-cep').value.replace(/\D/g, '');
-    
+
       if (cep.length !== 8) {
         alert('CEP inválido. Digite os 8 dígitos.');
         return;
       }
-    
+
       document.getElementById('cep-searching').classList.remove('hidden');
       document.getElementById('btn-buscar-cep').disabled = true;
-    
+
       var preencheu = false;
-    
+
       // Tentativa 1: ViaCEP
       try {
         var r1 = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
@@ -2543,7 +2564,7 @@ async function salvarDadosPessoais() {
           }
         }
       } catch(e1) { /* segue para fallback */ }
-    
+
       // Tentativa 2: ApiCEP (fallback)
       if (!preencheu) {
         try {
@@ -2561,7 +2582,7 @@ async function salvarDadosPessoais() {
           }
         } catch(e2) { /* segue para fallback 2 */ }
       }
-    
+
       // Tentativa 3: BrasilAPI (segundo fallback)
       if (!preencheu) {
         try {
@@ -2579,11 +2600,11 @@ async function salvarDadosPessoais() {
           }
         } catch(e3) { /* todas falharam */ }
       }
-    
+
       if (!preencheu) {
         alert('CEP não encontrado. Preencha o endereço manualmente.');
       }
-    
+
       document.getElementById('cep-searching').classList.add('hidden');
       document.getElementById('btn-buscar-cep').disabled = false;
     }

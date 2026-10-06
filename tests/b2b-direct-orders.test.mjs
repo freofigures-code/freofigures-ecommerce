@@ -55,11 +55,16 @@ test('B2B migration creates a separate cart, validates quantities and fixes orde
   }
 });
 
-test('B2B checkout retains the ordinary payment UI and excludes stock calls', async () => {
-  const html = await readFile(new URL('../public/checkout.html', import.meta.url), 'utf8');
-  assert.match(html, /b2bCheckoutMode = urlParams\.get\('b2b'\) === '1'/);
-  assert.match(html, /from\(b2bCheckoutMode \? 'b2b_cart_items' : 'cart_items'\)/);
-  assert.match(html, /if \(!b2bCheckoutMode\) cartItemsData\.forEach/);
-  assert.match(html, /if \(data\.status !== 'rejected' && !b2bCheckoutMode\) cartItemsData\.forEach/g);
-  assert.match(html, /is_b2b:\s+b2bCheckoutMode/g);
+test('B2B has its own product and checkout pages while retail checkout stays isolated', async () => {
+  const html = await readFile(new URL('../public/b2b-checkout.html', import.meta.url), 'utf8');
+  const retail = await readFile(new URL('../public/checkout.html', import.meta.url), 'utf8');
+  const catalog = await readFile(new URL('../src/BApp.tsx', import.meta.url), 'utf8');
+  assert.match(catalog, /detailHref = `\/b2b-produto\.html\?id=/);
+  assert.match(catalog, /window\.location\.href = '\/b2b-checkout\.html'/);
+  assert.match(html, /const b2bCheckoutMode = true/);
+  assert.doesNotMatch(html, /b2bCheckoutMode = urlParams\.get/);
+  assert.match(html, /from\('b2b_cart_items'\)/);
+  assert.match(html, /is_b2b:\s+true/g);
+  assert.doesNotMatch(html, /decrementar_estoque|['"]cart_items['"]/);
+  assert.doesNotMatch(retail, /b2bCheckoutMode|b2b_cart_items|is_b2b/);
 });

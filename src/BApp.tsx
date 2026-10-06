@@ -514,7 +514,7 @@ const B2BCartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem,
                 </div>
                 <button
                   disabled={busyItem !== null}
-                  onClick={() => { window.location.href = '/checkout.html?b2b=1'; }}
+                  onClick={() => { window.location.href = '/b2b-checkout.html'; }}
                   className="w-full font-bold font-display uppercase tracking-widest py-3.5 text-sm transition-colors disabled:opacity-50"
                   style={{ background: B2B_ACCENT, color: '#fff' }}
                 >
