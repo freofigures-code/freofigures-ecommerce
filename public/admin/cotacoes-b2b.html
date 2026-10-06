@@ -37,7 +37,7 @@
   function show(message, error){notice.textContent=message;notice.className=error?'error':'success';}
   async function load(){
     show('Carregando cotações...',false);
-    var result=await db.from('b2b_quote_requests').select('id,user_id,company_name,contact_email,contact_phone,category,product_name,description,quantity,deadline,status,admin_note,estimated_unit_price,estimated_total,created_at,updated_at').order('created_at',{ascending:false});
+    var result=await db.from('b2b_quote_requests').select('id,user_id,company_name,contact_email,contact_phone,category,product_name,description,quantity,deadline,status,admin_note,estimated_unit_price,estimated_total,customization,created_at,updated_at').order('created_at',{ascending:false});
     if(result.error){show('Erro ao carregar cotações. Confirme que o SQL B2B foi aplicado.',true);return;}
     rows=result.data||[];
     show(rows.length+' solicitação(ões) encontrada(s).',false);
@@ -54,6 +54,12 @@
       heading.append(el('p','meta','Contato: '+(row.contact_email||'E-mail não informado')+(row.contact_phone?' · '+row.contact_phone:'')));
       head.append(heading,el('span','tag',statuses[row.status]||row.status));card.append(head);
       card.append(el('p','quote-body',row.description));
+      if(row.customization){
+        var choice=el('p','meta');
+        choice.append(el('strong','', 'Personalização: '),el('span','',row.customization.color_name+' · Texto: '+row.customization.text));
+        var color=el('span');color.style.display='inline-block';color.style.width='17px';color.style.height='17px';color.style.border='1px solid #ffffff66';color.style.borderRadius='50%';color.style.backgroundColor=/^#[0-9a-f]{6}$/i.test(row.customization.color_hex)?row.customization.color_hex:'#777';color.style.verticalAlign='middle';color.style.margin='0 6px';
+        choice.prepend(color);card.append(choice);
+      }
       card.append(el('p','meta','Quantidade: '+Number(row.quantity).toLocaleString('pt-BR')+(row.deadline?' · Prazo desejado: '+row.deadline:'')));
       if(row.estimated_total!==null)card.append(el('p','tag','Estimativa: R$ '+Number(row.estimated_unit_price).toFixed(2).replace('.',',')+'/un. · R$ '+Number(row.estimated_total).toFixed(2).replace('.',',')+' total'));
       var grid=el('div','quote-grid');

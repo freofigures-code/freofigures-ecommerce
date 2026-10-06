@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, Building2, ClipboardList, FileText, MessageCircl
 import B2BQuoteChat from './B2BQuoteChat';
 
 type Profile = { id: string; account_type: string | null; is_admin?: boolean | null; company_name: string | null; trade_name: string | null; cnpj: string | null; name: string | null; phone: string | null };
-type Quote = { id: string; category: string; product_name: string | null; description: string; quantity: number; deadline: string | null; status: string; admin_note: string | null; estimated_unit_price: number | null; estimated_total: number | null; created_at: string; updated_at: string };
+type Quote = { id: string; category: string; product_name: string | null; description: string; quantity: number; deadline: string | null; status: string; admin_note: string | null; estimated_unit_price: number | null; estimated_total: number | null; customization: { text: string; color_name: string; color_hex: string } | null; created_at: string; updated_at: string };
 type Order = { id: string | number; status: string | null; total: number | null; created_at: string };
 
 const quoteStatus: Record<string, { label: string; color: string }> = {
@@ -56,7 +56,7 @@ export default function B2BAccount() {
     setRefreshing(true);
     const db = (window as any).supabaseClient;
     const [quoteResult, orderResult] = await Promise.all([
-      db.from('b2b_quote_requests').select('id,category,product_name,description,quantity,deadline,status,admin_note,estimated_unit_price,estimated_total,created_at,updated_at').eq('user_id', userId).order('created_at', { ascending: false }),
+      db.from('b2b_quote_requests').select('id,category,product_name,description,quantity,deadline,status,admin_note,estimated_unit_price,estimated_total,customization,created_at,updated_at').eq('user_id', userId).order('created_at', { ascending: false }),
       db.from('orders').select('id,status,total,created_at').eq('user_id', userId).eq('is_b2b', true).order('created_at', { ascending: false }).limit(5),
     ]);
     if (quoteResult.error) setQuotesError('Não foi possível carregar as cotações. Confira se o SQL da área B2B já foi executado e tente novamente.');
@@ -116,6 +116,7 @@ export default function B2BAccount() {
           {quotesError ? <p role="alert" className="p-6 text-red-300 text-sm">{quotesError}</p> : quotes.length === 0 ? <div className="p-9 text-center"><FileText className="text-white/25 mx-auto" size={33} /><p className="font-semibold mt-3">Ainda não há solicitações.</p><p className="text-white/50 text-sm mt-1">Escolha produtos para eventos, um novo produto sob medida ou uma cotação por volume.</p></div> : <div className="divide-y divide-white/10">{quotes.map(q => <article key={q.id} className="p-5 md:p-6">
             <div className="flex flex-wrap justify-between items-start gap-3"><div><p className="text-[#e5bb62] text-[11px] uppercase tracking-wider">{categoryName[q.category] || q.category}</p><h3 className="font-display font-bold text-lg mt-1">{q.product_name || 'Projeto personalizado'}</h3><p className="text-white/40 text-xs mt-1">Solicitada em {date(q.created_at)} · Protocolo {q.id.slice(0, 8).toUpperCase()}</p></div><span className={`text-xs border px-2.5 py-1.5 ${quoteStatus[q.status]?.color || 'text-white/70 border-white/20'}`}>{quoteStatus[q.status]?.label || q.status}</span></div>
             <p className="text-white/70 text-sm mt-4 whitespace-pre-wrap break-words">{q.description}</p>
+            {q.customization && <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-white/75"><span className="h-5 w-5 rounded-full border border-white/30" style={{ backgroundColor: q.customization.color_hex }} /><span>Cor: <strong>{q.customization.color_name}</strong></span><span>· Texto: <strong className="break-all">{q.customization.text}</strong></span></div>}
             <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-white/50 mt-4"><span>Quantidade: {q.quantity.toLocaleString('pt-BR')}</span>{q.deadline && <span>Prazo desejado: {q.deadline}</span>}<span>Atualizada em {date(q.updated_at)}</span></div>
             {q.estimated_total !== null && <p className="text-[#e5bb62] text-sm mt-3">Estimativa cadastrada: {money(q.estimated_unit_price)} por unidade · {money(q.estimated_total)} no total. A proposta final será combinada na conversa.</p>}
             {q.admin_note && <div className="mt-4 border-l-2 border-[#e5bb62] pl-3"><p className="text-[11px] uppercase tracking-widest text-[#e5bb62]">Retorno da equipe</p><p className="text-sm text-white/80 mt-1 whitespace-pre-wrap break-words">{q.admin_note}</p></div>}

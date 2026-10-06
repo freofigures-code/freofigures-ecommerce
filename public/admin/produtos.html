@@ -535,6 +535,28 @@
             <p id="event-pricing-status" role="status" class="font-mono text-xs text-white/50">Salve o produto para publicar estes preços.</p>
           </div>
 
+          <div id="event-customizer-editor" class="hidden border border-white/15 bg-white/[0.03] p-4 space-y-4">
+            <div><p class="font-display font-bold text-lg text-white">Personalização de cor e nome</p><p class="font-mono text-xs text-white/50 mt-1">O cliente vê uma prévia simples e envia as escolhas junto com a cotação. A arte final é confirmada no chat.</p></div>
+            <label class="flex items-center gap-2 text-sm text-white/80"><input id="event-customizer-enabled" type="checkbox" onchange="toggleEventCustomizer()"> Permitir que o cliente escolha cor e texto</label>
+            <div id="event-customizer-fields" class="hidden space-y-4">
+              <div class="border border-freo-orange/20 bg-freo-orange/5 p-3 text-xs text-white/70 leading-relaxed">
+                <strong class="text-freo-orange">Qual arquivo enviar?</strong> Uma imagem PNG quadrada, com fundo transparente, apenas da parte do produto que mudará de cor (por exemplo, o disco liso do chaveiro), sem nome impresso. Recomendamos 1200 × 1200 px; mínimo 600 × 600 px e até 5 MB. As fotos reais para o catálogo continuam na aba Imagens. O arquivo 3D de fabricação não é necessário para esta prévia.
+              </div>
+              <div class="flex flex-wrap items-center gap-4">
+                <input id="event-template-file" type="file" accept="image/png" class="hidden" onchange="uploadEventTemplate(this.files[0])">
+                <button type="button" onclick="document.getElementById('event-template-file').click()" class="border border-freo-orange/50 text-freo-orange px-4 py-2 text-xs uppercase tracking-wider">Enviar PNG da peça sem texto</button>
+                <span id="event-template-name" class="text-xs text-white/50">Nenhum arquivo enviado</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="fl">Texto de exemplo<input id="event-sample-text" class="fi mt-1" type="text" maxlength="40" value="Seu nome" oninput="renderEventCustomizerPreview()"></label>
+                <label class="fl">Máximo de letras para o cliente<input id="event-text-limit" class="fi mt-1" type="number" min="1" max="40" step="1" value="20" oninput="renderEventCustomizerPreview()"></label>
+              </div>
+              <div><div class="flex items-center justify-between gap-3"><label class="fl mb-0">Cores disponíveis</label><button type="button" onclick="addEventColor()" class="text-freo-orange text-xs">+ Adicionar cor</button></div><div id="event-color-list" class="space-y-2 mt-2"></div><p class="text-xs text-white/40 mt-2">Escolha de 1 a 8 cores. O nome e a cor aparecerão para o cliente.</p></div>
+              <div><p class="fl">Prévia para o cliente</p><div id="event-customizer-preview" class="relative mx-auto h-56 w-56 bg-[#17222b] border border-white/15 overflow-hidden"></div><p class="text-center text-[11px] text-white/40 mt-2">Prévia ilustrativa. A peça final será combinada na cotação.</p></div>
+              <p id="event-customizer-status" role="status" class="text-xs text-white/50">Envie o PNG antes de salvar o produto.</p>
+            </div>
+          </div>
+
         </div>
 
         </div>
@@ -568,6 +590,10 @@
   var currentTiers = []; // faixas de preço do produto em edição, formato: [{id, min_qty, max_qty, unit_price, _isNew}]
   var currentEventTiers = [];
   var eventPricingReady = true;
+  var eventCustomizerReady = true;
+  var eventTemplatePath = '';
+  var eventTemplateUrl = '';
+  var eventColors = [];
   var nonEventSaleMode = 'normal';
 
   /*
@@ -826,6 +852,7 @@
       updateSaleModeHint();
       loadTiersForProduct(p.id);
       loadEventPricing(p.id);
+      loadEventCustomizer(p.id);
 
       // Detecta se video_url é upload direto ou YouTube
       var savedVideo = p.video_url || '';
@@ -857,6 +884,7 @@
       currentTiers = [];
       renderTiersUI();
       resetEventPricing();
+      resetEventCustomizer();
 
       currentVideoUrl = null;
       renderVideoUI();
@@ -1066,6 +1094,7 @@
   function updateB2BCategory() {
     var eventProduct = document.getElementById('f-b2b-category').value === 'eventos';
     document.getElementById('event-pricing-editor').classList.toggle('hidden', !eventProduct);
+    document.getElementById('event-customizer-editor').classList.toggle('hidden', !eventProduct);
     document.getElementById('tiers-editor-wrap').classList.toggle('hidden', eventProduct);
     document.getElementById('active-product-label').textContent = eventProduct
       ? 'Produto ativo (visível apenas para contas B2B)' : 'Produto ativo (visível na loja)';
@@ -1083,6 +1112,8 @@
     setViewMode('b2b');
     openForm(null);
     document.getElementById('f-b2b-category').value = 'eventos';
+    document.getElementById('event-customizer-enabled').checked = true;
+    toggleEventCustomizer();
     updateB2BCategory();
     showTab('tab-b2b');
   }
@@ -1180,6 +1211,145 @@
     return { pricing_mode: mode, minimum_quantity: min, base_unit_price: base,
       discount_per_extra_unit: mode === 'step' ? discount : 0,
       floor_unit_price: mode === 'step' ? floor : 0.01, tiers: breaks };
+  }
+
+  function eventTemplatePublicUrl(path) {
+    return window.supabaseClient.storage.from('imagens').getPublicUrl(path).data.publicUrl;
+  }
+  function resetEventCustomizer() {
+    eventCustomizerReady = true;
+    eventTemplatePath = '';
+    eventTemplateUrl = '';
+    eventColors = [
+      { name: 'Azul claro', hex: '#82c9e8' },
+      { name: 'Vermelho', hex: '#d12e3c' },
+      { name: 'Rosa', hex: '#e9a0c5' }
+    ];
+    document.getElementById('event-customizer-enabled').checked = false;
+    document.getElementById('event-sample-text').value = 'Seu nome';
+    document.getElementById('event-text-limit').value = 20;
+    document.getElementById('event-template-name').textContent = 'Nenhum arquivo enviado';
+    document.getElementById('event-customizer-status').textContent = 'Envie o PNG antes de salvar o produto.';
+    document.getElementById('event-template-file').value = '';
+    renderEventColors();
+    toggleEventCustomizer();
+  }
+  async function loadEventCustomizer(productId) {
+    resetEventCustomizer();
+    eventCustomizerReady = false;
+    var result = await window.supabaseClient.from('b2b_event_customizers').select('*').eq('product_id', productId).maybeSingle();
+    if (String(editingProductId) !== String(productId)) return;
+    if (result.error) {
+      document.getElementById('event-customizer-status').textContent = 'Erro ao carregar a personalização. Atualize a página antes de salvar.';
+      return;
+    }
+    eventCustomizerReady = true;
+    if (!result.data) return;
+    eventTemplatePath = result.data.template_path;
+    eventTemplateUrl = eventTemplatePublicUrl(eventTemplatePath);
+    eventColors = result.data.colors;
+    document.getElementById('event-customizer-enabled').checked = true;
+    document.getElementById('event-sample-text').value = result.data.sample_text;
+    document.getElementById('event-text-limit').value = result.data.text_limit;
+    document.getElementById('event-template-name').textContent = 'PNG já enviado';
+    document.getElementById('event-customizer-status').textContent = 'Personalização carregada.';
+    renderEventColors();
+    toggleEventCustomizer();
+  }
+  function toggleEventCustomizer() {
+    var enabled = document.getElementById('event-customizer-enabled').checked;
+    document.getElementById('event-customizer-fields').classList.toggle('hidden', !enabled);
+    if (enabled) renderEventCustomizerPreview();
+  }
+  function addEventColor() {
+    if (eventColors.length >= 8) { showToast('Escolha até 8 cores.', 'error'); return; }
+    eventColors.push({ name: '', hex: '#ffffff' });
+    renderEventColors();
+  }
+  function removeEventColor(index) {
+    eventColors.splice(index, 1);
+    renderEventColors();
+  }
+  function renderEventColors() {
+    var list = document.getElementById('event-color-list');
+    list.replaceChildren();
+    eventColors.forEach(function(color, index) {
+      var row = document.createElement('div'); row.className = 'flex items-center gap-2';
+      var swatch = document.createElement('input'); swatch.type = 'color'; swatch.value = /^#[0-9a-f]{6}$/i.test(color.hex) ? color.hex : '#ffffff';
+      swatch.setAttribute('aria-label', 'Cor ' + (index + 1)); swatch.className = 'h-10 w-12 cursor-pointer bg-transparent';
+      swatch.oninput = function() { eventColors[index].hex = this.value; renderEventCustomizerPreview(); };
+      var name = document.createElement('input'); name.type = 'text'; name.maxLength = 30; name.value = color.name;
+      name.placeholder = 'Nome da cor'; name.setAttribute('aria-label', 'Nome da cor ' + (index + 1)); name.className = 'fi flex-1';
+      name.oninput = function() { eventColors[index].name = this.value; };
+      var remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Remover'; remove.className = 'text-red-300 text-xs';
+      remove.onclick = function() { removeEventColor(index); };
+      row.append(swatch, name, remove); list.append(row);
+    });
+    renderEventCustomizerPreview();
+  }
+  function renderEventCustomizerPreview() {
+    var box = document.getElementById('event-customizer-preview');
+    box.replaceChildren();
+    if (!eventTemplateUrl) {
+      var hint = document.createElement('p'); hint.className = 'absolute inset-0 grid place-items-center text-center p-4 text-xs text-white/40';
+      hint.textContent = 'A prévia aparecerá após enviar o PNG transparente.'; box.append(hint); return;
+    }
+    var shape = document.createElement('div'); shape.className = 'absolute inset-3';
+    shape.style.backgroundColor = eventColors[0]?.hex || '#cccccc';
+    shape.style.maskImage = 'url("' + eventTemplateUrl + '")'; shape.style.webkitMaskImage = shape.style.maskImage;
+    shape.style.maskPosition = 'center'; shape.style.maskSize = 'contain'; shape.style.maskRepeat = 'no-repeat';
+    shape.style.webkitMaskPosition = 'center'; shape.style.webkitMaskSize = 'contain'; shape.style.webkitMaskRepeat = 'no-repeat';
+    var label = document.createElement('div'); label.className = 'absolute inset-0 flex items-center justify-center p-8 text-center font-bold break-words';
+    label.style.color = '#fff'; label.style.textShadow = '0 1px 4px #000, 0 0 2px #000'; label.style.fontSize = 'clamp(13px, 6vw, 20px)';
+    label.textContent = document.getElementById('event-sample-text').value.trim() || 'Seu nome';
+    box.append(shape, label);
+  }
+  async function uploadEventTemplate(file) {
+    if (!file) return;
+    if (file.type !== 'image/png' || file.size > 5 * 1024 * 1024) { showToast('Envie um PNG de até 5 MB.', 'error'); return; }
+    var status = document.getElementById('event-customizer-status');
+    status.textContent = 'Conferindo imagem...';
+    var objectUrl = URL.createObjectURL(file);
+    try {
+      var image = await new Promise(function(resolve, reject) {
+        var img = new Image(); img.onload = function() { resolve(img); }; img.onerror = reject; img.src = objectUrl;
+      });
+      if (image.naturalWidth !== image.naturalHeight || image.naturalWidth < 600) throw new Error('O PNG deve ser quadrado e ter pelo menos 600 × 600 px.');
+      var canvas = document.createElement('canvas'); canvas.width = 2; canvas.height = 2;
+      var context = canvas.getContext('2d');
+      if (!context) throw new Error('Não foi possível conferir a transparência do PNG.');
+      context.drawImage(image, 0, 0, 2, 2);
+      var alpha = context.getImageData(0, 0, 2, 2).data;
+      if ([3, 7, 11, 15].every(function(i) { return alpha[i] === 255; })) throw new Error('O PNG precisa ter fundo transparente ao redor da peça.');
+      status.textContent = 'Enviando PNG...';
+      var path = 'b2b-customizers/' + crypto.randomUUID() + '.png';
+      var result = await window.supabaseClient.storage.from('imagens').upload(path, file, { upsert: false, contentType: 'image/png' });
+      if (result.error) throw result.error;
+      eventTemplatePath = path;
+      eventTemplateUrl = eventTemplatePublicUrl(path);
+      document.getElementById('event-template-name').textContent = file.name;
+      status.textContent = 'PNG pronto para salvar com o produto.';
+      renderEventCustomizerPreview();
+    } catch (error) {
+      status.textContent = error.message || 'Não foi possível enviar o PNG.';
+      showToast(status.textContent, 'error');
+    } finally { URL.revokeObjectURL(objectUrl); }
+  }
+  function readEventCustomizer() {
+    if (!eventCustomizerReady) throw new Error('Aguarde a personalização carregar ou atualize a página.');
+    if (!document.getElementById('event-customizer-enabled').checked) return null;
+    if (!eventTemplatePath) throw new Error('Envie o PNG transparente da parte que muda de cor.');
+    var limit = Number(document.getElementById('event-text-limit').value);
+    var sample = document.getElementById('event-sample-text').value.trim();
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 40 || !sample || sample.length > limit) throw new Error('Confira o exemplo e o limite de letras.');
+    if (eventColors.length < 1 || eventColors.length > 8) throw new Error('Configure de 1 a 8 cores.');
+    var seen = new Set();
+    var colors = eventColors.map(function(color) {
+      var name = String(color.name || '').trim(); var hex = String(color.hex || '').toLowerCase();
+      if (!name || name.length > 30 || !/^#[0-9a-f]{6}$/.test(hex) || seen.has(hex)) throw new Error('Cada cor precisa de um nome e tom únicos.');
+      seen.add(hex); return { name: name, hex: hex };
+    });
+    return { template_path: eventTemplatePath, colors: colors, sample_text: sample, text_limit: limit };
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1370,9 +1540,15 @@
     var price = parseFloat(priceRaw);
     var eventProduct = document.getElementById('f-b2b-category').value === 'eventos';
     var eventPricing = null;
+    var eventCustomizer = null;
     if (eventProduct) {
       try { eventPricing = readEventPricing(); }
       catch (e) { showToast(e.message, 'error'); showTab('tab-b2b'); return false; }
+      try { eventCustomizer = readEventCustomizer(); }
+      catch (e) { showToast(e.message, 'error'); showTab('tab-b2b'); return false; }
+      if (eventCustomizer && document.getElementById('f-active').checked && currentImages.length === 0) {
+        showToast('Envie ao menos uma foto real do produto antes de ativá-lo.', 'error'); showTab('tab-images'); return false;
+      }
       price = eventPricing.base_unit_price;
       document.getElementById('f-price').value = price;
     }
@@ -1441,6 +1617,14 @@
         var rPrice = await window.supabaseClient.from('b2b_event_pricing')
           .upsert(Object.assign({ product_id: editingProductId }, eventPricing), { onConflict: 'product_id' });
         if (rPrice.error) throw rPrice.error;
+        if (eventCustomizer) {
+          var rCustom = await window.supabaseClient.from('b2b_event_customizers')
+            .upsert(Object.assign({ product_id: editingProductId }, eventCustomizer), { onConflict: 'product_id' });
+          if (rCustom.error) throw rCustom.error;
+        } else {
+          var rRemoveCustom = await window.supabaseClient.from('b2b_event_customizers').delete().eq('product_id', editingProductId);
+          if (rRemoveCustom.error) throw rRemoveCustom.error;
+        }
         if (document.getElementById('f-active').checked) {
           var rActivate = await window.supabaseClient.from('products').update({ is_active: true }).eq('id', editingProductId);
           if (rActivate.error) throw rActivate.error;

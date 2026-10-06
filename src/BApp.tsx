@@ -541,6 +541,7 @@ export default function BApp() {
   const [products, setProducts] = useState<Product[]>([]);
   const [tiersByProduct, setTiersByProduct] = useState<Record<number, PriceTier[]>>({});
   const [eventPricingByProduct, setEventPricingByProduct] = useState<Record<number, B2BEventPricing>>({});
+  const [customizableProductIds, setCustomizableProductIds] = useState<Set<number>>(new Set());
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [catalogError, setCatalogError] = useState('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -628,6 +629,9 @@ export default function BApp() {
         const { data: eventPricingData, error: eventPricingError } = await supabase
           .from('b2b_event_pricing').select('*');
         if (eventPricingError) throw eventPricingError;
+        const { data: customizerData, error: customizerError } = await supabase
+          .from('b2b_event_customizers').select('product_id');
+        if (customizerError) throw customizerError;
 
         const grouped: Record<number, PriceTier[]> = {};
         (tiersData || []).forEach((tier: PriceTier) => {
@@ -638,6 +642,7 @@ export default function BApp() {
         setProducts(productsData || []);
         setTiersByProduct(grouped);
         setEventPricingByProduct(Object.fromEntries((eventPricingData || []).map((row: B2BEventPricing) => [row.product_id, row])));
+        setCustomizableProductIds(new Set((customizerData || []).map((row: { product_id: number }) => row.product_id)));
       } catch (err) {
         console.error('[B2B] erro ao carregar catálogo:', err);
         setCatalogError(err instanceof Error ? err.message : 'Não foi possível carregar o catálogo.');
@@ -655,11 +660,15 @@ export default function BApp() {
     const quoteId = Number(params.get('quote'));
     const selected = products.find(p => p.id === quoteId);
     if (selected) {
+      if (customizableProductIds.has(selected.id)) {
+        window.location.replace(`/b2b-produto.html?id=${encodeURIComponent(selected.id)}`);
+        return;
+      }
       setActiveSection(selected.b2b_category || 'loja');
       setQuoteProduct(selected);
       window.setTimeout(() => document.getElementById('b2b-brief')?.scrollIntoView({ behavior: 'smooth' }), 0);
     }
-  }, [authState, loadingProducts, products]);
+  }, [authState, loadingProducts, products, customizableProductIds]);
 
   const filtered = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
