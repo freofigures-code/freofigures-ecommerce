@@ -536,24 +536,31 @@
           </div>
 
           <div id="event-customizer-editor" class="hidden border border-white/15 bg-white/[0.03] p-4 space-y-4">
-            <div><p class="font-display font-bold text-lg text-white">Personalização de cor e nome</p><p class="font-mono text-xs text-white/50 mt-1">O cliente vê uma prévia simples e envia as escolhas junto com a cotação. A arte final é confirmada no chat.</p></div>
+            <div><p class="font-display font-bold text-lg text-white">Personalização de cor e nome</p><p class="font-mono text-xs text-white/50 mt-1">Para alterar a geometria junto com o nome, envie o projeto paramétrico OpenSCAD (.scad). Anúncios antigos com prévia em PNG continuam funcionando.</p></div>
             <label class="flex items-center gap-2 text-sm text-white/80"><input id="event-customizer-enabled" type="checkbox" onchange="toggleEventCustomizer()"> Permitir que o cliente escolha cor e texto</label>
             <div id="event-customizer-fields" class="hidden space-y-4">
-              <div class="border border-freo-orange/20 bg-freo-orange/5 p-3 text-xs text-white/70 leading-relaxed">
-                <strong class="text-freo-orange">Qual arquivo enviar?</strong> Uma imagem PNG quadrada, com fundo transparente, apenas da parte do produto que mudará de cor (por exemplo, o disco liso do chaveiro), sem nome impresso. Recomendamos 1200 × 1200 px; mínimo 600 × 600 px e até 5 MB. As fotos reais para o catálogo continuam na aba Imagens. O arquivo 3D de fabricação não é necessário para esta prévia.
+              <label class="fl">Tipo de personalização<select id="event-customizer-mode" class="fi mt-1" onchange="updateEventCustomizerMode()"><option value="scad">Modelo 3D paramétrico (.scad)</option><option value="png">Prévia ilustrativa (PNG)</option></select></label>
+              <div id="event-scad-fields" class="space-y-3">
+                <div class="border border-freo-orange/20 bg-freo-orange/5 p-3 text-xs text-white/70 leading-relaxed"><strong class="text-freo-orange">Arquivo para o modelo 3D:</strong> envie um .scad autocontido de até 256 KiB. Ele precisa ter uma variável de texto no início, por exemplo <code>custom_text = "Seu nome";</code>, e usar essa variável para construir o corpo e as letras. A interface do cliente mostra apenas nome e cor. Depois de salvar, teste dois nomes no visualizador antes de ativar o anúncio.</div>
+                <div class="flex flex-wrap items-center gap-4"><input id="event-scad-file" type="file" accept=".scad,text/plain" class="hidden" onchange="uploadEventScad(this.files[0])"><button type="button" onclick="document.getElementById('event-scad-file').click()" class="border border-freo-orange/50 text-freo-orange px-4 py-2 text-xs uppercase tracking-wider">Enviar arquivo .scad</button><span id="event-scad-name" class="text-xs text-white/50">Nenhum arquivo enviado</span></div>
+                <label class="fl">Nome da variável de texto no .scad<input id="event-scad-parameter" class="fi mt-1" type="text" maxlength="40" value="custom_text" placeholder="custom_text"></label>
+                <a id="event-scad-test-link" class="hidden text-freo-orange text-xs underline" target="_blank" rel="noopener">Testar e baixar o modelo 3D salvo</a>
               </div>
-              <div class="flex flex-wrap items-center gap-4">
+              <div id="event-png-fields" class="hidden border border-freo-orange/20 bg-freo-orange/5 p-3 text-xs text-white/70 leading-relaxed">
+                <strong class="text-freo-orange">Qual arquivo enviar?</strong> Uma imagem PNG quadrada, com fundo transparente, apenas da parte do produto que mudará de cor (por exemplo, o disco liso do chaveiro), sem nome impresso. Recomendamos 1200 × 1200 px; mínimo 600 × 600 px e até 5 MB. As fotos reais para o catálogo continuam na aba Imagens. O arquivo 3D de fabricação não é necessário para esta prévia.
+              <div class="flex flex-wrap items-center gap-4 mt-3">
                 <input id="event-template-file" type="file" accept="image/png" class="hidden" onchange="uploadEventTemplate(this.files[0])">
                 <button type="button" onclick="document.getElementById('event-template-file').click()" class="border border-freo-orange/50 text-freo-orange px-4 py-2 text-xs uppercase tracking-wider">Enviar PNG da peça sem texto</button>
                 <span id="event-template-name" class="text-xs text-white/50">Nenhum arquivo enviado</span>
+              </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label class="fl">Texto de exemplo<input id="event-sample-text" class="fi mt-1" type="text" maxlength="40" value="Seu nome" oninput="renderEventCustomizerPreview()"></label>
                 <label class="fl">Máximo de letras para o cliente<input id="event-text-limit" class="fi mt-1" type="number" min="1" max="40" step="1" value="20" oninput="renderEventCustomizerPreview()"></label>
               </div>
               <div><div class="flex items-center justify-between gap-3"><label class="fl mb-0">Cores disponíveis</label><button type="button" onclick="addEventColor()" class="text-freo-orange text-xs">+ Adicionar cor</button></div><div id="event-color-list" class="space-y-2 mt-2"></div><p class="text-xs text-white/40 mt-2">Escolha de 1 a 8 cores. O nome e a cor aparecerão para o cliente.</p></div>
-              <div><p class="fl">Prévia para o cliente</p><div id="event-customizer-preview" class="relative mx-auto h-56 w-56 bg-[#17222b] border border-white/15 overflow-hidden"></div><p class="text-center text-[11px] text-white/40 mt-2">Prévia ilustrativa. A peça final será combinada na cotação.</p></div>
-              <p id="event-customizer-status" role="status" class="text-xs text-white/50">Envie o PNG antes de salvar o produto.</p>
+              <div id="event-png-preview"><p class="fl">Prévia para o cliente</p><div id="event-customizer-preview" class="relative mx-auto h-56 w-56 bg-[#17222b] border border-white/15 overflow-hidden"></div><p class="text-center text-[11px] text-white/40 mt-2">Prévia ilustrativa. A peça final será combinada na cotação.</p></div>
+              <p id="event-customizer-status" role="status" class="text-xs text-white/50">Envie o arquivo .scad antes de salvar o produto.</p>
             </div>
           </div>
 
@@ -593,6 +600,9 @@
   var eventCustomizerReady = true;
   var eventTemplatePath = '';
   var eventTemplateUrl = '';
+  var eventModelPath = '';
+  var eventModelVerifiedPath = '';
+  var eventModelVerifiedParameter = '';
   var eventColors = [];
   var nonEventSaleMode = 'normal';
 
@@ -1220,19 +1230,28 @@
     eventCustomizerReady = true;
     eventTemplatePath = '';
     eventTemplateUrl = '';
+    eventModelPath = '';
+    eventModelVerifiedPath = '';
+    eventModelVerifiedParameter = '';
     eventColors = [
       { name: 'Azul claro', hex: '#82c9e8' },
       { name: 'Vermelho', hex: '#d12e3c' },
       { name: 'Rosa', hex: '#e9a0c5' }
     ];
     document.getElementById('event-customizer-enabled').checked = false;
+    document.getElementById('event-customizer-mode').value = 'scad';
+    document.getElementById('event-scad-parameter').value = 'custom_text';
+    document.getElementById('event-scad-name').textContent = 'Nenhum arquivo enviado';
+    document.getElementById('event-scad-test-link').classList.add('hidden');
     document.getElementById('event-sample-text').value = 'Seu nome';
     document.getElementById('event-text-limit').value = 20;
     document.getElementById('event-template-name').textContent = 'Nenhum arquivo enviado';
-    document.getElementById('event-customizer-status').textContent = 'Envie o PNG antes de salvar o produto.';
+    document.getElementById('event-customizer-status').textContent = 'Envie um arquivo .scad para gerar o modelo 3D.';
     document.getElementById('event-template-file').value = '';
+    document.getElementById('event-scad-file').value = '';
     renderEventColors();
     toggleEventCustomizer();
+    updateEventCustomizerMode();
   }
   async function loadEventCustomizer(productId) {
     resetEventCustomizer();
@@ -1245,21 +1264,41 @@
     }
     eventCustomizerReady = true;
     if (!result.data) return;
-    eventTemplatePath = result.data.template_path;
-    eventTemplateUrl = eventTemplatePublicUrl(eventTemplatePath);
+    eventTemplatePath = result.data.template_path || '';
+    eventTemplateUrl = eventTemplatePath ? eventTemplatePublicUrl(eventTemplatePath) : '';
+    eventModelPath = result.data.model_path || '';
+    eventModelVerifiedPath = result.data.model_verified_path || '';
+    eventModelVerifiedParameter = result.data.text_parameter || 'custom_text';
     eventColors = result.data.colors;
     document.getElementById('event-customizer-enabled').checked = true;
+    document.getElementById('event-customizer-mode').value = eventModelPath ? 'scad' : 'png';
+    document.getElementById('event-scad-parameter').value = result.data.text_parameter || 'custom_text';
+    document.getElementById('event-scad-name').textContent = eventModelPath ? 'Modelo .scad já enviado' : 'Nenhum arquivo enviado';
     document.getElementById('event-sample-text').value = result.data.sample_text;
     document.getElementById('event-text-limit').value = result.data.text_limit;
-    document.getElementById('event-template-name').textContent = 'PNG já enviado';
+    document.getElementById('event-template-name').textContent = eventTemplatePath ? 'PNG já enviado' : 'Nenhum arquivo enviado';
     document.getElementById('event-customizer-status').textContent = 'Personalização carregada.';
     renderEventColors();
     toggleEventCustomizer();
+    updateEventCustomizerMode();
+    updateEventScadTestLink(productId);
   }
   function toggleEventCustomizer() {
     var enabled = document.getElementById('event-customizer-enabled').checked;
     document.getElementById('event-customizer-fields').classList.toggle('hidden', !enabled);
     if (enabled) renderEventCustomizerPreview();
+  }
+  function updateEventCustomizerMode() {
+    var isScad = document.getElementById('event-customizer-mode').value === 'scad';
+    document.getElementById('event-scad-fields').classList.toggle('hidden', !isScad);
+    document.getElementById('event-png-fields').classList.toggle('hidden', isScad);
+    document.getElementById('event-png-preview').classList.toggle('hidden', isScad);
+    if (!isScad) renderEventCustomizerPreview();
+  }
+  function updateEventScadTestLink(productId) {
+    var link = document.getElementById('event-scad-test-link');
+    link.classList.toggle('hidden', !productId || !eventModelPath);
+    if (productId && eventModelPath) link.href = '/b2b-modelo-admin.html?id=' + encodeURIComponent(productId);
   }
   function addEventColor() {
     if (eventColors.length >= 8) { showToast('Escolha até 8 cores.', 'error'); return; }
@@ -1335,10 +1374,39 @@
       showToast(status.textContent, 'error');
     } finally { URL.revokeObjectURL(objectUrl); }
   }
+  async function uploadEventScad(file) {
+    if (!file) return;
+    var status = document.getElementById('event-customizer-status');
+    try {
+      if (!/\.scad$/i.test(file.name) || file.size < 1 || file.size > 262144) throw new Error('Envie um arquivo .scad de até 256 KiB.');
+      var source = (await file.text()).replace(/^\uFEFF/, '');
+      if (source.includes('\0')) throw new Error('O arquivo .scad precisa ser texto válido.');
+      var parameter = document.getElementById('event-scad-parameter').value.trim();
+      if (!/^[A-Za-z_][A-Za-z0-9_]{0,39}$/.test(parameter)) throw new Error('Informe o nome válido da variável de texto.');
+      if (!(new RegExp('(^|\\n)\\s*' + parameter + '\\s*=')).test(source)) throw new Error('O .scad precisa declarar a variável ' + parameter + ' no início de uma linha.');
+      status.textContent = 'Enviando modelo paramétrico...';
+      var path = 'models/' + crypto.randomUUID() + '.scad';
+      var upload = await window.supabaseClient.storage.from('b2b-parametric-models')
+        .upload(path, new Blob([source], {type: 'text/plain'}), {upsert: false, contentType: 'text/plain'});
+      if (upload.error) throw upload.error;
+      eventModelPath = path;
+      eventModelVerifiedPath = '';
+      document.getElementById('event-scad-name').textContent = file.name;
+      status.textContent = 'Modelo enviado. Salve o produto e teste dois nomes no visualizador 3D antes de ativá-lo.';
+      updateEventScadTestLink(null);
+    } catch (error) {
+      status.textContent = error.message || 'Não foi possível enviar o arquivo .scad.';
+      showToast(status.textContent, 'error');
+    }
+  }
   function readEventCustomizer() {
     if (!eventCustomizerReady) throw new Error('Aguarde a personalização carregar ou atualize a página.');
     if (!document.getElementById('event-customizer-enabled').checked) return null;
-    if (!eventTemplatePath) throw new Error('Envie o PNG transparente da parte que muda de cor.');
+    var isScad = document.getElementById('event-customizer-mode').value === 'scad';
+    if (isScad && !eventModelPath) throw new Error('Envie o arquivo .scad paramétrico.');
+    if (!isScad && !eventTemplatePath) throw new Error('Envie o PNG transparente da parte que muda de cor.');
+    var parameter = document.getElementById('event-scad-parameter').value.trim();
+    if (isScad && !/^[A-Za-z_][A-Za-z0-9_]{0,39}$/.test(parameter)) throw new Error('Informe uma variável de texto válida para o .scad.');
     var limit = Number(document.getElementById('event-text-limit').value);
     var sample = document.getElementById('event-sample-text').value.trim();
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 40 || !sample || sample.length > limit) throw new Error('Confira o exemplo e o limite de letras.');
@@ -1349,7 +1417,8 @@
       if (!name || name.length > 30 || !/^#[0-9a-f]{6}$/.test(hex) || seen.has(hex)) throw new Error('Cada cor precisa de um nome e tom únicos.');
       seen.add(hex); return { name: name, hex: hex };
     });
-    return { template_path: eventTemplatePath, colors: colors, sample_text: sample, text_limit: limit };
+    return { template_path: isScad ? null : eventTemplatePath, model_path: isScad ? eventModelPath : null,
+      text_parameter: isScad ? parameter : 'custom_text', colors: colors, sample_text: sample, text_limit: limit };
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1546,6 +1615,11 @@
       catch (e) { showToast(e.message, 'error'); showTab('tab-b2b'); return false; }
       try { eventCustomizer = readEventCustomizer(); }
       catch (e) { showToast(e.message, 'error'); showTab('tab-b2b'); return false; }
+      if (eventCustomizer && eventCustomizer.model_path && document.getElementById('f-active').checked
+          && (eventCustomizer.model_path !== eventModelVerifiedPath || eventCustomizer.text_parameter !== eventModelVerifiedParameter)) {
+        showToast('Salve o modelo como inativo, teste dois nomes no visualizador 3D e depois ative o anúncio.', 'error');
+        showTab('tab-b2b'); return false;
+      }
       if (eventCustomizer && document.getElementById('f-active').checked && currentImages.length === 0) {
         showToast('Envie ao menos uma foto real do produto antes de ativá-lo.', 'error'); showTab('tab-images'); return false;
       }

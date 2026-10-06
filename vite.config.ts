@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
         '@': projectRoot,
       },
     },
+    worker: { format: 'es' },
     build: {
       rollupOptions: {
         input: {
@@ -26,6 +27,7 @@ export default defineConfig(({ mode }) => {
           b2b: path.resolve(projectRoot, 'b2b.html'),
           b2bProduto: path.resolve(projectRoot, 'b2b-produto.html'),
           b2bConta: path.resolve(projectRoot, 'b2b-conta.html'),
+          b2bModeloAdmin: path.resolve(projectRoot, 'b2b-modelo-admin.html'),
           criarModelo: path.resolve(projectRoot, 'criar-modelo.html'),
           minhasCriacoes: path.resolve(projectRoot, 'minhas-criacoes.html'),
         },
