@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from 'motion/react';
 import { b2bUnitPrice, minimumB2BQuantity } from './b2bPricing';
+import { b2bEventUnitPrice, type B2BEventPricing } from './b2bEventPricing';
 import {
   ShoppingCart,
   X,
@@ -87,8 +88,6 @@ const B2B_GOLD = '#DDAF34';
 const formatPrice = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 const cartUnitPrice = (item: CartItem) => item.priceValue ?? Number(item.price.replace(/[^\d,.]/g, '').replace(/\./g, '').replace(',', '.'));
-
-const WHATSAPP_NUMBER = '5511946454111';
 
 function getSessionId(): string {
   const key = 'freo_sid';
@@ -278,12 +277,14 @@ const PriceTierTable = ({ tiers, basePrice }: { tiers: PriceTier[]; basePrice: n
 // ─────────────────────────────────────────────────────────────────────────────
 
 const B2BProductCard = ({
-  product, tiers, section,
-}: { product: Product; tiers: PriceTier[]; section: B2BCategory }) => {
+  product, tiers, section, eventPricing,
+}: { product: Product; tiers: PriceTier[]; section: B2BCategory; eventPricing?: B2BEventPricing }) => {
   const thumb = product.images && product.images.length > 0 ? product.images[0] : null;
   const minimum = minimumB2BQuantity(tiers);
   const minPrice = b2bUnitPrice(tiers, minimum || 1);
   const isQuoteOnly = product.sale_mode === 'quote_only' || !!product.is_kit || minPrice === null;
+  const eventStartingPrice = section === 'eventos' && eventPricing
+    ? b2bEventUnitPrice(eventPricing, eventPricing.minimum_quantity) : null;
   const detailHref = `/b2b-produto.html?id=${encodeURIComponent(product.id)}`;
 
   return (
@@ -308,7 +309,8 @@ const B2BProductCard = ({
 
         <div className="mt-auto flex flex-col gap-3">
           {isQuoteOnly ? (
-            <p className="font-mono text-xs" style={{ color: B2B_MUTED }}>Preço definido após avaliarmos quantidade e especificações.</p>
+            eventStartingPrice !== null ? <p className="font-mono text-xs" style={{ color: B2B_MUTED }}>A partir de {formatPrice(eventStartingPrice)}/un. para {eventPricing!.minimum_quantity.toLocaleString('pt-BR')} peças. Cotação final no chat.</p>
+              : <p className="font-mono text-xs" style={{ color: B2B_MUTED }}>Preço definido após avaliarmos quantidade e especificações.</p>
           ) : (
             <>
               <PriceTierTable tiers={tiers} basePrice={minPrice || 0} />
@@ -316,14 +318,14 @@ const B2BProductCard = ({
             </>
           )}
 
-          <a href={detailHref} className="w-full flex items-center justify-center gap-2 font-display font-bold uppercase tracking-wider py-2.5 text-xs transition-colors" style={{ background: isQuoteOnly ? '#25D366' : B2B_ACCENT, color: isQuoteOnly ? '#000' : '#fff' }}>{isQuoteOnly ? 'Ver produto e cotar' : 'Ver produto e comprar'} <ArrowRight className="w-4 h-4" /></a>
+          <a href={detailHref} className="w-full flex items-center justify-center gap-2 font-display font-bold uppercase tracking-wider py-2.5 text-xs transition-colors" style={{ background: isQuoteOnly ? B2B_GOLD : B2B_ACCENT, color: isQuoteOnly ? '#07111a' : '#fff' }}>{isQuoteOnly ? 'Ver produto e cotar' : 'Ver produto e comprar'} <ArrowRight className="w-4 h-4" /></a>
         </div>
       </div>
     </div>
   );
 };
 
-const B2BProjectBrief = ({ section, userId, companyName, selectedProduct }: { section: B2BCategory; userId: string; companyName?: string | null; selectedProduct: Product | null }) => {
+const B2BProjectBrief = ({ section, userId, selectedProduct, eventPricing }: { section: B2BCategory; userId: string; selectedProduct: Product | null; eventPricing?: B2BEventPricing }) => {
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState('');
   const [deadline, setDeadline] = useState('');
@@ -331,10 +333,17 @@ const B2BProjectBrief = ({ section, userId, companyName, selectedProduct }: { se
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const subject = section === 'eventos' ? 'personalizados para eventos' : section === 'sob_medida' ? 'novo produto sob medida' : 'preço por volume';
+  const requestedQuantity = Number(quantity);
+  const estimatedUnitPrice = selectedProduct?.b2b_category === 'eventos' ? b2bEventUnitPrice(eventPricing, requestedQuantity) : null;
 
   useEffect(() => {
-    if (selectedProduct) setDescription(`Tenho interesse em ${selectedProduct.title} (ID ${selectedProduct.id}). `);
-  }, [selectedProduct]);
+    if (selectedProduct) {
+      setDescription(`Tenho interesse em ${selectedProduct.title} (ID ${selectedProduct.id}). `);
+      const fromUrl = Number(new URLSearchParams(window.location.search).get('quantity'));
+      setQuantity(String(Number.isSafeInteger(fromUrl) && fromUrl >= (eventPricing?.minimum_quantity || 1)
+        ? fromUrl : eventPricing?.minimum_quantity || 1));
+    }
+  }, [selectedProduct, eventPricing]);
 
   const requestQuote = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -358,17 +367,9 @@ const B2BProjectBrief = ({ section, userId, companyName, selectedProduct }: { se
         deadline: deadline.trim() || null,
       }).select('id').single();
       if (insertError || !data) throw insertError || new Error('Sem confirmação');
-      const message = [
-        `Olá! Gostaria de solicitar uma cotação B2B para ${subject}.`,
-        `Protocolo: ${data.id}`,
-        companyName ? `Empresa: ${companyName}` : '',
-        `Projeto: ${description.trim()}`,
-        `Quantidade estimada: ${quantity.trim()}`,
-        deadline.trim() ? `Prazo desejado: ${deadline.trim()}` : '',
-      ].filter(Boolean).join('\n');
       trackEvent('b2b_quote_click', undefined, subject);
-      setSuccess(`Solicitação registrada. Protocolo ${data.id}. Continue a conversa no WhatsApp ou acompanhe na área da empresa.`);
-      window.location.assign(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`);
+      setSuccess(`Solicitação registrada. Protocolo ${data.id}. Abrindo a conversa com nossa equipe.`);
+      window.location.assign(`/b2b-conta.html?quote=${encodeURIComponent(data.id)}`);
     } catch {
       setError('Não foi possível confirmar a cotação. Confira suas solicitações na área da empresa antes de tentar novamente.');
     } finally {
@@ -378,7 +379,7 @@ const B2BProjectBrief = ({ section, userId, companyName, selectedProduct }: { se
 
   return <form id="b2b-brief" onSubmit={requestQuote} className="mt-8 border bg-[#111316] p-5 md:p-7 scroll-mt-24" style={{ borderColor: `${B2B_ACCENT}35` }}>
     <h2 className="font-display font-black text-xl uppercase text-white">Conte seu projeto</h2>
-    <p className="font-body text-sm mt-1 mb-5" style={{ color: B2B_MUTED }}>Registre o pedido para acompanhá-lo na área da empresa e continue a conversa pelo WhatsApp.</p>
+    <p className="font-body text-sm mt-1 mb-5" style={{ color: B2B_MUTED }}>A solicitação abre uma conversa privada com nossa equipe. Você poderá enviar imagens e combinar os detalhes por aqui.</p>
     {error && <p role="alert" className="mb-4 text-sm text-red-400">{error} <a href="/b2b-conta.html" className="underline">Ver solicitações</a></p>}
     {success && <p role="status" className="mb-4 text-sm text-green-400">{success} <a href="/b2b-conta.html" className="underline">Ver solicitações</a></p>}
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -386,12 +387,13 @@ const B2BProjectBrief = ({ section, userId, companyName, selectedProduct }: { se
         <textarea required minLength={10} maxLength={1000} value={description} onChange={e => setDescription(e.target.value)} placeholder={section === 'eventos' ? 'Ex.: chaveiros com o símbolo da escola para a formatura' : 'Ex.: escultura exclusiva para presentear clientes da empresa'} className="mt-2 w-full min-h-28 bg-[#0A0A0A] border p-3 text-sm text-white outline-none" style={{ borderColor: `${B2B_ACCENT}35` }} />
       </label>
       <label className="block font-mono text-xs text-white/70">Quantidade estimada
-        <input required type="number" min="1" step="1" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="Ex.: 100" className="mt-2 w-full bg-[#0A0A0A] border p-3 text-sm text-white outline-none" style={{ borderColor: `${B2B_ACCENT}35` }} />
+        <input required type="number" min={eventPricing?.minimum_quantity || 1} max="1000000" step="1" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="Ex.: 100" className="mt-2 w-full bg-[#0A0A0A] border p-3 text-sm text-white outline-none" style={{ borderColor: `${B2B_ACCENT}35` }} />
       </label>
       <label className="block font-mono text-xs text-white/70">Prazo desejado (opcional)
         <input type="text" maxLength={100} value={deadline} onChange={e => setDeadline(e.target.value)} placeholder="Ex.: até novembro" className="mt-2 w-full bg-[#0A0A0A] border p-3 text-sm text-white outline-none" style={{ borderColor: `${B2B_ACCENT}35` }} />
       </label>
     </div>
+    {eventPricing && selectedProduct && <p className="mt-4 text-sm text-[#f0bf5d]">{estimatedUnitPrice === null ? `Mínimo: ${eventPricing.minimum_quantity.toLocaleString('pt-BR')} unidades` : `Estimativa: ${formatPrice(estimatedUnitPrice)} por unidade · ${formatPrice(estimatedUnitPrice * requestedQuantity)} no total. Frete e detalhes finais na conversa.`}</p>}
     <button type="submit" disabled={submitting} className="mt-5 inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 font-display font-bold uppercase text-sm disabled:opacity-50" style={{ background: B2B_ACCENT, color: '#fff' }}><MessageCircle className="w-4 h-4" />{submitting ? 'Registrando...' : 'Solicitar cotação'}</button>
   </form>;
 };
@@ -538,6 +540,7 @@ export default function BApp() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [tiersByProduct, setTiersByProduct] = useState<Record<number, PriceTier[]>>({});
+  const [eventPricingByProduct, setEventPricingByProduct] = useState<Record<number, B2BEventPricing>>({});
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [catalogError, setCatalogError] = useState('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -622,6 +625,9 @@ export default function BApp() {
           .select('*')
           .eq('is_active', true);
         if (tiersError) throw tiersError;
+        const { data: eventPricingData, error: eventPricingError } = await supabase
+          .from('b2b_event_pricing').select('*');
+        if (eventPricingError) throw eventPricingError;
 
         const grouped: Record<number, PriceTier[]> = {};
         (tiersData || []).forEach((tier: PriceTier) => {
@@ -631,6 +637,7 @@ export default function BApp() {
 
         setProducts(productsData || []);
         setTiersByProduct(grouped);
+        setEventPricingByProduct(Object.fromEntries((eventPricingData || []).map((row: B2BEventPricing) => [row.product_id, row])));
       } catch (err) {
         console.error('[B2B] erro ao carregar catálogo:', err);
         setCatalogError(err instanceof Error ? err.message : 'Não foi possível carregar o catálogo.');
@@ -787,11 +794,12 @@ export default function BApp() {
                 product={product}
                 tiers={tiersByProduct[product.id] || []}
                 section={activeSection}
+                eventPricing={eventPricingByProduct[product.id]}
               />
             ))}
           </div>
         )}
-        {(activeSection !== 'loja' || quoteProduct) && <B2BProjectBrief key={activeSection} section={activeSection} userId={profile!.id} companyName={profile?.company_name} selectedProduct={quoteProduct} />}
+        {(activeSection !== 'loja' || quoteProduct) && <B2BProjectBrief key={`${activeSection}-${quoteProduct?.id || ''}`} section={activeSection} userId={profile!.id} selectedProduct={quoteProduct} eventPricing={quoteProduct ? eventPricingByProduct[quoteProduct.id] : undefined} />}
       </section>
 
       <B2BCartDrawer

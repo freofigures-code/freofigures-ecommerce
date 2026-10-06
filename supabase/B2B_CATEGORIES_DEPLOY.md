@@ -1,5 +1,7 @@
 # Catálogo B2B: ordem de publicação
 
+> Este documento registra a primeira versão do catálogo. Para o fluxo atual de produtos de eventos, preços e chat interno, siga [B2B_EVENT_CHAT_DEPLOY.md](B2B_EVENT_CHAT_DEPLOY.md).
+
 1. Execute `migrations/202610030001_b2b_categories.sql` no projeto Supabase da loja. A coluna nova classifica os produtos B2B; todos os produtos existentes ficam em `loja`.
 2. Publique a versão desta revisão da Edge Function `freo-checkout`, que impede pagamento direto de produtos das áreas de cotação.
 3. Publique o frontend desta revisão. A vitrine comum e o gerador de sitemap dependem da coluna criada no passo 1.

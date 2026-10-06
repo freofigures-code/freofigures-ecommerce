@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Building2, ClipboardList, FileText, MessageCircle, Package, UserRound } from 'lucide-react';
+import B2BQuoteChat from './B2BQuoteChat';
 
 type Profile = { id: string; account_type: string | null; is_admin?: boolean | null; company_name: string | null; trade_name: string | null; cnpj: string | null; name: string | null; phone: string | null };
-type Quote = { id: string; category: string; product_name: string | null; description: string; quantity: number; deadline: string | null; status: string; admin_note: string | null; created_at: string; updated_at: string };
+type Quote = { id: string; category: string; product_name: string | null; description: string; quantity: number; deadline: string | null; status: string; admin_note: string | null; estimated_unit_price: number | null; estimated_total: number | null; created_at: string; updated_at: string };
 type Order = { id: string | number; status: string | null; total: number | null; created_at: string };
 
 const quoteStatus: Record<string, { label: string; color: string }> = {
@@ -41,12 +42,21 @@ export default function B2BAccount() {
   const [quotesError, setQuotesError] = useState('');
   const [ordersError, setOrdersError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [activeQuoteId, setActiveQuoteId] = useState(new URLSearchParams(window.location.search).get('quote'));
+
+  function openQuote(id: string) {
+    setActiveQuoteId(current => current === id ? null : id);
+    const url = new URL(window.location.href);
+    if (activeQuoteId === id) url.searchParams.delete('quote');
+    else url.searchParams.set('quote', id);
+    window.history.replaceState(null, '', url);
+  }
 
   async function loadData(userId: string) {
     setRefreshing(true);
     const db = (window as any).supabaseClient;
     const [quoteResult, orderResult] = await Promise.all([
-      db.from('b2b_quote_requests').select('id,category,product_name,description,quantity,deadline,status,admin_note,created_at,updated_at').eq('user_id', userId).order('created_at', { ascending: false }),
+      db.from('b2b_quote_requests').select('id,category,product_name,description,quantity,deadline,status,admin_note,estimated_unit_price,estimated_total,created_at,updated_at').eq('user_id', userId).order('created_at', { ascending: false }),
       db.from('orders').select('id,status,total,created_at').eq('user_id', userId).eq('is_b2b', true).order('created_at', { ascending: false }).limit(5),
     ]);
     if (quoteResult.error) setQuotesError('Não foi possível carregar as cotações. Confira se o SQL da área B2B já foi executado e tente novamente.');
@@ -107,8 +117,10 @@ export default function B2BAccount() {
             <div className="flex flex-wrap justify-between items-start gap-3"><div><p className="text-[#e5bb62] text-[11px] uppercase tracking-wider">{categoryName[q.category] || q.category}</p><h3 className="font-display font-bold text-lg mt-1">{q.product_name || 'Projeto personalizado'}</h3><p className="text-white/40 text-xs mt-1">Solicitada em {date(q.created_at)} · Protocolo {q.id.slice(0, 8).toUpperCase()}</p></div><span className={`text-xs border px-2.5 py-1.5 ${quoteStatus[q.status]?.color || 'text-white/70 border-white/20'}`}>{quoteStatus[q.status]?.label || q.status}</span></div>
             <p className="text-white/70 text-sm mt-4 whitespace-pre-wrap break-words">{q.description}</p>
             <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-white/50 mt-4"><span>Quantidade: {q.quantity.toLocaleString('pt-BR')}</span>{q.deadline && <span>Prazo desejado: {q.deadline}</span>}<span>Atualizada em {date(q.updated_at)}</span></div>
+            {q.estimated_total !== null && <p className="text-[#e5bb62] text-sm mt-3">Estimativa cadastrada: {money(q.estimated_unit_price)} por unidade · {money(q.estimated_total)} no total. A proposta final será combinada na conversa.</p>}
             {q.admin_note && <div className="mt-4 border-l-2 border-[#e5bb62] pl-3"><p className="text-[11px] uppercase tracking-widest text-[#e5bb62]">Retorno da equipe</p><p className="text-sm text-white/80 mt-1 whitespace-pre-wrap break-words">{q.admin_note}</p></div>}
-            <a href={`https://wa.me/5511946454111?text=${encodeURIComponent(`Olá! Quero acompanhar a cotação B2B de protocolo ${q.id}.`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-[#9bdab5] mt-5 hover:underline"><MessageCircle size={16} /> Falar sobre esta cotação</a>
+            <button type="button" onClick={() => openQuote(q.id)} className="inline-flex items-center gap-2 text-sm text-[#9bdab5] mt-5 hover:underline"><MessageCircle size={16} /> {activeQuoteId === q.id ? 'Fechar conversa' : 'Abrir conversa e enviar imagens'}</button>
+            {activeQuoteId === q.id && profile && <B2BQuoteChat quoteId={q.id} userId={profile.id} />}
           </article>)}</div>}
         </section>
 
