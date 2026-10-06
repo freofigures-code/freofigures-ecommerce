@@ -28,7 +28,7 @@ test('only admin configures a preview, and quote stores server-validated color/t
       grant select on public.profiles to authenticated;
       create table public.products(id bigint primary key,title text,b2b_category text,sale_mode text,is_kit boolean default false,is_active boolean default true);
       insert into public.products values(1,'Chaveiro','eventos','quote_only',false,true),(2,'Projeto sob medida','sob_medida','quote_only',false,true);
-      grant select on public.products to authenticated;
+      grant select,update on public.products to authenticated;
       create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
       insert into storage.buckets values('imagens','imagens',true,null,null);
       create table storage.objects(id bigint generated always as identity primary key,bucket_id text,name text);
@@ -89,5 +89,33 @@ test('only admin configures a preview, and quote stores server-validated color/t
     const saved = (await db.query(`select customization from public.b2b_quote_requests where id='${quote.id}'`)).rows[0].customization;
     assert.equal(saved.color_name, 'Azul claro');
     assert.equal(saved.text, 'Alice');
+
+    await db.exec('reset role');
+    await db.exec(await readFile(file('migrations/202610060003_b2b_parametric_customizer.sql'), 'utf8'));
+    const parametricChecks = (await db.query(await readFile(file('diagnostics/b2b_parametric_customizer_postflight.sql'), 'utf8'))).rows[0].verificacao_modelo_parametrico;
+    assert.ok(Object.values(parametricChecks).every(Boolean), JSON.stringify(parametricChecks));
+    const modelPath = 'models/dddddddd-dddd-4ddd-8ddd-dddddddddddd.scad';
+    await as(admin);
+    await db.exec(`insert into storage.objects(bucket_id,name) values('b2b-parametric-models','${modelPath}')`);
+    await assert.rejects(db.exec(`update public.b2b_event_customizers set template_path=null, model_path='${modelPath}' where product_id=1`), /Deactivate the event product/);
+    await db.exec(`update public.products set is_active=false where id=1`);
+    await db.exec(`update public.b2b_event_customizers set template_path=null, model_path='${modelPath}', text_parameter='custom_text' where product_id=1`);
+    await assert.rejects(db.exec(`update public.products set is_active=true where id=1`), /Test the parametric model/);
+    await db.exec(`update public.b2b_event_customizers set model_verified_path='${modelPath}', model_verified_at=now() where product_id=1`);
+    await db.exec(`update public.products set is_active=true where id=1`);
+    await assert.rejects(db.exec(`update public.b2b_event_customizers set text_parameter='x; drop table users' where product_id=1`), /parameter name/);
+    await as(owner);
+    assert.equal((await db.query(`select model_path from public.b2b_event_customizers where product_id=1`)).rows[0].model_path, modelPath);
+    assert.equal((await db.query(`select name from storage.objects where bucket_id='b2b-parametric-models'`)).rows.length, 1);
+    await assert.rejects(db.exec(`insert into storage.objects(bucket_id,name) values('b2b-parametric-models','models/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee.scad')`), /row-level security/);
+    const parametricQuote = (await db.query(`insert into public.b2b_quote_requests(user_id,category,product_id,description,quantity,customization)
+      values('${owner}','eventos',1,'Chaveiros paramétricos',20,'{"text":"Alex","color_hex":"#e9a0c5","model_path":"fraude"}') returning customization`)).rows[0].customization;
+    assert.equal(parametricQuote.model_path, modelPath);
+    assert.equal(parametricQuote.text_parameter, 'custom_text');
+    assert.equal(parametricQuote.template_path, null);
+    await as(other);
+    assert.equal((await db.query(`select name from storage.objects where bucket_id='b2b-parametric-models'`)).rows.length, 0);
+    await db.exec(`reset role; select set_config('test.uid','',false); set role anon;`);
+    await assert.rejects(db.query(`select name from storage.objects where bucket_id='b2b-parametric-models'`), /permission denied/);
   } finally { await db.close(); }
 });

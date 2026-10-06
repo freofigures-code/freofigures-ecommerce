@@ -59,6 +59,12 @@
         choice.append(el('strong','', 'Personalização: '),el('span','',row.customization.color_name+' · Texto: '+row.customization.text));
         var color=el('span');color.style.display='inline-block';color.style.width='17px';color.style.height='17px';color.style.border='1px solid #ffffff66';color.style.borderRadius='50%';color.style.backgroundColor=/^#[0-9a-f]{6}$/i.test(row.customization.color_hex)?row.customization.color_hex:'#777';color.style.verticalAlign='middle';color.style.margin='0 6px';
         choice.prepend(color);card.append(choice);
+        if(row.customization.model_path){
+          var modelLink=el('a','tag','Abrir modelo 3D e baixar STL');
+          modelLink.href='/b2b-modelo-admin.html?quote='+encodeURIComponent(row.id);
+          modelLink.target='_blank';modelLink.rel='noopener';modelLink.style.display='inline-block';
+          card.append(modelLink);
+        }
       }
       card.append(el('p','meta','Quantidade: '+Number(row.quantity).toLocaleString('pt-BR')+(row.deadline?' · Prazo desejado: '+row.deadline:'')));
       if(row.estimated_total!==null)card.append(el('p','tag','Estimativa: R$ '+Number(row.estimated_unit_price).toFixed(2).replace('.',',')+'/un. · R$ '+Number(row.estimated_total).toFixed(2).replace('.',',')+' total'));
