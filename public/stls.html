@@ -40,7 +40,7 @@
     .notice{color:#efc38f;background:#2b2116;border:1px solid #795a28;padding:12px;border-radius:6px;margin-top:12px}
     .success{color:#aee7ad;background:#17301f;border:1px solid #3e884c;padding:12px;border-radius:6px;margin-top:12px}
     footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-size:13px}
-    @media(max-width:700px){.top .shell{gap:10px}.brand{font-size:20px}nav{justify-content:flex-start;order:3;width:100%;gap:12px;font-size:13px}.top .outline{margin-left:auto;padding:9px 12px;font-size:12px}.hero{padding:48px 0}.hero p{font-size:16px}.library-card{align-items:stretch}.library-actions{width:100%}.library-actions button{flex:1}.dialog{padding:22px 18px}}
+    @media(max-width:700px){.top .shell{gap:10px}.brand{font-size:20px}nav{order:3;flex:0 0 100%;width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;font-size:13px;text-align:center}nav a{padding:8px 4px;border:1px solid #29333d;border-radius:5px}.top .outline{margin-left:auto;padding:9px 12px;font-size:12px}.hero{padding:48px 0}.hero p{font-size:16px}.library-card{align-items:stretch}.library-actions{width:100%}.library-actions button{flex:1}.dialog{padding:22px 18px}}
   </style>
 </head>
 <body>
@@ -167,7 +167,7 @@
         if(result.confirmed){message.className='success';message.textContent='Pagamento confirmado. Seus arquivos estão na biblioteca.';await loadLibrary();return;}
         if(!result.qr_code && !result.ticket_url) throw new Error('Pix criado, mas o código ainda não está disponível. Reabra esta compra.');
         showPayment(result,message);
-      }catch(e){message.className='notice';message.textContent=e.message;}finally{button.disabled=false;}
+      }catch(e){message.className='notice';message.textContent=e.message;}finally{button.disabled=false;if(orderId)await loadLibrary();}
     }
     function showPayment(result,message){
         clearPoll();$('payment-fields').hidden=true;$('payment-result').hidden=false;
