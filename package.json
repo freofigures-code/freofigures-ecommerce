@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "node --test seo/seo.test.mjs tests/product-reviews.test.mjs tests/generation-publications.test.mjs tests/generation-publication-edge.test.mjs tests/freo-credits.test.mjs tests/community-creators.test.mjs tests/b2b-catalog.test.mjs tests/b2b-account.test.mjs tests/b2b-direct-orders.test.mjs tests/b2b-event-chat.test.mjs tests/b2b-customizer.test.mjs tests/b2b-parametric-engine.test.mjs",
+    "test": "node --test seo/seo.test.mjs tests/product-reviews.test.mjs tests/generation-publications.test.mjs tests/generation-publication-edge.test.mjs tests/freo-credits.test.mjs tests/community-creators.test.mjs tests/b2b-catalog.test.mjs tests/b2b-account.test.mjs tests/b2b-direct-orders.test.mjs tests/b2b-event-chat.test.mjs tests/b2b-customizer.test.mjs tests/b2b-parametric-engine.test.mjs tests/digital-file-store.test.mjs",
     "test:community": "node --test tests/generation-publications.test.mjs tests/generation-publication-edge.test.mjs",
     "test:parametric": "node --test tests/b2b-parametric-engine.test.mjs"
   },

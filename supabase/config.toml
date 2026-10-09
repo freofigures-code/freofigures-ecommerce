@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.freo-checkout]
 verify_jwt = true
+
+[functions.freo-digital-store]
+verify_jwt = true
