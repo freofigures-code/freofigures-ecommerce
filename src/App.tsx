@@ -1173,18 +1173,21 @@ const Navbar = ({
               <a href="#sobre" className="hover:text-freo-orange transition-colors">O Processo</a>
               <a href="#sobre-nos" className="hover:text-freo-orange transition-colors">A Origem</a>
               <button onClick={goToCatalog} className="text-freo-orange hover:text-white transition-colors">Catálogo</button>
+              <a href="/stls.html" className="hover:text-freo-orange transition-colors">Arquivos STL</a>
             </>
           ) : (
             <>
               <button onClick={goHome} className="hover:text-freo-orange transition-colors">Início</button>
               <button type="button" onClick={goToCatalog} className="hover:text-freo-orange transition-colors">Categorias</button>
               <span className="text-freo-orange">Catálogo</span>
+              <a href="/stls.html" className="hover:text-freo-orange transition-colors">Arquivos STL</a>
             </>
           )}
         </div>
 
         {/* Desktop Actions */}
         <div className="order-2 hidden lg:flex items-center gap-2.5 xl:gap-4 flex-shrink-0 whitespace-nowrap">
+          <a href="/stls.html" className="flex items-center gap-2 text-xs font-mono text-[#f0bf5d] hover:text-white transition-colors border border-[#f0bf5d]/40 bg-[#f0bf5d]/10 px-3 py-2 rounded" aria-label="Comprar arquivos STL e 3MF">STL / 3MF</a>
           <a href="/b2b.html" className="flex items-center gap-2 text-xs font-mono text-[#f0bf5d] hover:text-white transition-colors border border-[#f0bf5d]/40 bg-[#f0bf5d]/10 px-3 py-2 rounded" aria-label="Acessar área B2B para empresas"><Building2 className="w-4 h-4" /> Empresas B2B</a>
           <a href="/criar-modelo.html" className="flex items-center gap-2 text-xs font-mono text-freo-orange hover:text-white transition-colors border border-freo-orange/30 hover:border-white/30 bg-freo-orange/10 px-3 py-1.5 rounded whitespace-nowrap">
             <Sparkles className="w-4 h-4" />
@@ -1298,6 +1301,8 @@ const Navbar = ({
                   </span>
                 </>
               )}
+
+              <a href="/stls.html" onClick={() => setMobileMenuOpen(false)} className="py-4 text-lg font-display font-bold uppercase tracking-wide border-b border-white/8 text-freo-orange text-left">Arquivos STL e 3MF</a>
 
               <button
                 onClick={() => { setIsSearchOpen(true); setMobileMenuOpen(false); }}
@@ -2051,6 +2056,7 @@ const Footer = () => (
             <li><a href="/?categoria=games" className="hover:text-white transition-colors">Geek/Gamer</a></li>
             <li><a href="/?categoria=religioso" className="hover:text-white transition-colors">Artigos Religiosos</a></li>
             <li><a href="/?categoria=feito_por_voces" className="hover:text-white transition-colors">Feito por vocês</a></li>
+            <li><a href="/stls.html" className="hover:text-white transition-colors">Arquivos STL e 3MF</a></li>
             <li><a href="/b2b.html" className="hover:text-white transition-colors">Soluções B2B para empresas</a></li>
             <li>
               <a

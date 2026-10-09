@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Arquivos STL e 3MF para impressão 3D | FreoFigures</title>
+  <meta name="description" content="Compre modelos digitais FreoFigures e baixe o STL ou o 3MF preparado para impressão após a confirmação do pagamento.">
+  <link rel="canonical" href="https://www.freofigures.com.br/stls.html">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{color-scheme:dark;--bg:#080a0d;--panel:#111820;--line:#2d333a;--gold:#e6bb49;--muted:#a7adb4}
+    [hidden]{display:none!important}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f5f5;font-family:Inter,Outfit,Arial,sans-serif}
+    a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
+    .shell{max-width:1320px;margin:auto;padding:0 22px}.top{border-bottom:1px solid #24282c;background:#0b1016;position:sticky;top:0;z-index:20}
+    .top .shell{display:flex;align-items:center;gap:22px;min-height:74px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}
+    .brand{font-size:24px;font-weight:900;letter-spacing:-.06em;white-space:nowrap}.brand span{color:var(--gold);font-weight:400}
+    nav{display:flex;gap:18px;flex:1;justify-content:center;align-items:center;flex-wrap:wrap;font-size:14px}
+    nav a{color:#d7dce0}nav a:hover,nav .current{color:var(--gold)}
+    .button,.outline{border:1px solid var(--gold);padding:12px 18px;border-radius:7px;font-weight:700;background:var(--gold);color:#111;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    .outline{background:transparent;color:var(--gold)}.button:hover{background:#f3cd6d}.outline:hover{background:#211c10}
+    .hero{padding:72px 0 55px;background:radial-gradient(circle at 76% 20%,#263342 0,transparent 34%),linear-gradient(115deg,#06090c,#111a24);border-bottom:1px solid var(--line)}
+    .eyebrow{color:var(--gold);font-size:12px;text-transform:uppercase;letter-spacing:.24em;font-weight:700}.hero h1{font-size:clamp(38px,6vw,76px);letter-spacing:-.055em;line-height:1.02;margin:15px 0 17px;max-width:790px}
+    .hero p{max-width:620px;color:#c5cad0;font-size:18px;line-height:1.6}.hero .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+    section{padding:50px 0}.section-head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:22px;flex-wrap:wrap}
+    h2{font-size:clamp(26px,3vw,38px);margin:0;letter-spacing:-.04em} .sub{color:var(--muted);margin:8px 0 0;line-height:1.5}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+    .card img,.placeholder{height:220px;width:100%;object-fit:cover;background:linear-gradient(135deg,#243442,#0c1117);display:grid;place-items:center;color:var(--gold);font-size:52px}
+    .card .content{padding:19px;display:flex;flex-direction:column;gap:8px;flex:1}.card h3{margin:0;font-size:21px}.card p{color:var(--muted);line-height:1.5;margin:0;flex:1}
+    .price{color:var(--gold);font-size:23px;font-weight:800}.tag{font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:#bbc2c8}
+    .card .button,.card .outline{width:100%;margin-top:7px}.empty{padding:30px;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--muted)}
+    .library{border-top:1px solid var(--line)}.library-card{background:var(--panel);border:1px solid var(--line);padding:20px;border-radius:10px;display:flex;justify-content:space-between;gap:18px;align-items:center;flex-wrap:wrap}
+    .library-card h3{margin:0 0 5px}.library-card p{color:var(--muted);margin:0}.library-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .shade{position:fixed;inset:0;background:#000c;display:none;z-index:40;overflow:auto;padding:20px}.shade.open{display:grid;place-items:center}
+    .dialog{position:relative;background:#101820;border:1px solid #384047;border-radius:14px;width:min(100%,540px);padding:26px;box-shadow:0 30px 100px #000a}
+    .dialog h2{font-size:27px;margin:0 0 10px}.dialog p{color:var(--muted);line-height:1.5}.close{position:absolute;right:14px;top:14px;background:none;border:0;color:white;font-size:25px}
+    label{display:block;font-size:13px;font-weight:700;margin:18px 0 6px}.field{width:100%;background:#080d12;border:1px solid #45505b;border-radius:6px;color:#fff;padding:12px}
+    .row{display:flex;justify-content:space-between;gap:12px;margin:14px 0}.qr{display:block;max-width:230px;width:100%;margin:20px auto;background:white;padding:8px}
+    .notice{color:#efc38f;background:#2b2116;border:1px solid #795a28;padding:12px;border-radius:6px;margin-top:12px}
+    .success{color:#aee7ad;background:#17301f;border:1px solid #3e884c;padding:12px;border-radius:6px;margin-top:12px}
+    footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-size:13px}
+    @media(max-width:700px){.top .shell{gap:10px}.brand{font-size:20px}nav{justify-content:flex-start;order:3;width:100%;gap:12px;font-size:13px}.top .outline{margin-left:auto;padding:9px 12px;font-size:12px}.hero{padding:48px 0}.hero p{font-size:16px}.library-card{align-items:stretch}.library-actions{width:100%}.library-actions button{flex:1}.dialog{padding:22px 18px}}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="shell">
+    <a class="brand" href="/">FREO<span>FIGURES</span></a>
+    <nav aria-label="Navegação"><a href="/">Loja</a><a class="current" href="/stls.html">Arquivos STL</a><a href="/criar-modelo.html">Criar modelo 3D</a><a href="/b2b.html">Empresas B2B</a></nav>
+    <a class="outline" href="#biblioteca">Minha biblioteca</a>
+  </div></header>
+  <main>
+    <div class="hero"><div class="shell"><span class="eyebrow">Modelos digitais FreoFigures</span><h1>Seu próximo projeto começa no arquivo certo.</h1><p>Escolha um modelo, finalize a compra e baixe o STL para personalizar a impressão ou o 3MF já preparado para imprimir.</p><div class="actions"><a class="button" href="#catalogo">Explorar arquivos ↓</a><a class="outline" href="#biblioteca">Ver minhas compras</a></div></div></div>
+    <section class="shell" id="catalogo"><div class="section-head"><div><span class="eyebrow">Catálogo digital</span><h2>Arquivos para impressão 3D</h2><p class="sub">Preço único por modelo: a compra libera STL e 3MF. Sem frete e sem estoque físico.</p></div></div><div id="catalog-grid" class="grid"><p>Carregando arquivos...</p></div></section>
+    <section class="library" id="biblioteca"><div class="shell"><div class="section-head"><div><span class="eyebrow">Seu acervo</span><h2>Minha biblioteca</h2><p class="sub">Downloads disponíveis após a confirmação da compra.</p></div><button id="refresh-library" class="outline" type="button">Atualizar biblioteca</button></div><div id="library-list" class="grid"><div class="empty">Entre na sua conta para ver seus downloads.</div></div></div></section>
+  </main>
+  <footer><div class="shell">© FreoFigures · Arquivos digitais para uso conforme as condições de cada produto.</div></footer>
+  <div id="shade" class="shade" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div class="dialog">
+    <button type="button" class="close" id="close-dialog" aria-label="Fechar">×</button>
+    <h2 id="dialog-title">Comprar arquivo</h2><p id="dialog-description"></p>
+    <div class="row"><span>STL + 3MF</span><strong id="dialog-price"></strong></div>
+    <div id="payment-fields">
+      <label for="cpf">CPF para o Pix</label><input class="field" id="cpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="Somente números">
+      <label for="credits">Créditos Freo (opcional)</label><input class="field" type="number" id="credits" min="0" step="1" value="0"><small id="credit-help" class="sub"></small>
+      <div class="row"><span>Total a pagar</span><strong id="pay-total"></strong></div>
+      <button id="pay-button" type="button" class="button" style="width:100%">Gerar Pix seguro</button>
+    </div>
+    <div id="payment-result" hidden>
+      <img id="qr-image" class="qr" alt="Código QR Pix" hidden><a id="pix-ticket" class="outline" target="_blank" rel="noopener noreferrer" hidden>Abrir Pix no Mercado Pago</a>
+      <label for="pix-code">Pix Copia e Cola</label><input class="field" id="pix-code" readonly>
+      <button id="copy-pix" class="outline" type="button" style="margin-top:10px;width:100%">Copiar código Pix</button>
+      <p id="payment-status">Aguardando confirmação. Esta página verifica o pagamento automaticamente.</p>
+    </div>
+    <p id="dialog-message" role="status"></p>
+  </div></div>
+  <script>
+  (() => {
+    const URL = 'https://rrmxqpvxrpcqqxsgccqw.supabase.co';
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM';
+    const client = supabase.createClient(URL, KEY);
+    const money = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
+    const $ = id => document.getElementById(id);
+    let user=null, products=[], library=[], pendingOrders=[], selected=null, pendingPurchase=null, orderId=null, requestId=null, poll=null, balance=0;
+    const returnUrl = () => '/login.html?return=' + encodeURIComponent('/stls.html' + location.search + '#biblioteca');
+    const clearPoll = () => { if(poll){clearInterval(poll);poll=null;} };
+    async function invoke(body) {
+      const {data,error}=await client.functions.invoke('freo-digital-store',{body});
+      if(error || data?.error) throw new Error(data?.error || 'Serviço digital indisponível. Tente novamente.');
+      return data;
+    }
+    function el(tag,className,text){const x=document.createElement(tag);if(className)x.className=className;if(text!==undefined)x.textContent=text;return x;}
+    function renderCatalog(){
+      const grid=$('catalog-grid');grid.replaceChildren();
+      if(!products.length){grid.append(el('div','empty','Nenhum arquivo digital publicado ainda.'));return;}
+      products.forEach(p=>{
+        const card=el('article','card'),photo=p.cover_url?el('img'):el('div','placeholder','◈');
+        if(p.cover_url){photo.src=p.cover_url;photo.alt='Capa de '+p.title;photo.loading='lazy';}
+        const content=el('div','content');content.append(el('span','tag','STL + 3MF'),el('h3','',p.title),el('p','',p.description||'Modelo digital para impressão 3D.'),el('strong','price',money(p.price)));
+        const owned=library.some(x=>Number(x.product_id)===Number(p.id));
+        const pending=pendingOrders.find(x=>Number(x.product_id)===Number(p.id));
+        const button=el('button',owned?'outline':'button',owned?'Ver na minha biblioteca':pending?'Continuar compra':'Comprar e baixar');
+        button.type='button';button.addEventListener('click',()=>owned?$('biblioteca').scrollIntoView({behavior:'smooth'}):pending?resume(p,pending):openPurchase(p));
+        content.append(button);card.append(photo,content);grid.append(card);
+      });
+    }
+    function renderLibrary(){
+      const list=$('library-list');list.replaceChildren();
+      if(!user){const box=el('div','empty');box.append(el('p','','Entre para acessar suas compras digitais.'));const link=el('a','button','Entrar na conta');link.href=returnUrl();box.append(link);list.append(box);return;}
+      if(!library.length&&!pendingOrders.length){list.append(el('div','empty','Nenhum arquivo liberado ainda. Compras em processamento aparecem após a confirmação do pagamento.'));return;}
+      pendingOrders.forEach(item=>{
+        const card=el('article','library-card'),info=el('div'),actions=el('div','library-actions');
+        info.append(el('h3','',item.title),el('p','','Pedido #'+item.order_id+' · '+money(item.total)+' pendente'));
+        const button=el('button','button','Continuar pagamento');button.type='button';
+        button.addEventListener('click',()=>{const p=products.find(x=>Number(x.id)===Number(item.product_id))||{id:item.product_id,title:item.title,price:Number(item.total)+Number(item.freo_credits_used||0)/10};resume(p,item);});
+        actions.append(button);card.append(info,actions);list.append(card);
+      });
+      library.forEach(item=>{
+        const card=el('article','library-card'),info=el('div'),actions=el('div','library-actions');
+        info.append(el('h3','',item.title),el('p','','Pedido #'+item.order_id+' · '+money(item.price)));
+        ['stl','3mf'].forEach(format=>{const b=el('button','outline','Baixar '+format.toUpperCase());b.type='button';b.addEventListener('click',()=>download(item.order_id,format,b));actions.append(b);});
+        card.append(info,actions);list.append(card);
+      });
+    }
+    async function loadCatalog(){
+      const {data,error}=await client.from('digital_products').select('id,title,description,cover_url,price').eq('is_active',true).order('created_at',{ascending:false});
+      if(error){$('catalog-grid').replaceChildren(el('div','empty','Não foi possível carregar o catálogo digital.'));return;}
+      products=data||[];renderCatalog();
+    }
+    async function loadLibrary(){
+      if(!user){library=[];pendingOrders=[];renderLibrary();return;}
+      try{const result=await invoke({action:'library'});library=result.items||[];pendingOrders=result.pending||[];
+        const wallet=await client.from('freo_wallets').select('balance').eq('user_id',user.id).maybeSingle();
+        if(!wallet.error)balance=Number(wallet.data?.balance)||0;}catch(e){$('library-list').replaceChildren(el('div','notice',e.message));return;}
+      renderLibrary();renderCatalog();
+    }
+    function closeDialog(){clearPoll();$('shade').classList.remove('open');selected=null;pendingPurchase=null;}
+    function openPurchase(p,existing=null){
+      if(!user){location.href='/login.html?return='+encodeURIComponent('/stls.html?id='+p.id);return;}
+      clearPoll();selected=p;pendingPurchase=existing;orderId=existing?.order_id||null;requestId=crypto.randomUUID();
+      $('dialog-title').textContent=p.title;$('dialog-description').textContent='Uma compra libera os dois formatos para esta conta.';
+      const original=existing?Number(existing.total)+Number(existing.freo_credits_used||0)/10:Number(p.price);
+      $('dialog-price').textContent=money(original);$('payment-fields').hidden=false;$('payment-result').hidden=true;$('dialog-message').textContent='';
+      $('dialog-message').className='';$('credits').disabled=Boolean(existing?.freo_credits_used||existing?.payment_id);
+      $('credits').value=String(existing?.freo_credits_used||0);$('credits').max=String(Math.min(balance+Number(existing?.freo_credits_used||0),Math.floor(original*10)));
+      $('credit-help').textContent=balance+' disponíveis · 10 créditos = R$ 1,00';
+      $('payment-status').textContent='Aguardando confirmação. Esta página verifica o pagamento automaticamente.';
+      updateTotal();$('shade').classList.add('open');
+    }
+    function updateTotal(){
+      if(!selected)return;
+      const original=pendingPurchase?Number(pendingPurchase.total)+Number(pendingPurchase.freo_credits_used||0)/10:Number(selected.price);
+      const max=Math.min(balance+Number(pendingPurchase?.freo_credits_used||0),Math.floor(original*10));
+      const amount=Math.max(0,Math.min(max,Math.floor(Number($('credits').value)||0)));
+      $('credits').value=String(amount);$('pay-total').textContent=money(original-amount/10);
+      $('cpf').disabled=Boolean(pendingPurchase?.payment_id)||amount>=Math.round(original*10);
+      $('pay-button').textContent=original-amount/10<=0?'Finalizar com créditos':'Gerar Pix seguro';
+    }
+    async function buy(){
+      if(!selected || !user)return;
+      const button=$('pay-button'),message=$('dialog-message');button.disabled=true;message.textContent='Preparando pedido...';
+      try{
+        const credits=Number($('credits').value)||0;
+        const original=pendingPurchase?Number(pendingPurchase.total)+Number(pendingPurchase.freo_credits_used||0)/10:Number(selected.price);
+        if(!pendingPurchase?.payment_id && original-credits/10>0 && $('cpf').value.replace(/\D/g,'').length!==11) throw new Error('Informe os 11 dígitos do CPF para gerar o Pix.');
+        if(!orderId){const start=await invoke({action:'start',product_id:selected.id,request_id:requestId});orderId=start.order_id;}
+        const result=await invoke({action:'pay',order_id:orderId,credits,cpf:$('cpf').value});
+        if(result.confirmed){message.className='success';message.textContent='Pagamento confirmado. Seus arquivos estão na biblioteca.';await loadLibrary();return;}
+        if(!result.qr_code && !result.ticket_url) throw new Error('Pix criado, mas o código ainda não está disponível. Reabra esta compra.');
+        showPayment(result,message);
+      }catch(e){message.className='notice';message.textContent=e.message;}finally{button.disabled=false;}
+    }
+    function showPayment(result,message){
+        clearPoll();$('payment-fields').hidden=true;$('payment-result').hidden=false;
+        $('pix-code').value=result.qr_code||'';
+        $('pix-ticket').hidden=!result.ticket_url;
+        if(result.ticket_url)$('pix-ticket').href=result.ticket_url;
+        $('qr-image').hidden=!result.qr_code_base64;
+        if(result.qr_code_base64)$('qr-image').src='data:image/png;base64,'+result.qr_code_base64;
+        message.textContent='Pix gerado. O download aparecerá após a confirmação.';
+        poll=setInterval(async()=>{
+          try{const status=await invoke({action:'status',order_id:orderId});
+            if(status.confirmed){clearPoll();$('payment-status').textContent='Pagamento confirmado!';message.className='success';message.textContent='STL e 3MF liberados na biblioteca.';await loadLibrary();}
+          }catch(e){$('payment-status').textContent='Aguardando confirmação. Você pode atualizar sua biblioteca mais tarde.';}
+        },5000);
+    }
+    async function resume(p,existing){
+      openPurchase(p,existing);
+      if(!existing.payment_id)return;
+      const message=$('dialog-message');message.textContent='Carregando Pix...';
+      try{const result=await invoke({action:'pay',order_id:existing.order_id,credits:existing.freo_credits_used});
+        if(result.confirmed){message.className='success';message.textContent='Pagamento confirmado. Arquivos liberados.';await loadLibrary();return;}
+        showPayment(result,message);
+      }catch(e){message.className='notice';message.textContent=e.message;}
+    }
+    async function download(id,format,button){
+      button.disabled=true;
+      try{const result=await invoke({action:'download',order_id:id,format});location.href=result.url;}
+      catch(e){alert(e.message);}finally{button.disabled=false;}
+    }
+    $('credits').addEventListener('input',updateTotal);$('pay-button').addEventListener('click',buy);
+    $('copy-pix').addEventListener('click',async()=>{await navigator.clipboard.writeText($('pix-code').value);$('copy-pix').textContent='Código copiado';});
+    $('refresh-library').addEventListener('click',loadLibrary);$('close-dialog').addEventListener('click',closeDialog);
+    $('shade').addEventListener('click',e=>{if(e.target===$('shade'))closeDialog();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDialog();});
+    async function init(){
+      const auth=await client.auth.getUser();user=auth.data?.user&&!auth.data.user.is_anonymous?auth.data.user:null;
+      await loadCatalog();await loadLibrary();
+      const id=Number(new URLSearchParams(location.search).get('id'));
+      if(Number.isSafeInteger(id) && id>0){const p=products.find(x=>Number(x.id)===id);if(p){const pending=pendingOrders.find(x=>Number(x.product_id)===id);pending?resume(p,pending):openPurchase(p);}}
+    }
+    init().catch(()=>{$('catalog-grid').replaceChildren(el('div','notice','Não foi possível carregar a loja. Atualize a página.'));});
+  })();
+  </script>
+</body>
+</html>

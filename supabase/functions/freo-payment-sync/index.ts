@@ -12,7 +12,7 @@ Deno.serve(async (request: Request) => {
     const url = Deno.env.get('SUPABASE_URL')!;
     const service = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
     const { data: order, error } = await service.from('orders')
-      .select('id,user_id,status,total,payment_id,freo_verified_paid_amount,freo_credits_used,freo_rewards_eligible')
+      .select('id,user_id,status,total,payment_id,freo_verified_paid_amount,freo_credits_used,freo_rewards_eligible,is_digital')
       .eq('id', order_id).single();
     if (error || !order || !order.freo_rewards_eligible || !['pago', 'pendente', 'producao', 'enviado', 'entregue'].includes(String(order.status).toLowerCase())) return respond({ confirmed: false });
     if (order.freo_verified_paid_amount !== null) return respond({ confirmed: true });
@@ -29,6 +29,8 @@ Deno.serve(async (request: Request) => {
     const orderCents = Math.round(Number(order.total) * 100);
     if (String(payment.id) !== paymentId
         || String(payment.metadata?.user_id || '') !== order.user_id
+        || (order.is_digital && (String(payment.metadata?.digital_order_id || '') !== String(order.id)
+          || String(payment.external_reference || '') !== 'digital:' + order.id))
         || !Number.isSafeInteger(paidCents) || paidCents !== orderCents) {
       return respond({ confirmed: false });
     }
@@ -36,6 +38,9 @@ Deno.serve(async (request: Request) => {
       if (Number(order.freo_credits_used) > 0) {
         const refund = await service.rpc('freo_release_order_credits', { p_order_id: order.id, p_payment_id: paymentId });
         if (refund.error) throw refund.error;
+      } else if (order.is_digital) {
+        const cancelled = await service.from('orders').update({ status: 'cancelado' }).eq('id', order.id).eq('status', 'pendente');
+        if (cancelled.error) throw cancelled.error;
       }
       return respond({ confirmed: false, rejected: true });
     }

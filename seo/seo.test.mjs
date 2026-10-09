@@ -71,6 +71,7 @@ test('sitemap contains all products, no tracking, no invented modification dates
   assert.ok(!xml.includes('categoria=keycaps'));
   assert.ok(xml.includes('?categorias=1'));
   assert.ok(xml.includes(`${SITE}/b2b.html`));
+  assert.ok(xml.includes(`${SITE}/stls.html`));
   assert.ok(!xml.includes('categoria=Todos'));
 });
 test('loader uses public allowlisted columns, pages results, caches and deduplicates requests', async () => {

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin — Arquivos digitais | FreoFigures</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{color-scheme:dark;--gold:#e1b84e;--bg:#090a0c;--panel:#151719;--line:#35383c}
+    [hidden]{display:none!important}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f7f7f7;font-family:Outfit,Arial,sans-serif}
+    a{color:var(--gold);text-decoration:none}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+    header{border-bottom:1px solid var(--line);padding:20px max(20px,calc((100vw - 1150px)/2));display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;background:#121416}
+    header strong{font-size:22px}main{max-width:1150px;margin:auto;padding:38px 20px 90px}
+    h1{font-size:clamp(30px,4vw,48px);margin:0 0 8px}h2{font-size:24px}.muted{color:#a8acb0;line-height:1.5}
+    .layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:26px;margin-top:28px}
+    .panel{background:var(--panel);border:1px solid var(--line);padding:25px;border-radius:10px}
+    label{display:block;margin:18px 0 7px;font-size:13px;color:#d8d8d8;font-weight:700}
+    input,textarea{width:100%;background:#0b0e11;color:#fff;border:1px solid #41464c;border-radius:5px;padding:12px}textarea{min-height:100px;resize:vertical}
+    input[type=file],input[type=checkbox]{width:auto}input[type=checkbox]{margin-right:8px}
+    small{display:block;color:#9a9fa4;margin-top:7px;line-height:1.4}
+    .button,.outline{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--gold);border:1px solid var(--gold);border-radius:5px;color:#111;font-weight:800;padding:11px 16px}
+    .outline{background:none;color:var(--gold)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.spaced{justify-content:space-between}
+    .item{border:1px solid var(--line);padding:16px;margin-top:12px;border-radius:6px;background:#0d1012}.item h3{margin:0 0 5px}.item p{margin:0 0 10px;color:#acb0b4}
+    .success{color:#b6e2ae}.error{color:#ff9a9a}.state{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--gold)}
+    @media(max-width:800px){.layout{grid-template-columns:1fr}.panel{padding:20px}}
+  </style>
+</head>
+<body>
+  <header><div><a href="/admin/produtos.html">← Produtos</a> <strong> · Arquivos digitais</strong></div><div class="row"><a href="/stls.html" target="_blank" rel="noopener">Ver loja</a><a href="/dashboard.html">Painel</a></div></header>
+  <main>
+    <h1>Modelos STL / 3MF</h1><p class="muted">Cadastre o anúncio, o preço único e os dois arquivos. O cliente recebe ambos após o pagamento confirmado. Estes produtos não usam frete nem estoque.</p>
+    <p id="access" class="state">Verificando acesso de administrador...</p>
+    <div class="layout" id="workspace" hidden>
+      <section class="panel">
+        <div class="row spaced"><h2 id="form-heading">Novo arquivo digital</h2><button type="button" id="new-button" class="outline">Novo produto</button></div>
+        <form id="editor">
+          <label for="title">Nome do modelo</label><input id="title" required minlength="3" maxlength="150" placeholder="Ex.: Chaveiro personalizado Freo" />
+          <label for="description">Descrição e orientação de impressão</label><textarea id="description" maxlength="3000" placeholder="Dimensões, material recomendado, impressoras compatíveis..."></textarea>
+          <label for="price">Preço único de STL + 3MF (R$)</label><input id="price" type="number" min="0.01" max="999999.99" step="0.01" required placeholder="29.90">
+          <label for="cover">Foto de capa (JPG, PNG ou WEBP)</label><input id="cover" type="file" accept="image/jpeg,image/png,image/webp"><small id="cover-state">A imagem é pública e aparece no catálogo.</small>
+          <label for="stl">Arquivo STL</label><input id="stl" type="file" accept=".stl,model/stl,application/octet-stream"><small id="stl-state">Obrigatório para publicar. Até 50 MiB.</small>
+          <label for="mf3">Arquivo 3MF já configurado para impressão</label><input id="mf3" type="file" accept=".3mf,application/vnd.ms-package,application/octet-stream"><small id="mf3-state">Obrigatório para publicar. Exporte do fatiador com as configurações desejadas; até 50 MiB.</small>
+          <label><input type="checkbox" id="active"> Publicar no catálogo após salvar</label>
+          <p class="muted">Ao substituir arquivos de um anúncio, os compradores anteriores continuam com a versão adquirida.</p>
+          <button class="button" id="save" type="submit">Salvar produto digital</button>
+          <p id="message" role="status"></p>
+        </form>
+      </section>
+      <section class="panel"><h2>Anúncios digitais</h2><p class="muted">Edite preço, descrição e arquivos. Para retirar da loja, desative o anúncio.</p><div id="list">Carregando...</div></section>
+    </div>
+  </main>
+  <script>
+  (() => {
+    const client=supabase.createClient('https://rrmxqpvxrpcqqxsgccqw.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM');
+    const $=id=>document.getElementById(id);let products=[],editing=null,assets=null;
+    function state(msg,good=false){$('message').textContent=msg;$('message').className=good?'success':'error';}
+    function money(n){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);}
+    function reset(){
+      editing=null;assets=null;$('editor').reset();$('form-heading').textContent='Novo arquivo digital';
+      $('cover-state').textContent='A imagem é pública e aparece no catálogo.';
+      $('stl-state').textContent='Obrigatório para publicar. Até 50 MiB.';
+      $('mf3-state').textContent='Obrigatório para publicar. Exporte do fatiador com as configurações desejadas.';
+      state('');
+    }
+    async function load(){
+      const {data,error}=await client.from('digital_products').select('*').order('created_at',{ascending:false});
+      if(error){$('list').textContent='Erro ao carregar anúncios: '+error.message;return;}
+      products=data||[];const list=$('list');list.replaceChildren();
+      if(!products.length){list.textContent='Nenhum modelo cadastrado.';return;}
+      products.forEach(p=>{
+        const card=document.createElement('div');card.className='item';
+        const title=document.createElement('h3');title.textContent=p.title;
+        const info=document.createElement('p');info.textContent=money(p.price)+' · '+(p.is_active?'Publicado':'Rascunho');
+        const button=document.createElement('button');button.type='button';button.className='outline';button.textContent='Editar';
+        button.addEventListener('click',()=>edit(p));card.append(title,info,button);list.append(card);
+      });
+    }
+    async function edit(p){
+      editing=p.id;$('form-heading').textContent='Editar #'+p.id;
+      $('title').value=p.title;$('description').value=p.description||'';$('price').value=p.price;$('active').checked=p.is_active;
+      $('cover').value='';$('stl').value='';$('mf3').value='';
+      $('cover-state').textContent=p.cover_url?'Capa atual cadastrada. Envie outra apenas se quiser trocar.':'Nenhuma capa cadastrada.';
+      const {data,error}=await client.from('digital_product_assets').select('stl_path,mf3_path').eq('product_id',p.id).maybeSingle();
+      if(error){state('Não foi possível carregar os arquivos: '+error.message);return;}
+      assets=data;
+      $('stl-state').textContent=data?.stl_path?'STL cadastrado. Envie outro apenas se quiser substituir.':'STL ainda não cadastrado.';
+      $('mf3-state').textContent=data?.mf3_path?'3MF cadastrado. Envie outro apenas se quiser substituir.':'3MF ainda não cadastrado.';
+      state('');window.scrollTo({top:0,behavior:'smooth'});
+    }
+    async function upload(file,format){
+      if(!file)return null;
+      if(!new RegExp('\\.'+format+'$','i').test(file.name)||file.size<(format==='stl'?16:4)||file.size>52428800)
+        throw new Error('O arquivo '+format.toUpperCase()+' deve ter até 50 MiB e a extensão correta.');
+      if(format==='3mf'){
+        const bytes=new Uint8Array(await file.slice(0,4).arrayBuffer());
+        if(bytes[0]!==80||bytes[1]!==75)throw new Error('O 3MF precisa ser um pacote ZIP válido exportado do fatiador.');
+      }
+      const path=format+'/'+crypto.randomUUID()+'.'+format;
+      const {error}=await client.storage.from('digital-print-files').upload(path,file,{contentType:'application/octet-stream',upsert:false});
+      if(error)throw error;return path;
+    }
+    async function uploadCover(file){
+      if(!file)return null;
+      if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>5242880)throw new Error('A capa deve ser JPG, PNG ou WEBP de até 5 MiB.');
+      const path='digital-covers/'+crypto.randomUUID()+'.'+file.name.split('.').pop().toLowerCase();
+      const result=await client.storage.from('imagens').upload(path,file,{contentType:file.type,upsert:false});
+      if(result.error)throw result.error;
+      return client.storage.from('imagens').getPublicUrl(path).data.publicUrl;
+    }
+    async function save(event){
+      event.preventDefault();const button=$('save');button.disabled=true;state('Enviando arquivos...');
+      try{
+        const price=Number($('price').value);
+        if(!Number.isFinite(price)||price<.01||price>999999.99||Math.abs(Math.round(price*100)-price*100)>0.00001)
+          throw new Error('Informe um preço válido com até duas casas decimais.');
+        const next={title:$('title').value.trim(),description:$('description').value.trim(),price,
+          cover_url:(await uploadCover($('cover').files[0]))||(products.find(x=>x.id===editing)?.cover_url||null)};
+        const stl=(await upload($('stl').files[0],'stl'))||assets?.stl_path;
+        const mf3=(await upload($('mf3').files[0],'3mf'))||assets?.mf3_path;
+        if(!stl||!mf3)throw new Error('Envie os dois arquivos antes de salvar.');
+        const changed=!assets||stl!==assets.stl_path||mf3!==assets.mf3_path;
+        let id=editing;
+        if(id){
+          const result=await client.from('digital_products').update({...next,is_active:false}).eq('id',id);
+          if(result.error)throw result.error;
+        }else{
+          const result=await client.from('digital_products').insert({...next,is_active:false}).select('id').single();
+          if(result.error)throw result.error;id=result.data.id;editing=id;
+        }
+        if(changed){
+          const result=await client.from('digital_product_assets').upsert({product_id:id,stl_path:stl,mf3_path:mf3},{onConflict:'product_id'});
+          if(result.error)throw result.error;
+        }
+        if($('active').checked){
+          const result=await client.from('digital_products').update({is_active:true}).eq('id',id);
+          if(result.error)throw result.error;
+        }
+        assets={stl_path:stl,mf3_path:mf3};
+        state('Produto salvo com sucesso.',true);await load();
+      }catch(e){state(e.message||'Não foi possível salvar.');}
+      finally{button.disabled=false;}
+    }
+    $('editor').addEventListener('submit',save);$('new-button').addEventListener('click',reset);
+    async function init(){
+      const auth=await client.auth.getUser();if(!auth.data?.user||auth.data.user.is_anonymous){$('access').textContent='Entre como administrador.';return;}
+      const profile=await client.from('profiles').select('is_admin').eq('id',auth.data.user.id).single();
+      if(profile.error||profile.data?.is_admin!==true){$('access').textContent='Acesso restrito à administração.';return;}
+      $('access').textContent='Acesso autorizado';$('workspace').hidden=false;await load();
+    }
+    init().catch(e=>{$('access').textContent='Erro ao verificar acesso: '+e.message;});
+  })();
+  </script>
+</body>
+</html>

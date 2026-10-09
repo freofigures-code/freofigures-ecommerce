@@ -63,7 +63,7 @@ function categoryLinks() {
   return Object.entries(CATEGORIES).map(([key, entry]) => `<a href="${esc(categoryUrl(key))}">${esc(entry[0])}</a>`).join(' · ');
 }
 function fallbackShell(content, id = '') {
-  return `<section ${id ? `id="${id}"` : ''} style="max-width:1152px;margin:auto;padding:32px 24px;font-family:Arial,sans-serif;line-height:1.6"><a href="/">FreoFigures</a>${content}<nav aria-label="Categorias">${categoryLinks()}</nav><p><a href="/b2b.html">Soluções B2B para empresas</a> · <a href="/faq.html">Dúvidas frequentes</a> · <a href="/politicas.html">Políticas e atendimento</a></p></section>`;
+  return `<section ${id ? `id="${id}"` : ''} style="max-width:1152px;margin:auto;padding:32px 24px;font-family:Arial,sans-serif;line-height:1.6"><a href="/">FreoFigures</a>${content}<nav aria-label="Categorias">${categoryLinks()}</nav><p><a href="/b2b.html">Soluções B2B para empresas</a> · <a href="/stls.html">Arquivos STL e 3MF</a> · <a href="/faq.html">Dúvidas frequentes</a> · <a href="/politicas.html">Políticas e atendimento</a></p></section>`;
 }
 export function renderHome(html, products, category, chooser = false) {
   const meta = pageMetadata(category, chooser);
@@ -87,7 +87,7 @@ export function renderProduct(html, p) {
 }
 export function sitemap(products) {
   const categories = Object.keys(CATEGORIES).filter(key => key === 'kit_fixo' ? products.some(p => p.is_kit && p.kit_type === 'fixed') : products.some(p => !p.is_kit && normalizeCategory(p.category) === key));
-  const urls = [`${SITE}/`, CHOOSER_URL, `${SITE}/b2b.html`, `${SITE}/faq.html`, `${SITE}/politicas.html`, ...categories.map(categoryUrl), ...products.map(p => productUrl(p.id))];
+  const urls = [`${SITE}/`, CHOOSER_URL, `${SITE}/b2b.html`, `${SITE}/stls.html`, `${SITE}/faq.html`, `${SITE}/politicas.html`, ...categories.map(categoryUrl), ...products.map(p => productUrl(p.id))];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${[...new Set(urls)].map(url => `<url><loc>${esc(url)}</loc></url>`).join('')}</urlset>`;
 }
 
