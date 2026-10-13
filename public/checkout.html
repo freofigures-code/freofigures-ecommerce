@@ -631,6 +631,7 @@
   <!-- FIM MODAL DADOS PESSOAIS -->
 
   <script src="/auth-listener.js"></script>
+  <script src="/affiliate-referral.js"></script>
 
   <script>
     var MP_PUBLIC_KEY = 'APP_USR-7eb3299c-7dd3-4e5e-aaf0-c2ca09b1f5ad';
@@ -1224,20 +1225,22 @@ async function salvarDadosPessoais() {
     }
 
     async function aplicarCreditosAoPedido(orderId) {
+      var affiliateVisitorToken = window.FreoAffiliate ? window.FreoAffiliate.getToken() : null;
       var productIds = cartItemsData.map(function(item) { return Number(item.product_id); })
         .filter(function(id) { return Number.isSafeInteger(id) && id > 0; });
-      var needsServerValidation = false;
+      var needsServerValidation = !!affiliateVisitorToken;
       if (!freoCreditsSelected && productIds.length) {
         var catalogLookup = await window.supabaseClient.from('products').select('id,category,b2b_category')
           .in('id', productIds);
         if (catalogLookup.error) throw catalogLookup.error;
-        needsServerValidation = (catalogLookup.data || []).some(function(product) {
+        needsServerValidation = needsServerValidation || (catalogLookup.data || []).some(function(product) {
           return product.category === 'feito_por_voces' || (product.b2b_category && product.b2b_category !== 'loja');
         });
       }
       if (!freoCreditsSelected && !needsServerValidation) return totalAntesDosCreditos();
       var r = await window.supabaseClient.functions.invoke('freo-checkout', {
-        body: { order_id: orderId, credits: freoCreditsSelected, coupon_code: activeCouponData ? activeCouponData.code : null }
+        body: { order_id: orderId, credits: freoCreditsSelected, coupon_code: activeCouponData ? activeCouponData.code : null,
+          affiliate_visitor_token: affiliateVisitorToken }
       });
       if (r.error || !r.data || typeof r.data.amount !== 'number') {
         throw new Error((r.data && r.data.error) || 'Não foi possível validar os Créditos Freo. Confira carrinho, cupom e frete.');

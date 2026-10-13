@@ -127,6 +127,7 @@
   <div id="toast" role="status" aria-live="polite"></div>
   <div id="sticky-buy-bar" class="sticky-buy-bar" hidden><div class="sticky-buy-inner"><div class="sticky-product-copy"><strong id="sticky-product-title"></strong><span id="sticky-selection"></span></div><strong id="sticky-price"></strong><button id="sticky-buy-button" type="button">Escolher opções ↗</button></div></div>
   <script src="/auth-listener.js"></script>
+  <script src="/affiliate-referral.js"></script>
   <script src="/produto-apple.js?v=5"></script>
 </body>
 </html>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Programa de Afiliados | FreoFigures</title>
+  <meta name="description" content="Indique peças FreoFigures e acompanhe suas comissões no seu perfil.">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{color-scheme:dark;--gold:#e0b640;--bg:#08090b;--panel:#141619;--line:#34383d}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f8f8f8;font:16px Outfit,Arial,sans-serif}
+    a{color:var(--gold);text-decoration:none}button,input{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait}
+    header{border-bottom:1px solid var(--line);padding:18px max(20px,calc((100vw - 1120px)/2));display:flex;justify-content:space-between;gap:18px;align-items:center;flex-wrap:wrap}
+    header strong{font-size:22px}main{max-width:1120px;margin:auto;padding:45px 20px 100px}
+    h1{font-size:clamp(34px,5vw,62px);line-height:1.04;margin:0 0 12px}h2{font-size:24px;margin:0 0 14px}h3{margin:0 0 6px}
+    .gold{color:var(--gold)}.muted{color:#aeb4ba;line-height:1.5}.small{font-size:13px}.eyebrow{color:var(--gold);font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:800}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;margin-top:24px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+    .button,.outline{display:inline-flex;justify-content:center;align-items:center;border:1px solid var(--gold);border-radius:6px;padding:11px 17px;background:var(--gold);color:#151515;font-weight:800}
+    .outline{color:var(--gold);background:transparent}.button:hover,.outline:hover{filter:brightness(1.13)}
+    label{display:block;margin:18px 0 7px;font-weight:700;font-size:14px}
+    input{width:100%;border:1px solid #51565d;border-radius:6px;background:#0b0d0f;color:white;padding:12px}
+    input[type=file]{padding:10px}.field{max-width:470px}.status{min-height:22px;margin-top:14px}.error{color:#ff9292}.success{color:#9ce3ae}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stat{background:#0b0d0f;border:1px solid var(--line);padding:18px;border-radius:8px}.stat strong{display:block;font-size:25px;margin-top:7px;color:var(--gold)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .product{border:1px solid var(--line);border-radius:8px;background:#0b0d0f;padding:14px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:15px}
+    .product img{width:96px;height:96px;object-fit:cover;border-radius:5px;background:#202327}
+    .product .button{margin-top:10px}.link-row,.ledger-row{border-top:1px solid var(--line);padding:15px 0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+    .url{overflow-wrap:anywhere;font-size:13px;color:#e9edf0}.pill{display:inline-block;border:1px solid #685821;color:var(--gold);padding:4px 7px;border-radius:4px;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+    [hidden]{display:none!important}
+    @media(max-width:700px){main{padding-top:30px}.panel{padding:18px}.stats,.grid{grid-template-columns:1fr}.product{grid-template-columns:75px minmax(0,1fr)}.product img{width:75px;height:75px}.link-row{display:block}.link-row button{margin-top:10px}}
+  </style>
+</head>
+<body>
+  <header><a href="/" aria-label="FreoFigures início"><strong>FREO<span class="gold">FIGURES</span></strong></a><nav class="row"><a href="/dashboard.html">Meu perfil</a><a href="/meus-pedidos.html">Pedidos</a></nav></header>
+  <main>
+    <p class="eyebrow">FREO / AFILIADOS</p>
+    <h1>Compartilhe o que ama.<br><span class="gold">Ganhe por cada venda.</span></h1>
+    <p class="muted">Escolha um produto, gere seu link e acompanhe as vendas confirmadas. A comissão usa o preço exibido da peça antes de cupons e Créditos Freo. O pagamento é feito por Pix após conferência.</p>
+    <p class="muted small">Vale o último link de afiliado clicado nos 30 dias anteriores à compra. Compras próprias e pedidos sem pagamento em dinheiro não geram comissão; estornos revertem o saldo.</p>
+    <p id="access" class="muted" role="status">Verificando sua conta...</p>
+
+    <section id="register-section" class="panel" hidden aria-labelledby="register-title">
+      <h2 id="register-title">Quero me afiliar</h2>
+      <p class="muted">Informe seu CPF e envie uma selfie nítida do rosto. O arquivo fica privado no Supabase e apenas você e a administração podem acessá-lo. Seus links são liberados após o cadastro.</p>
+      <form id="register-form">
+        <div class="field"><label for="cpf">CPF</label><input id="cpf" inputmode="numeric" autocomplete="off" maxlength="14" required placeholder="000.000.000-00"></div>
+        <div class="field"><label for="selfie">Sua selfie (JPG, PNG ou WEBP, até 5 MiB)</label><input id="selfie" type="file" accept="image/jpeg,image/png,image/webp" capture="user" required></div>
+        <label class="muted small" style="font-weight:400"><input type="checkbox" required style="width:auto;margin-right:8px">Li como CPF, selfie, links e pagamentos são tratados na <a href="/politicas.html">política de privacidade</a>.</label>
+        <button id="register-button" type="submit" class="button">Ativar minha afiliação</button>
+      </form>
+      <p id="register-message" class="status" role="status"></p>
+    </section>
+
+    <div id="affiliate-area" hidden>
+      <section class="panel">
+        <div class="row between"><div><p class="eyebrow">MINHAS COMISSÕES</p><h2>Seu painel</h2></div><span class="pill" id="account-status"></span></div>
+        <div class="stats">
+          <div class="stat"><span class="muted">Saldo para receber</span><strong id="balance">R$ 0,00</strong></div>
+          <div class="stat"><span class="muted">Vendas confirmadas</span><strong id="earned">R$ 0,00</strong></div>
+          <div class="stat"><span class="muted">Pix já registrados</span><strong id="paid">R$ 0,00</strong></div>
+        </div>
+        <p id="pending" class="muted small"></p>
+        <form id="pix-form" class="field"><label for="pix-key">Sua chave Pix para receber</label><input id="pix-key" maxlength="120" required placeholder="CPF, e-mail, celular ou chave aleatória"><button type="submit" class="outline" style="margin-top:10px">Salvar chave Pix</button><p id="pix-message" class="status" role="status"></p></form>
+      </section>
+      <section class="panel"><div class="row between"><div><p class="eyebrow">SEUS LINKS</p><h2>Prontos para compartilhar</h2></div></div><div id="links-list" class="muted">Nenhum link gerado ainda.</div></section>
+      <section class="panel"><p class="eyebrow">CATÁLOGO</p><h2>Escolha um produto para divulgar</h2><p class="muted small">A previsão usa o preço da peça e sua taxa atual; variações, kits e promoções podem alterar o valor final. A comissão exata é registrada no pedido validado.</p><div id="products-list" class="grid"></div><button id="more-products" type="button" class="outline" hidden style="margin-top:18px">Carregar mais produtos</button></section>
+      <section class="panel"><p class="eyebrow">HISTÓRICO</p><h2>Vendas indicadas e Pix</h2><div id="commission-list" class="muted">Nenhuma venda indicada ainda.</div><div id="payout-list"></div></section>
+    </div>
+  </main>
+  <script>
+    (function () {
+      'use strict';
+      var client=supabase.createClient('https://rrmxqpvxrpcqqxsgccqw.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM');
+      var $=function(id){return document.getElementById(id)}, user=null, profile=null, rate=10, offset=0, pageSize=40;
+      var money=function(cents){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((Number(cents)||0)/100)};
+      function cpfValid(value){var s=String(value).replace(/\D/g,'');if(s.length!==11||/^(.)\1{10}$/.test(s))return false;for(var d=10;d<=11;d++){var sum=0;for(var i=0;i<d-1;i++)sum+=Number(s[i])*(d+1-i);var check=(sum*10)%11;if(check===10)check=0;if(check!==Number(s[d-1]))return false}return true}
+      function status(id,message,good){$(id).textContent=message;$(id).className='status '+(good?'success':'error')}
+      async function initialize(){
+        var auth=await client.auth.getUser();user=auth.data&&auth.data.user;
+        if(!user||user.is_anonymous){$('access').innerHTML='Entre em sua conta para se afiliar. <a href="/login.html?return=%2Fafiliados.html">Fazer login →</a>';return}
+        var existing=await client.from('affiliate_profiles').select('*').eq('user_id',user.id).maybeSingle();
+        if(existing.error)throw existing.error;
+        profile=existing.data;
+        $('access').hidden=true;
+        if(!profile){$('register-section').hidden=false;return}
+        await showArea();
+      }
+      async function register(event){
+        event.preventDefault();var button=$('register-button'),file=$('selfie').files[0],cpf=$('cpf').value;
+        if(!cpfValid(cpf)){status('register-message','Confira o CPF informado.');return}
+        if(!file||!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size<100||file.size>5242880){status('register-message','Envie uma selfie JPG, PNG ou WEBP de até 5 MiB.');return}
+        button.disabled=true;status('register-message','Enviando sua selfie privada...',true);
+        var path=user.id+'/'+crypto.randomUUID()+'.'+({ 'image/jpeg':'jpg','image/png':'png','image/webp':'webp' }[file.type]);
+        var uploaded=false;
+        try{
+          var up=await client.storage.from('affiliate-selfies').upload(path,file,{contentType:file.type,upsert:false});
+          if(up.error)throw up.error;uploaded=true;
+          var saved=await client.rpc('affiliate_register',{p_cpf:cpf,p_selfie_path:path});
+          if(saved.error)throw saved.error;
+          var current=await client.from('affiliate_profiles').select('*').eq('user_id',user.id).single();
+          if(current.error)throw current.error;profile=current.data;
+          $('register-section').hidden=true;await showArea();
+        }catch(e){
+          if(uploaded)await client.storage.from('affiliate-selfies').remove([path]);
+          status('register-message',e.message||'Não foi possível concluir o cadastro.');
+        }finally{button.disabled=false}
+      }
+      async function showArea(){
+        $('affiliate-area').hidden=false;$('account-status').textContent=profile.status==='active'?'Ativo':'Suspenso';
+        $('pix-key').value=profile.pix_key||'';
+        var settings=await client.from('affiliate_settings').select('default_rate_pct').eq('id',1).single();
+        if(settings.error)throw settings.error;rate=Number(profile.commission_override_pct??settings.data.default_rate_pct);
+        await Promise.all([loadBalance(),loadLinks(),loadProducts(),loadHistory()]);
+      }
+      async function loadBalance(){
+        var result=await client.rpc('affiliate_balance');if(result.error)throw result.error;
+        var row=result.data&&result.data[0];if(!row)return;
+        $('balance').textContent=money(row.balance_cents);$('earned').textContent=money(row.earned_cents);$('paid').textContent=money(row.paid_cents);
+        $('pending').textContent='Em confirmação: '+money(row.pending_cents)+' · Taxa atual: '+rate.toLocaleString('pt-BR')+'%';
+      }
+      async function loadLinks(){
+        var result=await client.from('affiliate_links').select('id,product_id,products(title)').eq('affiliate_id',user.id).order('created_at',{ascending:false});
+        if(result.error)throw result.error;var host=$('links-list');host.replaceChildren();
+        if(!result.data.length){host.textContent='Nenhum link gerado ainda.';return}
+        result.data.forEach(function(link){
+          var row=document.createElement('div');row.className='link-row';
+          var left=document.createElement('div'),title=document.createElement('strong'),url=document.createElement('div'),copy=document.createElement('button');
+          var share=new URL('/produto',location.origin);share.searchParams.set('id',link.product_id);share.searchParams.set('af',link.id);
+          title.textContent=(link.products&&link.products.title)||('Produto #'+link.product_id);url.className='url';url.textContent=share.href;
+          left.append(title,url);copy.className='outline';copy.type='button';copy.textContent='Copiar link';
+          copy.addEventListener('click',async function(){try{await navigator.clipboard.writeText(share.href);copy.textContent='Copiado!'}catch(_){copy.textContent='Selecione o link acima para copiar'}});
+          row.append(left,copy);host.append(row);
+        });
+      }
+      function productBase(p,kitChildren){
+        var normal=Number(p.price),promo=Number(p.promotional_price);
+        if(p.is_kit&&kitChildren&&kitChildren.length){
+          var chosen=p.kit_type==='configurable'?kitChildren.slice().sort(function(a,b){return a.price-b.price}).slice(0,Number(p.kit_slots)||0):kitChildren;
+          if(chosen.length){
+            var sum=chosen.reduce(function(n,c){return n+Number(c.price)},0);
+            normal=p.kit_discount_type==='fixed'?Math.max(0,sum-Number(p.kit_discount_value||0)):
+              p.kit_discount_type==='percent'?Math.max(0,sum*(1-Number(p.kit_discount_value||0)/100)):sum;
+            return Math.round(normal*100)/100;
+          }
+        }
+        var base=p.promotional_price!==null&&Number.isFinite(promo)&&promo>=0&&promo<normal?promo:normal;
+        var firstPriceGroup=Array.isArray(p.variants)?p.variants.find(function(g){return g&&g.per_option_price&&Array.isArray(g.options)}):null;
+        if(firstPriceGroup){
+          var choices=firstPriceGroup.options.map(function(o){return o&&typeof o==='object'?Number(o.price):NaN}).filter(Number.isFinite);
+          if(choices.length)base=Math.min.apply(null,choices);
+        }
+        return base;
+      }
+      function productImage(p){var images=Array.isArray(p.images)?p.images:[];return typeof images[0]==='string'?images[0]:(images[0]&&images[0].url)||''}
+      async function loadProducts(){
+        var result=await client.from('products').select('id,title,price,promotional_price,images,variants,is_kit,kit_type,kit_slots,kit_discount_type,kit_discount_value,sale_mode,b2b_category')
+          .eq('is_active',true).order('id',{ascending:false}).range(offset,offset+pageSize-1);
+        if(result.error)throw result.error;var list=result.data||[];
+        var kitChildren={};var kitIds=list.filter(function(p){return p.is_kit}).map(function(p){return p.id});
+        if(kitIds.length){
+          var parts=await client.from('product_kit_items').select('kit_product_id,child_product_id').in('kit_product_id',kitIds);
+          if(parts.error)throw parts.error;
+          var childIds=[...new Set((parts.data||[]).map(function(x){return x.child_product_id}))];
+          if(childIds.length){
+            var children=await client.from('products').select('id,price').in('id',childIds);
+            if(children.error)throw children.error;
+            var childMap={};(children.data||[]).forEach(function(c){childMap[c.id]=c});
+            (parts.data||[]).forEach(function(link){if(!kitChildren[link.kit_product_id])kitChildren[link.kit_product_id]=[];
+              if(childMap[link.child_product_id])kitChildren[link.kit_product_id].push(childMap[link.child_product_id])});
+          }
+        }
+        var host=$('products-list');
+        list.filter(function(p){return p.sale_mode!=='quote_only'&&(!p.b2b_category||p.b2b_category==='loja')}).forEach(function(p){
+          var card=document.createElement('article');card.className='product';
+          var img=document.createElement('img');img.alt='';img.loading='lazy';img.src=productImage(p);
+          var body=document.createElement('div'),title=document.createElement('h3'),price=document.createElement('div'),note=document.createElement('div'),button=document.createElement('button');
+          var base=productBase(p,kitChildren[p.id]);
+          title.textContent=p.title;price.textContent=(p.kit_type==='configurable'?'Preço a partir de: ':'Preço exibido: ')+money(Math.round(base*100));
+          var estimate=Math.round(base*100*rate/100);
+          note.className='muted small';note.textContent='Comissão estimada: '+money(estimate)+(p.kit_type==='configurable'||Array.isArray(p.variants)&&p.variants.length?' · varia conforme a escolha':'');
+          button.type='button';button.className='button';button.textContent='Vender este produto';
+          if(profile.status!=='active')button.disabled=true;
+          button.addEventListener('click',async function(){button.disabled=true;button.textContent='Gerando link...';try{
+            var r=await client.rpc('affiliate_get_link',{p_product_id:p.id});if(r.error)throw r.error;
+            await loadLinks();$('links-list').scrollIntoView({behavior:'smooth',block:'start'});
+          }catch(e){alert(e.message||'Não foi possível gerar o link.')}finally{button.disabled=profile.status!=='active';button.textContent='Vender este produto'}});
+          body.append(title,price,note,button);card.append(img,body);host.append(card);
+        });
+        offset+=list.length;$('more-products').hidden=list.length<pageSize;
+        if(offset===0)host.textContent='Nenhum produto disponível para divulgação.';
+      }
+      async function loadHistory(){
+        var [commissions,payouts]=await Promise.all([
+          client.from('affiliate_commissions').select('order_id,product_id,commission_cents,state,created_at').eq('affiliate_id',user.id).order('created_at',{ascending:false}).limit(50),
+          client.from('affiliate_payouts').select('amount_cents,pix_reference,paid_at').eq('affiliate_id',user.id).order('paid_at',{ascending:false}).limit(50)
+        ]);
+        if(commissions.error)throw commissions.error;if(payouts.error)throw payouts.error;
+        var host=$('commission-list');host.replaceChildren();if(!commissions.data.length)host.textContent='Nenhuma venda indicada ainda.';
+        commissions.data.forEach(function(c){var row=document.createElement('div');row.className='ledger-row';
+          var label=c.state==='available'?'Confirmada':c.state==='pending'?'Aguardando pagamento':'Estornada ou sem pagamento em dinheiro';
+          row.textContent='Pedido #'+c.order_id+' · Produto #'+c.product_id+' · '+label+' · '+money(c.commission_cents);host.append(row)});
+        var paid=$('payout-list');paid.replaceChildren();payouts.data.forEach(function(p){var row=document.createElement('div');row.className='ledger-row muted';
+          row.textContent='Pix registrado em '+new Date(p.paid_at).toLocaleDateString('pt-BR')+' · '+money(p.amount_cents)+' · comprovante '+p.pix_reference;paid.append(row)});
+      }
+      $('register-form').addEventListener('submit',register);
+      $('pix-form').addEventListener('submit',async function(event){event.preventDefault();var r=await client.rpc('affiliate_update_pix_key',{p_pix_key:$('pix-key').value.trim()});status('pix-message',r.error?r.error.message:'Chave Pix salva.',!r.error)});
+      $('more-products').addEventListener('click',function(){loadProducts().catch(function(e){alert(e.message)})});
+      initialize().catch(function(e){$('access').textContent='Não foi possível carregar afiliação: '+e.message});
+    })();
+  </script>
+</body>
+</html>

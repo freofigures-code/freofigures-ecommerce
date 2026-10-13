@@ -133,7 +133,9 @@ Deno.serve(async (request: Request) => {
     const body = await request.json();
     const orderId = Number(body.order_id);
     const credits = Number(body.credits);
+    const affiliateVisitorToken = body.affiliate_visitor_token == null ? null : String(body.affiliate_visitor_token);
     if (!Number.isSafeInteger(orderId) || orderId <= 0 || !Number.isSafeInteger(credits) || credits < 0) return respond({ error: 'Pedido ou créditos inválidos' }, 400);
+    if (affiliateVisitorToken && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(affiliateVisitorToken)) return respond({ error: 'Indicação inválida' }, 400);
     if (credits > 0 && user.is_anonymous) return respond({ error: 'Entre em uma conta cadastrada para usar Créditos Freo' }, 401);
     const service = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
     const order = value(await service.from('orders').select('*').eq('id', orderId).single());
@@ -164,6 +166,10 @@ Deno.serve(async (request: Request) => {
     if (expectedCents !== baseCents) throw new Error('O valor do pedido diverge dos preços, cupom ou frete atuais');
     if (credits > expectedCents / 10) throw new Error('Créditos acima do valor do pedido');
     value(await service.rpc('prepare_community_order', { p_order_id: orderId, p_subtotal: subtotal, p_items: order.items }));
+    if (!b2b && affiliateVisitorToken) value(await service.rpc('affiliate_prepare_order', {
+      p_order_id: orderId, p_visitor_token: affiliateVisitorToken,
+      p_items: order.items, p_subtotal: subtotal,
+    }));
     if (b2b) value(await service.rpc('mark_b2b_order_validated', { p_order_id: orderId }));
     if (credits === 0) return respond({ amount: Number(order.total), covered: false });
     const amount = value(await service.rpc('freo_apply_order_credits', { p_order_id: orderId, p_credits: credits, p_user_id: user.id }));
