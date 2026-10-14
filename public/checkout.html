@@ -597,7 +597,7 @@
       <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-freo-orange to-transparent rounded-t-xl"></div>
   
       <h3 class="font-display font-black uppercase text-2xl text-white mb-1">Dados pessoais</h3>
-      <p class="font-mono text-sm text-white/40 leading-relaxed mb-5">Necessários para processar seu pedido.</p>
+      <p class="font-mono text-sm text-white/40 leading-relaxed mb-5">Esses dados são utilizados para emitir a nota fiscal e enviar o pedido.</p>
   
       <div id="dados-pessoais-error" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 text-xs font-mono p-3 mb-4 rounded"></div>
   
@@ -671,6 +671,8 @@
     var paymentBrickInitialized = false;
     var savedAddresses = [];
     var selectedAddress = null;
+    var checkoutIsGuest = false;
+    var personalDataStepPending = false;
     var shippingPromotionRules = [];       // regras carregadas do Supabase (shipping_promotions)
     var shippingPromotionRulesLoaded = false;
     var lastFreteMotivo = null;            // 'gratis' | 'subsidio' | 'normal' | 'sem_regra' — usado na exibição
@@ -715,14 +717,14 @@ function abrirDadosPessoaisConvidado(isGuest) {
 
       // Adapta título e subtítulo para linguagem de convidado
       var titulo = modalBox.querySelector('h3');
-      if (titulo) titulo.innerText = 'Seus dados de entrega';
+      if (titulo) titulo.innerText = 'Dados para nota fiscal e envio';
 
       var sub = modalBox.querySelector('p.font-mono');
-      if (sub) sub.innerText = 'Sem cadastro obrigatório. Usados apenas para entrega e nota fiscal.';
+      if (sub) sub.innerText = 'Sem cadastro obrigatório. Esses dados são utilizados para emitir a nota fiscal e enviar o pedido.';
 
       // Adapta botão
       var btn = document.getElementById('btn-salvar-dados');
-      if (btn) btn.innerText = 'Continuar para endereço →';
+      if (btn) btn.innerText = 'Salvar e continuar';
 
       // Substitui o handler do botão para usar a versão de convidado
       btn.onclick = function() { salvarDadosPessoaisConvidado(); };
@@ -803,9 +805,11 @@ async function salvarDadosPessoaisConvidado() {
       phone: phone,
       cpf:   cpf
     });
+    personalDataStepPending = false;
 
     document.getElementById('dados-pessoais-modal').classList.add('hidden');
     document.getElementById('dados-pessoais-modal').classList.remove('flex');
+    if (selectedShipping) void liberarPagamento();
 
   } catch (e) {
     console.error('Erro ao salvar dados do convidado:', e);
@@ -813,7 +817,7 @@ async function salvarDadosPessoaisConvidado() {
     errEl.classList.remove('hidden');
   }
 
-  btn.innerText = 'Continuar para endereço →';
+  btn.innerText = 'Salvar e continuar';
   btn.disabled  = false;
 }
 // ── FIM DADOS PESSOAIS CONVIDADO ─────────────────────────────────────────────
@@ -887,9 +891,11 @@ async function salvarDadosPessoais() {
       cpf:   cpf,
       email: currentUser.email
     });
+    personalDataStepPending = false;
 
     document.getElementById('dados-pessoais-modal').classList.add('hidden');
     document.getElementById('dados-pessoais-modal').classList.remove('flex');
+    if (selectedShipping) void liberarPagamento();
 
   } catch (e) {
     console.error('Erro ao salvar dados pessoais:', e);
@@ -1962,6 +1968,14 @@ async function salvarDadosPessoais() {
       }
     }
      async function liberarPagamento() {
+      if (!selectedShipping) {
+        alert('Escolha uma opção de frete primeiro.');
+        return;
+      }
+      if (personalDataStepPending) {
+        abrirDadosPessoaisConvidado(checkoutIsGuest);
+        return;
+      }
   if (!getCurrentPhone()) {
     // Se for convidado e não tiver dados, reabre o modal completo de dados
     var isGuest = currentUser && (currentUser.is_anonymous === true
@@ -1973,11 +1987,6 @@ async function salvarDadosPessoais() {
     }
     return;
   }
-    
-      if (!selectedShipping) {
-        alert('Escolha uma opção de frete primeiro.');
-        return;
-      }
     
       document.getElementById('payment-overlay').classList.add('hidden');
     
@@ -2419,17 +2428,12 @@ async function salvarDadosPessoais() {
     showCheckout();
     renderItems(cartItemsData);
     carregarRegrasFrete(); // dispara em paralelo, não precisa aguardar aqui
+    // Os dados para a nota fiscal são solicitados após o endereço e o frete,
+    // antes de liberar a etapa de pagamento.
+    checkoutIsGuest = isGuest;
+    personalDataStepPending = Boolean(isGuest || !getCurrentPhone() ||
+      !getCustomerNameForOrder() || !(currentProfile && currentProfile.cpf));
     await carregarEnderecos();
-
-    // Para convidado: sempre abre o modal de dados pessoais (ele não tem cadastro)
-    // Para usuário logado: abre só se dados estiverem incompletos
-    var temDadosCompletos = getCurrentPhone() &&
-                            getCustomerNameForOrder() &&
-                            (currentProfile && currentProfile.cpf);
-
-    if (isGuest || !temDadosCompletos) {
-      abrirDadosPessoaisConvidado(isGuest);
-    }
   } catch (err) {
     console.error('Erro checkout:', err);
     if (customCheckoutMode) {
