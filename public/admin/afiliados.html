@@ -14,10 +14,13 @@
     .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
     label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}input,select{width:100%;background:#0b0d0f;color:white;border:1px solid #51565d;border-radius:5px;padding:10px}
     .button,.outline{display:inline-flex;border:1px solid var(--gold);border-radius:5px;background:var(--gold);color:#111;padding:10px 15px;font-weight:800;justify-content:center}
-    .outline{background:transparent;color:var(--gold)}.item{border:1px solid var(--line);background:#0b0d0f;padding:19px;border-radius:8px;margin-top:15px}
-    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.stat{font-size:24px;color:var(--gold);font-weight:800}
+    .outline{background:transparent;color:var(--gold)}.affiliate-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin-top:18px}
+    .item{min-width:0;border:1px solid var(--line);background:#0b0d0f;padding:20px;border-radius:10px}.card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .card-email{font-size:19px;line-height:1.3;overflow-wrap:anywhere;margin:0}.status-pill{flex:none;border:1px solid #675718;border-radius:99px;padding:5px 9px;color:var(--gold);font-size:12px;font-weight:700}
+    .card-contact{margin:13px 0;color:#aeb4ba;overflow-wrap:anywhere}.card-actions{border-top:1px solid var(--line);margin-top:18px;padding-top:14px}.card-actions summary{cursor:pointer;color:var(--gold);font-weight:700}
+    .card-actions form{margin-top:18px}.card-actions button{margin-top:12px}.grid{display:grid;grid-template-columns:1fr;gap:12px}.stat{font-size:20px;color:var(--gold);font-weight:800;margin:16px 0 0}
     .error{color:#ff9292}.success{color:#9ce3ae}[hidden]{display:none!important}
-    @media(max-width:700px){.grid{grid-template-columns:1fr}.panel{padding:17px}}
+    @media(max-width:800px){.affiliate-cards{grid-template-columns:1fr}.panel{padding:17px}}
   </style>
 </head>
 <body>
@@ -28,7 +31,7 @@
     <p id="access" class="muted" role="status">Verificando acesso...</p>
     <div id="workspace" hidden>
       <section class="panel"><h2>Comissão geral</h2><form id="settings-form" class="row"><div style="width:200px"><label for="global-rate">Porcentagem (%)</label><input id="global-rate" type="number" min="0" max="100" step="0.01" required></div><button class="button" type="submit" style="align-self:end">Salvar taxa</button></form><p id="settings-message" role="status"></p><p class="muted small">A alteração vale para pedidos futuros. Comissões já registradas preservam a taxa aplicada na venda.</p></section>
-      <section class="panel"><div class="row between"><h2>Contas de afiliados</h2><button type="button" id="refresh" class="outline">Atualizar</button></div><div id="affiliate-list" class="muted">Carregando...</div><button id="more-affiliates" type="button" class="outline" hidden style="margin-top:18px">Carregar mais afiliados</button></section>
+      <section class="panel"><div class="row between"><h2>Contas de afiliados</h2><button type="button" id="refresh" class="outline">Atualizar</button></div><div id="affiliate-list" class="affiliate-cards" aria-live="polite">Carregando...</div><button id="more-affiliates" type="button" class="outline" hidden style="margin-top:18px">Carregar mais afiliados</button></section>
     </div>
   </main>
   <script>
@@ -46,15 +49,16 @@
         ]);
         if(settings.error)throw settings.error;if(people.error)throw people.error;
         $('global-rate').value=settings.data.default_rate_pct;profiles=people.data||[];
-        var ids=profiles.map(function(p){return p.user_id}),names={};
-        if(ids.length){var res=await client.from('profiles').select('id,name,email').in('id',ids);if(res.error)throw res.error;(res.data||[]).forEach(function(p){names[p.id]=p})}
+        var ids=profiles.map(function(p){return p.user_id}),emails={};
+        if(ids.length){var res=await client.rpc('affiliate_admin_identity',{p_user_ids:ids});if(res.error)throw res.error;(res.data||[]).forEach(function(p){emails[p.user_id]=p.email})}
         var host=$('affiliate-list');
         if(!profiles.length&&offset===0){host.textContent='Nenhum afiliado cadastrado.';return}
         profiles.forEach(function(p){
           var card=document.createElement('article');card.className='item';
-          var name=document.createElement('h3'),info=document.createElement('p'),body=document.createElement('div'),form=document.createElement('form');
-          var person=names[p.user_id]||{};name.textContent=person.name||person.email||p.user_id;
-          info.className='muted small';info.textContent='CPF: '+p.cpf+' · Telefone: '+(p.phone||'não informado')+' · '+(person.email||'')+' · '+(p.status==='active'?'Ativo':'Suspenso');
+          var heading=document.createElement('div'),name=document.createElement('h3'),badge=document.createElement('span'),info=document.createElement('p'),body=document.createElement('div'),form=document.createElement('form');
+          heading.className='card-heading';name.className='card-email';name.textContent=emails[p.user_id]||'Conta sem e-mail';
+          badge.className='status-pill';badge.textContent=p.status==='active'?'Ativo':'Suspenso';heading.append(name,badge);
+          info.className='card-contact small';info.textContent='CPF: '+p.cpf+' · Telefone: '+(p.phone||'não informado');
           if(p.selfie_path){var selfie=document.createElement('button');selfie.type='button';selfie.className='outline';selfie.textContent='Ver foto antiga privada';
             selfie.addEventListener('click',async function(){var signed=await client.storage.from('affiliate-selfies').createSignedUrl(p.selfie_path,60);if(signed.error){alert(signed.error.message);return}window.open(signed.data.signedUrl,'_blank','noopener,noreferrer')});body.append(selfie)}
           var balance=document.createElement('p');balance.className='stat';balance.textContent='Saldo: carregando...';
@@ -88,7 +92,8 @@
             msg(payState,r.error?r.error.message:'Pix registrado com comprovante #'+r.data,!r.error);payButton.disabled=false;
             if(!r.error){amount.value='';ref.value='';var b=await client.rpc('affiliate_balance',{p_user_id:p.user_id});if(!b.error)balance.textContent='Saldo para Pix: '+money(b.data[0].balance_cents)}
           });
-          body.append(balance,form,payout);card.append(name,info,body);host.append(card);
+          var details=document.createElement('details'),summary=document.createElement('summary');details.className='card-actions';summary.textContent='Gerenciar comissão e Pix';
+          body.append(form,payout);details.append(summary,body);card.append(heading,info,balance,details);host.append(card);
         });
         offset+=profiles.length;$('more-affiliates').hidden=profiles.length<pageSize;
       }
@@ -101,7 +106,7 @@
       (async function(){var auth=await client.auth.getUser();if(!auth.data?.user||auth.data.user.is_anonymous){$('access').textContent='Entre como administrador.';return}
         var p=await client.from('profiles').select('is_admin').eq('id',auth.data.user.id).single();
         if(p.error||p.data?.is_admin!==true){$('access').textContent='Acesso restrito à administração.';return}
-        $('access').hidden=true;$('workspace').hidden=false;await load(true)})().catch(function(e){$('access').textContent='Erro ao carregar: '+e.message});
+        $('access').hidden=true;$('workspace').hidden=false;await load(true)})().catch(function(e){$('access').hidden=false;$('access').textContent='Erro ao carregar: '+e.message});
     })();
   </script>
 </body>
