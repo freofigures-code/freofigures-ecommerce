@@ -318,6 +318,11 @@
                 <p class="text-[10px] font-mono text-freo-light/40 uppercase">CPF</p>
                 <p class="text-sm text-freo-light/80 font-mono" id="modal-customer-cpf">---</p>
               </div>
+              <div id="modal-affiliate-block" class="hidden border-t border-freo-orange/30 pt-3">
+                <p class="text-[10px] font-mono text-freo-orange uppercase">Venda por link de afiliado</p>
+                <p class="text-sm text-white" id="modal-affiliate-name"></p>
+                <p class="text-xs text-freo-light/60" id="modal-affiliate-commission"></p>
+              </div>
             </div>
           </div>
 
@@ -497,9 +502,20 @@
           .order('created_at', { ascending: false });
 
         if (ordersError) throw ordersError;
+        const commissionResult = await window.supabaseClient
+          .from('affiliate_commissions')
+          .select('order_id,affiliate_id,commission_cents,state')
+          .order('created_at', { ascending: false })
+          .limit(1000);
+        if (commissionResult.error) throw commissionResult.error;
+        const affiliateByOrder = {};
+        (commissionResult.data || []).forEach(c => { affiliateByOrder[c.order_id] = c; });
 
         const uniqueUserIds = [
-          ...new Set((orders || []).map(o => o.user_id).filter(Boolean))
+          ...new Set([
+            ...(orders || []).map(o => o.user_id),
+            ...(commissionResult.data || []).map(c => c.affiliate_id)
+          ].filter(Boolean))
         ];
 
         let profilesMap = {};
@@ -521,7 +537,11 @@
 
         allOrders = (orders || []).map(o => ({
           ...o,
-          profiles: profilesMap[o.user_id] || null
+          profiles: profilesMap[o.user_id] || null,
+          affiliate: affiliateByOrder[o.id] ? {
+            ...affiliateByOrder[o.id],
+            profile: profilesMap[affiliateByOrder[o.id].affiliate_id] || null
+          } : null
         }));
 
         renderOrders();
@@ -610,6 +630,7 @@
               onclick="openOrderModal(this.dataset.orderId)">
             <td class="p-4 font-mono text-sm text-white group-hover:text-freo-orange transition-colors">
               #${escapeHTML(formatOrderId(order.id))}
+              ${order.affiliate ? '<span class="block text-[10px] text-freo-orange mt-1">Indicado por afiliado</span>' : ''}
             </td>
             <td class="p-4 font-mono text-xs text-freo-light/70">
               ${escapeHTML(formatDate(order.created_at))}
@@ -675,6 +696,16 @@
         currentOrder.customer_cpf ||
         (currentOrder.profiles && currentOrder.profiles.cpf) ||
         'Não informado';
+      const affiliateBlock = document.getElementById('modal-affiliate-block');
+      affiliateBlock.classList.toggle('hidden', !currentOrder.affiliate);
+      if (currentOrder.affiliate) {
+        const p = currentOrder.affiliate.profile || {};
+        document.getElementById('modal-affiliate-name').textContent =
+          (p.name || p.email || currentOrder.affiliate.affiliate_id);
+        document.getElementById('modal-affiliate-commission').textContent =
+          'Comissão: ' + formatCurrency(Number(currentOrder.affiliate.commission_cents) / 100)
+          + ' · ' + ({pending:'Aguardando pagamento',available:'Confirmada',reversed:'Estornada'}[currentOrder.affiliate.state] || currentOrder.affiliate.state);
+      }
 
       renderShippingAddress();
       renderOrderItems();

@@ -12,10 +12,10 @@ Deno.serve(async (request: Request) => {
     const url = Deno.env.get('SUPABASE_URL')!;
     const service = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
     const { data: order, error } = await service.from('orders')
-      .select('id,user_id,status,total,payment_id,freo_verified_paid_amount,freo_credits_used,freo_rewards_eligible,is_digital')
+      .select('id,user_id,status,total,payment_id,freo_verified_paid_amount,freo_credits_used,freo_rewards_eligible,is_digital,affiliate_prepared')
       .eq('id', order_id).single();
     if (error || !order || !order.freo_rewards_eligible || !['pago', 'pendente', 'producao', 'enviado', 'entregue'].includes(String(order.status).toLowerCase())) return respond({ confirmed: false });
-    if (order.freo_verified_paid_amount !== null) return respond({ confirmed: true });
+    if (order.freo_verified_paid_amount !== null && (!order.affiliate_prepared || String(order.payment_id || '').startsWith('freo-only:'))) return respond({ confirmed: true });
     const paymentId = String(order.payment_id || '');
     if (!/^\d{5,30}$/.test(paymentId)) return respond({ confirmed: false });
     const token = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
@@ -33,6 +33,21 @@ Deno.serve(async (request: Request) => {
           || String(payment.external_reference || '') !== 'digital:' + order.id))
         || !Number.isSafeInteger(paidCents) || paidCents !== orderCents) {
       return respond({ confirmed: false });
+    }
+    if (order.freo_verified_paid_amount !== null) {
+      const refunded = ['refunded', 'charged_back'].includes(String(payment.status))
+        || ['refunded', 'partially_refunded', 'charged_back'].includes(String(payment.status_detail))
+        || Number(payment.transaction_amount_refunded || 0) > 0;
+      if (refunded) {
+        const reversal = await service.rpc('affiliate_reverse_order', {
+          p_order_id: order.id, p_reason: 'Pagamento estornado no Mercado Pago',
+        });
+        if (reversal.error) throw reversal.error;
+      } else if (payment.status === 'approved') {
+        const checked = await service.rpc('affiliate_mark_checked', { p_order_id: order.id });
+        if (checked.error) throw checked.error;
+      }
+      return respond({ confirmed: !refunded, refunded });
     }
     if (['rejected', 'cancelled'].includes(payment.status) && order.status === 'pendente') {
       if (Number(order.freo_credits_used) > 0) {

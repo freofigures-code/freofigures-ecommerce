@@ -181,6 +181,7 @@
 
   <div id="toast"></div>
   <script src="/auth-listener.js"></script>
+  <script src="/affiliate-referral.js"></script>
 
   <script>
     var kitProduct = null;
@@ -362,6 +363,10 @@
         }
 
         kitProduct = kitRes.data;
+        if (window.FreoAffiliate && new URLSearchParams(window.location.search).has('af')) {
+          var captured = await window.FreoAffiliate.capture(kitProduct.id);
+          if (!captured) throw new Error('Não foi possível registrar o link de indicação.');
+        }
 
         var relRes = await window.supabaseClient
           .from('product_kit_items')

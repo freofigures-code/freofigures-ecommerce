@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin — Afiliados | FreoFigures</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{color-scheme:dark;--gold:#e0b640;--bg:#08090b;--panel:#141619;--line:#34383d}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f8f8f8;font:16px Outfit,Arial,sans-serif}
+    a{color:var(--gold);text-decoration:none}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait}
+    header{border-bottom:1px solid var(--line);padding:18px max(20px,calc((100vw - 1150px)/2));display:flex;gap:18px;justify-content:space-between;flex-wrap:wrap}
+    main{max-width:1150px;margin:auto;padding:40px 20px 100px}h1{font-size:clamp(34px,5vw,56px);margin:0 0 8px}h2{margin:0 0 15px}
+    .muted{color:#aeb4ba;line-height:1.5}.small{font-size:13px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:23px;margin-top:22px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+    label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}input,select{width:100%;background:#0b0d0f;color:white;border:1px solid #51565d;border-radius:5px;padding:10px}
+    .button,.outline{display:inline-flex;border:1px solid var(--gold);border-radius:5px;background:var(--gold);color:#111;padding:10px 15px;font-weight:800;justify-content:center}
+    .outline{background:transparent;color:var(--gold)}.item{border:1px solid var(--line);background:#0b0d0f;padding:19px;border-radius:8px;margin-top:15px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.stat{font-size:24px;color:var(--gold);font-weight:800}
+    .error{color:#ff9292}.success{color:#9ce3ae}[hidden]{display:none!important}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}.panel{padding:17px}}
+  </style>
+</head>
+<body>
+  <header><div><a href="/dashboard.html">← Painel admin</a> · <strong>Afiliados</strong></div><a href="/admin/pedidos.html">Pedidos</a></header>
+  <main>
+    <h1>Programa de afiliados</h1>
+    <p class="muted">Ajuste a taxa geral, aumente ou reduza a taxa de uma conta, confira os dados privados e registre manualmente cada Pix com seu comprovante. Confirme o nome do destinatário no banco antes de enviar: o site não valida a titularidade da chave Pix.</p>
+    <p id="access" class="muted" role="status">Verificando acesso...</p>
+    <div id="workspace" hidden>
+      <section class="panel"><h2>Comissão geral</h2><form id="settings-form" class="row"><div style="width:200px"><label for="global-rate">Porcentagem (%)</label><input id="global-rate" type="number" min="0" max="100" step="0.01" required></div><button class="button" type="submit" style="align-self:end">Salvar taxa</button></form><p id="settings-message" role="status"></p><p class="muted small">A alteração vale para pedidos futuros. Comissões já registradas preservam a taxa aplicada na venda.</p></section>
+      <section class="panel"><div class="row between"><h2>Contas de afiliados</h2><button type="button" id="refresh" class="outline">Atualizar</button></div><div id="affiliate-list" class="muted">Carregando...</div><button id="more-affiliates" type="button" class="outline" hidden style="margin-top:18px">Carregar mais afiliados</button></section>
+    </div>
+  </main>
+  <script>
+    (function(){
+      'use strict';
+      var client=supabase.createClient('https://rrmxqpvxrpcqqxsgccqw.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM');
+      var $=function(id){return document.getElementById(id)},profiles=[],offset=0,pageSize=50;
+      var money=function(c){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((Number(c)||0)/100)};
+      function msg(el,value,good){el.textContent=value;el.className=good?'success':'error'}
+      async function load(reset){
+        if(reset){offset=0;$('affiliate-list').replaceChildren()}
+        var [settings,people]=await Promise.all([
+          client.from('affiliate_settings').select('default_rate_pct').eq('id',1).single(),
+          client.from('affiliate_profiles').select('user_id,cpf,selfie_path,pix_key,status,commission_override_pct,created_at').order('created_at',{ascending:false}).range(offset,offset+pageSize-1)
+        ]);
+        if(settings.error)throw settings.error;if(people.error)throw people.error;
+        $('global-rate').value=settings.data.default_rate_pct;profiles=people.data||[];
+        var ids=profiles.map(function(p){return p.user_id}),names={};
+        if(ids.length){var res=await client.from('profiles').select('id,name,email').in('id',ids);if(res.error)throw res.error;(res.data||[]).forEach(function(p){names[p.id]=p})}
+        var host=$('affiliate-list');
+        if(!profiles.length&&offset===0){host.textContent='Nenhum afiliado cadastrado.';return}
+        profiles.forEach(function(p){
+          var card=document.createElement('article');card.className='item';
+          var name=document.createElement('h3'),info=document.createElement('p'),body=document.createElement('div'),form=document.createElement('form');
+          var person=names[p.user_id]||{};name.textContent=person.name||person.email||p.user_id;
+          info.className='muted small';info.textContent='CPF: '+p.cpf+' · '+(person.email||'')+' · '+(p.status==='active'?'Ativo':'Suspenso');
+          var selfie=document.createElement('button');selfie.type='button';selfie.className='outline';selfie.textContent='Ver selfie privada';
+          selfie.addEventListener('click',async function(){var signed=await client.storage.from('affiliate-selfies').createSignedUrl(p.selfie_path,60);if(signed.error){alert(signed.error.message);return}window.open(signed.data.signedUrl,'_blank','noopener,noreferrer')});
+          var balance=document.createElement('p');balance.className='stat';balance.textContent='Saldo: carregando...';
+          client.rpc('affiliate_balance',{p_user_id:p.user_id}).then(function(r){balance.textContent=r.error?'Saldo indisponível':'Saldo para Pix: '+money(r.data[0].balance_cents)});
+          var grid=document.createElement('div');grid.className='grid';
+          var rateWrap=document.createElement('div'),rateLabel=document.createElement('label'),rate=document.createElement('input');
+          rateLabel.textContent='Taxa individual (%) · vazio usa geral';rate.type='number';rate.min='0';rate.max='100';rate.step='0.01';rate.value=p.commission_override_pct??'';
+          rateWrap.append(rateLabel,rate);
+          var statusWrap=document.createElement('div'),statusLabel=document.createElement('label'),status=document.createElement('select');
+          statusLabel.textContent='Situação';[['active','Ativo'],['suspended','Suspenso']].forEach(function(option){var el=document.createElement('option');el.value=option[0];el.textContent=option[1];status.append(el)});status.value=p.status;statusWrap.append(statusLabel,status);
+          grid.append(rateWrap,statusWrap);
+          var save=document.createElement('button');save.className='button';save.type='submit';save.textContent='Salvar ajustes';
+          var state=document.createElement('p');state.setAttribute('role','status');
+          form.append(grid,save,state);
+          form.addEventListener('submit',async function(event){event.preventDefault();save.disabled=true;var raw=rate.value.trim(),override=raw===''?null:Number(raw);
+            if(override!==null&&(!Number.isFinite(override)||override<0||override>100)){msg(state,'Taxa inválida.');save.disabled=false;return}
+            var r=await client.rpc('affiliate_admin_update',{p_user_id:p.user_id,p_status:status.value,p_override:override});
+            msg(state,r.error?r.error.message:'Alterações salvas.',!r.error);save.disabled=false});
+          var payout=document.createElement('form'),payGrid=document.createElement('div');payGrid.className='grid';
+          var amountWrap=document.createElement('div'),amountLabel=document.createElement('label'),amount=document.createElement('input');
+          amountLabel.textContent='Valor pago via Pix (R$)';amount.type='number';amount.min='0.01';amount.step='0.01';amount.required=true;amountWrap.append(amountLabel,amount);
+          var refWrap=document.createElement('div'),refLabel=document.createElement('label'),ref=document.createElement('input');
+          refLabel.textContent='ID ou código do comprovante Pix';ref.minLength=6;ref.maxLength=120;ref.required=true;refWrap.append(refLabel,ref);
+          payGrid.append(amountWrap,refWrap);
+          var payButton=document.createElement('button');payButton.type='submit';payButton.className='outline';payButton.textContent='Registrar Pix já enviado';
+          var payState=document.createElement('p');payState.setAttribute('role','status');
+          payout.append(payGrid,payButton,payState);
+          payout.addEventListener('submit',async function(event){event.preventDefault();var cents=Math.round(Number(amount.value)*100);
+            if(!Number.isSafeInteger(cents)||cents<=0||!confirm('Confirma que você já enviou '+money(cents)+' à chave Pix '+(p.pix_key||'não cadastrada')+'?'))return;
+            payButton.disabled=true;var r=await client.rpc('affiliate_record_payout',{p_affiliate_id:p.user_id,p_amount_cents:cents,p_pix_reference:ref.value.trim()});
+            msg(payState,r.error?r.error.message:'Pix registrado com comprovante #'+r.data,!r.error);payButton.disabled=false;
+            if(!r.error){amount.value='';ref.value='';var b=await client.rpc('affiliate_balance',{p_user_id:p.user_id});if(!b.error)balance.textContent='Saldo para Pix: '+money(b.data[0].balance_cents)}
+          });
+          body.append(selfie,balance,form,payout);card.append(name,info,body);host.append(card);
+        });
+        offset+=profiles.length;$('more-affiliates').hidden=profiles.length<pageSize;
+      }
+      $('settings-form').addEventListener('submit',async function(event){event.preventDefault();var rate=Number($('global-rate').value);
+        if(!Number.isFinite(rate)||rate<0||rate>100){msg($('settings-message'),'Porcentagem inválida.');return}
+        var r=await client.from('affiliate_settings').update({default_rate_pct:rate}).eq('id',1);
+        msg($('settings-message'),r.error?r.error.message:'Taxa geral salva para próximos pedidos.',!r.error)});
+      $('refresh').addEventListener('click',function(){load(true).catch(function(e){$('affiliate-list').textContent=e.message})});
+      $('more-affiliates').addEventListener('click',function(){load(false).catch(function(e){alert(e.message)})});
+      (async function(){var auth=await client.auth.getUser();if(!auth.data?.user||auth.data.user.is_anonymous){$('access').textContent='Entre como administrador.';return}
+        var p=await client.from('profiles').select('is_admin').eq('id',auth.data.user.id).single();
+        if(p.error||p.data?.is_admin!==true){$('access').textContent='Acesso restrito à administração.';return}
+        $('access').hidden=true;$('workspace').hidden=false;await load(true)})().catch(function(e){$('access').textContent='Erro ao carregar: '+e.message});
+    })();
+  </script>
+</body>
+</html>

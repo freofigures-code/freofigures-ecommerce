@@ -483,6 +483,10 @@
           class="hidden items-center gap-2 text-xs font-mono text-white/40 border border-white/10 px-3 py-1.5 hover:text-white transition-colors">
           Cupons
         </a>
+        <a href="/admin/afiliados.html" id="nav-admin-afiliados"
+          class="hidden items-center gap-2 text-xs font-mono text-white/40 border border-white/10 px-3 py-1.5 hover:text-white transition-colors">
+          Afiliados
+        </a>
         <a href="/admin/frete.html" id="nav-admin-frete"
           class="hidden items-center gap-2 text-xs font-mono text-white/40 border border-white/10 px-3 py-1.5 hover:text-white transition-colors">
           Frete
@@ -497,6 +501,10 @@
           class="hidden items-center gap-2 text-xs font-mono text-white/50 border border-white/10 px-3 py-1.5 hover:text-freo-orange hover:border-freo-orange/30 transition-colors">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l8 4.5v9L12 20l-8-4.5v-9L12 2zm0 0v9m8-4.5l-8 4.5m-8-4.5l8 4.5"/></svg>
           Minhas Criações 3D
+        </a>
+        <a href="/afiliados.html" id="my-affiliates-btn"
+          class="hidden items-center gap-2 text-xs font-mono text-white/50 border border-white/10 px-3 py-1.5 hover:text-freo-orange hover:border-freo-orange/30 transition-colors">
+          Afiliados
         </a>
         <button id="logout-btn" class="hidden text-xs font-mono text-white/30 border border-white/[0.07] px-3 py-1.5 hover:text-white hover:border-white/20 transition-colors">Sair</button>
       </div>
@@ -544,6 +552,7 @@
           <div class="text-center py-10"><div class="w-8 h-8 border-2 border-freo-orange/40 border-t-freo-orange rounded-full animate-spin mx-auto"></div></div>
         </div>
         <a href="/admin/criacoes.html" class="block bg-freo-dark border border-freo-orange/30 p-4 text-freo-orange font-display font-bold">Feito por vocês — aprovar criações →</a>
+        <a href="/admin/afiliados.html" class="block bg-freo-dark border border-freo-orange/30 p-4 text-freo-orange font-display font-bold">Afiliados — taxas, cadastros e Pix →</a>
         <div class="grid grid-cols-2 gap-3 pt-2">
           <a href="/admin/produtos.html" class="flex items-center gap-3 bg-freo-dark border border-white/10 p-4 hover:border-freo-orange/40 transition-colors group">
             <div class="w-9 h-9 bg-freo-orange/10 flex items-center justify-center group-hover:bg-freo-orange/20 transition-colors flex-shrink-0">
@@ -760,6 +769,13 @@
             <p id="creator-summary-stats" class="mt-2 text-sm text-white/55"></p>
             <div id="creator-summary-products" class="mt-4 space-y-2"></div>
             <a href="/minhas-criacoes.html#criador" class="btn-gold mt-4 inline-block px-4 py-3 text-xs">Gerenciar meu perfil de criador</a>
+          </div>
+
+          <div class="dash-card corner-tl corner-br p-5 fade-up fade-up-d1">
+            <p class="font-mono text-[10px] uppercase tracking-widest text-freo-orange">Programa de afiliados</p>
+            <h2 class="mt-2 font-display text-2xl font-black">Indique produtos FreoFigures</h2>
+            <p class="mt-2 text-sm text-white/55">Crie seus links, acompanhe as vendas confirmadas e receba comissões por Pix.</p>
+            <a href="/afiliados.html" class="btn-gold mt-4 inline-block px-4 py-3 text-xs">Abrir minha área de afiliado</a>
           </div>
 
           <!-- Cart section -->
@@ -1070,6 +1086,8 @@
     document.getElementById('nav-admin-pedidos').classList.add('flex');
     document.getElementById('nav-admin-cupons').classList.remove('hidden');
     document.getElementById('nav-admin-cupons').classList.add('flex');
+    document.getElementById('nav-admin-afiliados').classList.remove('hidden');
+    document.getElementById('nav-admin-afiliados').classList.add('flex');
     document.getElementById('nav-admin-frete').classList.remove('hidden');
     document.getElementById('nav-admin-frete').classList.add('flex');
     document.getElementById('logout-btn').classList.remove('hidden');
@@ -1105,6 +1123,9 @@
       generationsBtn.classList.remove('hidden');
       generationsBtn.classList.add('flex');
     }
+    var affiliatesBtn = document.getElementById('my-affiliates-btn');
+    affiliatesBtn.classList.remove('hidden');
+    affiliatesBtn.classList.add('flex');
     document.getElementById('logout-btn').classList.remove('hidden');
 
     var name = (profile && (profile.full_name || profile.name)) || user.email.split('@')[0];
@@ -1392,6 +1413,13 @@
 
       if (r.error) throw r.error;
       var orders = r.data || [];
+      var referredOrders = new Set();
+      if (orders.length) {
+        var referrals = await window.supabaseClient.from('affiliate_commissions')
+          .select('order_id').in('order_id', orders.map(function(o) { return o.id; }));
+        if (referrals.error) throw referrals.error;
+        (referrals.data || []).forEach(function(c) { referredOrders.add(String(c.order_id)); });
+      }
       document.getElementById('orders-badge').innerText = orders.length;
 
       if (orders.length === 0) {
@@ -1413,7 +1441,8 @@
         return '<div class="order-row">'
           + '<div class="flex-1 min-w-0">'
           + '<div class="flex items-center gap-2 mb-0.5"><p class="font-mono text-sm font-bold text-white">#' + o.id + '</p>'
-          + '<span class="status-badge ' + sc + '">' + lb + '</span></div>'
+          + '<span class="status-badge ' + sc + '">' + lb + '</span>'
+          + (referredOrders.has(String(o.id)) ? '<span class="status-badge status-pago">Afiliado</span>' : '') + '</div>'
           + '<p class="font-mono text-xs text-white/30">' + date + ' · ' + (o.user_email || o.user_id || '—') + '</p>'
           + '</div>'
           + '<div class="text-right flex-shrink-0">'

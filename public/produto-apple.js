@@ -692,6 +692,10 @@ async function init() {
         var result = await window.supabaseClient.from('products').select('*').eq('id', id).eq('is_active', true).eq('b2b_category', 'loja').single();
         if (result.error || !result.data)
             throw new Error('Esta peça não está disponível ou não foi possível carregar o catálogo.');
+        if (window.FreoAffiliate && new URLSearchParams(location.search).has('af')) {
+            var captured = await window.FreoAffiliate.capture(result.data.id);
+            if (!captured) throw new Error('Não foi possível registrar o link de indicação. Atualize a página e tente novamente.');
+        }
         if (result.data.is_kit && result.data.kit_type === 'configurable') {
             location.replace('/montar-kit.html?id=' + encodeURIComponent(id));
             return;
