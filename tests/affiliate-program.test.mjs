@@ -54,6 +54,26 @@ test('referral has a locked price snapshot, requires verified cash, and reverses
     await db.exec(`
       insert into storage.objects values(
         'affiliate-selfies',
+        '00000000-0000-4000-8000-000000000001/22222222-2222-4222-8222-222222222222.jpg',
+        '00000000-0000-4000-8000-000000000001',
+        '{"size":10240,"mimetype":"image/jpeg"}'
+      );
+      insert into public.affiliate_profiles(user_id,cpf,selfie_path) values(
+        '00000000-0000-4000-8000-000000000001','11144477735',
+        '00000000-0000-4000-8000-000000000001/22222222-2222-4222-8222-222222222222.jpg'
+      );
+    `);
+    const phoneMigration = await readFile(new URL('../supabase/migrations/20261014184213_affiliate_phone_signup.sql', import.meta.url), 'utf8');
+    await db.exec(phoneMigration);
+    const phoneDiagnostic = await readFile(new URL('../supabase/diagnostics/affiliate_phone_signup_postflight.sql', import.meta.url), 'utf8');
+    const phoneChecks = (await db.query(phoneDiagnostic)).rows[0].verificacao_cadastro_afiliados;
+    assert.ok(Object.values(phoneChecks).every(Boolean),JSON.stringify(phoneChecks));
+    const legacy = (await db.query("select phone,selfie_path from public.affiliate_profiles where user_id='00000000-0000-4000-8000-000000000001'")).rows[0];
+    assert.equal(legacy.phone,null);
+    assert.match(legacy.selfie_path,/22222222-2222-4222-8222-222222222222\.jpg$/);
+    await db.exec(`
+      insert into storage.objects values(
+        'affiliate-selfies',
         '00000000-0000-4000-8000-000000000002/11111111-1111-4111-8111-111111111111.jpg',
         '00000000-0000-4000-8000-000000000002',
         '{"size":10240,"mimetype":"image/jpeg"}'
@@ -62,10 +82,14 @@ test('referral has a locked price snapshot, requires verified cash, and reverses
       set role authenticated;
     `);
     await assert.rejects(
-      db.exec(`select public.affiliate_register('11111111111','00000000-0000-4000-8000-000000000002/11111111-1111-4111-8111-111111111111.jpg')`),
+      db.exec(`select public.affiliate_register_phone('11111111111','11912345678')`),
       /CPF inválido/
     );
-    await db.exec(`select public.affiliate_register('52998224725','00000000-0000-4000-8000-000000000002/11111111-1111-4111-8111-111111111111.jpg')`);
+    await assert.rejects(db.exec(`select public.affiliate_register_phone('52998224725','123')`),/Telefone inválido/);
+    await db.exec(`select public.affiliate_register_phone('529.982.247-25','(11) 91234-5678')`);
+    const newProfile = (await db.query("select cpf,phone,selfie_path from public.affiliate_profiles where user_id='00000000-0000-4000-8000-000000000002'")).rows[0];
+    assert.deepEqual(newProfile,{cpf:'52998224725',phone:'11912345678',selfie_path:null});
+    await assert.rejects(db.exec(`insert into storage.objects values('affiliate-selfies','00000000-0000-4000-8000-000000000002/33333333-3333-4333-8333-333333333333.jpg','00000000-0000-4000-8000-000000000002','{}')`),/row-level security|permission denied/i);
     const link = (await db.query('select public.affiliate_get_link(1) as id')).rows[0].id;
     await assert.rejects(db.exec(`update public.affiliate_profiles set commission_override_pct=90`), /permission denied/);
     await db.exec(`reset role; select set_config('test.uid','00000000-0000-4000-8000-000000000003',false); set role authenticated;`);
@@ -133,4 +157,14 @@ test('affiliate UI and payment integration scripts parse', async () => {
     const source = await readFile(new URL(path, import.meta.url),'utf8');
     assert.doesNotThrow(() => new Function(source));
   }
+  const affiliateHtml = await readFile(new URL('../public/afiliados.html',import.meta.url),'utf8');
+  assert.match(affiliateHtml,/<input id="phone"[^>]*type="tel"/);
+  assert.doesNotMatch(affiliateHtml,/<input[^>]*type="file"/);
+  assert.match(affiliateHtml,/affiliate_register_phone/);
+  const formatter = affiliateHtml.match(/function formatCpf\(value\)\{[^\n]+\}/)?.[0];
+  assert.ok(formatter);
+  const formatCpf = new Function(`${formatter}; return formatCpf`)();
+  assert.equal(formatCpf('52998224725'),'529.982.247-25');
+  assert.equal(formatCpf('529.982.247-25'),'529.982.247-25');
+  assert.equal(formatCpf('529.98'),'529.98');
 });

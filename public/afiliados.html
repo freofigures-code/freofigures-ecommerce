@@ -19,7 +19,7 @@
     .outline{color:var(--gold);background:transparent}.button:hover,.outline:hover{filter:brightness(1.13)}
     label{display:block;margin:18px 0 7px;font-weight:700;font-size:14px}
     input{width:100%;border:1px solid #51565d;border-radius:6px;background:#0b0d0f;color:white;padding:12px}
-    input[type=file]{padding:10px}.field{max-width:470px}.status{min-height:22px;margin-top:14px}.error{color:#ff9292}.success{color:#9ce3ae}
+    .field{max-width:470px}.status{min-height:22px;margin-top:14px}.error{color:#ff9292}.success{color:#9ce3ae}
     .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stat{background:#0b0d0f;border:1px solid var(--line);padding:18px;border-radius:8px}.stat strong{display:block;font-size:25px;margin-top:7px;color:var(--gold)}
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .product{border:1px solid var(--line);border-radius:8px;background:#0b0d0f;padding:14px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:15px}
@@ -41,11 +41,11 @@
 
     <section id="register-section" class="panel" hidden aria-labelledby="register-title">
       <h2 id="register-title">Quero me afiliar</h2>
-      <p class="muted">Informe seu CPF e envie uma selfie nítida do rosto. A selfie fica privada. Seus links são liberados após o cadastro.</p>
+      <p class="muted">Informe seu CPF e telefone para ativar a afiliação. Esses dados ficam privados e seus links são liberados após o cadastro.</p>
       <form id="register-form">
         <div class="field"><label for="cpf">CPF</label><input id="cpf" inputmode="numeric" autocomplete="off" maxlength="14" required placeholder="000.000.000-00"></div>
-        <div class="field"><label for="selfie">Sua selfie (JPG, PNG ou WEBP, até 5 MiB)</label><input id="selfie" type="file" accept="image/jpeg,image/png,image/webp" capture="user" required></div>
-        <label class="muted small" style="font-weight:400"><input type="checkbox" required style="width:auto;margin-right:8px">Li como CPF, selfie, links e pagamentos são tratados na <a href="/politicas.html">política de privacidade</a>.</label>
+        <div class="field"><label for="phone">Telefone com DDD</label><input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="15" required placeholder="(11) 91234-5678"></div>
+        <label class="muted small" style="font-weight:400"><input type="checkbox" required style="width:auto;margin-right:8px">Li como CPF, telefone, links e pagamentos são tratados na <a href="/politicas.html">política de privacidade</a>.</label>
         <button id="register-button" type="submit" class="button">Ativar minha afiliação</button>
       </form>
       <p id="register-message" class="status" role="status"></p>
@@ -74,6 +74,9 @@
       var $=function(id){return document.getElementById(id)}, user=null, profile=null, rate=10, offset=0, pageSize=40;
       var money=function(cents){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((Number(cents)||0)/100)};
       function cpfValid(value){var s=String(value).replace(/\D/g,'');if(s.length!==11||/^(.)\1{10}$/.test(s))return false;for(var d=10;d<=11;d++){var sum=0;for(var i=0;i<d-1;i++)sum+=Number(s[i])*(d+1-i);var check=(sum*10)%11;if(check===10)check=0;if(check!==Number(s[d-1]))return false}return true}
+      function formatCpf(value){var s=String(value).replace(/\D/g,'').slice(0,11);return s.slice(0,3)+(s.length>3?'.'+s.slice(3,6):'')+(s.length>6?'.'+s.slice(6,9):'')+(s.length>9?'-'+s.slice(9):'')}
+      function formatPhone(value){var s=String(value).replace(/\D/g,'').slice(0,11);if(s.length<=2)return s.length?'('+s:'';return '('+s.slice(0,2)+') '+s.slice(2,s.length>10?7:6)+(s.length>(s.length>10?7:6)?'-'+s.slice(s.length>10?7:6):'')}
+      function phoneValid(value){return /^[1-9]{2}[0-9]{8,9}$/.test(String(value).replace(/\D/g,''))}
       function status(id,message,good){$(id).textContent=message;$(id).className='status '+(good?'success':'error')}
       async function initialize(){
         var auth=await client.auth.getUser();user=auth.data&&auth.data.user;
@@ -86,22 +89,17 @@
         await showArea();
       }
       async function register(event){
-        event.preventDefault();var button=$('register-button'),file=$('selfie').files[0],cpf=$('cpf').value;
+        event.preventDefault();var button=$('register-button'),cpf=$('cpf').value,phone=$('phone').value;
         if(!cpfValid(cpf)){status('register-message','Confira o CPF informado.');return}
-        if(!file||!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size<100||file.size>5242880){status('register-message','Envie uma selfie JPG, PNG ou WEBP de até 5 MiB.');return}
-        button.disabled=true;status('register-message','Enviando sua selfie privada...',true);
-        var path=user.id+'/'+crypto.randomUUID()+'.'+({ 'image/jpeg':'jpg','image/png':'png','image/webp':'webp' }[file.type]);
-        var uploaded=false;
+        if(!phoneValid(phone)){status('register-message','Confira o telefone com DDD.');return}
+        button.disabled=true;status('register-message','Ativando sua afiliação...',true);
         try{
-          var up=await client.storage.from('affiliate-selfies').upload(path,file,{contentType:file.type,upsert:false});
-          if(up.error)throw up.error;uploaded=true;
-          var saved=await client.rpc('affiliate_register',{p_cpf:cpf,p_selfie_path:path});
+          var saved=await client.rpc('affiliate_register_phone',{p_cpf:cpf,p_phone:phone});
           if(saved.error)throw saved.error;
           var current=await client.from('affiliate_profiles').select('*').eq('user_id',user.id).single();
           if(current.error)throw current.error;profile=current.data;
           $('register-section').hidden=true;await showArea();
         }catch(e){
-          if(uploaded)await client.storage.from('affiliate-selfies').remove([path]);
           status('register-message',e.message||'Não foi possível concluir o cadastro.');
         }finally{button.disabled=false}
       }
@@ -202,6 +200,8 @@
         var paid=$('payout-list');paid.replaceChildren();payouts.data.forEach(function(p){var row=document.createElement('div');row.className='ledger-row muted';
           row.textContent='Pix registrado em '+new Date(p.paid_at).toLocaleDateString('pt-BR')+' · '+money(p.amount_cents)+' · comprovante '+p.pix_reference;paid.append(row)});
       }
+      $('cpf').addEventListener('input',function(){this.value=formatCpf(this.value)});
+      $('phone').addEventListener('input',function(){this.value=formatPhone(this.value)});
       $('register-form').addEventListener('submit',register);
       $('pix-form').addEventListener('submit',async function(event){event.preventDefault();var r=await client.rpc('affiliate_update_pix_key',{p_pix_key:$('pix-key').value.trim()});status('pix-message',r.error?r.error.message:'Chave Pix salva.',!r.error)});
       $('more-products').addEventListener('click',function(){loadProducts().catch(function(e){alert(e.message)})});

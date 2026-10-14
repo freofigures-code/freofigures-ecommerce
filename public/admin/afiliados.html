@@ -42,7 +42,7 @@
         if(reset){offset=0;$('affiliate-list').replaceChildren()}
         var [settings,people]=await Promise.all([
           client.from('affiliate_settings').select('default_rate_pct').eq('id',1).single(),
-          client.from('affiliate_profiles').select('user_id,cpf,selfie_path,pix_key,status,commission_override_pct,created_at').order('created_at',{ascending:false}).range(offset,offset+pageSize-1)
+          client.from('affiliate_profiles').select('user_id,cpf,phone,selfie_path,pix_key,status,commission_override_pct,created_at').order('created_at',{ascending:false}).range(offset,offset+pageSize-1)
         ]);
         if(settings.error)throw settings.error;if(people.error)throw people.error;
         $('global-rate').value=settings.data.default_rate_pct;profiles=people.data||[];
@@ -54,9 +54,9 @@
           var card=document.createElement('article');card.className='item';
           var name=document.createElement('h3'),info=document.createElement('p'),body=document.createElement('div'),form=document.createElement('form');
           var person=names[p.user_id]||{};name.textContent=person.name||person.email||p.user_id;
-          info.className='muted small';info.textContent='CPF: '+p.cpf+' · '+(person.email||'')+' · '+(p.status==='active'?'Ativo':'Suspenso');
-          var selfie=document.createElement('button');selfie.type='button';selfie.className='outline';selfie.textContent='Ver selfie privada';
-          selfie.addEventListener('click',async function(){var signed=await client.storage.from('affiliate-selfies').createSignedUrl(p.selfie_path,60);if(signed.error){alert(signed.error.message);return}window.open(signed.data.signedUrl,'_blank','noopener,noreferrer')});
+          info.className='muted small';info.textContent='CPF: '+p.cpf+' · Telefone: '+(p.phone||'não informado')+' · '+(person.email||'')+' · '+(p.status==='active'?'Ativo':'Suspenso');
+          if(p.selfie_path){var selfie=document.createElement('button');selfie.type='button';selfie.className='outline';selfie.textContent='Ver foto antiga privada';
+            selfie.addEventListener('click',async function(){var signed=await client.storage.from('affiliate-selfies').createSignedUrl(p.selfie_path,60);if(signed.error){alert(signed.error.message);return}window.open(signed.data.signedUrl,'_blank','noopener,noreferrer')});body.append(selfie)}
           var balance=document.createElement('p');balance.className='stat';balance.textContent='Saldo: carregando...';
           client.rpc('affiliate_balance',{p_user_id:p.user_id}).then(function(r){balance.textContent=r.error?'Saldo indisponível':'Saldo para Pix: '+money(r.data[0].balance_cents)});
           var grid=document.createElement('div');grid.className='grid';
@@ -88,7 +88,7 @@
             msg(payState,r.error?r.error.message:'Pix registrado com comprovante #'+r.data,!r.error);payButton.disabled=false;
             if(!r.error){amount.value='';ref.value='';var b=await client.rpc('affiliate_balance',{p_user_id:p.user_id});if(!b.error)balance.textContent='Saldo para Pix: '+money(b.data[0].balance_cents)}
           });
-          body.append(selfie,balance,form,payout);card.append(name,info,body);host.append(card);
+          body.append(balance,form,payout);card.append(name,info,body);host.append(card);
         });
         offset+=profiles.length;$('more-affiliates').hidden=profiles.length<pageSize;
       }
