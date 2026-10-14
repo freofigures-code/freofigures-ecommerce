@@ -167,4 +167,11 @@ test('affiliate UI and payment integration scripts parse', async () => {
   assert.equal(formatCpf('52998224725'),'529.982.247-25');
   assert.equal(formatCpf('529.982.247-25'),'529.982.247-25');
   assert.equal(formatCpf('529.98'),'529.98');
+  const validator = affiliateHtml.match(/function cpfValid\(value\)\{[^\n]+\}/)?.[0];
+  assert.ok(validator);
+  const cpfValid = new Function(`${validator}; return cpfValid`)();
+  assert.equal(cpfValid('52998224725'),true);
+  assert.equal(cpfValid('529.982.247-25'),true);
+  assert.equal(cpfValid('52998224726'),false);
+  assert.equal(cpfValid('111.111.111-11'),false);
 });
