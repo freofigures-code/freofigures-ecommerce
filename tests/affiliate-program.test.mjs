@@ -9,7 +9,7 @@ test('referral has a locked price snapshot, requires verified cash, and reverses
     await db.exec(`
       create role anon; create role authenticated; create role service_role bypassrls;
       create schema auth; create schema storage; create schema private; create schema cron;
-      create table auth.users(id uuid primary key,is_anonymous boolean not null default false);
+      create table auth.users(id uuid primary key,is_anonymous boolean not null default false,email text);
       create function auth.uid() returns uuid language sql stable
         as 'select nullif(current_setting(''test.uid'',true),'''')::uuid';
       create function auth.jwt() returns jsonb language sql stable as 'select ''{}''::jsonb';
@@ -32,9 +32,9 @@ test('referral has a locked price snapshot, requires verified cash, and reverses
       create function cron.schedule(text,text,text) returns bigint language sql as 'select 1::bigint';
       create table cron.job(jobname text);
       insert into auth.users values
-        ('00000000-0000-4000-8000-000000000001',false),
-        ('00000000-0000-4000-8000-000000000002',false),
-        ('00000000-0000-4000-8000-000000000003',false);
+        ('00000000-0000-4000-8000-000000000001',false,'admin@example.test'),
+        ('00000000-0000-4000-8000-000000000002',false,'affiliate@example.test'),
+        ('00000000-0000-4000-8000-000000000003',false,'buyer@example.test');
       insert into public.profiles values
         ('00000000-0000-4000-8000-000000000001',true),
         ('00000000-0000-4000-8000-000000000002',false),
@@ -68,6 +68,11 @@ test('referral has a locked price snapshot, requires verified cash, and reverses
     const phoneDiagnostic = await readFile(new URL('../supabase/diagnostics/affiliate_phone_signup_postflight.sql', import.meta.url), 'utf8');
     const phoneChecks = (await db.query(phoneDiagnostic)).rows[0].verificacao_cadastro_afiliados;
     assert.ok(Object.values(phoneChecks).every(Boolean),JSON.stringify(phoneChecks));
+    const identityMigration = await readFile(new URL('../supabase/migrations/20261014202415_affiliate_admin_identity.sql', import.meta.url), 'utf8');
+    await db.exec(identityMigration);
+    const identityDiagnostic = await readFile(new URL('../supabase/diagnostics/affiliate_admin_identity_postflight.sql', import.meta.url), 'utf8');
+    const identityChecks = (await db.query(identityDiagnostic)).rows[0].verificacao_email_afiliados;
+    assert.ok(Object.values(identityChecks).every(Boolean),JSON.stringify(identityChecks));
     const legacy = (await db.query("select phone,selfie_path from public.affiliate_profiles where user_id='00000000-0000-4000-8000-000000000001'")).rows[0];
     assert.equal(legacy.phone,null);
     assert.match(legacy.selfie_path,/22222222-2222-4222-8222-222222222222\.jpg$/);
@@ -89,6 +94,11 @@ test('referral has a locked price snapshot, requires verified cash, and reverses
     await db.exec(`select public.affiliate_register_phone('529.982.247-25','(11) 91234-5678')`);
     const newProfile = (await db.query("select cpf,phone,selfie_path from public.affiliate_profiles where user_id='00000000-0000-4000-8000-000000000002'")).rows[0];
     assert.deepEqual(newProfile,{cpf:'52998224725',phone:'11912345678',selfie_path:null});
+    await assert.rejects(db.exec("select * from public.affiliate_admin_identity(array['00000000-0000-4000-8000-000000000002']::uuid[])"),/Acesso negado/);
+    await db.exec("reset role; select set_config('test.uid','00000000-0000-4000-8000-000000000001',false); set role authenticated;");
+    const identities = (await db.query("select * from public.affiliate_admin_identity(array['00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000003']::uuid[])")).rows;
+    assert.deepEqual(identities,[{user_id:'00000000-0000-4000-8000-000000000002',email:'affiliate@example.test'}]);
+    await db.exec("reset role; select set_config('test.uid','00000000-0000-4000-8000-000000000002',false); set role authenticated;");
     await assert.rejects(db.exec(`insert into storage.objects values('affiliate-selfies','00000000-0000-4000-8000-000000000002/33333333-3333-4333-8333-333333333333.jpg','00000000-0000-4000-8000-000000000002','{}')`),/row-level security|permission denied/i);
     const link = (await db.query('select public.affiliate_get_link(1) as id')).rows[0].id;
     await assert.rejects(db.exec(`update public.affiliate_profiles set commission_override_pct=90`), /permission denied/);
@@ -174,4 +184,8 @@ test('affiliate UI and payment integration scripts parse', async () => {
   assert.equal(cpfValid('529.982.247-25'),true);
   assert.equal(cpfValid('52998224726'),false);
   assert.equal(cpfValid('111.111.111-11'),false);
+  const adminHtml = await readFile(new URL('../public/admin/afiliados.html',import.meta.url),'utf8');
+  assert.match(adminHtml,/class="affiliate-cards"/);
+  assert.match(adminHtml,/affiliate_admin_identity/);
+  assert.doesNotMatch(adminHtml,/client\.from\('profiles'\)\.select\('id,name,email'\)/);
 });
