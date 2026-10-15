@@ -175,3 +175,31 @@ test('affiliate UI and payment integration scripts parse', async () => {
   assert.equal(cpfValid('52998224726'),false);
   assert.equal(cpfValid('111.111.111-11'),false);
 });
+
+test('affiliate variation preview uses the option price validated by checkout', async () => {
+  const html = await readFile(new URL('../public/afiliados.html',import.meta.url),'utf8');
+  const start = html.indexOf('function productVariantGroups');
+  const end = html.indexOf('function productImage',start);
+  assert.ok(start > -1 && end > start);
+  const pricing = new Function('var rate=10;'+html.slice(start,end)+';return {productVariantGroups,selectedVariantPrice,productBase,estimatedCommission}')();
+  const product = {price:180,promotional_price:30,is_kit:false,variants:[
+    {name:'Tamanho',per_option_price:true,options:[
+      {name:'10 cm',price:30},{name:'15 cm',price:60},{name:'20 cm',price:77},{name:'25 cm',price:120}
+    ]},
+    {name:'Cor',per_option_price:false,options:['Branco','Dourado']}
+  ]};
+  const groups = pricing.productVariantGroups(product);
+  assert.equal(pricing.productBase(product),30);
+  assert.deepEqual([0,1,2,3].map(i=>pricing.selectedVariantPrice(groups,[i,0],30)),[30,60,77,120]);
+  assert.equal(pricing.selectedVariantPrice(groups,[1,1],30),60);
+  assert.deepEqual([30,60,77,120].map(pricing.estimatedCommission),[300,600,770,1200]);
+  const fallback = {price:50,promotional_price:null,is_kit:false,variants:[
+    {name:'Tamanho',per_option_price:true,options:[{name:'P',price:null},{name:'G',price:80}]},
+    {name:'Acabamento',per_option_price:true,options:[{name:'Padrão',price:40},{name:'Especial',price:70}]}
+  ]};
+  const fallbackGroups = pricing.productVariantGroups(fallback);
+  assert.equal(pricing.selectedVariantPrice(fallbackGroups,[0,1],50),70);
+  assert.equal(pricing.selectedVariantPrice(fallbackGroups,[1,0],50),80);
+  assert.equal(pricing.productBase(fallback),40);
+  assert.match(html,/Ver variações e comissões/);
+});

@@ -24,7 +24,11 @@
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .product{border:1px solid var(--line);border-radius:8px;background:#0b0d0f;padding:14px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:15px}
     .product img{width:96px;height:96px;object-fit:cover;border-radius:5px;background:#202327}
-    .product .button{margin-top:10px}.link-row,.ledger-row{border-top:1px solid var(--line);padding:15px 0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+    .product-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.product-actions button{font-size:14px;padding:9px 12px}
+    .variant-panel{grid-column:1/-1;border-top:1px solid var(--line);padding-top:14px}.variant-group{margin:0 0 14px}.variant-group strong{display:block;margin-bottom:8px}
+    .variant-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:8px}.variant-option{width:100%;text-align:left;border:1px solid var(--line);border-radius:6px;background:#15191d;color:#f8f8f8;padding:10px;cursor:pointer}
+    .variant-option[aria-pressed="true"]{border-color:var(--gold);background:#302713}.variant-option:focus-visible,.product-actions button:focus-visible{outline:2px solid white;outline-offset:2px}.variant-option span{display:block}.variant-option small{display:block;color:#aeb4ba;margin-top:4px}.variant-total{color:var(--gold);font-weight:800;margin:4px 0 0}
+    .link-row,.ledger-row{border-top:1px solid var(--line);padding:15px 0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
     .url{overflow-wrap:anywhere;font-size:13px;color:#e9edf0}.pill{display:inline-block;border:1px solid #685821;color:var(--gold);padding:4px 7px;border-radius:4px;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
     [hidden]{display:none!important}
     @media(max-width:700px){main{padding-top:30px}.panel{padding:18px}.stats,.grid{grid-template-columns:1fr}.product{grid-template-columns:75px minmax(0,1fr)}.product img{width:75px;height:75px}.link-row{display:block}.link-row button{margin-top:10px}}
@@ -63,7 +67,7 @@
         <form id="pix-form" class="field"><label for="pix-key">Sua chave Pix para receber</label><input id="pix-key" maxlength="120" required placeholder="CPF, e-mail, celular ou chave aleatória"><button type="submit" class="outline" style="margin-top:10px">Salvar chave Pix</button><p id="pix-message" class="status" role="status"></p></form>
       </section>
       <section class="panel"><div class="row between"><div><p class="eyebrow">SEUS LINKS</p><h2>Prontos para compartilhar</h2></div></div><div id="links-list" class="muted">Nenhum link gerado ainda.</div></section>
-      <section class="panel"><p class="eyebrow">CATÁLOGO</p><h2>Escolha um produto para divulgar</h2><p class="muted small">A previsão usa o preço da peça e sua taxa atual; variações, kits e promoções podem alterar o valor final. A comissão exata é registrada no pedido validado.</p><div id="products-list" class="grid"></div><button id="more-products" type="button" class="outline" hidden style="margin-top:18px">Carregar mais produtos</button></section>
+      <section class="panel"><p class="eyebrow">CATÁLOGO</p><h2>Escolha um produto para divulgar</h2><p class="muted small">Veja a comissão de cada variação antes de compartilhar. A comissão exata é registrada pelo preço da opção comprada no pedido validado; kits configuráveis dependem da composição escolhida.</p><div id="products-list" class="grid"></div><button id="more-products" type="button" class="outline" hidden style="margin-top:18px">Carregar mais produtos</button></section>
       <section class="panel"><p class="eyebrow">HISTÓRICO</p><h2>Vendas indicadas e Pix</h2><div id="commission-list" class="muted">Nenhuma venda indicada ainda.</div><div id="payout-list"></div></section>
     </div>
   </main>
@@ -130,6 +134,37 @@
           row.append(left,copy);host.append(row);
         });
       }
+      function productVariantGroups(p){
+        return (Array.isArray(p.variants)?p.variants:[]).filter(function(g){return g&&g.name&&Array.isArray(g.options)&&g.options.length}).map(function(g){
+          return {name:String(g.name),options:g.options.map(function(o){
+            var name=o&&typeof o==='object'?String(o.name||''):String(o||'');
+            var raw=g.per_option_price&&o&&typeof o==='object'?o.price:null;
+            var price=raw!==null&&raw!==''&&Number.isFinite(Number(raw))&&Number(raw)>=0?Number(raw):null;
+            return {name:name,price:price};
+          }).filter(function(o){return o.name})};
+        }).filter(function(g){return g.options.length});
+      }
+      function catalogBasePrice(p){
+        var normal=Number(p.price),promo=Number(p.promotional_price);
+        return p.promotional_price!==null&&Number.isFinite(promo)&&promo>=0&&promo<normal?promo:normal;
+      }
+      function selectedVariantPrice(groups,selected,fallback){
+        for(var i=0;i<groups.length;i++){
+          var option=groups[i].options[selected[i]];
+          if(option&&option.price!==null)return option.price;
+        }
+        return fallback;
+      }
+      function minimumVariantPrice(groups,fallback){
+        var minimum=Infinity,canReachNext=true;
+        for(var i=0;i<groups.length&&canReachNext;i++){
+          canReachNext=false;
+          groups[i].options.forEach(function(o){if(o.price===null)canReachNext=true;else minimum=Math.min(minimum,o.price)});
+        }
+        if(canReachNext)minimum=Math.min(minimum,fallback);
+        return Number.isFinite(minimum)?minimum:fallback;
+      }
+      function estimatedCommission(price){return Math.round(Math.round(price*100)*rate/100)}
       function productBase(p,kitChildren){
         var normal=Number(p.price),promo=Number(p.promotional_price);
         if(p.is_kit&&kitChildren&&kitChildren.length){
@@ -142,12 +177,36 @@
           }
         }
         var base=p.promotional_price!==null&&Number.isFinite(promo)&&promo>=0&&promo<normal?promo:normal;
-        var firstPriceGroup=Array.isArray(p.variants)?p.variants.find(function(g){return g&&g.per_option_price&&Array.isArray(g.options)}):null;
-        if(firstPriceGroup){
-          var choices=firstPriceGroup.options.map(function(o){return o&&typeof o==='object'?Number(o.price):NaN}).filter(Number.isFinite);
-          if(choices.length)base=Math.min.apply(null,choices);
+        return minimumVariantPrice(productVariantGroups(p),base);
+      }
+      function createVariantPanel(p,groups){
+        var panel=document.createElement('div'),selected=groups.map(function(){return 0}),buttons=[];
+        panel.id='affiliate-variants-'+p.id;panel.className='variant-panel';panel.hidden=true;
+        var intro=document.createElement('p');intro.className='muted small';intro.textContent='Selecione as opções para ver o preço e a comissão. O valor em cada opção considera as demais escolhas marcadas.';panel.append(intro);
+        groups.forEach(function(group,groupIndex){
+          var section=document.createElement('section'),heading=document.createElement('strong'),choices=document.createElement('div');
+          section.className='variant-group';heading.textContent=group.name;choices.className='variant-options';buttons[groupIndex]=[];
+          group.options.forEach(function(option,optionIndex){
+            var choice=document.createElement('button'),label=document.createElement('span'),amount=document.createElement('small');
+            choice.type='button';choice.className='variant-option';label.textContent=option.name;choice.append(label,amount);
+            choice.addEventListener('click',function(){selected[groupIndex]=optionIndex;render()});
+            choices.append(choice);buttons[groupIndex].push({button:choice,amount:amount});
+          });
+          section.append(heading,choices);panel.append(section);
+        });
+        var total=document.createElement('p');total.className='variant-total';panel.append(total);
+        function render(){
+          var fallback=catalogBasePrice(p);
+          groups.forEach(function(group,groupIndex){group.options.forEach(function(option,optionIndex){
+            var candidate=selected.slice();candidate[groupIndex]=optionIndex;
+            var price=selectedVariantPrice(groups,candidate,fallback),entry=buttons[groupIndex][optionIndex];
+            entry.button.setAttribute('aria-pressed',String(selected[groupIndex]===optionIndex));
+            entry.amount.textContent=money(Math.round(price*100))+' · comissão '+money(estimatedCommission(price));
+          })});
+          var price=selectedVariantPrice(groups,selected,fallback);
+          total.textContent='Combinação escolhida: '+money(Math.round(price*100))+' · comissão estimada '+money(estimatedCommission(price));
         }
-        return base;
+        render();return panel;
       }
       function productImage(p){var images=Array.isArray(p.images)?p.images:[];return typeof images[0]==='string'?images[0]:(images[0]&&images[0].url)||''}
       async function loadProducts(){
@@ -171,18 +230,26 @@
         list.filter(function(p){return p.sale_mode!=='quote_only'&&(!p.b2b_category||p.b2b_category==='loja')}).forEach(function(p){
           var card=document.createElement('article');card.className='product';
           var img=document.createElement('img');img.alt='';img.loading='lazy';img.src=productImage(p);
-          var body=document.createElement('div'),title=document.createElement('h3'),price=document.createElement('div'),note=document.createElement('div'),button=document.createElement('button');
-          var base=productBase(p,kitChildren[p.id]);
-          title.textContent=p.title;price.textContent=(p.kit_type==='configurable'?'Preço a partir de: ':'Preço exibido: ')+money(Math.round(base*100));
-          var estimate=Math.round(base*100*rate/100);
-          note.className='muted small';note.textContent='Comissão estimada: '+money(estimate)+(p.kit_type==='configurable'||Array.isArray(p.variants)&&p.variants.length?' · varia conforme a escolha':'');
+          var body=document.createElement('div'),title=document.createElement('h3'),price=document.createElement('div'),note=document.createElement('div'),actions=document.createElement('div'),button=document.createElement('button');
+          var groups=p.is_kit?[]:productVariantGroups(p),hasVariablePrice=groups.some(function(g){return g.options.some(function(o){return o.price!==null})});
+          var base=productBase(p,kitChildren[p.id]),varies=p.kit_type==='configurable'||hasVariablePrice;
+          title.textContent=p.title;price.textContent=(varies?'Preço a partir de: ':'Preço exibido: ')+money(Math.round(base*100));
+          note.className='muted small';note.textContent=(varies?'Comissão a partir de: ':'Comissão estimada: ')+money(estimatedCommission(base))+(p.kit_type==='configurable'?' · depende da composição':'');
+          actions.className='product-actions';var panel=null;
+          if(groups.length){
+            panel=createVariantPanel(p,groups);
+            var toggle=document.createElement('button');toggle.type='button';toggle.className='outline';toggle.textContent='Ver variações e comissões';
+            toggle.setAttribute('aria-controls',panel.id);toggle.setAttribute('aria-expanded','false');
+            toggle.addEventListener('click',function(){panel.hidden=!panel.hidden;toggle.setAttribute('aria-expanded',String(!panel.hidden));toggle.textContent=panel.hidden?'Ver variações e comissões':'Ocultar variações'});
+            actions.append(toggle);
+          }
           button.type='button';button.className='button';button.textContent='Vender este produto';
           if(profile.status!=='active')button.disabled=true;
           button.addEventListener('click',async function(){button.disabled=true;button.textContent='Gerando link...';try{
             var r=await client.rpc('affiliate_get_link',{p_product_id:p.id});if(r.error)throw r.error;
             await loadLinks();$('links-list').scrollIntoView({behavior:'smooth',block:'start'});
           }catch(e){alert(e.message||'Não foi possível gerar o link.')}finally{button.disabled=profile.status!=='active';button.textContent='Vender este produto'}});
-          body.append(title,price,note,button);card.append(img,body);host.append(card);
+          actions.append(button);body.append(title,price,note,actions);card.append(img,body);if(panel)card.append(panel);host.append(card);
         });
         offset+=list.length;$('more-products').hidden=list.length<pageSize;
         if(offset===0)host.textContent='Nenhum produto disponível para divulgação.';
