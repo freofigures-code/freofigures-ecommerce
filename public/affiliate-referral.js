@@ -2,7 +2,12 @@
   'use strict';
   var key = 'freo_affiliate_visitor';
   var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  var pendingProductId = null;
+  function allowed() {
+    return !!(window.FreoConsent && window.FreoConsent.allows('marketing'));
+  }
   function getToken() {
+    if (!allowed()) return null;
     try {
       var saved = localStorage.getItem(key);
       if (!saved) return null;
@@ -16,6 +21,11 @@
     var code = new URLSearchParams(location.search).get('af');
     if (!code) return true;
     if (!uuid.test(code) || !Number.isSafeInteger(Number(productId))) return false;
+    if (!allowed()) {
+      pendingProductId = productId;
+      return true;
+    }
+    pendingProductId = null;
     var token = getToken() || crypto.randomUUID();
     var result = await window.supabaseClient.rpc('affiliate_record_click', {
       p_link_id: code, p_product_id: Number(productId), p_visitor_token: token
@@ -25,5 +35,12 @@
     catch (_) { return false; }
     return true;
   }
+  window.addEventListener('ff_consent_update', function () {
+    if (!allowed()) {
+      try { localStorage.removeItem(key); } catch (_) { /* Storage can be unavailable. */ }
+      return;
+    }
+    if (pendingProductId !== null) void capture(pendingProductId);
+  });
   window.FreoAffiliate = { getToken: getToken, capture: capture };
 })();

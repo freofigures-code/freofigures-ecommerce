@@ -63,6 +63,7 @@ function scrollToNode(node) { if (node)
 function showToast(message, type, duration) { var node = el('toast'); node.textContent = message; node.className = 'show ' + (type || 'success'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { node.classList.remove('show'); }, duration || 3800); }
 window.trackEvent = function (type, id, name) {
     try {
+        if (!window.FreoConsent || !window.FreoConsent.allows('analytics')) return;
         var db = window.supabaseClient;
         if (!db)
             return;
