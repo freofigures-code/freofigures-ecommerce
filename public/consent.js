@@ -42,7 +42,9 @@
   announce('ff_consent_state');
 
   function loadGtm() {
-    if (!containerId || gtmLoaded || !prefs || !(prefs.analytics || prefs.marketing)) return;
+    // This container currently holds advertising tags. Analytics-only consent
+    // must not load it until a consent-gated analytics tag is added to GTM.
+    if (!containerId || gtmLoaded || !prefs || !prefs.marketing) return;
     gtmLoaded = true;
     window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
     var script = document.createElement('script');

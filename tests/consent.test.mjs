@@ -37,7 +37,7 @@ function consentCommands(dataLayer) {
   return dataLayer.filter(item => item[0] === 'consent').map(item => [item[1], item[2]]);
 }
 
-test('new visitor has denied defaults and no GTM until choosing a category', () => {
+test('new visitor has denied defaults and no GTM until marketing consent', () => {
   const page = start();
   assert.equal(page.scripts.length, 0);
   assert.equal(consentCommands(page.dataLayer)[0][1].analytics_storage, 'denied');
@@ -45,10 +45,12 @@ test('new visitor has denied defaults and no GTM until choosing a category', () 
   page.window.FreoConsent.save(false, false);
   assert.equal(page.scripts.length, 0);
   page.window.FreoConsent.save(true, false);
+  assert.equal(page.scripts.length, 0);
+  page.window.FreoConsent.save(true, true);
   assert.equal(page.scripts.length, 1);
   assert.match(page.scripts[0].src, /gtm\.js\?id=GTM-PSSBXMVL$/);
   assert.equal(consentCommands(page.dataLayer).at(-1)[1].analytics_storage, 'granted');
-  assert.equal(consentCommands(page.dataLayer).at(-1)[1].ad_storage, 'denied');
+  assert.equal(consentCommands(page.dataLayer).at(-1)[1].ad_storage, 'granted');
   assert.ok(page.dataLayer.findIndex(item => item.event === 'gtm.js') > page.dataLayer.findIndex(item => item[0] === 'consent' && item[1] === 'update'));
 });
 
@@ -59,6 +61,13 @@ test('saved preferences reach the data layer before GTM loads', () => {
   assert.equal(consentCommands(page.dataLayer)[1][1].ad_storage, 'granted');
   assert.equal(page.window.FreoConsent.allows('analytics'), false);
   assert.equal(page.window.FreoConsent.allows('marketing'), true);
+});
+
+test('saved analytics-only consent does not load the advertising container', () => {
+  const page = start({ essential: true, analytics: true, marketing: false, at: '2026-10-22' });
+  assert.equal(page.scripts.length, 0);
+  assert.equal(consentCommands(page.dataLayer)[1][1].analytics_storage, 'granted');
+  assert.equal(consentCommands(page.dataLayer)[1][1].ad_storage, 'denied');
 });
 
 test('changing consent after GTM loaded reloads to stop old tags', () => {
