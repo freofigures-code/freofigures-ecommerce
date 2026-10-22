@@ -11,4 +11,6 @@ A taxa inicial é 10%. A administração pode alterá-la para vendas futuras ou 
 
 Para atualizar o cadastro já implantado, execute `supabase/migrations/20261014184213_affiliate_phone_signup.sql` e depois `supabase/diagnostics/affiliate_phone_signup_postflight.sql`. Todos os campos de `verificacao_cadastro_afiliados` devem ser `true` antes de publicar o frontend atualizado. A migração substitui a função de cadastro por CPF e telefone; não exige alterar as Edge Functions do checkout ou pagamento.
 
+Para mostrar no painel administrativo o e-mail usado no login de cada afiliado, execute `supabase/migrations/20261014202415_affiliate_admin_identity.sql` e depois `supabase/diagnostics/affiliate_admin_identity_postflight.sql`. Todos os campos de `verificacao_email_afiliados` devem ser `true` antes de publicar a nova página de administração. A consulta devolve apenas e-mails de afiliados ao administrador autenticado; não muda o acesso dos próprios afiliados nem o checkout.
+
 O bucket `affiliate-selfies` continua privado para preservar fotos de cadastros anteriores. Novos cadastros não solicitam nem aceitam fotos. O CPF e o telefone ficam no perfil privado do afiliado; a administração vê ambos e ainda pode consultar fotos antigas. O identificador de indicação expira no navegador após 30 dias sem novo clique e os cliques antigos são eliminados diariamente do banco.
