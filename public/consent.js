@@ -60,6 +60,7 @@
     try { localStorage.setItem(storageKey, JSON.stringify(prefs)); } catch (_) { /* Consent still applies to this page. */ }
     window.gtag('consent', 'update', consentState(prefs));
     announce('ff_consent_update');
+    window.dispatchEvent(new Event('ff_consent_update'));
     if (typeof window.clarity === 'function') {
       window.clarity('consentv2', {
         analytics_Storage: prefs.analytics ? 'granted' : 'denied',

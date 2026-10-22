@@ -18,13 +18,19 @@ function start(saved = null, containerId = 'GTM-PSSBXMVL') {
     addEventListener() {},
     getElementById() { return null; }
   };
-  const window = { dataLayer };
+  const listeners = new Map();
+  const window = {
+    dataLayer,
+    addEventListener(name, listener) { listeners.set(name, listener); },
+    dispatchEvent(event) { listeners.get(event.type)?.(event); }
+  };
   const localStorage = {
     getItem(key) { return stored.get(key) ?? null; },
-    setItem(key, value) { stored.set(key, value); }
+    setItem(key, value) { stored.set(key, value); },
+    removeItem(key) { stored.delete(key); }
   };
-  runInNewContext(code, { window, document, localStorage, location: { reload() { reloads++; } }, Date, JSON, encodeURIComponent });
-  return { window, scripts, dataLayer, stored, get reloads() { return reloads; } };
+  runInNewContext(code, { window, document, localStorage, location: { reload() { reloads++; } }, Date, JSON, Event: class { constructor(type) { this.type = type; } }, encodeURIComponent });
+  return { window, scripts, dataLayer, stored, localStorage, get reloads() { return reloads; } };
 }
 
 function consentCommands(dataLayer) {
@@ -68,4 +74,28 @@ test('extensionless product route uses the consent loader', () => {
   const product = readFileSync(new URL('../public/produto', import.meta.url), 'utf8');
   assert.match(product, /<script src="\/consent\.js" data-gtm="GTM-PSSBXMVL"><\/script>/);
   assert.doesNotMatch(product, /googletagmanager\.com\/gtm\.js/);
+});
+
+test('affiliate attribution waits for marketing consent and clears on revocation', async () => {
+  const page = start();
+  let clicks = 0;
+  page.window.supabaseClient = { rpc: async () => { clicks++; return { data: true }; } };
+  const affiliate = readFileSync(new URL('../public/affiliate-referral.js', import.meta.url), 'utf8');
+  const ref = '11111111-1111-4111-8111-111111111111';
+  runInNewContext(affiliate, {
+    window: page.window,
+    localStorage: page.localStorage,
+    location: { search: `?af=${ref}` },
+    crypto: { randomUUID: () => ref },
+    URLSearchParams, Date, JSON, Number
+  });
+  assert.equal(await page.window.FreoAffiliate.capture(1), true);
+  assert.equal(clicks, 0);
+  page.window.FreoConsent.save(false, true);
+  assert.equal(clicks, 1);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.window.FreoAffiliate.getToken(), ref);
+  page.window.FreoConsent.save(false, false);
+  assert.equal(page.window.FreoAffiliate.getToken(), null);
+  assert.equal(page.stored.has('freo_affiliate_visitor'), false);
 });
