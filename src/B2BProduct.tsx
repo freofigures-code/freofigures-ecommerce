@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Box, ShoppingCart } from 'lucide-react';
 import { b2bUnitPrice, minimumB2BQuantity, type B2BTier } from './b2bPricing';
 import { b2bEventUnitPrice, type B2BEventPricing } from './b2bEventPricing';
@@ -18,6 +18,7 @@ const db = () => (window as any).supabaseClient;
 export default function B2BProduct() {
   const [access, setAccess] = useState<'loading' | 'guest' | 'pf' | 'ready' | 'error'>('loading');
   const [product, setProduct] = useState<Product | null>(null);
+  const productViewSent = useRef(false);
   const [tiers, setTiers] = useState<B2BTier[]>([]);
   const [eventPricing, setEventPricing] = useState<B2BEventPricing | null>(null);
   const [eventCustomizer, setEventCustomizer] = useState<B2BEventCustomizerConfig | null>(null);
@@ -75,6 +76,18 @@ export default function B2BProduct() {
   const minimum = minimumB2BQuantity(tiers);
   const price = b2bUnitPrice(tiers, amount);
   const eventPrice = product?.b2b_category === 'eventos' ? b2bEventUnitPrice(eventPricing, amount) : null;
+  useEffect(() => {
+    if (!product) return;
+    const trackProduct = () => {
+      if (productViewSent.current) return;
+      const unitPrice = price ?? eventPrice;
+      const item = { item_id: String(product.id), item_name: product.title, item_category: product.b2b_category, ...(unitPrice !== null ? { price: unitPrice } : {}) };
+      productViewSent.current = (window as any).FreoAnalytics?.event('view_item', { currency: 'BRL', ...(unitPrice !== null ? { value: unitPrice } : {}), items: [item] }) || false;
+    };
+    trackProduct();
+    window.addEventListener('ff_consent_update', trackProduct);
+    return () => window.removeEventListener('ff_consent_update', trackProduct);
+  }, [product, price, eventPrice]);
   const groups = useMemo(() => (Array.isArray(product?.variants) ? product.variants : []).filter(group => group?.name && Array.isArray(group.options) && group.options.length), [product]);
   const variant = groups.map(group => `${group.name}: ${choices[group.name] || ''}`).join(' | ');
   const configured = groups.every(group => Boolean(choices[group.name]));
@@ -95,6 +108,7 @@ export default function B2BProduct() {
         image_url: Array.isArray(product.images) ? product.images[0] || null : null, variant: variant || null,
       });
       if (result.error) throw result.error;
+      (window as any).FreoAnalytics?.event('add_to_cart', { currency: 'BRL', value: price * amount, items: [{ item_id: String(product.id), item_name: product.title, price, quantity: amount, item_category: product.b2b_category }] });
       location.assign('/b2b.html?cart=1');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível adicionar ao pedido.');

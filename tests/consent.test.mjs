@@ -13,6 +13,7 @@ function start(saved = null, containerId = 'GTM-PSSBXMVL') {
   const document = {
     currentScript: { dataset: { gtm: containerId } },
     readyState: 'loading',
+    referrer: '',
     head: { appendChild(node) { scripts.push(node); } },
     createElement() { return {}; },
     addEventListener() {},
@@ -29,7 +30,7 @@ function start(saved = null, containerId = 'GTM-PSSBXMVL') {
     setItem(key, value) { stored.set(key, value); },
     removeItem(key) { stored.delete(key); }
   };
-  runInNewContext(code, { window, document, localStorage, location: { reload() { reloads++; } }, Date, JSON, Event: class { constructor(type) { this.type = type; } }, encodeURIComponent });
+  runInNewContext(code, { window, document, localStorage, location: { href: 'https://freofigures.com.br/checkout.html?payment_id=private', reload() { reloads++; } }, URL, Date, JSON, Event: class { constructor(type) { this.type = type; } }, encodeURIComponent });
   return { window, scripts, dataLayer, stored, localStorage, get reloads() { return reloads; } };
 }
 
@@ -37,7 +38,7 @@ function consentCommands(dataLayer) {
   return dataLayer.filter(item => item[0] === 'consent').map(item => [item[1], item[2]]);
 }
 
-test('new visitor has denied defaults and no GTM until marketing consent', () => {
+test('new visitor loads analytics only after consent and advertising only after marketing', () => {
   const page = start();
   assert.equal(page.scripts.length, 0);
   assert.equal(consentCommands(page.dataLayer)[0][1].analytics_storage, 'denied');
@@ -45,13 +46,17 @@ test('new visitor has denied defaults and no GTM until marketing consent', () =>
   page.window.FreoConsent.save(false, false);
   assert.equal(page.scripts.length, 0);
   page.window.FreoConsent.save(true, false);
-  assert.equal(page.scripts.length, 0);
-  page.window.FreoConsent.save(true, true);
   assert.equal(page.scripts.length, 1);
-  assert.match(page.scripts[0].src, /gtm\.js\?id=GTM-PSSBXMVL$/);
+  assert.match(page.scripts[0].src, /gtag\/js\?id=G-M6TC25ZLMD$/);
+  assert.equal(page.dataLayer.find(item => item[0] === 'config')[2].page_location, 'https://freofigures.com.br/checkout.html');
+  page.window.FreoConsent.save(true, true);
+  assert.equal(page.reloads, 1);
+  const reloaded = start(JSON.parse(page.stored.get('ff_cookies')));
+  assert.equal(reloaded.scripts.length, 2);
+  assert.ok(reloaded.scripts.some(script => /gtm\.js\?id=GTM-PSSBXMVL$/.test(script.src)));
   assert.equal(consentCommands(page.dataLayer).at(-1)[1].analytics_storage, 'granted');
   assert.equal(consentCommands(page.dataLayer).at(-1)[1].ad_storage, 'granted');
-  assert.ok(page.dataLayer.findIndex(item => item.event === 'gtm.js') > page.dataLayer.findIndex(item => item[0] === 'consent' && item[1] === 'update'));
+  assert.ok(reloaded.dataLayer.findIndex(item => item.event === 'gtm.js') > reloaded.dataLayer.findIndex(item => item[0] === 'consent' && item[1] === 'update'));
 });
 
 test('saved preferences reach the data layer before GTM loads', () => {
@@ -65,9 +70,36 @@ test('saved preferences reach the data layer before GTM loads', () => {
 
 test('saved analytics-only consent does not load the advertising container', () => {
   const page = start({ essential: true, analytics: true, marketing: false, at: '2026-10-22' });
-  assert.equal(page.scripts.length, 0);
+  assert.equal(page.scripts.length, 1);
+  assert.match(page.scripts[0].src, /gtag\/js\?id=G-M6TC25ZLMD$/);
   assert.equal(consentCommands(page.dataLayer)[1][1].analytics_storage, 'granted');
   assert.equal(consentCommands(page.dataLayer)[1][1].ad_storage, 'denied');
+});
+
+test('GA4 events require analytics consent and target only the GA4 property', () => {
+  const page = start();
+  assert.equal(page.window.FreoAnalytics.event('view_cart', { currency: 'BRL', value: 10 }), false);
+  assert.equal(page.dataLayer.filter(item => item[0] === 'event').length, 0);
+  page.window.FreoConsent.save(true, false);
+  assert.equal(page.window.FreoAnalytics.event('view_cart', { currency: 'BRL', value: 10 }), true);
+  const command = page.dataLayer.find(item => item[0] === 'event');
+  assert.equal(command[1], 'view_cart');
+  assert.equal(command[2].send_to, 'G-M6TC25ZLMD');
+  page.window.FreoConsent.save(false, false);
+  assert.equal(page.reloads, 1);
+  assert.equal(page.window.FreoAnalytics.event('view_cart', {}), false);
+});
+
+test('GA4 ecommerce items omit customer-written creation titles and identifiers', () => {
+  const page = start({ essential: true, analytics: true, marketing: false });
+  const items = page.window.FreoAnalytics.items([
+    { product_id: 'custom-11111111-1111-4111-8111-111111111111', product_name: 'Modelo 3D personalizado — Nome privado', price: 42, quantity: 1, custom_product: true },
+    { product_id: '25', product_name: 'Figure', price: 'R$ 1.234,50', quantity: 2 }
+  ]);
+  assert.equal(items[0].item_id, 'custom-model-3d');
+  assert.equal(items[0].item_name, 'Modelo 3D personalizado');
+  assert.equal(items[1].price, 1234.5);
+  assert.equal(items[1].quantity, 2);
 });
 
 test('changing consent after GTM loaded reloads to stop old tags', () => {

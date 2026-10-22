@@ -1,5 +1,5 @@
 import { CATEGORY_LABELS, categoryLabel, normalizeCategory } from '../public/catalog-categories.js';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { updateStoreLocation } from './seo';
 import GeekShopView from './GeekShop';
 import { motion, AnimatePresence } from 'motion/react';
@@ -68,6 +68,7 @@ function trackEvent(eventType: string, productId?: string, productName?: string)
 
 type CartItem = {
   cartItemId?: number;
+  productId?: number;
   name: string;
   price: string;
   img: string;
@@ -1406,6 +1407,7 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
 
   const goToProduct = () => {
     trackEvent('product_click', String(product.id), product.title);
+    (window as any).FreoAnalytics?.event('select_item', { item_list_name: 'Vitrine', items: [{ item_id: String(product.id), item_name: product.title, price: displayPrice, item_category: product.category || undefined }] });
   };
   return (
     <div className={`group flex flex-col ${compact ? '' : 'bg-freo-dark border border-white/5 hover:border-freo-orange/50 transition-colors'}`}>
@@ -1894,7 +1896,7 @@ const MobileCategoryDrawer = ({
 // SHOP VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 
 const ShopView = ({ addToCart, activeFilter, onSelectCategory, searchTerm, onClearSearch }: any) => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -1964,7 +1966,11 @@ const ShopView = ({ addToCart, activeFilter, onSelectCategory, searchTerm, onCle
         trackEvent('add_to_cart', String(product.id), product.title);
         addToCart(product);
       }}
-      onProductClick={(product) => trackEvent('product_click', String(product.id), product.title)}
+      onProductClick={(product) => {
+        trackEvent('product_click', String(product.id), product.title);
+        const price = product.promotional_price !== null && product.promotional_price < product.price ? product.promotional_price : product.price;
+        (window as any).FreoAnalytics?.event('select_item', { item_list_name: 'Games', items: [{ item_id: String(product.id), item_name: product.title, price, item_category: product.category || undefined }] });
+      }}
       onSelectCategory={handleCategoryClick}
     />;
   }
@@ -2572,6 +2578,20 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const cartViewSent = useRef(false);
+
+  useEffect(() => {
+    if (!isCartOpen) { cartViewSent.current = false; return; }
+    const trackCart = () => {
+      if (cartViewSent.current || !cartItems.length) return;
+      const ga = (window as any).FreoAnalytics;
+      const items = ga?.items(cartItems) || [];
+      cartViewSent.current = ga?.event('view_cart', { currency: 'BRL', value: items.reduce((sum: number, item: any) => sum + (item.price || 0) * (item.quantity || 1), 0), items }) || false;
+    };
+    trackCart();
+    window.addEventListener('ff_consent_update', trackCart);
+    return () => window.removeEventListener('ff_consent_update', trackCart);
+  }, [isCartOpen, cartItems]);
   const [user, setUser] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState(() => {
     const category = new URLSearchParams(window.location.search).get('categoria');
@@ -2611,6 +2631,7 @@ export default function App() {
       if (event.detail.cartItems) {
         setCartItems(event.detail.cartItems.map((item: any) => ({
           cartItemId: item.id,
+          productId: Number(item.product_id) || undefined,
           name: item.product_name,
           price: formatPrice(item.price),
           img: item.image_url,
@@ -2718,12 +2739,14 @@ export default function App() {
     if (error) throw error;
     setCartItems(previous => [...previous, {
       cartItemId: data.id,
+      productId: product.id,
       name: product.title,
       price: formatPrice(priceNum),
       img: thumb,
       quantity: 1,
       variant: null,
     }]);
+    (window as any).FreoAnalytics?.event('add_to_cart', { currency: 'BRL', value: priceNum, items: [{ item_id: String(product.id), item_name: product.title, price: priceNum, quantity: 1, item_category: product.category || undefined }] });
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#DDAF34;color:#000;padding:12px 24px;font-weight:700;font-family:inherit;text-transform:uppercase;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap;border-radius:2px;font-size:14px;';
     toast.innerHTML = '✅ Adicionado ao carrinho!';
@@ -2747,8 +2770,14 @@ export default function App() {
   const removeItem = async (product: CartItem) => {
     // @ts-ignore
     const supabase = window.supabaseClient || window.supabase;
-    if (supabase && product.cartItemId) await supabase.from('cart_items').delete().eq('id', product.cartItemId);
+    if (supabase && product.cartItemId) {
+      const { error } = await supabase.from('cart_items').delete().eq('id', product.cartItemId);
+      if (error) return;
+    }
     setCartItems(previous => previous.filter(item => item.cartItemId !== product.cartItemId));
+    const ga = (window as any).FreoAnalytics;
+    const items = ga?.items([product]) || [];
+    ga?.event('remove_from_cart', { currency: 'BRL', value: (items[0]?.price || 0) * product.quantity, items });
   };
 
   // Se URL tem ?_cupom=CODE, renderiza tela de resgate isolada (sem navbar/footer)

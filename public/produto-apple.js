@@ -641,6 +641,10 @@ async function savePurchase(action) {
         if (saved.error)
             throw new Error('Não conseguimos salvar sua peça. Tente novamente.');
         window.trackEvent(action === 'buy' ? 'buy_now' : 'add_to_cart', String(product.id), product.title);
+        if (window.FreoAnalytics) window.FreoAnalytics.event('add_to_cart', {
+            currency: 'BRL', value: unitPrice * qty,
+            items: [{ item_id: String(product.id), item_name: product.title, price: unitPrice, quantity: qty, item_category: product.category || undefined }]
+        });
         var guest = session.user.is_anonymous === true || (session.user.user_metadata || {}).is_anonymous === true;
         var checkout = '/checkout.html' + (guest ? '?guest=1' : '');
         if (action === 'buy') {
@@ -702,6 +706,7 @@ async function init() {
             return;
         }
         await renderProduct(result.data);
+        trackProductView();
         // Restaura somente escolhas pendentes que ainda existem no catálogo.
         if (new URLSearchParams(location.search).get('autoAddToCart') === '1') {
             var pending;
@@ -726,6 +731,16 @@ async function init() {
         text('error-copy', error.message || 'Não foi possível carregar a peça. Tente novamente.');
     }
 }
+var productViewSent = false;
+function trackProductView() {
+    if (productViewSent || !product || !window.FreoAnalytics) return;
+    var price = getEffectivePrice();
+    productViewSent = window.FreoAnalytics.event('view_item', {
+        currency: 'BRL', value: price,
+        items: [{ item_id: String(product.id), item_name: product.title, price: price, item_category: product.category || undefined }]
+    });
+}
+window.addEventListener('ff_consent_update', trackProductView);
 function setupInteractions() {
     el('retry-load').addEventListener('click', init);
     el('qty-minus').addEventListener('click', function () { changeQty(-1); });

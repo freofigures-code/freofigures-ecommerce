@@ -3,7 +3,10 @@
 
   var storageKey = 'ff_cookies';
   var containerId = document.currentScript && document.currentScript.dataset.gtm;
+  var analyticsId = 'G-M6TC25ZLMD';
   var gtmLoaded = false;
+  var analyticsLoaded = false;
+  var reloading = false;
   var prefs = readPrefs();
 
   function readPrefs() {
@@ -41,6 +44,74 @@
 
   announce('ff_consent_state');
 
+  function publicUrl(raw, keepCampaign) {
+    if (!raw) return '';
+    try {
+      var source = new URL(raw);
+      var safe = new URL(source.origin + source.pathname);
+      if (keepCampaign) {
+        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function (key) {
+          if (source.searchParams.has(key)) safe.searchParams.set(key, source.searchParams.get(key));
+        });
+        if (prefs && prefs.marketing && source.searchParams.has('gclid')) safe.searchParams.set('gclid', source.searchParams.get('gclid'));
+      }
+      return safe.href;
+    } catch (_) { return ''; }
+  }
+
+  function loadAnalytics() {
+    if (analyticsLoaded || !prefs || !prefs.analytics || reloading) return;
+    analyticsLoaded = true;
+    var config = {
+      page_location: publicUrl(location.href, true),
+      allow_google_signals: false,
+      allow_ad_personalization_signals: false
+    };
+    var referrer = publicUrl(document.referrer, false);
+    if (referrer) config.page_referrer = referrer;
+    window.gtag('js', new Date());
+    window.gtag('config', analyticsId, config);
+    var script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=' + analyticsId;
+    document.head.appendChild(script);
+  }
+
+  function items(rows) {
+    return (Array.isArray(rows) ? rows : []).map(function (row) {
+      if (!row) return null;
+      var id = row.item_id || row.product_id || row.productId || row.id;
+      var name = row.item_name || row.product_name || row.name || row.title;
+      if (!id && !name) return null;
+      // Personalized creations can contain a customer-written title and UUID.
+      if (row.custom_product || /^custom-/i.test(String(id || '')) || /^Modelo 3D personalizado/i.test(String(name || ''))) {
+        id = 'custom-model-3d';
+        name = 'Modelo 3D personalizado';
+      }
+      var item = {};
+      if (id) item.item_id = String(id);
+      if (name) item.item_name = String(name);
+      var rawPrice = row.priceValue !== undefined ? row.priceValue : row.price;
+      var price = typeof rawPrice === 'string' && rawPrice.indexOf(',') !== -1
+        ? Number(rawPrice.replace(/[^\d,]/g, '').replace(',', '.')) : Number(rawPrice);
+      if (Number.isFinite(price) && price >= 0) item.price = price;
+      var quantity = Number(row.quantity);
+      if (Number.isFinite(quantity) && quantity > 0) item.quantity = quantity;
+      if (row.item_category || row.category) item.item_category = String(row.item_category || row.category);
+      return item;
+    }).filter(Boolean);
+  }
+
+  window.FreoAnalytics = {
+    event: function (name, parameters) {
+      if (reloading || !prefs || !prefs.analytics) return false;
+      loadAnalytics();
+      window.gtag('event', name, Object.assign({}, parameters || {}, { send_to: analyticsId }));
+      return true;
+    },
+    items: items
+  };
+
   function loadGtm() {
     // This container currently holds advertising tags. Analytics-only consent
     // must not load it until a consent-gated analytics tag is added to GTM.
@@ -54,11 +125,15 @@
   }
 
   loadGtm();
+  loadAnalytics();
 
   function save(analytics, marketing) {
     var previous = prefs;
     var wasGtmLoaded = gtmLoaded;
+    var wasAnalyticsLoaded = analyticsLoaded;
     prefs = { essential: true, analytics: !!analytics, marketing: !!marketing, at: new Date().toISOString() };
+    reloading = !!(previous && (wasGtmLoaded || wasAnalyticsLoaded) &&
+      (previous.analytics !== prefs.analytics || previous.marketing !== prefs.marketing));
     try { localStorage.setItem(storageKey, JSON.stringify(prefs)); } catch (_) { /* Consent still applies to this page. */ }
     window.gtag('consent', 'update', consentState(prefs));
     announce('ff_consent_update');
@@ -69,12 +144,13 @@
         ad_Storage: prefs.marketing ? 'granted' : 'denied'
       });
     }
-    loadGtm();
-    // Existing tags need a fresh page to apply a changed choice immediately.
-    if (wasGtmLoaded && previous && (previous.analytics !== prefs.analytics || previous.marketing !== prefs.marketing)) {
+    // Unload previously active tags before changing a granted category.
+    if (reloading) {
       location.reload();
       return;
     }
+    loadGtm();
+    loadAnalytics();
     render();
   }
 
