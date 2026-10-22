@@ -63,3 +63,9 @@ test('changing consent after GTM loaded reloads to stop old tags', () => {
   assert.equal(JSON.parse(page.stored.get('ff_cookies')).marketing, false);
   assert.equal(consentCommands(page.dataLayer).at(-1)[1].ad_storage, 'denied');
 });
+
+test('extensionless product route uses the consent loader', () => {
+  const product = readFileSync(new URL('../public/produto', import.meta.url), 'utf8');
+  assert.match(product, /<script src="\/consent\.js" data-gtm="GTM-PSSBXMVL"><\/script>/);
+  assert.doesNotMatch(product, /googletagmanager\.com\/gtm\.js/);
+});
