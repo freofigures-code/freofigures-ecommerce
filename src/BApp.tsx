@@ -101,6 +101,7 @@ function getSessionId(): string {
 
 function trackEvent(eventType: string, productId?: string, productName?: string): void {
   try {
+    if (!(window as any).FreoConsent?.allows('analytics')) return;
     // @ts-ignore
     const supabase = window.supabaseClient || window.supabase;
     if (!supabase) return;
