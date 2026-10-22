@@ -150,6 +150,14 @@
       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(v) || 0);
     }
 
+    let confirmedPurchase = null;
+    let purchaseSent = false;
+    function trackConfirmedPurchase() {
+      if (purchaseSent || !confirmedPurchase || !window.FreoAnalytics) return;
+      purchaseSent = window.FreoAnalytics.event('purchase', confirmedPurchase);
+    }
+    window.addEventListener('ff_consent_update', trackConfirmedPurchase);
+
     async function carregarPedido() {
       const urlParams = new URLSearchParams(window.location.search);
       const paymentId = urlParams.get('payment_id');
@@ -178,6 +186,16 @@
 
       const items = Array.isArray(data.items) ? data.items : [];
 
+      if (['pago', 'aprovado', 'producao', 'enviado', 'entregue'].includes(String(data.status || '').toLowerCase())) {
+        confirmedPurchase = {
+          transaction_id: String(data.id),
+          value: Number(data.total) || 0,
+          currency: 'BRL',
+          items: window.FreoAnalytics ? window.FreoAnalytics.items(items) : []
+        };
+        trackConfirmedPurchase();
+      }
+
       if (items.length === 0) {
         document.getElementById('order-items').innerHTML =
           '<p class="text-sm text-freo-light/40">Detalhes do pedido enviados por e-mail.</p>';
@@ -193,7 +211,7 @@
           + '</div>';
       }).join('');
 
-      // Envia evento de compra para o GTM
+      // Mantém o evento já existente para as tags de marketing no GTM.
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({ ecommerce: null });
       window.dataLayer.push({

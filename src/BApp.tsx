@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from 'motion/react';
 import { b2bUnitPrice, minimumB2BQuantity } from './b2bPricing';
 import { b2bEventUnitPrice, type B2BEventPricing } from './b2bEventPricing';
@@ -547,6 +547,19 @@ export default function BApp() {
   const [catalogError, setCatalogError] = useState('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const cartViewSent = useRef(false);
+  useEffect(() => {
+    if (!isCartOpen) { cartViewSent.current = false; return; }
+    const trackCart = () => {
+      if (cartViewSent.current || !cartItems.length) return;
+      const ga = (window as any).FreoAnalytics;
+      const items = ga?.items(cartItems) || [];
+      cartViewSent.current = ga?.event('view_cart', { currency: 'BRL', value: items.reduce((sum: number, item: any) => sum + (item.price || 0) * (item.quantity || 1), 0), items }) || false;
+    };
+    trackCart();
+    window.addEventListener('ff_consent_update', trackCart);
+    return () => window.removeEventListener('ff_consent_update', trackCart);
+  }, [isCartOpen, cartItems]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSection, setActiveSection] = useState<B2BCategory>('loja');
   const [quoteProduct, setQuoteProduct] = useState<Product | null>(null);
@@ -716,6 +729,8 @@ export default function BApp() {
       const { error } = await supabase.from('b2b_cart_items').delete().eq('id', product.cartItemId).eq('user_id', session.user.id);
       if (error) throw error;
       setCartItems(prev => prev.filter(item => item.cartItemId !== product.cartItemId));
+      const ga = (window as any).FreoAnalytics;
+      ga?.event('remove_from_cart', { currency: 'BRL', value: cartUnitPrice(product) * product.quantity, items: ga.items([product]) });
       setCartError('');
     } catch (error) {
       setCartError(error instanceof Error ? error.message : 'Não foi possível remover o item.');

@@ -645,6 +645,17 @@
     var subtotalAmount = 0;
     var freteAmount = 0;
     var cartItemsData = [];
+    var beginCheckoutSent = false;
+    function trackBeginCheckout() {
+      if (beginCheckoutSent || !cartItemsData.length || !window.FreoAnalytics) return;
+      var items = window.FreoAnalytics.items(cartItemsData);
+      beginCheckoutSent = window.FreoAnalytics.event('begin_checkout', {
+        currency: 'BRL',
+        value: items.reduce(function(sum, item) { return sum + (item.price || 0) * (item.quantity || 1); }, 0),
+        items: items
+      });
+    }
+    window.addEventListener('ff_consent_update', trackBeginCheckout);
     var customCheckoutMode = false;
     var customGenerationId = null;
     var currentUser = null;
@@ -2415,6 +2426,7 @@ async function salvarDadosPessoais() {
 
     showCheckout();
     renderItems(cartItemsData);
+    trackBeginCheckout();
     carregarRegrasFrete(); // dispara em paralelo, não precisa aguardar aqui
     // Os dados para a nota fiscal são solicitados após o endereço e o frete,
     // antes de liberar a etapa de pagamento.

@@ -332,6 +332,10 @@
         });
         if (r.error) throw r.error;
 
+        if (window.FreoAnalytics) window.FreoAnalytics.event('add_to_cart', {
+          currency: 'BRL', value: finalPrice,
+          items: [{ item_id: String(kitProduct.id), item_name: kitProduct.title, price: finalPrice, quantity: 1, item_category: kitProduct.category || undefined }]
+        });
         showToast('Kit adicionado ao carrinho!', 'success');
         setTimeout(function() { window.location.href = '/dashboard.html#cart-section'; }, 900);
       } catch (err) {
