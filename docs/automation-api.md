@@ -58,7 +58,7 @@ O projeto da loja é `rrmxqpvxrpcqqxsgccqw`. Confira essa referência antes de e
 1. Faça backup e aplique `supabase/migrations/20261023182546_automation_api_v1.sql` pelo fluxo de migrações da loja. Confira se as tabelas `public.orders` e `public.analytics_events` existem e se a migração termina sem erro.
 2. Gere cinco segredos independentes com um gerador criptográfico: `FREO_API_READ_TOKEN`, `FREO_API_WRITE_TOKEN`, `FREO_AUTOMATION_WORKER_TOKEN`, `FREO_AUTOMATION_WEBHOOK_SECRET` (ao menos 32 caracteres cada) e `FREO_AUTOMATION_WEBHOOK_URL` (URL HTTPS do seu sistema receptor). Defina-os nas Edge Function Secrets do projeto. O endpoint de webhook pode ser configurado mais tarde; sem ele a entrega retorna `not_configured` e a fila permanece intacta.
 3. Implante `freo-automation-api` e `freo-automation-dispatch` com `verify_jwt=false` de `supabase/config.toml`. A autenticação própria de cada função verifica os tokens antes de consultar dados ou despachar eventos.
-4. Teste `GET /products`, `GET /orders` e os agregados com o token de leitura; teste criação com produto inativo e imagem de amostra com o token de escrita. Teste `401` sem token e `403` ao tentar escrever com o token de leitura.
+4. Em produção, verifique apenas `GET /products`, `GET /orders` e os agregados com o token de leitura, além de `401` sem token e `403` ao tentar escrever com o token de leitura. Testes de criação, edição, envio de imagem e desativação devem ocorrer apenas em ambiente isolado; a ativação não exige alterar produtos reais.
 5. Ative as extensões `pg_cron`, `pg_net` e Vault no projeto. Guarde `FREO_AUTOMATION_WORKER_TOKEN` também no Vault com o nome `freo_automation_worker_token`, usando `select vault.create_secret('<TOKEN>', 'freo_automation_worker_token');` no SQL Editor. Depois agende o despachante:
 
 ```sql
@@ -78,7 +78,7 @@ select cron.schedule(
 );
 ```
 
-6. Crie um pedido de teste, confira um único `order.created` em `GET /webhooks/events` e valide assinatura, recebimento e detalhes via `GET /orders/:id`. Depois altere seu status pelo fluxo normal e confira `order.status_changed`. Se o destino falhar, observe `attempts`/`last_error` antes de reencaminhar.
+6. Quando um pedido novo ocorrer naturalmente, confira `order.created` em `GET /webhooks/events` e valide assinatura, recebimento e detalhes via `GET /orders/:id`. Confira `order.status_changed` quando o status mudar pelo fluxo normal. Não crie nem altere pedidos reais apenas para testar. Se o destino falhar, observe `attempts`/`last_error` antes de reencaminhar.
 
 Para expor a API como `https://freofigures.com.br/api/v1/`, configure um proxy HTTPS do servidor web para a função Supabase, preservando o cabeçalho `Authorization` e a rota após `/api/v1`. O repositório não contém a configuração atual do proxy da VPS; essa etapa depende do servidor. O endereço Supabase acima funciona independentemente do proxy.
 
