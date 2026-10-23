@@ -92,7 +92,8 @@ returns jsonb language sql stable security invoker set search_path = '' as $$
   ), order_counts as (
     select count(*) as created_orders,
       count(*) filter (where lower(btrim(status)) in ('pago', 'aprovado', 'producao', 'enviado', 'entregue')) as paid_orders
-    from public.orders where created_at >= p_from and created_at < p_to
+    from public.orders where created_at >= (p_from at time zone 'UTC')
+      and created_at < (p_to at time zone 'UTC')
   )
   select jsonb_build_object(
     'visits', s.visits, 'product_views', s.product_views, 'carts', s.carts,

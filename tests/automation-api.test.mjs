@@ -91,7 +91,7 @@ test('SQL migration queues orders, restricts outbox, and aggregates consented ev
     await db.exec(`
       create role anon; create role authenticated; create role service_role bypassrls;
       grant usage on schema public to anon, authenticated, service_role;
-      create table public.orders(id bigint primary key, status text not null, total numeric not null, created_at timestamptz not null default now());
+      create table public.orders(id bigint primary key, status text not null, total numeric not null, created_at timestamp without time zone not null default (now() at time zone 'UTC'));
       create table public.analytics_events(event_type text not null, product_id text, page text, session_id text, created_at timestamptz not null default now());
       grant insert, update, select on public.orders to authenticated, service_role;
       grant select, insert on public.analytics_events to service_role;
