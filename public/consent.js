@@ -102,15 +102,53 @@
     }).filter(Boolean);
   }
 
+  var lastLocalPageView = '';
+  function recordLocalEvent(name, productId, productName) {
+    if (['page_view', 'view_item', 'add_to_cart', 'view_cart', 'begin_checkout', 'purchase'].indexOf(name) === -1) return;
+    var db = window.supabaseClient;
+    if (!db || !db.from) return;
+    try {
+      var page = location.pathname;
+      if (name === 'page_view' && lastLocalPageView === page) return;
+      var sid = sessionStorage.getItem('freo_sid');
+      if (!sid) {
+        sid = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+        sessionStorage.setItem('freo_sid', sid);
+      }
+      Promise.resolve(db.from('analytics_events').insert({
+        event_type: name === 'view_item' ? 'product_click' : name,
+        product_id: productId || null, product_name: productName || null,
+        page: page, session_id: sid
+      })).catch(function () {});
+      if (name === 'page_view') lastLocalPageView = page;
+    } catch (_) { /* Optional measurement must never interrupt checkout. */ }
+  }
+
   window.FreoAnalytics = {
+    pageView: function () {
+      if (reloading || !prefs || !prefs.analytics) return false;
+      recordLocalEvent('page_view');
+      return true;
+    },
     event: function (name, parameters) {
       if (reloading || !prefs || !prefs.analytics) return false;
       loadAnalytics();
       window.gtag('event', name, Object.assign({}, parameters || {}, { send_to: analyticsId }));
+      var firstItem = parameters && Array.isArray(parameters.items) && parameters.items[0];
+      var productId = firstItem && /^\d+$/.test(String(firstItem.item_id || '')) ? String(firstItem.item_id) : null;
+      recordLocalEvent(name, productId);
       return true;
     },
     items: items
   };
+
+  // Static pages have no React tracker. Product pages add their product ID
+  // through produto-apple.js, so they are measured there instead.
+  function recordPageView() {
+    if (location.pathname.indexOf('/produto') !== 0) window.FreoAnalytics.pageView();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', recordPageView);
+  else recordPageView();
 
   function loadGtm() {
     // This container currently holds advertising tags. Analytics-only consent
@@ -138,6 +176,7 @@
     window.gtag('consent', 'update', consentState(prefs));
     announce('ff_consent_update');
     window.dispatchEvent(new Event('ff_consent_update'));
+    recordPageView();
     if (typeof window.clarity === 'function') {
       window.clarity('consentv2', {
         analytics_Storage: prefs.analytics ? 'granted' : 'denied',
