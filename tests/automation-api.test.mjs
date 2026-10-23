@@ -24,6 +24,8 @@ test('product writes allow regular catalog fields and block privileged/special f
   const product = validateProduct({ title: 'Figure', price: 20, category: 'games' }, { creating: true, storageOrigin: origin });
   assert.equal(product.is_active, false);
   assert.equal(product.b2b_category, 'loja');
+  assert.equal(validateProduct({ preparation_days: 3 }, { storageOrigin: origin }).preparation_days, 3);
+  assert.throws(() => validateProduct({ preparation_days: 0 }, { storageOrigin: origin }), /Prazo de preparação/);
   assert.throws(() => validateProduct({ publication_id: 'forged' }, { storageOrigin: origin }), /Campo não permitido/);
   assert.throws(() => validateProduct({ category: 'feito_por_voces' }, { storageOrigin: origin }), /Categoria indisponível/);
   assert.throws(() => validateProduct({ title: 'X' }, { existing: { is_kit: true }, storageOrigin: origin }), /painel especializado/);

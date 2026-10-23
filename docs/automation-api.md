@@ -21,7 +21,7 @@ A API fica no backend da própria loja, em `https://rrmxqpvxrpcqqxsgccqw.supabas
 
 Todas as rotas exigem `Authorization: Bearer <TOKEN>`. Configure `FREO_API_READ_TOKEN` para leitura e `FREO_API_WRITE_TOKEN` para escrita e leitura, com valores distintos e pelo menos 32 caracteres aleatórios. O token de leitura permite consultar dados pessoais de pedidos e deve ficar restrito ao servidor autorizado. Respostas têm JSON no formato `{ "data": ... }` ou `{ "error": { "code": "...", "message": "..." } }`.
 
-`POST` e `PATCH /products` aceitam apenas `title`, `description`, `price`, `promotional_price`, `stock`, `category`, `images`, `tags`, `variants`, `seo_title`, `seo_description` e `is_active`. Criação exige `title`, `price` e `category` (`games` ou `religioso`). O preço é em reais, como número JSON; imagens devem ser URLs retornadas pelo upload ao bucket desta loja. Produtos de kits, eventos, encomendas B2B e publicações da comunidade ficam sob seus fluxos especializados no painel. A API não altera preço, pagamento ou status de pedidos.
+`POST` e `PATCH /products` aceitam apenas `title`, `description`, `price`, `promotional_price`, `stock`, `preparation_days`, `category`, `images`, `tags`, `variants`, `seo_title`, `seo_description` e `is_active`. Criação exige `title`, `price` e `category` (`games` ou `religioso`). `preparation_days` aceita de 1 a 365 dias. O preço é em reais, como número JSON; imagens devem ser URLs retornadas pelo upload ao bucket desta loja. Produtos de kits, eventos, encomendas B2B e publicações da comunidade ficam sob seus fluxos especializados no painel. A API não altera preço, pagamento ou status de pedidos.
 
 Exemplos, substituindo os tokens por segredos do seu gerenciador:
 

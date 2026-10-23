@@ -1,6 +1,6 @@
-const PRODUCT_FIELDS = 'id,title,description,price,promotional_price,stock,category,images,tags,variants,seo_title,seo_description,is_active,created_at,sale_mode,b2b_category,is_kit,publication_id';
+const PRODUCT_FIELDS = 'id,title,description,price,promotional_price,stock,preparation_days,category,images,tags,variants,seo_title,seo_description,is_active,created_at,sale_mode,b2b_category,is_kit,publication_id';
 const ORDER_FIELDS = 'id,status,total,items,created_at,is_b2b,frete_valor,frete_nome,shipping_address,customer_name,customer_email,customer_phone';
-const WRITABLE_FIELDS = new Set(['title', 'description', 'price', 'promotional_price', 'stock', 'category', 'images', 'tags', 'variants', 'seo_title', 'seo_description', 'is_active']);
+const WRITABLE_FIELDS = new Set(['title', 'description', 'price', 'promotional_price', 'stock', 'preparation_days', 'category', 'images', 'tags', 'variants', 'seo_title', 'seo_description', 'is_active']);
 const IMAGE_TYPES = new Map([['image/jpeg', 'jpg'], ['image/png', 'png'], ['image/webp', 'webp']]);
 
 export class ApiError extends Error {
@@ -104,6 +104,10 @@ export function validateProduct(input, { creating = false, existing = null, stor
   if ('stock' in input) {
     if (!Number.isSafeInteger(input.stock) || input.stock < 0 || input.stock > 1000000) throw new ApiError(400, 'invalid_product', 'Estoque inválido.');
     value.stock = input.stock;
+  }
+  if ('preparation_days' in input) {
+    if (!Number.isSafeInteger(input.preparation_days) || input.preparation_days < 1 || input.preparation_days > 365) throw new ApiError(400, 'invalid_product', 'Prazo de preparação inválido.');
+    value.preparation_days = input.preparation_days;
   }
   if ('category' in input || creating) {
     if (!['games', 'religioso'].includes(input.category)) throw new ApiError(400, 'invalid_product', 'Categoria indisponível para esta API.');
