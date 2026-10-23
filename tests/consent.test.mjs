@@ -30,7 +30,9 @@ function start(saved = null, containerId = 'GTM-PSSBXMVL') {
     setItem(key, value) { stored.set(key, value); },
     removeItem(key) { stored.delete(key); }
   };
-  runInNewContext(code, { window, document, localStorage, location: { href: 'https://freofigures.com.br/checkout.html?payment_id=private', reload() { reloads++; } }, URL, Date, JSON, Event: class { constructor(type) { this.type = type; } }, encodeURIComponent });
+  const session = new Map();
+  const sessionStorage = { getItem(key) { return session.get(key) ?? null; }, setItem(key, value) { session.set(key, value); } };
+  runInNewContext(code, { window, document, localStorage, sessionStorage, location: { href: 'https://freofigures.com.br/checkout.html?payment_id=private', pathname: '/checkout.html', reload() { reloads++; } }, URL, Date, JSON, Math, Promise, Event: class { constructor(type) { this.type = type; } }, encodeURIComponent });
   return { window, scripts, dataLayer, stored, localStorage, get reloads() { return reloads; } };
 }
 
@@ -57,6 +59,27 @@ test('new visitor loads analytics only after consent and advertising only after 
   assert.equal(consentCommands(page.dataLayer).at(-1)[1].analytics_storage, 'granted');
   assert.equal(consentCommands(page.dataLayer).at(-1)[1].ad_storage, 'granted');
   assert.ok(reloaded.dataLayer.findIndex(item => item.event === 'gtm.js') > reloaded.dataLayer.findIndex(item => item[0] === 'consent' && item[1] === 'update'));
+});
+
+test('first-party page and checkout stages require analytics consent and omit URL parameters', async () => {
+  const page = start();
+  const inserted = [];
+  page.window.supabaseClient = { from(table) {
+    assert.equal(table, 'analytics_events');
+    return { insert(row) { inserted.push(row); return Promise.resolve({ error: null }); } };
+  } };
+  page.window.FreoAnalytics.pageView();
+  assert.equal(inserted.length, 0);
+  page.window.FreoConsent.save(true, false);
+  page.window.FreoAnalytics.pageView();
+  page.window.FreoAnalytics.event('begin_checkout', {});
+  page.window.FreoAnalytics.event('view_item', { items: [{ item_id: '42', item_name: 'Figure' }] });
+  await Promise.resolve();
+  assert.deepEqual(inserted.map(row => row.event_type), ['page_view', 'begin_checkout', 'product_click']);
+  assert.ok(inserted.every(row => row.page === '/checkout.html'));
+  assert.equal(inserted[2].product_id, '42');
+  assert.equal(inserted[2].product_name, null);
+  assert.equal(inserted[0].session_id, inserted[1].session_id);
 });
 
 test('saved preferences reach the data layer before GTM loads', () => {

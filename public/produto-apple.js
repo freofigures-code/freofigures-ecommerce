@@ -72,7 +72,7 @@ window.trackEvent = function (type, id, name) {
             sid = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
             sessionStorage.setItem('freo_sid', sid);
         }
-        Promise.resolve(db.from('analytics_events').insert({ event_type: type, product_id: id || null, product_name: name || null, page: location.pathname + location.search, session_id: sid, referrer: document.referrer || null, user_agent: navigator.userAgent.slice(0, 200) })).catch(function () { });
+        Promise.resolve(db.from('analytics_events').insert({ event_type: type, product_id: id || null, product_name: name || null, page: location.pathname, session_id: sid, referrer: null, user_agent: navigator.userAgent.slice(0, 200) })).catch(function () { });
     }
     catch (_) { }
 };

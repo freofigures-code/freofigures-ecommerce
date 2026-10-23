@@ -42,6 +42,10 @@ function getSessionId(): string {
 function trackEvent(eventType: string, productId?: string, productName?: string): void {
   try {
     if (!(window as any).FreoConsent?.allows('analytics')) return;
+    if (eventType === 'page_view' && (window as any).FreoAnalytics?.pageView) {
+      (window as any).FreoAnalytics.pageView();
+      return;
+    }
     // @ts-ignore
     const supabase = window.supabaseClient || window.supabase;
     if (!supabase) return;
@@ -49,9 +53,9 @@ function trackEvent(eventType: string, productId?: string, productName?: string)
       event_type:   eventType,
       product_id:   productId   || null,
       product_name: productName || null,
-      page:         window.location.pathname + window.location.search,
+      page:         window.location.pathname,
       session_id:   getSessionId(),
-      referrer:     document.referrer || null,
+      referrer:     null,
       user_agent:   navigator.userAgent ? navigator.userAgent.substring(0, 200) : null,
     };
     supabase.from('analytics_events').insert(payload).then((res: any) => {
@@ -2599,6 +2603,12 @@ export default function App() {
   });
   useEffect(() => {
     updateStoreLocation(currentView === 'shop' ? activeFilter : undefined, currentView === 'shop' && !activeFilter);
+  }, [currentView, activeFilter]);
+  useEffect(() => {
+    const recordVisit = () => trackEvent('page_view');
+    recordVisit();
+    window.addEventListener('ff_consent_update', recordVisit);
+    return () => window.removeEventListener('ff_consent_update', recordVisit);
   }, [currentView, activeFilter]);
   const [searchTerm, setSearchTerm] = useState('');
   const [cupomCode, setCupomCode] = useState<string | null>(() => {
