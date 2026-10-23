@@ -1,4 +1,12 @@
-import { tokenMatches } from '../freo-automation-api/core.mjs';
+async function tokenMatches(candidate, expected) {
+  if (!candidate || !expected || expected.length < 32) return false;
+  const encoder = new TextEncoder();
+  const [a, b] = await Promise.all([candidate, expected].map(value => crypto.subtle.digest('SHA-256', encoder.encode(value))));
+  const left = new Uint8Array(a), right = new Uint8Array(b);
+  let difference = 0;
+  for (let i = 0; i < left.length; i++) difference |= left[i] ^ right[i];
+  return difference === 0;
+}
 
 function reply(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
