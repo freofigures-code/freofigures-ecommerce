@@ -1187,6 +1187,12 @@ export default function FreoCriarModelo() {
                   </button>
                 </div>
                 <button
+                  onClick={handleRefazerImagem}
+                  className="w-full mt-3 flex items-center justify-center gap-2 border border-white/10 text-white/60 font-display font-bold uppercase tracking-widest px-6 py-3 hover:border-freo-orange/30 hover:text-freo-orange transition-all"
+                >
+                  Começar de novo
+                </button>
+                <button
                   onClick={() => { window.location.href = `/minhas-criacoes.html?id=${encodeURIComponent(currentJob?.id ?? "")}`; }}
                   className="w-full mt-3 flex items-center justify-center gap-2 border border-white/10 text-white/60 font-display font-bold uppercase tracking-widest px-6 py-3 hover:border-freo-orange/30 hover:text-freo-orange transition-all"
                 >
@@ -1274,6 +1280,12 @@ export default function FreoCriarModelo() {
                     Ver Preço
                   </button>
                 </div>
+                <button
+                  onClick={handleRefazerImagem}
+                  className="w-full mt-3 flex items-center justify-center gap-2 border border-white/10 text-white/60 font-display font-bold uppercase tracking-widest px-6 py-3 hover:border-freo-orange/30 hover:text-freo-orange transition-all"
+                >
+                  Começar de novo
+                </button>
                 <button
                   onClick={() => { window.location.href = `/minhas-criacoes.html?id=${encodeURIComponent(currentJob?.id ?? "")}`; }}
                   className="w-full mt-3 flex items-center justify-center gap-2 border border-white/10 text-white/60 font-display font-bold uppercase tracking-widest px-6 py-3 hover:border-freo-orange/30 hover:text-freo-orange transition-all"
