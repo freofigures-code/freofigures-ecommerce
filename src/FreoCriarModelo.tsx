@@ -6,8 +6,11 @@ import {
   createGenerationImageUrl,
   createGenerationModelUrl,
   createPromptGeneration,
-  createUploadGeneration,
+  createUploadPreview,
   getAuthenticatedUser,
+  isPhotoConversion,
+  startPhotoConversion,
+  type UploadKind,
   getFreoBalance,
   getGeneration,
   isGenerationBusy,
@@ -174,6 +177,8 @@ export default function FreoCriarModelo() {
   const [, setRefineOrigin] = useState<"image-ready" | "model-ready">("image-ready");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState<string | null>(null);
+  const [uploadKind, setUploadKind] = useState<UploadKind | null>(null);
+  const [uploadNote, setUploadNote] = useState("");
   const [currentJob, setCurrentJob] = useState<GenerationJob | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [restoring, setRestoring] = useState(true);
@@ -476,20 +481,34 @@ export default function FreoCriarModelo() {
   };
 
   const handleEnviarImagemPropria = async () => {
-    if (submitting || !uploadedFile || !(await requireAccount())) return;
+    if (submitting || !uploadedFile || !uploadKind || !(await requireAccount())) return;
     setPrice(null);
     setErrorMessage(null);
-    setStep("loading-model-from-upload");
     setSubmitting(true);
 
+    let preview: GenerationJob | null = null;
     try {
-      const job = await createUploadGeneration(uploadedFile);
+      preview = await createUploadPreview(uploadedFile);
       void getFreoBalance().then(setCreditBalance).catch(() => {});
+      if (uploadKind === "ready") {
+        await applyJob(preview);
+        return;
+      }
+      setStep("loading-refine");
+      const job = await startPhotoConversion(preview.id, uploadKind, uploadNote);
       await applyJob(job);
     } catch (error) {
       if (!mountedRef.current) return;
-      setErrorMessage(error instanceof Error ? error.message : "Não foi possível enviar a imagem e iniciar o modelo 3D.");
-      setStep("upload-image");
+      const message = error instanceof Error ? error.message : "Não foi possível enviar a imagem.";
+      if (preview) {
+        // O upload já foi salvo: mostra a prévia para o cliente tentar de novo
+        // pelo ajuste por texto, sem enviar a imagem outra vez.
+        await applyJob(preview);
+        setErrorMessage(`${message} Sua imagem foi salva; use "Refazer Imagem" para tentar a conversão novamente.`);
+      } else {
+        setErrorMessage(message);
+        setStep("upload-image");
+      }
     } finally {
       if (mountedRef.current) setSubmitting(false);
     }
@@ -527,6 +546,8 @@ export default function FreoCriarModelo() {
     setUploadedFile(null);
     if (uploadedPreviewUrl) URL.revokeObjectURL(uploadedPreviewUrl);
     setUploadedPreviewUrl(null);
+    setUploadKind(null);
+    setUploadNote("");
     setStep("start");
     window.history.replaceState({}, "", "/criar-modelo.html");
   };
@@ -731,7 +752,7 @@ export default function FreoCriarModelo() {
                       Enviar minha imagem
                     </p>
                     <p className="text-freo-light/50 font-body text-sm">
-                      Já tenho uma imagem pronta — gerar o modelo 3D direto.
+                      Imagem de personagem ou foto real — você ajusta antes do 3D.
                     </p>
                   </button>
                 </div>
@@ -758,11 +779,50 @@ export default function FreoCriarModelo() {
                     Envie sua <span className="text-freo-orange">imagem</span>
                   </h1>
                   <p className="text-freo-light/50 font-body text-sm md:text-base max-w-lg mx-auto">
-                    Vamos gerar o modelo 3D diretamente a partir da imagem que você enviar.
+                    Você vê a prévia e pode ajustar por texto antes de gerar o modelo 3D.
                   </p>
                 </div>
 
                 <div className="bg-[#111111] border border-white/[0.07] p-5 md:p-6">
+                  <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                    Que tipo de imagem é?
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-5">
+                    {([
+                      ["ready", "Personagem pronto", "Imagem de IA (ChatGPT), ilustração ou render de figure."],
+                      ["photo", "Foto de pessoa", "Foto real. Transformamos em figure antes do 3D."],
+                      ["object", "Foto de pet ou objeto", "Foto real de animal ou objeto, vira figure antes do 3D."],
+                    ] as const).map(([kind, title, description]) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        onClick={() => setUploadKind(kind)}
+                        aria-pressed={uploadKind === kind}
+                        className={`text-left border px-3 py-3 transition-all ${uploadKind === kind ? "border-freo-orange bg-freo-orange/10" : "border-white/10 hover:border-freo-orange/40"}`}
+                      >
+                        <span className={`block font-display font-bold uppercase tracking-wide text-sm mb-1 ${uploadKind === kind ? "text-freo-orange" : "text-white"}`}>
+                          {title}
+                        </span>
+                        <span className="block font-body text-xs text-white/45 leading-snug">{description}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {(uploadKind === "photo" || uploadKind === "object") && (
+                    <div className="mb-5">
+                      <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                        Algum detalhe para a figure? (opcional)
+                      </label>
+                      <textarea
+                        value={uploadNote}
+                        onChange={event => setUploadNote(event.target.value)}
+                        placeholder="Ex: estilo anime, segurando uma bola, roupa de super-herói..."
+                        rows={2}
+                        className="w-full bg-[#0A0A0A] border border-white/[0.08] text-freo-light px-4 py-3 font-body text-sm outline-none focus:border-freo-orange transition-colors resize-none placeholder:text-white/20"
+                      />
+                    </div>
+                  )}
+
                   <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
                     Arquivo de imagem
                   </label>
@@ -799,10 +859,10 @@ export default function FreoCriarModelo() {
                     </button>
                     <button
                       onClick={handleEnviarImagemPropria}
-                      disabled={!uploadedFile}
+                      disabled={!uploadedFile || !uploadKind || submitting}
                       className="bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.99]"
                     >
-                      Gerar Modelo 3D
+                      {submitting ? "Enviando..." : uploadKind === "ready" ? "Ver prévia" : uploadKind ? "Transformar em figure" : "Escolha o tipo"}
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -1454,7 +1514,7 @@ export default function FreoCriarModelo() {
                 )}
                 <div className="w-14 h-14 border-2 border-freo-orange border-t-transparent rounded-full animate-spin mb-6" />
                 <p className="font-display font-bold text-lg uppercase tracking-wide text-white mb-2">
-                  Aplicando a mudança
+                  {isPhotoConversion(currentJob) ? "Transformando sua foto em figure" : "Aplicando a mudança"}
                 </p>
                 <p className="font-mono text-sm text-freo-orange fcm-pulse">
                   Isso pode levar até 1 minuto...
