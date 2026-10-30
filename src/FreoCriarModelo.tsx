@@ -64,6 +64,24 @@ function useRotatingMessages(messages: string[], active: boolean, intervalMs = 3
   return messages[index] ?? messages[0] ?? "";
 }
 
+const PROMPT_ANSWER_LABELS = ["Sujeito", "Estilo", "Pose", "Roupa/acessórios/cores", "Observações extras"] as const;
+
+// Reconstrói as respostas a partir do prompt montado em handleFinalizarPerguntas,
+// para permitir editá-las depois de recarregar a página.
+function parsePromptAnswers(prompt: string): Record<(typeof PROMPT_ANSWER_LABELS)[number], string> {
+  const found = PROMPT_ANSWER_LABELS
+    .map(label => ({ label, start: prompt.indexOf(`${label}: `) }))
+    .filter(entry => entry.start >= 0)
+    .sort((a, b) => a.start - b.start);
+  const answers = Object.fromEntries(PROMPT_ANSWER_LABELS.map(label => [label, ""])) as Record<(typeof PROMPT_ANSWER_LABELS)[number], string>;
+  found.forEach((entry, index) => {
+    const valueStart = entry.start + entry.label.length + 2;
+    const end = index + 1 < found.length ? found[index + 1].start : prompt.length;
+    answers[entry.label] = prompt.slice(valueStart, end).replace(/\.\s*$/, "").trim();
+  });
+  return answers;
+}
+
 type FlowStep =
   | "start"
   | "upload-image"
@@ -475,6 +493,20 @@ export default function FreoCriarModelo() {
     } finally {
       if (mountedRef.current) setSubmitting(false);
     }
+  };
+
+  const openRefine = (origin: "image-ready" | "model-ready") => {
+    setRefineOrigin(origin);
+    setRefineText("");
+    if (currentJob?.source_type === "prompt" && currentJob.prompt && !answerSubject.trim()) {
+      const answers = parsePromptAnswers(currentJob.prompt);
+      setAnswerSubject(answers["Sujeito"]);
+      setAnswerStyle(answers["Estilo"]);
+      setAnswerPose(answers["Pose"]);
+      setAnswerOutfit(answers["Roupa/acessórios/cores"]);
+      setAnswerNotes(answers["Observações extras"]);
+    }
+    setStep("refine-question");
   };
 
   const handleRefazerImagem = () => {
@@ -1080,7 +1112,7 @@ export default function FreoCriarModelo() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
-                    onClick={() => { setRefineOrigin("image-ready"); setRefineText(""); setStep("refine-question"); }}
+                    onClick={() => openRefine("image-ready")}
                     className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
                   >
                     <RefreshCw className="w-4 h-4" />
@@ -1168,7 +1200,7 @@ export default function FreoCriarModelo() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
-                    onClick={() => { setRefineOrigin("model-ready"); setRefineText(""); setStep("refine-question"); }}
+                    onClick={() => openRefine("model-ready")}
                     className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
                   >
                     <RefreshCw className="w-4 h-4" />
@@ -1360,6 +1392,40 @@ export default function FreoCriarModelo() {
                     Enviar
                     <ArrowRight className="w-4 h-4" />
                   </button>
+                  {currentJob?.source_type === "prompt" && (
+                    <details className="mt-4 border border-white/[0.08] bg-[#0A0A0A] group">
+                      <summary className="cursor-pointer list-none px-4 py-3 font-mono text-[10px] uppercase tracking-[0.1em] text-white/50 hover:text-freo-orange transition-colors">
+                        Prefere mudar suas respostas? Gera uma imagem nova (10 créditos)
+                      </summary>
+                      <div className="px-4 pb-4 space-y-3">
+                        {([
+                          ["O que transformar em figure", answerSubject, setAnswerSubject],
+                          ["Estilo", answerStyle, setAnswerStyle],
+                          ["Pose", answerPose, setAnswerPose],
+                          ["Roupa / acessórios / cores (opcional)", answerOutfit, setAnswerOutfit],
+                          ["Observações extras (opcional)", answerNotes, setAnswerNotes],
+                        ] as const).map(([label, value, setValue]) => (
+                          <div key={label}>
+                            <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-1.5">
+                              {label}
+                            </label>
+                            <input
+                              value={value}
+                              onChange={event => setValue(event.target.value)}
+                              className="w-full bg-[#111111] border border-white/[0.08] text-freo-light px-3 py-2.5 font-body text-sm outline-none focus:border-freo-orange transition-colors"
+                            />
+                          </div>
+                        ))}
+                        <button
+                          onClick={handleFinalizarPerguntas}
+                          disabled={submitting || !answerSubject.trim() || !answerStyle.trim() || !answerPose.trim()}
+                          className="w-full flex items-center justify-center gap-2 border border-freo-orange/50 text-freo-orange font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-freo-orange/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.99]"
+                        >
+                          Gerar nova imagem com essas respostas
+                        </button>
+                      </div>
+                    </details>
+                  )}
                   <button
                     onClick={handleRefazerImagem}
                     className="w-full mt-3 flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
