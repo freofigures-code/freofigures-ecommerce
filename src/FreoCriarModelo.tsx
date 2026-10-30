@@ -6,8 +6,11 @@ import {
   createGenerationImageUrl,
   createGenerationModelUrl,
   createPromptGeneration,
-  createUploadGeneration,
+  createUploadPreview,
   getAuthenticatedUser,
+  isPhotoConversion,
+  startPhotoConversion,
+  type UploadKind,
   getFreoBalance,
   getGeneration,
   isGenerationBusy,
@@ -62,6 +65,24 @@ function useRotatingMessages(messages: string[], active: boolean, intervalMs = 3
   }, [active, intervalMs, messages]);
 
   return messages[index] ?? messages[0] ?? "";
+}
+
+const PROMPT_ANSWER_LABELS = ["Sujeito", "Estilo", "Pose", "Roupa/acessórios/cores", "Observações extras"] as const;
+
+// Reconstrói as respostas a partir do prompt montado em handleFinalizarPerguntas,
+// para permitir editá-las depois de recarregar a página.
+function parsePromptAnswers(prompt: string): Record<(typeof PROMPT_ANSWER_LABELS)[number], string> {
+  const found = PROMPT_ANSWER_LABELS
+    .map(label => ({ label, start: prompt.indexOf(`${label}: `) }))
+    .filter(entry => entry.start >= 0)
+    .sort((a, b) => a.start - b.start);
+  const answers = Object.fromEntries(PROMPT_ANSWER_LABELS.map(label => [label, ""])) as Record<(typeof PROMPT_ANSWER_LABELS)[number], string>;
+  found.forEach((entry, index) => {
+    const valueStart = entry.start + entry.label.length + 2;
+    const end = index + 1 < found.length ? found[index + 1].start : prompt.length;
+    answers[entry.label] = prompt.slice(valueStart, end).replace(/\.\s*$/, "").trim();
+  });
+  return answers;
 }
 
 type FlowStep =
@@ -156,6 +177,8 @@ export default function FreoCriarModelo() {
   const [, setRefineOrigin] = useState<"image-ready" | "model-ready">("image-ready");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState<string | null>(null);
+  const [uploadKind, setUploadKind] = useState<UploadKind | null>(null);
+  const [uploadNote, setUploadNote] = useState("");
   const [currentJob, setCurrentJob] = useState<GenerationJob | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [restoring, setRestoring] = useState(true);
@@ -458,23 +481,51 @@ export default function FreoCriarModelo() {
   };
 
   const handleEnviarImagemPropria = async () => {
-    if (submitting || !uploadedFile || !(await requireAccount())) return;
+    if (submitting || !uploadedFile || !uploadKind || !(await requireAccount())) return;
     setPrice(null);
     setErrorMessage(null);
-    setStep("loading-model-from-upload");
     setSubmitting(true);
 
+    let preview: GenerationJob | null = null;
     try {
-      const job = await createUploadGeneration(uploadedFile);
+      preview = await createUploadPreview(uploadedFile);
       void getFreoBalance().then(setCreditBalance).catch(() => {});
+      if (uploadKind === "ready") {
+        await applyJob(preview);
+        return;
+      }
+      setStep("loading-refine");
+      const job = await startPhotoConversion(preview.id, uploadKind, uploadNote);
       await applyJob(job);
     } catch (error) {
       if (!mountedRef.current) return;
-      setErrorMessage(error instanceof Error ? error.message : "Não foi possível enviar a imagem e iniciar o modelo 3D.");
-      setStep("upload-image");
+      const message = error instanceof Error ? error.message : "Não foi possível enviar a imagem.";
+      if (preview) {
+        // O upload já foi salvo: mostra a prévia para o cliente tentar de novo
+        // pelo ajuste por texto, sem enviar a imagem outra vez.
+        await applyJob(preview);
+        setErrorMessage(`${message} Sua imagem foi salva; use "Refazer Imagem" para tentar a conversão novamente.`);
+      } else {
+        setErrorMessage(message);
+        setStep("upload-image");
+      }
     } finally {
       if (mountedRef.current) setSubmitting(false);
     }
+  };
+
+  const openRefine = (origin: "image-ready" | "model-ready") => {
+    setRefineOrigin(origin);
+    setRefineText("");
+    if (currentJob?.source_type === "prompt" && currentJob.prompt && !answerSubject.trim()) {
+      const answers = parsePromptAnswers(currentJob.prompt);
+      setAnswerSubject(answers["Sujeito"]);
+      setAnswerStyle(answers["Estilo"]);
+      setAnswerPose(answers["Pose"]);
+      setAnswerOutfit(answers["Roupa/acessórios/cores"]);
+      setAnswerNotes(answers["Observações extras"]);
+    }
+    setStep("refine-question");
   };
 
   const handleRefazerImagem = () => {
@@ -495,6 +546,8 @@ export default function FreoCriarModelo() {
     setUploadedFile(null);
     if (uploadedPreviewUrl) URL.revokeObjectURL(uploadedPreviewUrl);
     setUploadedPreviewUrl(null);
+    setUploadKind(null);
+    setUploadNote("");
     setStep("start");
     window.history.replaceState({}, "", "/criar-modelo.html");
   };
@@ -699,7 +752,7 @@ export default function FreoCriarModelo() {
                       Enviar minha imagem
                     </p>
                     <p className="text-freo-light/50 font-body text-sm">
-                      Já tenho uma imagem pronta — gerar o modelo 3D direto.
+                      Imagem de personagem ou foto real — você ajusta antes do 3D.
                     </p>
                   </button>
                 </div>
@@ -726,11 +779,50 @@ export default function FreoCriarModelo() {
                     Envie sua <span className="text-freo-orange">imagem</span>
                   </h1>
                   <p className="text-freo-light/50 font-body text-sm md:text-base max-w-lg mx-auto">
-                    Vamos gerar o modelo 3D diretamente a partir da imagem que você enviar.
+                    Você vê a prévia e pode ajustar por texto antes de gerar o modelo 3D.
                   </p>
                 </div>
 
                 <div className="bg-[#111111] border border-white/[0.07] p-5 md:p-6">
+                  <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                    Que tipo de imagem é?
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-5">
+                    {([
+                      ["ready", "Personagem pronto", "Imagem de IA (ChatGPT), ilustração ou render de figure."],
+                      ["photo", "Foto de pessoa", "Foto real. Transformamos em figure antes do 3D."],
+                      ["object", "Foto de pet ou objeto", "Foto real de animal ou objeto, vira figure antes do 3D."],
+                    ] as const).map(([kind, title, description]) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        onClick={() => setUploadKind(kind)}
+                        aria-pressed={uploadKind === kind}
+                        className={`text-left border px-3 py-3 transition-all ${uploadKind === kind ? "border-freo-orange bg-freo-orange/10" : "border-white/10 hover:border-freo-orange/40"}`}
+                      >
+                        <span className={`block font-display font-bold uppercase tracking-wide text-sm mb-1 ${uploadKind === kind ? "text-freo-orange" : "text-white"}`}>
+                          {title}
+                        </span>
+                        <span className="block font-body text-xs text-white/45 leading-snug">{description}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {(uploadKind === "photo" || uploadKind === "object") && (
+                    <div className="mb-5">
+                      <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
+                        Algum detalhe para a figure? (opcional)
+                      </label>
+                      <textarea
+                        value={uploadNote}
+                        onChange={event => setUploadNote(event.target.value)}
+                        placeholder="Ex: estilo anime, segurando uma bola, roupa de super-herói..."
+                        rows={2}
+                        className="w-full bg-[#0A0A0A] border border-white/[0.08] text-freo-light px-4 py-3 font-body text-sm outline-none focus:border-freo-orange transition-colors resize-none placeholder:text-white/20"
+                      />
+                    </div>
+                  )}
+
                   <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-2">
                     Arquivo de imagem
                   </label>
@@ -767,10 +859,10 @@ export default function FreoCriarModelo() {
                     </button>
                     <button
                       onClick={handleEnviarImagemPropria}
-                      disabled={!uploadedFile}
+                      disabled={!uploadedFile || !uploadKind || submitting}
                       className="bg-freo-orange text-freo-black font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:bg-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.99]"
                     >
-                      Gerar Modelo 3D
+                      {submitting ? "Enviando..." : uploadKind === "ready" ? "Ver prévia" : uploadKind ? "Transformar em figure" : "Escolha o tipo"}
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -1080,7 +1172,7 @@ export default function FreoCriarModelo() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
-                    onClick={() => { setRefineOrigin("image-ready"); setRefineText(""); setStep("refine-question"); }}
+                    onClick={() => openRefine("image-ready")}
                     className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
                   >
                     <RefreshCw className="w-4 h-4" />
@@ -1168,7 +1260,7 @@ export default function FreoCriarModelo() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
-                    onClick={() => { setRefineOrigin("model-ready"); setRefineText(""); setStep("refine-question"); }}
+                    onClick={() => openRefine("model-ready")}
                     className="flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
                   >
                     <RefreshCw className="w-4 h-4" />
@@ -1360,6 +1452,40 @@ export default function FreoCriarModelo() {
                     Enviar
                     <ArrowRight className="w-4 h-4" />
                   </button>
+                  {currentJob?.source_type === "prompt" && (
+                    <details className="mt-4 border border-white/[0.08] bg-[#0A0A0A] group">
+                      <summary className="cursor-pointer list-none px-4 py-3 font-mono text-[10px] uppercase tracking-[0.1em] text-white/50 hover:text-freo-orange transition-colors">
+                        Prefere mudar suas respostas? Gera uma imagem nova (10 créditos)
+                      </summary>
+                      <div className="px-4 pb-4 space-y-3">
+                        {([
+                          ["O que transformar em figure", answerSubject, setAnswerSubject],
+                          ["Estilo", answerStyle, setAnswerStyle],
+                          ["Pose", answerPose, setAnswerPose],
+                          ["Roupa / acessórios / cores (opcional)", answerOutfit, setAnswerOutfit],
+                          ["Observações extras (opcional)", answerNotes, setAnswerNotes],
+                        ] as const).map(([label, value, setValue]) => (
+                          <div key={label}>
+                            <label className="block font-mono text-[10px] uppercase tracking-[0.1em] text-white/35 mb-1.5">
+                              {label}
+                            </label>
+                            <input
+                              value={value}
+                              onChange={event => setValue(event.target.value)}
+                              className="w-full bg-[#111111] border border-white/[0.08] text-freo-light px-3 py-2.5 font-body text-sm outline-none focus:border-freo-orange transition-colors"
+                            />
+                          </div>
+                        ))}
+                        <button
+                          onClick={handleFinalizarPerguntas}
+                          disabled={submitting || !answerSubject.trim() || !answerStyle.trim() || !answerPose.trim()}
+                          className="w-full flex items-center justify-center gap-2 border border-freo-orange/50 text-freo-orange font-display font-bold uppercase tracking-widest px-6 py-3 hover:bg-freo-orange/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.99]"
+                        >
+                          Gerar nova imagem com essas respostas
+                        </button>
+                      </div>
+                    </details>
+                  )}
                   <button
                     onClick={handleRefazerImagem}
                     className="w-full mt-3 flex items-center justify-center gap-2 border border-white/15 text-white font-display font-bold uppercase tracking-widest px-6 py-3.5 hover:border-freo-orange/50 hover:bg-freo-orange/5 transition-all active:scale-[0.99]"
@@ -1388,7 +1514,7 @@ export default function FreoCriarModelo() {
                 )}
                 <div className="w-14 h-14 border-2 border-freo-orange border-t-transparent rounded-full animate-spin mb-6" />
                 <p className="font-display font-bold text-lg uppercase tracking-wide text-white mb-2">
-                  Aplicando a mudança
+                  {isPhotoConversion(currentJob) ? "Transformando sua foto em figure" : "Aplicando a mudança"}
                 </p>
                 <p className="font-mono text-sm text-freo-orange fcm-pulse">
                   Isso pode levar até 1 minuto...

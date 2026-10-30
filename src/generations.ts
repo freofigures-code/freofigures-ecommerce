@@ -71,7 +71,8 @@ export type GenerationJob = {
 };
 
 type StartGenerationArgs = {
-  p_action: GenerationOperation;
+  // 'register_upload' só cria a prévia do upload; nunca vira active_operation.
+  p_action: GenerationOperation | 'register_upload';
   p_generation_id?: string | null;
   p_prompt?: string | null;
   p_refinement_text?: string | null;
@@ -182,6 +183,24 @@ export async function startImageRefinement(
   });
 }
 
+// Converte uma foto real em figure usando o mesmo fluxo de refine_image.
+export async function startPhotoConversion(
+  generationId: string,
+  kind: Exclude<UploadKind, 'ready'>,
+  note?: string,
+): Promise<GenerationJob> {
+  const extra = note?.trim();
+  return startImageRefinement(
+    generationId,
+    extra ? `${UPLOAD_CONVERSION_PREFIX[kind]} ${extra}` : UPLOAD_CONVERSION_PREFIX[kind],
+  );
+}
+
+export function isPhotoConversion(job: GenerationJob | null): boolean {
+  const text = job?.refinement_text?.trim() ?? '';
+  return Object.values(UPLOAD_CONVERSION_PREFIX).some(prefix => text.startsWith(prefix));
+}
+
 export async function validateGenerationUpload(file: File): Promise<'image/png' | 'image/jpeg'> {
   if (!(file instanceof File)) throw new Error('Selecione um arquivo de imagem válido.');
   if (file.size <= 0) throw new Error('A imagem selecionada está vazia.');
@@ -206,18 +225,58 @@ function randomUuid(): string {
   throw new Error('Este navegador não oferece o gerador seguro de UUID necessário para o upload. Atualize o navegador e tente novamente.');
 }
 
-export async function createUploadGeneration(file: File): Promise<GenerationJob> {
+// Tipo de imagem escolhido no upload. 'ready' já é um personagem/figure
+// (ChatGPT, ilustração); 'photo' e 'object' são fotos reais que precisam ser
+// convertidas em figure antes do 3D.
+export type UploadKind = 'ready' | 'photo' | 'object';
+
+// O worker repassa refinement_text ao webhook refazer_imagem do n8n como
+// "prompt". O prefixo diz ao Switch do n8n qual prompt de conversão usar.
+export const UPLOAD_CONVERSION_PREFIX: Record<Exclude<UploadKind, 'ready'>, string> = {
+  photo: '[modo:foto]',
+  object: '[modo:objeto]',
+};
+
+const MAX_UPLOAD_DIMENSION = 2048;
+
+// O webhook GERAR_modelo só aceita PNG, então toda imagem enviada é
+// normalizada para PNG (respeitando a rotação EXIF) e limitada a 2048 px.
+async function normalizeUploadToPng(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  try {
+    const scale = Math.min(1, MAX_UPLOAD_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Este navegador não conseguiu processar a imagem.');
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('Não foi possível converter a imagem para PNG.');
+    if (blob.size > MAX_GENERATION_UPLOAD_BYTES) {
+      throw new Error('A imagem convertida ultrapassa 20 MB. Envie uma imagem menor.');
+    }
+    return blob;
+  } finally {
+    bitmap.close();
+  }
+}
+
+// Envia a imagem e cria a geração já como 'image_ready', sem gerar o 3D.
+// O cliente então ajusta por texto, converte a foto ou gera o modelo.
+export async function createUploadPreview(file: File): Promise<GenerationJob> {
   const supabase = getSupabase();
   const user = await getAuthenticatedUser();
-  const mimeType = await validateGenerationUpload(file);
-  const extension = mimeType === 'image/png' ? 'png' : 'jpg';
+  await validateGenerationUpload(file);
+  const png = await normalizeUploadToPng(file);
   const uploadId = randomUuid();
-  const path = `${user.id}/${uploadId}/upload.${extension}`;
+  const path = `${user.id}/${uploadId}/upload.png`;
+  const name = file.name || 'upload.png';
 
   const { error: uploadError } = await supabase.storage
     .from(GENERATIONS_BUCKET)
-    .upload(path, file, {
-      contentType: mimeType,
+    .upload(path, png, {
+      contentType: 'image/png',
       cacheControl: '3600',
       upsert: false,
     });
@@ -226,11 +285,11 @@ export async function createUploadGeneration(file: File): Promise<GenerationJob>
 
   try {
     return await callStartGeneration({
-      p_action: 'generate_model_from_upload',
+      p_action: 'register_upload',
       p_input_image_path: path,
-      p_input_image_name: file.name || `upload.${extension}`,
-      p_input_image_type: mimeType,
-      p_title: file.name || `upload.${extension}`,
+      p_input_image_name: name,
+      p_input_image_type: 'image/png',
+      p_title: name,
     });
   } catch (error) {
     try {
