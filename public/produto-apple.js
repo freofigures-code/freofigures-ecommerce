@@ -212,6 +212,8 @@ function syncPurchase(animate) {
         text('price-original', formatCurrency(oldPrice));
         text('price-discount-pct', Math.round((1 - effective / oldPrice) * 100));
     }
+    if (window.FreoBlackFriday)
+        window.FreoBlackFriday.updatePrice({ promo: promo, oldPrice: oldPrice, effective: effective });
     text('price-caption', (!ready && variantGroups.some(function (g) { return g.priced; }) ? 'O preço acompanha a opção escolhida' : 'Valor por ' + (product.is_kit ? 'kit' : 'peça')) + ' · frete no checkout');
     if (animate && !reduceMotion.matches) {
         el('summary-total').classList.remove('price-flash');
@@ -240,6 +242,8 @@ function renderStock() {
     el('estoque-badge').className = 'stock-badge' + (maxStock === 0 ? ' out' : maxStock <= 5 ? ' low' : '');
     text('estoque-badge', maxStock === 0 ? 'Esgotado' : maxStock <= 5 ? (maxStock === 1 ? 'Última peça disponível' : maxStock + ' peças disponíveis') : 'Disponível na coleção');
     el('out-of-stock-alert').classList.toggle('hidden', maxStock > 0);
+    if (window.FreoBlackFriday)
+        window.FreoBlackFriday.updateStock(maxStock);
 }
 var BRAZIL_REGIONS = {
     Norte: ['AC', 'AP', 'AM', 'PA', 'RO', 'RR', 'TO'],

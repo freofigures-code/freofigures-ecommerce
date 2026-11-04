@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Admin — Black Friday | FreoFigures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'freo-black': '#0A0A0A',
+            'freo-dark': '#111111',
+            'freo-card': '#181818',
+            'freo-light': '#F5F5F5',
+            'freo-orange': '#DDAF34',
+            'freo-muted': '#888',
+          },
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            body: ['Space Grotesk', 'sans-serif'],
+            mono: ['ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://rrmxqpvxrpcqqxsgccqw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJybXhxcHZ4cnBjcXF4c2djY3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTc5MjcsImV4cCI6MjA4ODE3MzkyN30.v4IoG2wln2-4T-DZ9CKdrftEu4oI6-bLfE8gRlWzDYM";
+    window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #0A0A0A; }
+    .fi { width:100%; background:#0D0D0D; border:1px solid rgba(255,255,255,0.08); color:#F5F5F5; padding:.7rem 1rem; font-family:'Space Grotesk',sans-serif; font-size:.875rem; outline:none; transition:border-color .15s; border-radius:2px; }
+    .fi:focus { border-color:#DDAF34; }
+    .fi::placeholder { color:rgba(245,245,245,.2); }
+    textarea.fi { resize:vertical; min-height:70px; }
+    .fl { display:block; font-family:ui-monospace,monospace; font-size:.65rem; color:rgba(245,245,245,.35); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
+    .card { background:#141414; border:1px solid rgba(255,255,255,.06); }
+
+    .switch { position:relative; width:64px; height:34px; flex:none; }
+    .switch input { opacity:0; width:0; height:0; }
+    .switch span { position:absolute; inset:0; background:#2a2a2a; border:1px solid rgba(255,255,255,.12); border-radius:999px; cursor:pointer; transition:background .2s,border-color .2s; }
+    .switch span::before { content:''; position:absolute; left:4px; top:4px; width:24px; height:24px; border-radius:50%; background:#777; transition:transform .2s,background .2s; }
+    .switch input:checked + span { background:#DDAF34; border-color:#DDAF34; }
+    .switch input:checked + span::before { transform:translateX(30px); background:#0A0A0A; }
+    .switch input:focus-visible + span { outline:2px solid #fff; outline-offset:2px; }
+
+    .pill { font-family:ui-monospace,monospace; font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; padding:.3rem .6rem; border:1px solid; }
+    .pill-live { color:#22c55e; border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.1); }
+    .pill-scheduled { color:#60a5fa; border-color:rgba(96,165,250,.35); background:rgba(96,165,250,.1); }
+    .pill-off { color:rgba(245,245,245,.45); border-color:rgba(255,255,255,.12); background:rgba(255,255,255,.04); }
+    .pill-ended { color:#f87171; border-color:rgba(248,113,113,.35); background:rgba(248,113,113,.1); }
+
+    .bf-badge { display:inline-flex; align-items:stretch; font-family:'Outfit',sans-serif; font-weight:900; text-transform:uppercase; line-height:1; box-shadow:0 6px 18px rgba(0,0,0,.45); }
+    .bf-badge b { background:#0A0A0A; color:#F5F5F5; border:1px solid #DDAF34; padding:.35rem .5rem; font-size:.6rem; letter-spacing:.12em; display:flex; align-items:center; }
+    .bf-badge i { font-style:normal; background:linear-gradient(135deg,#f5d36b,#DDAF34 55%,#b8871b); color:#0A0A0A; padding:.35rem .55rem; font-size:1rem; display:flex; align-items:center; }
+
+    table { border-collapse:collapse; width:100%; }
+    th { font-family:ui-monospace,monospace; font-size:.6rem; text-transform:uppercase; letter-spacing:.1em; color:rgba(245,245,245,.35); text-align:left; padding:.6rem .75rem; border-bottom:1px solid rgba(255,255,255,.08); white-space:nowrap; }
+    td { padding:.55rem .75rem; border-bottom:1px solid rgba(255,255,255,.05); font-size:.85rem; vertical-align:middle; }
+    tr:hover td { background:rgba(255,255,255,.015); }
+    .promo-input { width:110px; background:#0D0D0D; border:1px solid rgba(255,255,255,.1); color:#F5F5F5; padding:.4rem .5rem; font-family:ui-monospace,monospace; font-size:.8rem; border-radius:2px; outline:none; }
+    .promo-input:focus { border-color:#DDAF34; }
+    .promo-input.saving { border-color:#60a5fa; }
+    .promo-input.saved { border-color:#22c55e; }
+    .promo-input.error { border-color:#ef4444; }
+
+    #toast { position:fixed; bottom:2rem; right:2rem; z-index:9999; font-family:'Space Grotesk',sans-serif; font-size:.875rem; padding:.75rem 1.25rem; border-radius:4px; transform:translateY(160%); transition:transform .25s; pointer-events:none; max-width:340px; }
+    #toast.show { transform:translateY(0); }
+    #toast.success { background:#1a2e1a; border:1px solid rgba(34,197,94,.4); color:#86efac; }
+    #toast.error   { background:#2e1a1a; border:1px solid rgba(239,68,68,.4); color:#fca5a5; }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+  </style>
+</head>
+<body class="text-freo-light font-body antialiased min-h-screen flex flex-col">
+
+  <nav class="bg-freo-dark border-b border-white/[0.06] py-3 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4 min-w-0">
+        <a href="/dashboard.html" class="text-freo-light/40 hover:text-freo-orange transition-colors" aria-label="Voltar ao painel">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </a>
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="font-display font-black text-xl tracking-tighter uppercase">Freo<span class="text-freo-orange font-light">Figures</span></span>
+          <span class="text-white/20 font-mono text-xs">/</span>
+          <span class="font-mono text-xs text-freo-orange uppercase tracking-widest">Admin</span>
+          <span class="text-white/20 font-mono text-xs">/</span>
+          <span class="font-mono text-xs text-white/40 uppercase tracking-widest truncate">Black Friday</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/admin/produtos.html" class="hidden sm:flex items-center gap-2 border border-white/10 text-white/40 font-mono text-xs uppercase tracking-widest px-4 py-2 hover:text-white hover:border-white/30 transition-colors">Produtos</a>
+        <a href="/" target="_blank" rel="noopener" class="flex items-center gap-2 border border-freo-orange/30 text-freo-orange font-mono text-xs uppercase tracking-widest px-4 py-2 hover:bg-freo-orange hover:text-freo-black transition-colors">Ver site ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="page-loading" class="flex-1 flex items-center justify-center min-h-[60vh]">
+    <div class="w-10 h-10 border-4 border-freo-orange border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <main id="main-content" class="hidden max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full flex-1 space-y-8">
+
+    <!-- ── CAMPANHA ─────────────────────────────────────────── -->
+    <section class="card p-5 sm:p-7" aria-labelledby="campaign-title">
+      <div class="flex flex-wrap items-start justify-between gap-5 mb-6">
+        <div>
+          <p class="font-mono text-[10px] uppercase tracking-[.25em] text-freo-orange mb-2">Campanha</p>
+          <h1 id="campaign-title" class="font-display font-black uppercase text-3xl sm:text-4xl tracking-tight">Modo Black Friday</h1>
+          <p class="font-mono text-xs text-white/40 mt-2 max-w-xl leading-relaxed">Ligado, o site ganha o visual Black Friday: faixa com contador no topo, hero especial e vitrine de ofertas na home, selos de desconto nos produtos e elementos de urgência na página do produto. Os preços continuam vindo do <strong class="text-white/70">preço promocional</strong> de cada produto (seção abaixo).</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <span id="status-pill" class="pill pill-off">Desligada</span>
+          <label class="switch" title="Ativar ou desativar a Black Friday">
+            <input type="checkbox" id="f-active" aria-label="Ativar Black Friday">
+            <span></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <label class="fl" for="f-starts">Início (opcional)</label>
+          <input type="datetime-local" id="f-starts" class="fi">
+          <p class="font-mono text-[10px] text-white/25 mt-1">Vazio = começa assim que ativar.</p>
+        </div>
+        <div>
+          <label class="fl" for="f-ends">Fim — alimenta o contador regressivo</label>
+          <input type="datetime-local" id="f-ends" class="fi">
+          <p class="font-mono text-[10px] text-white/25 mt-1">Vazio = sem contador ("por tempo limitado"). Ao chegar a hora, o visual some sozinho.</p>
+        </div>
+        <div class="md:col-span-2">
+          <label class="fl" for="f-headline">Título (hero e faixa do topo)</label>
+          <input type="text" id="f-headline" class="fi" maxlength="80">
+        </div>
+        <div class="md:col-span-2">
+          <label class="fl" for="f-sub">Subtítulo</label>
+          <textarea id="f-sub" class="fi" maxlength="200"></textarea>
+        </div>
+        <div>
+          <label class="fl" for="f-cta">Texto do botão</label>
+          <input type="text" id="f-cta" class="fi" maxlength="30">
+        </div>
+        <div>
+          <label class="fl" for="f-low">"Últimas unidades" quando o estoque for ≤</label>
+          <input type="number" id="f-low" class="fi" min="1" max="100" step="1">
+          <p class="font-mono text-[10px] text-white/25 mt-1">Usa o estoque real do produto. Nada é inventado.</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-4 mt-7 pt-5 border-t border-white/[0.06]">
+        <div class="flex items-center gap-3">
+          <span class="font-mono text-[10px] uppercase tracking-widest text-white/30">Prévia do selo:</span>
+          <span class="bf-badge"><b>Black Friday</b><i>−35%</i></span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="last-saved" class="font-mono text-[10px] text-white/30"></span>
+          <button id="save-campaign" type="button" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-sm tracking-widest px-6 py-3 hover:bg-white transition-colors">Salvar campanha</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PREÇOS PROMOCIONAIS ──────────────────────────────── -->
+    <section class="card p-5 sm:p-7" aria-labelledby="prices-title">
+      <div class="mb-6">
+        <p class="font-mono text-[10px] uppercase tracking-[.25em] text-freo-orange mb-2">Preços</p>
+        <h2 id="prices-title" class="font-display font-black uppercase text-2xl sm:text-3xl tracking-tight">Preços promocionais</h2>
+        <p class="font-mono text-xs text-white/40 mt-2 max-w-2xl leading-relaxed">Só produtos com preço promocional menor que o preço normal ganham o selo de desconto. Este é o mesmo campo "Preço promocional" do cadastro de produtos — o checkout já cobra esse valor. <strong class="text-white/70">Depois da Black Friday, use "Remover promoções" para voltar aos preços normais.</strong></p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_200px_auto] gap-3 mb-4">
+        <input type="search" id="p-search" class="fi" placeholder="Buscar produto…" aria-label="Buscar produto">
+        <select id="p-category" class="fi" aria-label="Filtrar por categoria"><option value="">Todas as categorias</option></select>
+        <label class="flex items-center gap-2 font-mono text-xs text-white/50 whitespace-nowrap px-1"><input type="checkbox" id="p-only-promo"> Só com promoção</label>
+      </div>
+
+      <div class="flex flex-wrap items-end gap-3 p-4 bg-freo-orange/5 border border-freo-orange/15 mb-5">
+        <div>
+          <label class="fl" for="bulk-pct">Desconto em massa (%)</label>
+          <input type="number" id="bulk-pct" class="fi" style="width:130px" min="1" max="90" step="1" placeholder="ex: 30">
+        </div>
+        <label class="flex items-center gap-2 font-mono text-xs text-white/50 pb-3"><input type="checkbox" id="bulk-round" checked> Arredondar para ,90</label>
+        <button id="bulk-apply" type="button" class="bg-freo-orange text-freo-black font-display font-bold uppercase text-xs tracking-widest px-4 py-3 hover:bg-white transition-colors">Aplicar aos filtrados</button>
+        <button id="bulk-clear" type="button" class="border border-red-500/40 text-red-300 font-display font-bold uppercase text-xs tracking-widest px-4 py-3 hover:bg-red-500/10 transition-colors">Remover promoções dos filtrados</button>
+        <span id="bulk-scope" class="font-mono text-[10px] text-white/35 pb-3"></span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table>
+          <thead><tr><th>Produto</th><th>Categoria</th><th>Estoque</th><th>Preço normal</th><th>Preço promocional</th><th>Desconto</th></tr></thead>
+          <tbody id="p-rows"></tbody>
+        </table>
+      </div>
+      <p id="p-empty" class="hidden text-center font-mono text-xs text-white/30 py-10">Nenhum produto encontrado.</p>
+      <p class="font-mono text-[10px] text-white/25 mt-4">Kits têm preço calculado pelos itens e não aparecem aqui — ajuste-os em Produtos.</p>
+    </section>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="/auth-listener.js"></script>
+
+  <script>
+  var db = window.supabaseClient;
+  var CAMPAIGN_ID = 'black_friday';
+  var campaign = null;
+  var products = [];
+  var CATEGORY_LABELS = { games: 'Geek/Gamer', religioso: 'Religioso', feito_por_voces: 'Feito por vocês', montar_kit: 'Montar Kit' };
+
+  function el(id) { return document.getElementById(id); }
+  function showToast(msg, type) {
+    var t = el('toast'); t.textContent = msg; t.className = 'show ' + (type || 'success');
+    clearTimeout(showToast._t); showToast._t = setTimeout(function () { t.className = ''; }, 3200);
+  }
+  function money(n) { return Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function toLocalInput(iso) {
+    if (!iso) return '';
+    var d = new Date(iso); if (isNaN(d)) return '';
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function fromLocalInput(v) { if (!v) return null; var d = new Date(v); return isNaN(d) ? null : d.toISOString(); }
+
+  // ── AUTH ──────────────────────────────────────────────────────────────
+  window.addEventListener('auth-data-loaded', function (e) {
+    var profile = e.detail.profile;
+    if (!profile || !profile.is_admin) {
+      showToast('Acesso negado. Área restrita a administradores.', 'error');
+      setTimeout(function () { window.location.href = '/dashboard.html'; }, 1500);
+      return;
+    }
+    Promise.all([loadCampaign(), loadProducts()]).then(function () {
+      el('page-loading').classList.add('hidden');
+      el('main-content').classList.remove('hidden');
+    });
+  });
+
+  // ── CAMPANHA ──────────────────────────────────────────────────────────
+  function campaignStatus(c) {
+    if (!c || !c.is_active) return { key: 'off', label: 'Desligada' };
+    var now = Date.now();
+    if (c.ends_at && now >= new Date(c.ends_at).getTime()) return { key: 'ended', label: 'Encerrada' };
+    if (c.starts_at && now < new Date(c.starts_at).getTime()) return { key: 'scheduled', label: 'Agendada' };
+    return { key: 'live', label: 'No ar' };
+  }
+  function renderStatus() {
+    var draft = readForm();
+    var s = campaignStatus(draft);
+    el('status-pill').className = 'pill pill-' + s.key;
+    el('status-pill').textContent = s.label;
+  }
+  function readForm() {
+    return {
+      is_active: el('f-active').checked,
+      starts_at: fromLocalInput(el('f-starts').value),
+      ends_at: fromLocalInput(el('f-ends').value),
+      headline: el('f-headline').value.trim(),
+      subheadline: el('f-sub').value.trim(),
+      cta_label: el('f-cta').value.trim(),
+      low_stock_threshold: parseInt(el('f-low').value, 10),
+    };
+  }
+  async function loadCampaign() {
+    var r = await db.from('store_campaigns').select('*').eq('id', CAMPAIGN_ID).maybeSingle();
+    if (r.error || !r.data) {
+      showToast('Tabela store_campaigns não encontrada. Rode a migração no Supabase.', 'error');
+      el('save-campaign').disabled = true;
+      return;
+    }
+    campaign = r.data;
+    el('f-active').checked = !!campaign.is_active;
+    el('f-starts').value = toLocalInput(campaign.starts_at);
+    el('f-ends').value = toLocalInput(campaign.ends_at);
+    el('f-headline').value = campaign.headline || '';
+    el('f-sub').value = campaign.subheadline || '';
+    el('f-cta').value = campaign.cta_label || '';
+    el('f-low').value = campaign.low_stock_threshold || 5;
+    el('last-saved').textContent = campaign.updated_at ? 'Salvo em ' + new Date(campaign.updated_at).toLocaleString('pt-BR') : '';
+    renderStatus();
+  }
+  async function saveCampaign(partial) {
+    var payload = partial || readForm();
+    if (!partial) {
+      if (!payload.headline) return showToast('Preencha o título.', 'error');
+      if (!payload.cta_label) return showToast('Preencha o texto do botão.', 'error');
+      if (!(payload.low_stock_threshold >= 1 && payload.low_stock_threshold <= 100)) return showToast('Limite de estoque deve ser entre 1 e 100.', 'error');
+      if (payload.starts_at && payload.ends_at && new Date(payload.ends_at) <= new Date(payload.starts_at)) return showToast('O fim precisa ser depois do início.', 'error');
+    }
+    el('save-campaign').disabled = true;
+    var r = await db.from('store_campaigns').update(payload).eq('id', CAMPAIGN_ID).select().maybeSingle();
+    el('save-campaign').disabled = false;
+    if (r.error || !r.data) { showToast('Erro ao salvar: ' + (r.error ? r.error.message : 'sem permissão'), 'error'); await loadCampaign(); return; }
+    campaign = r.data;
+    el('last-saved').textContent = 'Salvo em ' + new Date(campaign.updated_at).toLocaleString('pt-BR');
+    var s = campaignStatus(campaign);
+    showToast(s.key === 'live' ? 'Black Friday no ar!' : 'Campanha salva (' + s.label.toLowerCase() + ').');
+    renderStatus();
+  }
+  el('save-campaign').addEventListener('click', function () { saveCampaign(); });
+  el('f-active').addEventListener('change', function () {
+    // O interruptor salva na hora — é o "botão de ligar" da Black Friday.
+    renderStatus();
+    saveCampaign({ is_active: el('f-active').checked });
+  });
+  ['f-starts', 'f-ends'].forEach(function (id) { el(id).addEventListener('change', renderStatus); });
+  setInterval(renderStatus, 30000);
+
+  // ── PRODUTOS ──────────────────────────────────────────────────────────
+  async function loadProducts() {
+    var r = await db.from('products')
+      .select('id,title,category,price,promotional_price,stock,is_kit,is_active,b2b_category')
+      .eq('is_active', true).eq('b2b_category', 'loja').order('title', { ascending: true });
+    if (r.error) { showToast('Erro ao carregar produtos: ' + r.error.message, 'error'); return; }
+    products = (r.data || []).filter(function (p) { return !p.is_kit; });
+    var cats = Array.from(new Set(products.map(function (p) { return p.category || ''; }).filter(Boolean))).sort();
+    el('p-category').innerHTML = '<option value="">Todas as categorias</option>' + cats.map(function (c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(CATEGORY_LABELS[c] || c) + '</option>'; }).join('');
+    renderProducts();
+  }
+  function hasPromo(p) { var n = Number(p.promotional_price); return p.promotional_price != null && isFinite(n) && n > 0 && n < Number(p.price); }
+  function filtered() {
+    var q = el('p-search').value.trim().toLowerCase();
+    var cat = el('p-category').value;
+    var only = el('p-only-promo').checked;
+    return products.filter(function (p) {
+      if (cat && p.category !== cat) return false;
+      if (only && !hasPromo(p)) return false;
+      if (q && String(p.title).toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+  }
+  function pctOf(p) { return hasPromo(p) ? Math.round((1 - Number(p.promotional_price) / Number(p.price)) * 100) : 0; }
+  function renderProducts() {
+    var list = filtered();
+    el('p-empty').classList.toggle('hidden', list.length > 0);
+    el('bulk-scope').textContent = list.length + ' produto(s) no filtro';
+    el('p-rows').innerHTML = list.map(function (p) {
+      var pct = pctOf(p);
+      return '<tr data-id="' + p.id + '">' +
+        '<td class="max-w-[280px]"><a href="/produto?id=' + p.id + '" target="_blank" rel="noopener" class="hover:text-freo-orange line-clamp-2">' + escapeHtml(p.title) + '</a></td>' +
+        '<td class="font-mono text-xs text-white/40">' + escapeHtml(CATEGORY_LABELS[p.category] || p.category || '—') + '</td>' +
+        '<td class="font-mono text-xs ' + (Number(p.stock) <= 0 ? 'text-red-400' : 'text-white/60') + '">' + (Number(p.stock) || 0) + '</td>' +
+        '<td class="font-mono text-xs text-white/60 whitespace-nowrap">' + money(p.price) + '</td>' +
+        '<td><input class="promo-input" type="number" min="0" step="0.01" inputmode="decimal" placeholder="—" value="' + (p.promotional_price != null ? Number(p.promotional_price).toFixed(2) : '') + '" data-id="' + p.id + '" aria-label="Preço promocional de ' + escapeHtml(p.title) + '"></td>' +
+        '<td>' + (pct > 0 ? '<span class="bf-badge"><b>BF</b><i>−' + pct + '%</i></span>' : '<span class="font-mono text-xs text-white/20">—</span>') + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+  ['p-search', 'p-category', 'p-only-promo'].forEach(function (id) { el(id).addEventListener('input', renderProducts); el(id).addEventListener('change', renderProducts); });
+
+  async function savePromo(product, value) {
+    var r = await db.from('products').update({ promotional_price: value }).eq('id', product.id).select('id,promotional_price').maybeSingle();
+    if (r.error || !r.data) throw new Error(r.error ? r.error.message : 'sem permissão');
+    product.promotional_price = r.data.promotional_price;
+  }
+  el('p-rows').addEventListener('change', async function (e) {
+    var input = e.target.closest('.promo-input'); if (!input) return;
+    var product = products.find(function (p) { return String(p.id) === input.dataset.id; }); if (!product) return;
+    var raw = input.value.trim().replace(',', '.');
+    var value = raw === '' ? null : Math.round(Number(raw) * 100) / 100;
+    if (value !== null && (!isFinite(value) || value <= 0)) { input.classList.add('error'); return showToast('Preço inválido.', 'error'); }
+    if (value !== null && value >= Number(product.price)) { input.classList.add('error'); return showToast('O promocional precisa ser menor que ' + money(product.price) + '.', 'error'); }
+    input.className = 'promo-input saving';
+    try { await savePromo(product, value); input.className = 'promo-input saved'; renderProducts(); }
+    catch (err) { input.className = 'promo-input error'; showToast('Erro ao salvar: ' + err.message, 'error'); }
+  });
+
+  async function runBulk(list, valueFor, label) {
+    var buttons = [el('bulk-apply'), el('bulk-clear')];
+    buttons.forEach(function (b) { b.disabled = true; });
+    var ok = 0, fail = 0;
+    for (var i = 0; i < list.length; i += 8) {
+      var chunk = list.slice(i, i + 8);
+      var results = await Promise.allSettled(chunk.map(function (p) { return savePromo(p, valueFor(p)); }));
+      results.forEach(function (r) { r.status === 'fulfilled' ? ok++ : fail++; });
+      el('bulk-scope').textContent = label + '… ' + (ok + fail) + '/' + list.length;
+    }
+    buttons.forEach(function (b) { b.disabled = false; });
+    renderProducts();
+    showToast(ok + ' produto(s) atualizado(s)' + (fail ? ', ' + fail + ' com erro' : '') + '.', fail ? 'error' : 'success');
+  }
+  function discounted(price, pct, round) {
+    var target = Number(price) * (1 - pct / 100);
+    var v = target;
+    if (round) {
+      // Termina em ,90 sem nunca dar menos desconto que o prometido.
+      v = Math.floor(target) + 0.9;
+      if (v > target + 0.0001) v -= 1;
+      if (v < 0.9) v = target;
+    }
+    return Math.round(v * 100) / 100;
+  }
+  el('bulk-apply').addEventListener('click', function () {
+    var pct = parseInt(el('bulk-pct').value, 10);
+    if (!(pct >= 1 && pct <= 90)) return showToast('Informe um desconto entre 1% e 90%.', 'error');
+    var round = el('bulk-round').checked;
+    var list = filtered().filter(function (p) { var v = discounted(p.price, pct, round); return v > 0 && v < Number(p.price); });
+    if (!list.length) return showToast('Nenhum produto no filtro.', 'error');
+    if (!confirm('Aplicar ' + pct + '% de desconto em ' + list.length + ' produto(s)? O preço promocional atual deles será substituído.')) return;
+    runBulk(list, function (p) { return discounted(p.price, pct, round); }, 'Aplicando');
+  });
+  el('bulk-clear').addEventListener('click', function () {
+    var list = filtered().filter(function (p) { return p.promotional_price != null; });
+    if (!list.length) return showToast('Nenhum produto com promoção no filtro.', 'error');
+    if (!confirm('Remover o preço promocional de ' + list.length + ' produto(s)? Eles voltam ao preço normal.')) return;
+    runBulk(list, function () { return null; }, 'Removendo');
+  });
+  </script>
+</body>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Box, ChevronDown, ChevronRight, Cross, Gamepad2, Gift, Grid2X2, List, Menu, ShoppingCart, SlidersHorizontal, UsersRound, X } from 'lucide-react';
+import { BfDiscountBadge, BfLowStock, BfPriceBlock, lowStockCount, saleInfo, useBlackFriday } from './blackFriday';
 
 export type GeekProduct = {
   id: number;
@@ -53,21 +54,31 @@ function GeekProductCard<T extends GeekProduct>({ product, onAddToCart, onProduc
   const salePrice = Number(product.promotional_price);
   const hasSale = product.promotional_price != null && salePrice > 0 && salePrice < Number(product.price);
   const tag = tagsOf(product)[0];
+  const bf = useBlackFriday();
+  const sale = saleInfo(product);
+  const bfSale = bf.live && sale.onSale;
+  const bfLowStock = bf.live ? lowStockCount(product as any, bf.campaign) : 0;
   return (
-    <article className={`group overflow-hidden rounded-md border border-[#25313d] bg-[#0d141c] hover:border-[#d6a72d]/70 transition-colors ${list ? 'sm:flex' : 'flex flex-col'}`}>
+    <article className={`group overflow-hidden rounded-md border border-[#25313d] bg-[#0d141c] hover:border-[#d6a72d]/70 transition-colors ${list ? 'sm:flex' : 'flex flex-col'} ${bfSale ? 'bf-card' : ''}`}>
       <a href={`/produto?id=${encodeURIComponent(product.id)}`} onClick={() => onProductClick(product)} className={`relative block overflow-hidden bg-black ${list ? 'sm:w-48 sm:shrink-0' : ''}`} aria-label={`Ver ${product.title}`}>
         <div className={`${list ? 'aspect-[4/3] sm:aspect-square' : 'aspect-[4/3] sm:aspect-square'} flex items-center justify-center`}>
           {image ? <img src={image} alt={product.title} loading="lazy" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" /> : <Box className="w-14 h-14 text-white/15" aria-hidden="true" />}
         </div>
-        {tag && <span className="absolute top-3 left-3 max-w-[75%] truncate rounded bg-[#f0bd3f] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#080b0e]">{tag}</span>}
+        {tag && !bfSale && <span className="absolute top-3 left-3 max-w-[75%] truncate rounded bg-[#f0bd3f] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[#080b0e]">{tag}</span>}
+        {bfSale && <BfDiscountBadge pct={sale.pct} className="absolute top-3 right-3 z-10" />}
+        {bfLowStock > 0 && <BfLowStock count={bfLowStock} className="absolute bottom-3 left-3 z-10" />}
       </a>
       <div className="flex flex-1 flex-col px-3.5 py-3.5 sm:px-4">
         <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[#e3b434]">Geek/Gamer</p>
         <h2 className="line-clamp-2 min-h-[2.75rem] text-sm font-semibold leading-snug text-white sm:text-base"><a href={`/produto?id=${encodeURIComponent(product.id)}`} onClick={() => onProductClick(product)} className="hover:text-[#f0bd3f]">{product.title}</a></h2>
-        <div className="mt-auto pt-2">
-          {hasSale && <span className="mr-2 text-xs text-white/45 line-through">{money(Number(product.price))}</span>}
-          <p className="text-lg font-bold text-white">{money(effectivePrice(product))}</p>
-        </div>
+        {bfSale ? (
+          <div className="mt-auto pt-2"><BfPriceBlock regular={sale.regular} current={sale.current} savings={sale.savings} size="sm" /></div>
+        ) : (
+          <div className="mt-auto pt-2">
+            {hasSale && <span className="mr-2 text-xs text-white/45 line-through">{money(Number(product.price))}</span>}
+            <p className="text-lg font-bold text-white">{money(effectivePrice(product))}</p>
+          </div>
+        )}
         <div className="mt-2.5 flex gap-2">
           <button type="button" onClick={() => onAddToCart(product)} aria-label={`Adicionar ${product.title} ao carrinho`} className="flex h-10 w-11 shrink-0 items-center justify-center rounded border border-[#e3b434] text-[#f0bd3f] hover:bg-[#e3b434] hover:text-black transition-colors"><ShoppingCart className="h-4 w-4" aria-hidden="true" /></button>
           <a href={`/produto?id=${encodeURIComponent(product.id)}`} onClick={() => onProductClick(product)} className="flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded border border-[#e3b434] px-2 text-xs font-bold text-[#f0bd3f] hover:bg-[#e3b434] hover:text-black transition-colors">Ver detalhes <ChevronRight className="h-4 w-4" aria-hidden="true" /></a>

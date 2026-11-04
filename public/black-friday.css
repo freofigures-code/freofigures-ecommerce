@@ -1,0 +1,94 @@
+/* FreoFigures — Black Friday na página do produto (ativo com html.bf-live). */
+@keyframes bf-shine { 0% { transform: translateX(-120%) skewX(-20deg); } 60%, 100% { transform: translateX(260%) skewX(-20deg); } }
+@keyframes bf-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
+
+.bf-chip {
+  display: inline-block;
+  background: linear-gradient(135deg, #f7da7a, #ddaf34 55%, #b8871b);
+  color: #050505;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: .28rem .5rem;
+  line-height: 1;
+}
+.bf-clock { color: #f7da7a; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+/* Faixa no topo */
+.bf-strip {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .4rem .8rem;
+  padding: .5rem 1rem;
+  background: #030303;
+  border-bottom: 1px solid rgba(221,175,52,.45);
+  color: rgba(244,242,236,.8);
+  font-family: ui-monospace, monospace;
+  font-size: .72rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.bf-strip[hidden] { display: none; }
+.bf-strip::after { content: ''; position: absolute; inset: 0 auto 0 0; width: 30%; background: linear-gradient(90deg, transparent, rgba(221,175,52,.2), transparent); animation: bf-shine 5s ease-in-out infinite; pointer-events: none; }
+@media (max-width: 560px) { .bf-strip-copy, .bf-strip-sep { display: none; } }
+
+/* Cabeçalho da oferta, acima do preço */
+.bf-offer { margin: 18px 0 10px; }
+.bf-offer[hidden] { display: none; }
+.bf-offer-head { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; font-family: ui-monospace, monospace; font-size: .74rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(244,242,236,.7); }
+.bf-offer-timer[hidden] { display: none; }
+
+/* Preço com moldura BF */
+html.bf-live .price-line:has(#price-promo:not(.hidden)) {
+  position: relative;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(221,175,52,.1), rgba(0,0,0,.4));
+  border-left: 3px solid #ddaf34;
+}
+html.bf-live #price-discount-badge:not(.hidden) {
+  background: linear-gradient(135deg, #f7da7a, #ddaf34 55%, #b8871b) !important;
+  color: #050505 !important;
+  font-weight: 900;
+  box-shadow: 0 8px 24px rgba(221,175,52,.25);
+}
+.bf-savings-line {
+  display: inline-block;
+  margin: 8px 0 0;
+  padding: .3rem .55rem;
+  background: rgba(221,175,52,.14);
+  color: #f7da7a;
+  font-family: ui-monospace, monospace;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.bf-savings-line[hidden] { display: none; }
+
+/* Estoque baixo real */
+.bf-stock { margin: 12px 0 4px; padding: 10px 12px; border: 1px solid rgba(248,113,113,.45); background: rgba(248,113,113,.07); }
+.bf-stock[hidden] { display: none; }
+.bf-stock-copy { display: flex; align-items: center; gap: .5rem; color: #fecaca; font-size: .9rem; }
+.bf-stock-dot { width: 8px; height: 8px; border-radius: 50%; background: #f87171; flex: none; animation: bf-pulse 1.2s ease-in-out infinite; }
+.bf-stock-bar { margin-top: 8px; height: 5px; background: rgba(255,255,255,.08); overflow: hidden; }
+.bf-stock-bar span { display: block; height: 100%; background: linear-gradient(90deg, #f87171, #ddaf34); transition: width .4s ease; }
+#estoque-badge.bf-hidden { display: none; }
+
+/* Prazo perto do botão */
+.bf-deadline { margin: 0 0 10px; padding: 9px 12px; border: 1px dashed rgba(221,175,52,.5); color: #f7da7a; font-family: ui-monospace, monospace; font-size: .72rem; letter-spacing: .04em; text-align: center; }
+.bf-deadline[hidden] { display: none; }
+
+html.bf-live #btn-buynow { box-shadow: 0 0 0 1px #ddaf34, 0 10px 34px rgba(221,175,52,.3); }
+html.bf-live .sticky-buy-bar { border-top-color: rgba(221,175,52,.6); }
+html.bf-live #sticky-price { color: #f7da7a; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-strip::after, .bf-stock-dot { animation: none; }
+}

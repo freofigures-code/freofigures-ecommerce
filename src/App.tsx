@@ -2,6 +2,7 @@ import { CATEGORY_LABELS, categoryLabel, normalizeCategory } from '../public/cat
 import { useState, useEffect, useRef } from "react";
 import { updateStoreLocation } from './seo';
 import GeekShopView from './GeekShop';
+import { BfDiscountBadge, BfLowStock, BfPriceBlock, BlackFridayTopBar, CountdownBlocks, lowStockCount, saleInfo, useBlackFriday } from './blackFriday';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShoppingCart,
@@ -81,6 +82,7 @@ type Product = {
   title: string;
   price: number;
   promotional_price: number | null;
+  stock?: number | null;
   category: string | null;
   images: string[];
   tags: string[] | string | null;
@@ -797,11 +799,20 @@ const Navbar = ({
   };
 
   const totalCartItems = cartItems.reduce((total: number, item: CartItem) => total + item.quantity, 0);
+  const blackFriday = useBlackFriday();
+
+  const goToDeals = () => {
+    onSearchClear();
+    setCurrentView('home');
+    setMobileMenuOpen(false);
+    window.setTimeout(() => document.getElementById('ofertas-black-friday')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 py-2.5 sm:py-3 transition-all duration-300 border-b ${
       isScrolled ? 'bg-black/95 border-freo-orange/20' : 'bg-black/95 border-white/10'
     }`}>
+      {blackFriday.live && <div className="-mt-2.5 sm:-mt-3 mb-2.5 sm:mb-3"><BlackFridayTopBar onCta={goToDeals} /></div>}
       <div className="max-w-[1500px] mx-auto px-3 sm:px-4 lg:px-6 flex flex-wrap justify-between items-center gap-x-3">
         {/* Logo */}
         <div className="order-1 flex items-center gap-2 md:gap-3 z-50 cursor-pointer flex-shrink-0" onClick={goHome}>
@@ -1404,13 +1415,17 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
   const displayPrice = hasPromo ? product.promotional_price! : product.price;
   const tags = Array.isArray(product.tags) ? product.tags : typeof product.tags === 'string' ? [product.tags] : [];
   const tag = tags.length > 0 ? tags[0] : null;
+  const bf = useBlackFriday();
+  const sale = saleInfo(product);
+  const bfSale = bf.live && sale.onSale;
+  const bfLowStock = bf.live ? lowStockCount(product, bf.campaign) : 0;
 
   const goToProduct = () => {
     trackEvent('product_click', String(product.id), product.title);
     (window as any).FreoAnalytics?.event('select_item', { item_list_name: 'Vitrine', items: [{ item_id: String(product.id), item_name: product.title, price: displayPrice, item_category: product.category || undefined }] });
   };
   return (
-    <div className={`group flex flex-col ${compact ? '' : 'bg-freo-dark border border-white/5 hover:border-freo-orange/50 transition-colors'}`}>
+    <div className={`group flex flex-col ${compact ? '' : 'bg-freo-dark border border-white/5 hover:border-freo-orange/50 transition-colors'} ${bfSale && !compact ? 'bf-card' : ''}`}>
       <a href={`/produto?id=${encodeURIComponent(product.id)}`}
         className={`relative ${compact ? 'aspect-square' : 'aspect-square bg-freo-black'} overflow-hidden ${compact ? 'border border-white/5 group-hover:border-freo-orange/50 transition-colors' : ''} mb-3 md:mb-4 cursor-pointer`}
         onClick={goToProduct}
@@ -1418,7 +1433,7 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
         {product.is_kit && (
           <div className="absolute top-2 left-2 md:top-3 md:left-3 z-10 bg-freo-orange text-freo-black text-[9px] md:text-[10px] font-bold uppercase tracking-widest px-1.5 md:px-2 py-0.5 md:py-1">✦ Kit</div>
         )}
-        {!product.is_kit && tag && (
+        {!product.is_kit && tag && !bfSale && (
           <div className="absolute top-2 left-2 md:top-3 md:left-3 z-10 bg-freo-orange text-freo-black text-[9px] md:text-[10px] font-bold uppercase tracking-widest px-1.5 md:px-2 py-0.5 md:py-1">{tag}</div>
         )}
         {thumb ? (
@@ -1427,6 +1442,8 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
           <div className="w-full h-full flex items-center justify-center bg-freo-dark"><Box className="w-12 h-12 text-white/10" /></div>
         )}
         {!compact && <div className="absolute inset-0 bg-freo-orange/20 opacity-0 group-hover:opacity-100 mix-blend-overlay transition-opacity duration-300" />}
+        {bfSale && <BfDiscountBadge pct={sale.pct} className="absolute top-2 right-2 md:top-3 md:right-3 z-10" />}
+        {bfLowStock > 0 && <BfLowStock count={bfLowStock} className="absolute bottom-2 left-2 md:bottom-3 md:left-3 z-10" />}
       </a>
       <div className={`flex flex-col flex-grow ${compact ? '' : 'p-3 md:p-5'}`}>
         <span className="text-freo-orange text-[9px] md:text-[10px] font-mono uppercase mb-1 tracking-wider">{categoryLabel(product.category)}</span>
@@ -1437,10 +1454,14 @@ const ProductCard = ({ product, onAddToCart, compact = false }: { product: Produ
         </h3>
         {product.category === 'feito_por_voces' && product.creator_handle && <CommunitySocial product={product} />}
         <div className="mt-auto flex flex-col gap-2 md:gap-3">
-          <div className="flex items-end gap-2">
-            {hasPromo && <span className="font-mono text-xs md:text-sm text-white/30 line-through">{formatPrice(product.price)}</span>}
-            <span className="font-mono text-base md:text-xl font-bold text-freo-orange">{formatPrice(displayPrice)}</span>
-          </div>
+          {bfSale ? (
+            <BfPriceBlock regular={sale.regular} current={sale.current} savings={sale.savings} size={compact ? 'sm' : 'md'} />
+          ) : (
+            <div className="flex items-end gap-2">
+              {hasPromo && <span className="font-mono text-xs md:text-sm text-white/30 line-through">{formatPrice(product.price)}</span>}
+              <span className="font-mono text-base md:text-xl font-bold text-freo-orange">{formatPrice(displayPrice)}</span>
+            </div>
+          )}
           <button
             onClick={event => {
               event.stopPropagation();
@@ -2338,12 +2359,133 @@ const ShopeeReviews = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// BLACK FRIDAY (ligada em /admin/black-friday.html)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const scrollToDeals = () => document.getElementById('ofertas-black-friday')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+const BlackFridayHero = ({ onExplore }: { onExplore: () => void }) => {
+  const { campaign } = useBlackFriday();
+  if (!campaign) return null;
+  return (
+    <section className="relative overflow-hidden bg-[#030303] pt-32 md:pt-40 pb-14 md:pb-20 min-h-[88vh] flex items-center" aria-labelledby="bf-hero-title">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-[radial-gradient(circle,rgba(221,175,52,.22),transparent_62%)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-freo-orange/70 to-transparent" />
+        <div className="absolute inset-0 opacity-[.07] bg-[linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] bg-[size:56px_56px]" />
+        <div className="bf-hero-word absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-display font-black uppercase leading-none text-[26vw] md:text-[20vw] tracking-tighter select-none">Black</div>
+      </div>
+      <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-6 text-center w-full">
+        <div className="inline-flex items-center gap-2 border border-freo-orange/40 bg-black/60 px-3 py-1.5 mb-6 font-mono text-[10px] md:text-xs uppercase tracking-[.3em] text-freo-orange">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" aria-hidden="true" /> Ao vivo agora
+        </div>
+        <h2 id="bf-hero-title" className="font-display font-black uppercase leading-[.85] tracking-tighter text-white">
+          <span className="block text-[17vw] sm:text-8xl md:text-9xl">Black</span>
+          <span className="block text-[17vw] sm:text-8xl md:text-9xl bg-gradient-to-r from-[#f7da7a] via-freo-orange to-[#b8871b] bg-clip-text text-transparent">Friday</span>
+        </h2>
+        <p className="mt-6 font-display font-bold text-xl md:text-3xl text-white">{campaign.headline}</p>
+        {campaign.subheadline && <p className="mt-3 max-w-2xl mx-auto text-sm md:text-lg text-white/60">{campaign.subheadline}</p>}
+        <div className="mt-9 md:mt-11">
+          {campaign.ends_at ? (
+            <>
+              <p className="mb-4 font-mono text-[10px] md:text-xs uppercase tracking-[.35em] text-white/50">As ofertas acabam em</p>
+              <CountdownBlocks target={campaign.ends_at} />
+            </>
+          ) : (
+            <p className="font-mono text-xs md:text-sm uppercase tracking-[.35em] text-freo-orange">Por tempo limitado</p>
+          )}
+        </div>
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button type="button" onClick={scrollToDeals} className="bf-tag w-full sm:w-auto px-10 py-4 font-display font-black uppercase tracking-widest text-sm md:text-base text-black hover:brightness-110 transition shadow-[0_10px_40px_rgba(221,175,52,.35)]">
+            {campaign.cta_label} ↓
+          </button>
+          <button type="button" onClick={onExplore} className="w-full sm:w-auto px-8 py-4 border border-white/20 font-display font-bold uppercase tracking-widest text-sm text-white/80 hover:border-freo-orange hover:text-freo-orange transition-colors">
+            Ver catálogo completo
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const BlackFridayDeals = ({ addToCart, onExplore }: { addToCart: (product: Product) => void; onExplore: () => void }) => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        // @ts-ignore
+        const supabase = window.supabaseClient || window.supabase;
+        if (!supabase) return;
+        const { data, error } = await supabase.from('products').select('*').eq('is_active', true).eq('b2b_category', 'loja').not('promotional_price', 'is', null);
+        if (error) throw error;
+        const deals = (data || []).filter((product: Product) => saleInfo(product).onSale && Number(product.stock ?? 1) > 0)
+          .sort((a: Product, b: Product) => saleInfo(b).pct - saleInfo(a).pct);
+        if (alive) setProducts(deals.slice(0, 8));
+      } catch (error) {
+        console.error('[BlackFridayDeals]', error);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const maxPct = products.reduce((max, product) => Math.max(max, saleInfo(product).pct), 0);
+  const ticker = `BLACK FRIDAY ✦ ${maxPct > 0 ? `ATÉ ${maxPct}% OFF` : 'PREÇOS ESPECIAIS'} ✦ ESTOQUE LIMITADO ✦ `;
+
+  return (
+    <section id="ofertas-black-friday" className="relative bg-[#050505] border-y border-freo-orange/30 scroll-mt-28" aria-labelledby="bf-deals-title">
+      <div className="overflow-hidden bg-freo-orange text-black py-2" aria-hidden="true">
+        <div className="bf-marquee-track flex w-max whitespace-nowrap font-display font-black uppercase tracking-widest text-sm">
+          <span>{ticker.repeat(6)}</span><span>{ticker.repeat(6)}</span>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-5 md:px-6 py-14 md:py-20">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10 md:mb-12">
+          <div>
+            <p className="font-mono text-[10px] md:text-xs uppercase tracking-[.3em] text-freo-orange mb-3">Seleção Black Friday</p>
+            <h2 id="bf-deals-title" className="font-display font-black uppercase text-4xl md:text-6xl tracking-tighter leading-none">Ofertas que <span className="text-freo-orange">não voltam</span></h2>
+          </div>
+          {maxPct > 0 && <p className="font-mono text-sm text-white/50">Descontos de até <strong className="text-freo-orange text-lg">{maxPct}%</strong></p>}
+        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+            {[0, 1, 2, 3].map(i => <div key={i} className="aspect-[3/4] bg-white/[.03] border border-white/5 animate-pulse" />)}
+          </div>
+        ) : products.length ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+            {products.map(product => <ProductCard key={product.id} product={product} onAddToCart={addToCart} />)}
+          </div>
+        ) : (
+          <p className="text-center font-mono text-sm text-white/40 py-10">As ofertas estão chegando. Enquanto isso, explore o catálogo.</p>
+        )}
+        <div className="text-center mt-10">
+          <button type="button" onClick={onExplore} className="inline-flex items-center gap-2 border border-freo-orange/40 text-freo-orange font-mono text-xs uppercase tracking-widest px-6 py-3 hover:bg-freo-orange hover:text-black transition-colors">Ver todos os produtos</button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // HOME VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 
-const HomeView = ({ onShowCategories, onSelectCategory, addToCart }: any) => (
+const HomeView = ({ onShowCategories, onSelectCategory, addToCart }: any) => {
+  const blackFriday = useBlackFriday();
+  return (
   <>
-    <HeroCarousel onExplore={onShowCategories} />
+    {blackFriday.live ? (
+      <>
+        <BlackFridayHero onExplore={onShowCategories} />
+        <BlackFridayDeals addToCart={addToCart} onExplore={onShowCategories} />
+      </>
+    ) : (
+      <HeroCarousel onExplore={onShowCategories} />
+    )}
     <Marquee />
     <ShopeeReviews />
     <Categories onSelectCategory={onSelectCategory} />
@@ -2352,7 +2494,8 @@ const HomeView = ({ onShowCategories, onSelectCategory, addToCart }: any) => (
     <ProcessSection />
     <AboutSection />
   </>
-);
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH MODAL
@@ -2571,6 +2714,7 @@ const CartDrawer = ({ isOpen, onClose, cartItems, updateQuantity, removeItem, us
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const blackFriday = useBlackFriday();
   const [currentView, setCurrentView] = useState<'home' | 'shop'>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.has('categoria') || params.get('categorias') === '1' ? 'shop' : 'home';
@@ -2814,6 +2958,7 @@ export default function App() {
         onSearchClear={handleSearchClear}
         onShowCategories={showCategories}
       />
+      {blackFriday.live && currentView !== 'home' && <div className="h-8 sm:h-9" aria-hidden="true" />}
       {currentView === 'home' && <h1 className="sr-only">FreoFigures — Arte em Impressão 3D</h1>}
       {currentView === 'home' ? (
         <HomeView onShowCategories={showCategories} onSelectCategory={handleSelectCategory} addToCart={addToCart} />
